@@ -14,6 +14,7 @@ private:
     void MainLoop();
 
     Window m_window;
+    Instance m_instance;
 };
 
 #endif

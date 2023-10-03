@@ -8,6 +8,7 @@ void HelloTriangleApplication::run()
 
 void HelloTriangleApplication::InitVulkan()
 {
+    
 }
 
 void HelloTriangleApplication::MainLoop()
