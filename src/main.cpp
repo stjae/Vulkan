@@ -1,21 +1,22 @@
-#include "common.h"
 #include "baseApp.h"
+#include "common.h"
 
 #ifdef NDEBUG
-    const bool enableValidationLayers = false;
+const bool enableValidationLayers = false;
 #else
-    const bool enableValidationLayers = true;
+const bool enableValidationLayers = true;
 #endif
 
-int main() {
-    HelloTriangleApplication app(800, 600, enableValidationLayers);
+int main()
+{
+    HelloTriangleApplication app(800, 600, "Vulkan");
 
     try {
         app.run();
     } catch (const std::exception& e) {
-        SPDLOG_INFO(e.what());
-        return EXIT_FAILURE;
+        spdlog::error(e.what());
+        return 1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }

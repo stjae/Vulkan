@@ -9,11 +9,10 @@ endif()
 project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME}
 src/main.cpp
-src/common.h
-src/baseApp.cpp src/baseApp.h
-src/baseAppInfo.h
-src/vkUtil.cpp src/vkUtil.h
-src/vkDebug.cpp src/vkDebug.h)
+src/common.h src/common.cpp
+src/baseApp.h src/baseApp.cpp
+src/API/window.h src/API/window.cpp
+)
 
 include(Dependency.cmake)
 find_package(Vulkan REQUIRED)
