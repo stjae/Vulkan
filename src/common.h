@@ -17,6 +17,7 @@
 #include <spdlog/spdlog.h>
 
 #include "API/instance.h"
+#include "API/log.h"
 #include "API/window.h"
 
 static std::vector<char> ReadFile(const std::string& filename);

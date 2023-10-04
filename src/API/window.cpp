@@ -1,18 +1,18 @@
 #include "window.h"
 
-Window::Window(int width, int height, const char* wName) : m_width(width), m_height(height)
+Window::Window(int width, int height, const char* wName) : width(width), height(height)
 {
     glfwInit();
-    m_windowPtr = glfwCreateWindow(width, height, wName, nullptr, nullptr);
+    window = glfwCreateWindow(width, height, wName, nullptr, nullptr);
 }
 
 Window::~Window()
 {
-    glfwDestroyWindow(m_windowPtr);
+    glfwDestroyWindow(window);
     glfwTerminate();
 }
 
 int Window::ShouldClose()
 {
-    return glfwWindowShouldClose(m_windowPtr);
+    return glfwWindowShouldClose(window);
 }

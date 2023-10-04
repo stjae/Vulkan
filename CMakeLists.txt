@@ -13,6 +13,7 @@ src/common.h src/common.cpp
 src/baseApp.h src/baseApp.cpp
 src/API/window.h src/API/window.cpp
 src/API/instance.h src/API/instance.cpp
+src/API/log.h src/API/log.cpp
 )
 
 include(Dependency.cmake)

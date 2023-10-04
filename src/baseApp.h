@@ -3,10 +3,11 @@
 
 #include "common.h"
 
-class HelloTriangleApplication
+class Application
 {
 public:
-    HelloTriangleApplication(const int width, const int height, const char* wName) : m_window(width, height, wName) {}
+    Application(const int width, const int height, const char* wName, bool debugMode);
+
     void run();
 
 private:
@@ -15,6 +16,7 @@ private:
 
     Window m_window;
     Instance m_instance;
+    Log m_log;
 };
 
 #endif

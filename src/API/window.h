@@ -3,9 +3,7 @@
 
 #include "../common.h"
 
-class Window
-{
-public:
+struct Window {
     Window(const int width, const int height, const char* wName);
     ~Window();
 
@@ -14,11 +12,10 @@ public:
 
     int ShouldClose();
 
-    const int m_width;
-    const int m_height;
+    const int width;
+    const int height;
 
-private:
-    GLFWwindow* m_windowPtr;
+    GLFWwindow* window;
 };
 
 #endif

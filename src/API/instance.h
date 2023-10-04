@@ -6,11 +6,17 @@
 class Instance
 {
 public:
-    Instance();
+    Instance(bool enableValidationLayers) : m_enableValidationLayers(enableValidationLayers){};
     ~Instance();
 
-private:
-    vk::Instance m_instance;
+    static vk::Instance& Get();
+    static vk::DispatchLoaderDynamic& Dldi();
+
+    void Create();
+    void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
+    void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
+
+    bool m_enableValidationLayers;
 };
 
 #endif

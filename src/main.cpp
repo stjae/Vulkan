@@ -2,14 +2,14 @@
 #include "common.h"
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+const bool debugMode = false;
 #else
-const bool enableValidationLayers = true;
+const bool debugMode = true;
 #endif
 
 int main()
 {
-    HelloTriangleApplication app(800, 600, "Vulkan");
+    Application app(800, 600, "Vulkan", debugMode);
 
     try {
         app.run();
