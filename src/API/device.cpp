@@ -41,7 +41,15 @@ void Device::FindQueueFamilies()
             QueueFamilyIndices().graphicsFamily = i;
 
             if (debug) {
-                spdlog::info("queue family index for graphics is {}", i);
+                spdlog::info("graphics queue family index is {}", i);
+            }
+        }
+
+        if (PhysicalDevice().getSurfaceSupportKHR(i, Instance::Surface())) {
+            QueueFamilyIndices().presentFamily = i;
+
+            if (debug) {
+                spdlog::info("present queue family index is {}", i);
             }
         }
 
@@ -59,18 +67,26 @@ void Device::FindQueueFamilies()
 
 void Device::CreateLogicalDevice()
 {
+    // In case queue families have different indices
+    std::vector<uint32_t> uniqueIndices;
+    uniqueIndices.push_back(QueueFamilyIndices().graphicsFamily.value());
+    if (QueueFamilyIndices().graphicsFamily.value() != QueueFamilyIndices().presentFamily.value()) {
+        uniqueIndices.push_back(QueueFamilyIndices().presentFamily.value());
+    }
+
     float queuePriority = 1.0f;
 
-    vk::DeviceQueueCreateInfo deviceQueueInfo;
-    deviceQueueInfo.setQueueFamilyIndex(QueueFamilyIndices().graphicsFamily.value());
-    deviceQueueInfo.setQueueCount(1);
-    deviceQueueInfo.setPQueuePriorities(&queuePriority);
+    std::vector<vk::DeviceQueueCreateInfo> deviceQueueInfos;
+    for (uint32_t queueFamilyIndex : uniqueIndices) {
+        deviceQueueInfos.push_back(
+            vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), queueFamilyIndex, 1, &queuePriority));
+    }
 
     vk::PhysicalDeviceFeatures deviceFeatures;
 
     vk::DeviceCreateInfo deviceInfo;
-    deviceInfo.setQueueCreateInfos(deviceQueueInfo);
-    deviceInfo.setQueueCreateInfoCount(1);
+    deviceInfo.setPQueueCreateInfos(deviceQueueInfos.data());
+    deviceInfo.setQueueCreateInfoCount(deviceQueueInfos.size());
     deviceInfo.setEnabledLayerCount(Instance::Layers().size());
     deviceInfo.setPpEnabledLayerNames(Instance::Layers().data());
 
@@ -79,7 +95,12 @@ void Device::CreateLogicalDevice()
     deviceInfo.setPpEnabledExtensionNames(extensions.data());
     deviceInfo.setPEnabledFeatures(&deviceFeatures);
 
+    // Get device handle
     Device::Get() = PhysicalDevice().createDevice(deviceInfo);
+
+    // Get queue handle
+    GraphicsQueue() = Device::Get().getQueue(QueueFamilyIndices().graphicsFamily.value(), 0);
+    PresentQueue() = Device::Get().getQueue(QueueFamilyIndices().presentFamily.value(), 0);
 }
 
 Device::~Device()
@@ -104,4 +125,16 @@ vk::Device& Device::Get()
 {
     static vk::Device device;
     return device;
+}
+
+vk::Queue& Device::GraphicsQueue()
+{
+    static vk::Queue graphicsQueue;
+    return graphicsQueue;
+}
+
+vk::Queue& Device::PresentQueue()
+{
+    static vk::Queue presentQueue;
+    return presentQueue;
 }

@@ -55,9 +55,17 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     }
 }
 
+void Instance::CreateSurface()
+{
+    if (glfwCreateWindowSurface(Instance::Get(), Window::Get(), nullptr, &Surface()) != VK_SUCCESS) {
+        spdlog::error("failed to create window surface");
+    }
+}
+
 Instance::~Instance()
 {
-    vkDestroyInstance(Instance::Get(), nullptr);
+    Instance::Get().destroySurfaceKHR(Surface());
+    Instance::Get().destroy();
 }
 
 // getter
@@ -77,4 +85,10 @@ std::vector<const char*>& Instance::Layers()
 {
     static std::vector<const char*> layers;
     return layers;
+}
+
+VkSurfaceKHR& Instance::Surface()
+{
+    static VkSurfaceKHR surface;
+    return surface;
 }

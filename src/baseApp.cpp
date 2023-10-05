@@ -13,7 +13,8 @@ void Application::InitVulkan()
 {
     m_instance.Create();
     m_log.CreateDebugMessenger();
-    
+    m_instance.CreateSurface();
+
     m_device.PickPhysicalDevice();
     m_device.FindQueueFamilies();
     m_device.CreateLogicalDevice();

@@ -7,15 +7,12 @@ struct Window {
     Window(const int width, const int height, const char* wName);
     ~Window();
 
-    Window(const Window&) = delete;
-    Window& operator=(const Window&) = delete;
+    static GLFWwindow*& Get();
 
     int ShouldClose();
 
     const int width;
     const int height;
-
-    GLFWwindow* window;
 };
 
 #endif
