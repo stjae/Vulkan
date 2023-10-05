@@ -6,7 +6,7 @@
 class Application
 {
 public:
-    Application(const int width, const int height, const char* wName, bool debugMode);
+    Application(const int width, const int height, const char* wName);
 
     void run();
 
@@ -17,6 +17,7 @@ private:
     Window m_window;
     Instance m_instance;
     Log m_log;
+    Device m_device;
 };
 
 #endif

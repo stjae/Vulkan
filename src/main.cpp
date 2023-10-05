@@ -1,15 +1,10 @@
 #include "baseApp.h"
 #include "common.h"
 
-#ifdef NDEBUG
-const bool debugMode = false;
-#else
-const bool debugMode = true;
-#endif
 
 int main()
 {
-    Application app(800, 600, "Vulkan", debugMode);
+    Application app(800, 600, "Vulkan");
 
     try {
         app.run();

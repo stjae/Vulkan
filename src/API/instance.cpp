@@ -1,17 +1,5 @@
 #include "instance.h"
 
-vk::Instance& Instance::Get()
-{
-    static vk::Instance instance;
-    return instance;
-}
-
-vk::DispatchLoaderDynamic& Instance::Dldi()
-{
-    static vk::DispatchLoaderDynamic dldi;
-    return dldi;
-}
-
 void Instance::Create()
 {
     vk::ApplicationInfo appInfo;
@@ -24,8 +12,7 @@ void Instance::Create()
     SetExtensions(extensions, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    std::vector<const char*> layers;
-    SetLayers(layers, createInfo, debugInfo);
+    SetLayers(Layers(), createInfo, debugInfo);
 
     if (vk::createInstance(&createInfo, nullptr, &Instance::Get()) != vk::Result::eSuccess) {
         spdlog::error("failed to create instance");
@@ -36,7 +23,8 @@ void Instance::Create()
 
 void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
 {
-    extensions.push_back("VK_KHR_portability_enumeration");
+    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     createInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
 
     uint32_t count = 0;
@@ -46,8 +34,8 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
         extensions.push_back(glfwExtensions[i]);
     }
 
-    if (m_enableValidationLayers) {
-        extensions.push_back("VK_EXT_debug_utils");
+    if (debug) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
     createInfo.setEnabledExtensionCount(extensions.size());
@@ -56,7 +44,7 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
 
 void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo)
 {
-    if (m_enableValidationLayers) {
+    if (debug) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
         createInfo.setEnabledLayerCount(layers.size());
@@ -70,4 +58,23 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
 Instance::~Instance()
 {
     vkDestroyInstance(Instance::Get(), nullptr);
+}
+
+// getter
+vk::Instance& Instance::Get()
+{
+    static vk::Instance instance;
+    return instance;
+}
+
+vk::DispatchLoaderDynamic& Instance::Dldi()
+{
+    static vk::DispatchLoaderDynamic dldi;
+    return dldi;
+}
+
+std::vector<const char*>& Instance::Layers()
+{
+    static std::vector<const char*> layers;
+    return layers;
 }
