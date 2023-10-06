@@ -7,12 +7,12 @@ struct Window {
     Window(const int width, const int height, const char* wName);
     ~Window();
 
-    static GLFWwindow*& Get();
-
     int ShouldClose();
 
     const int width;
     const int height;
+
+    static GLFWwindow* window;
 };
 
 #endif

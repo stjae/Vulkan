@@ -2,14 +2,15 @@
 #define _LOG_H_
 
 #include "../common.h"
+#include "instance.h"
 
 struct Log {
     ~Log();
 
-    static vk::DebugUtilsMessengerEXT& DebugMessenger();
-
     void CreateDebugMessenger();
-    static void GetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
+    static void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
+
+    static vk::DebugUtilsMessengerEXT debugMessenger;
 };
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

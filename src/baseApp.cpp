@@ -11,13 +11,15 @@ void Application::run()
 
 void Application::InitVulkan()
 {
-    m_instance.Create();
+    m_instance.CreateInstance();
     m_log.CreateDebugMessenger();
     m_instance.CreateSurface();
 
     m_device.PickPhysicalDevice();
     m_device.FindQueueFamilies();
-    m_device.CreateLogicalDevice();
+    m_device.CreateDevice();
+    m_device.QuerySwapchainSupportDetails();
+    m_device.CreateSwapchain();
 }
 
 void Application::MainLoop()

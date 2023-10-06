@@ -5,23 +5,18 @@ Window::Window(int width, int height, const char* wName) : width(width), height(
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    Window::Get() = glfwCreateWindow(width, height, wName, nullptr, nullptr);
+    window = glfwCreateWindow(width, height, wName, nullptr, nullptr);
 }
 
 int Window::ShouldClose()
 {
-    return glfwWindowShouldClose(Window::Get());
+    return glfwWindowShouldClose(window);
 }
 
 Window::~Window()
 {
-    glfwDestroyWindow(Window::Get());
+    glfwDestroyWindow(window);
     glfwTerminate();
 }
 
-// getter
-GLFWwindow*& Window::Get()
-{
-    static GLFWwindow* window;
-    return window;
-}
+GLFWwindow* Window::window;

@@ -1,6 +1,10 @@
 #ifndef _BASEAPP_H_
 #define _BASEAPP_H_
 
+#include "API/device.h"
+#include "API/instance.h"
+#include "API/log.h"
+#include "API/window.h"
 #include "common.h"
 
 class Application

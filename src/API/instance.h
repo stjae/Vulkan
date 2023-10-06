@@ -2,21 +2,24 @@
 #define _INSTANCE_H_
 
 #include "../common.h"
+#include "log.h"
+#include "window.h"
 
 class Instance
 {
 public:
     ~Instance();
 
-    static vk::Instance& Get();
-    static vk::DispatchLoaderDynamic& Dldi();
-    static std::vector<const char*>& Layers();
-    static VkSurfaceKHR& Surface();
-
-    void Create();
+    void CreateInstance();
     void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
     void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
     void CreateSurface();
+
+    static vk::Instance instance;
+    static vk::DispatchLoaderDynamic dldi;
+    static std::vector<const char*> extensions;
+    static std::vector<const char*> layers;
+    static VkSurfaceKHR surface;
 };
 
 #endif

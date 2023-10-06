@@ -17,10 +17,10 @@ void Log::CreateDebugMessenger()
         vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
     createInfo.setPfnUserCallback(DebugCallback);
 
-    Log::DebugMessenger() = Instance::Get().createDebugUtilsMessengerEXT(createInfo, nullptr, Instance::Dldi());
+    debugMessenger = Instance::instance.createDebugUtilsMessengerEXT(createInfo, nullptr, Instance::dldi);
 }
 
-void Log::GetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
+void Log::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo.setMessageSeverity(
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
@@ -36,15 +36,8 @@ void Log::GetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
 Log::~Log()
 {
     if (debug) {
-        Instance::Get().destroyDebugUtilsMessengerEXT(Log::DebugMessenger(), nullptr, Instance::Dldi());
+        Instance::instance.destroyDebugUtilsMessengerEXT(debugMessenger, nullptr, Instance::dldi);
     }
-}
-
-// getter
-vk::DebugUtilsMessengerEXT& Log::DebugMessenger()
-{
-    static vk::DebugUtilsMessengerEXT debugMessenger;
-    return debugMessenger;
 }
 
 // callback function
@@ -69,3 +62,5 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
 
     return vk::False;
 }
+
+vk::DebugUtilsMessengerEXT Log::debugMessenger;

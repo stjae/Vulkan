@@ -2,36 +2,40 @@
 #define _DEVICE_H_
 
 #include "../common.h"
-
-namespace vkStruct
-{
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool IsComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-} // namespace vkStruct
+#include "instance.h"
+#include "struct.h"
 
 class Device
 {
 public:
     ~Device();
 
-    static vk::PhysicalDevice& PhysicalDevice();
-    static vkStruct::QueueFamilyIndices& QueueFamilyIndices();
-    static vk::Device& Get();
-    static vk::Queue& GraphicsQueue();
-    static vk::Queue& PresentQueue();
-
+    // Physical Device related method
     void PickPhysicalDevice();
     bool IsDeviceSuitable(vk::PhysicalDevice& device);
     void FindQueueFamilies();
 
-    void CreateLogicalDevice();
+    // Device related method
+    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    void SetDeviceCreateInfo(vk::DeviceCreateInfo& deviceCreateInfo, std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    void CreateDevice();
+
+    // SwapChain related method
+    void QuerySwapchainSupportDetails();
+    void CreateSwapchain();
+    vk::SurfaceFormatKHR ChooseSurfaceFormat();
+    vk::PresentModeKHR ChoosePresentMode();
+    vk::Extent2D ChooseExtent();
+
+    // Vulkan object variable
+    static vk::PhysicalDevice physicalDevice;
+    static std::vector<const char*> extensions;
+    static QueueFamilyIndices queueFamilyIndices;
+    static vk::Device device;
+    static vk::Queue graphicsQueue;
+    static vk::Queue presentQueue;
+    static SwapchainSupportDetails swapchainSupportDetails;
+    static SwapchainDetails swapchainDetails;
 };
 
 #endif
