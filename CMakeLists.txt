@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_NAME vulkan_testing)
+set(PROJECT_NAME vulkanApp)
 set(CMAKE_CXX_STANDARD 17)
 if (APPLE)
     set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL")
@@ -16,8 +16,7 @@ src/API/window.h src/API/window.cpp
 src/API/instance.h src/API/instance.cpp
 src/API/log.h src/API/log.cpp
 src/API/device.h src/API/device.cpp
-
-src/API/struct.h
+src/API/swapchain.h src/API/swapchain.cpp
 )
 
 include(Dependency.cmake)

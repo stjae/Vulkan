@@ -3,7 +3,8 @@
 
 #include "../common.h"
 #include "instance.h"
-#include "struct.h"
+
+struct QueueFamilyIndices;
 
 class Device
 {
@@ -20,13 +21,6 @@ public:
     void SetDeviceCreateInfo(vk::DeviceCreateInfo& deviceCreateInfo, std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void CreateDevice();
 
-    // SwapChain related method
-    void QuerySwapchainSupportDetails();
-    void CreateSwapchain();
-    vk::SurfaceFormatKHR ChooseSurfaceFormat();
-    vk::PresentModeKHR ChoosePresentMode();
-    vk::Extent2D ChooseExtent();
-
     // Vulkan object variable
     static vk::PhysicalDevice physicalDevice;
     static std::vector<const char*> extensions;
@@ -34,8 +28,21 @@ public:
     static vk::Device device;
     static vk::Queue graphicsQueue;
     static vk::Queue presentQueue;
-    static SwapchainSupportDetails swapchainSupportDetails;
-    static SwapchainDetails swapchainDetails;
+};
+
+struct QueueFamilyIndices {
+
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool IsComplete()
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+
+    QueueFamilyIndices() {}
+    QueueFamilyIndices(const QueueFamilyIndices&) = delete;
+    QueueFamilyIndices& operator=(const QueueFamilyIndices&) = delete;
 };
 
 #endif

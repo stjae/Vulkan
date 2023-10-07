@@ -1,21 +1,24 @@
-#ifndef _VKSTRUCT_H_
-#define _VKSTRUCT_H_
+#ifndef _SWAPCHAIN_H_
+#define _SWAPCHAIN_H_
 
 #include "../common.h"
+#include "device.h"
 
-struct QueueFamilyIndices {
+struct SwapchainSupportDetails;
+struct SwapchainDetails;
 
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
+class Swapchain
+{
+public:
+    ~Swapchain();
+    void QuerySwapchainSupportDetails();
+    void CreateSwapchain();
+    vk::SurfaceFormatKHR ChooseSurfaceFormat();
+    vk::PresentModeKHR ChoosePresentMode();
+    vk::Extent2D ChooseExtent();
 
-    bool IsComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-
-    QueueFamilyIndices() {}
-    QueueFamilyIndices(const QueueFamilyIndices&) = delete;
-    QueueFamilyIndices& operator=(const QueueFamilyIndices&) = delete;
+    static SwapchainSupportDetails swapchainSupportDetails;
+    static SwapchainDetails swapchainDetails;
 };
 
 struct SwapchainSupportDetails {
@@ -29,10 +32,16 @@ struct SwapchainSupportDetails {
     SwapchainSupportDetails& operator=(const SwapchainSupportDetails&) = delete;
 };
 
+struct SwapchainFrame {
+
+    vk::Image image;
+    vk::ImageView imageView;
+};
+
 struct SwapchainDetails {
 
     vk::SwapchainKHR swapchain;
-    std::vector<vk::Image> images;
+    std::vector<SwapchainFrame> frames;
     vk::Format format;
     vk::Extent2D extent;
 

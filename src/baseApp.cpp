@@ -18,8 +18,9 @@ void Application::InitVulkan()
     m_device.PickPhysicalDevice();
     m_device.FindQueueFamilies();
     m_device.CreateDevice();
-    m_device.QuerySwapchainSupportDetails();
-    m_device.CreateSwapchain();
+
+    m_swapchain.QuerySwapchainSupportDetails();
+    m_swapchain.CreateSwapchain();
 }
 
 void Application::MainLoop()

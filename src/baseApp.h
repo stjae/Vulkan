@@ -4,6 +4,7 @@
 #include "API/device.h"
 #include "API/instance.h"
 #include "API/log.h"
+#include "API/swapchain.h"
 #include "API/window.h"
 #include "common.h"
 
@@ -22,6 +23,7 @@ private:
     Instance m_instance;
     Log m_log;
     Device m_device;
+    Swapchain m_swapchain;
 };
 
 #endif
