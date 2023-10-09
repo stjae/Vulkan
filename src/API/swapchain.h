@@ -42,7 +42,7 @@ struct SwapchainDetails {
 
     vk::SwapchainKHR swapchain;
     std::vector<SwapchainFrame> frames;
-    vk::Format format;
+    vk::Format imageFormat;
     vk::Extent2D extent;
 
     SwapchainDetails() {}

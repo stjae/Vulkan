@@ -6,6 +6,7 @@
 #include "API/log.h"
 #include "API/swapchain.h"
 #include "API/window.h"
+#include "API/pipeline.h"
 #include "common.h"
 
 class Application
@@ -24,6 +25,7 @@ private:
     Log m_log;
     Device m_device;
     Swapchain m_swapchain;
+    GraphicsPipeline m_pipeline;
 };
 
 #endif

@@ -23,7 +23,9 @@ const bool debug = true;
 
 // external library
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/bundled/color.h>
 
-static std::vector<char> ReadFile(const std::string& filename);
+std::vector<char> ReadFile(const std::string& filename);
+void ColorLog(const char* content, fmt::terminal_color color);
 
 #endif

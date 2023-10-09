@@ -48,19 +48,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
 {
     switch (messageSeverity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        spdlog::error("validation layer: {}", pCallbackData->pMessage);
+        spdlog::error(fmt::format(fmt::fg(fmt::terminal_color::red), pCallbackData->pMessage));
         break;
 
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        spdlog::warn("validation layer: {}", pCallbackData->pMessage);
+        spdlog::warn(fmt::format(fmt::fg(fmt::terminal_color::yellow), pCallbackData->pMessage));
         break;
 
     default:
-        spdlog::info("validation layer: {}", pCallbackData->pMessage);
+        spdlog::info(fmt::format(fmt::fg(fmt::terminal_color::black), pCallbackData->pMessage));
         break;
     }
 
-    return vk::False;
+    return VK_FALSE;
 }
 
 vk::DebugUtilsMessengerEXT Log::debugMessenger;

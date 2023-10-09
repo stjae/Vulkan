@@ -17,6 +17,8 @@ src/API/instance.h src/API/instance.cpp
 src/API/log.h src/API/log.cpp
 src/API/device.h src/API/device.cpp
 src/API/swapchain.h src/API/swapchain.cpp
+src/API/shader.h src/API/shader.cpp
+src/API/pipeline.h src/API/pipeline.cpp
 )
 
 include(Dependency.cmake)

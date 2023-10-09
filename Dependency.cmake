@@ -16,7 +16,11 @@ ExternalProject_Add(
 )
 
 set(DEP_LIST ${DEP_LIST} dep-spdlog)
+if(GENERATOR_IS_MULTI_CONFIG)
+set(DEP_LIBS ${DEP_LIBS} spdlog$<$<CONFIG:Debug>:d>)
+else()
 set(DEP_LIBS ${DEP_LIBS} spdlog)
+endif()
 
 #glfw
 ExternalProject_Add(

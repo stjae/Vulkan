@@ -21,6 +21,8 @@ void Application::InitVulkan()
 
     m_swapchain.QuerySwapchainSupportDetails();
     m_swapchain.CreateSwapchain();
+
+    m_pipeline.CreatePipeline();
 }
 
 void Application::MainLoop()

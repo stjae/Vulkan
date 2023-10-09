@@ -22,3 +22,8 @@ std::vector<char> ReadFile(const std::string& filename)
 
     return buffer;
 }
+
+void ColorLog(const char* content, fmt::terminal_color color)
+{
+    spdlog::info(fmt::format(fmt::fg(color), content));
+}
