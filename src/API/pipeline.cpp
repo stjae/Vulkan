@@ -2,10 +2,8 @@
 
 void GraphicsPipeline::CreatePipeline()
 {
-    input.vertexShaderFilepath = "shaders/shader.vert.spv";
-    input.fragmentShaderFilepath = "shaders/shader.frag.spv";
-    input.swapchainExtent = Swapchain::swapchainDetails.extent;
-    input.swapchainImageFormat = Swapchain::swapchainDetails.imageFormat;
+    std::string vertexShaderFilepath = "shaders/shader.vert.spv";
+    std::string fragmentShaderFilepath = "shaders/shader.frag.spv";
 
     vk::GraphicsPipelineCreateInfo pipelineInfo;
 
@@ -23,12 +21,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.setPInputAssemblyState(&inputAssemblyInfo);
 
     // vertex shader
-    Shader::vertexShaderModule = m_shader.CreateModule(input.vertexShaderFilepath);
-    if (debug)
-        ColorLog("created vertex shader module", fmt::terminal_color::bright_green);
+    m_shader.vertexShaderModule = m_shader.CreateModule(vertexShaderFilepath);
+    Log(debug, fmt::terminal_color::bright_green, "created vertex shader module");
     vk::PipelineShaderStageCreateInfo vertexShaderInfo;
     vertexShaderInfo.setStage(vk::ShaderStageFlagBits::eVertex);
-    vertexShaderInfo.setModule(Shader::vertexShaderModule);
+    vertexShaderInfo.setModule(m_shader.vertexShaderModule);
     vertexShaderInfo.setPName("main");
     shaderStageInfos.push_back(vertexShaderInfo);
 
@@ -36,14 +33,14 @@ void GraphicsPipeline::CreatePipeline()
     vk::Viewport viewport;
     viewport.setX(0.0f);
     viewport.setY(0.0f);
-    viewport.setWidth((float)input.swapchainExtent.width);
-    viewport.setHeight((float)input.swapchainExtent.height);
+    viewport.setWidth((float)swapchainDetails.extent.width);
+    viewport.setHeight((float)swapchainDetails.extent.height);
     viewport.setMinDepth(0.0f);
     viewport.setMaxDepth(1.0f);
 
     vk::Rect2D scissor;
     scissor.setOffset(vk::Offset2D(0, 0));
-    scissor.setExtent(input.swapchainExtent);
+    scissor.setExtent(swapchainDetails.extent);
 
     vk::PipelineViewportStateCreateInfo viewportState;
     viewportState.setViewportCount(1);
@@ -64,12 +61,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.setPRasterizationState(&rasterizerInfo);
 
     // fragment shader
-    Shader::fragmentShaderModule = m_shader.CreateModule(input.fragmentShaderFilepath);
-    if (debug)
-        ColorLog("created fragment shader module", fmt::terminal_color::bright_green);
+    m_shader.fragmentShaderModule = m_shader.CreateModule(fragmentShaderFilepath);
+    Log(debug, fmt::terminal_color::bright_green, "created fragment shader module");
     vk::PipelineShaderStageCreateInfo fragmentShaderInfo;
     fragmentShaderInfo.setStage(vk::ShaderStageFlagBits::eFragment);
-    fragmentShaderInfo.setModule(Shader::fragmentShaderModule);
+    fragmentShaderInfo.setModule(m_shader.fragmentShaderModule);
     fragmentShaderInfo.setPName("main");
     shaderStageInfos.push_back(fragmentShaderInfo);
     pipelineInfo.setStageCount((uint32_t)shaderStageInfos.size());
@@ -97,15 +93,14 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.setPColorBlendState(&colorBlendStateInfo);
 
     // pipeline layout
-    output.pipelineLayout = CreatePipelineLayout();
-    pipelineInfo.setLayout(output.pipelineLayout);
+    pipelineLayout = CreatePipelineLayout();
+    pipelineInfo.setLayout(pipelineLayout);
 
-    output.renderPass = CreateRenderPass();
-    pipelineInfo.setRenderPass(output.renderPass);
+    renderPass = CreateRenderPass();
+    pipelineInfo.setRenderPass(renderPass);
 
-    output.graphicsPipeline = (Device::device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
-    if (debug)
-        ColorLog("created graphics pipeline", fmt::terminal_color::bright_green);
+    graphicsPipeline = (device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
@@ -114,13 +109,13 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layoutInfo.setSetLayoutCount(0);
     layoutInfo.setPushConstantRangeCount(0);
 
-    return Device::device.createPipelineLayout(layoutInfo);
+    return device.createPipelineLayout(layoutInfo);
 }
 
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.setFormat(input.swapchainImageFormat);
+    colorAttachmentDesc.setFormat(swapchainDetails.imageFormat);
     colorAttachmentDesc.setSamples(vk::SampleCountFlagBits::e1);
     colorAttachmentDesc.setLoadOp(vk::AttachmentLoadOp::eClear);
     colorAttachmentDesc.setStoreOp(vk::AttachmentStoreOp::eStore);
@@ -144,15 +139,12 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     renderPassInfo.setSubpassCount(1);
     renderPassInfo.setPSubpasses(&subpassDesc);
 
-    return Device::device.createRenderPass(renderPassInfo);
+    return device.createRenderPass(renderPassInfo);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    Device::device.destroyPipeline(output.graphicsPipeline);
-    Device::device.destroyPipelineLayout(output.pipelineLayout);
-    Device::device.destroyRenderPass(output.renderPass);
+    device.destroyPipeline(graphicsPipeline);
+    device.destroyPipelineLayout(pipelineLayout);
+    device.destroyRenderPass(renderPass);
 }
-
-PipelineInDetails GraphicsPipeline::input;
-PipelineOutDetails GraphicsPipeline::output;

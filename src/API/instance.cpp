@@ -7,16 +7,16 @@ void Instance::CreateInstance()
 
     vk::InstanceCreateInfo createInfo;
     createInfo.setPApplicationInfo(&appInfo);
-    SetExtensions(extensions, createInfo);
+    SetExtensions(instanceExtensions, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    SetLayers(layers, createInfo, debugInfo);
+    SetLayers(instanceLayers, createInfo, debugInfo);
 
-    if (vk::createInstance(&createInfo, nullptr, &Instance::instance) != vk::Result::eSuccess) {
+    if (vk::createInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
         spdlog::error("failed to create instance");
     }
 
-    Instance::dldi = vk::DispatchLoaderDynamic(Instance::instance, vkGetInstanceProcAddr);
+    dldi = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
 }
 
 void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
@@ -30,7 +30,7 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
     uint32_t count = 0;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         extensions.push_back(glfwExtensions[i]);
     }
 
@@ -38,7 +38,7 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    createInfo.setEnabledExtensionCount(extensions.size());
+    createInfo.setEnabledExtensionCount((uint32_t)extensions.size());
     createInfo.setPpEnabledExtensionNames(extensions.data());
 }
 
@@ -47,29 +47,23 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     if (debug) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
-        createInfo.setEnabledLayerCount(layers.size());
+        createInfo.setEnabledLayerCount((uint32_t)layers.size());
         createInfo.setPpEnabledLayerNames(layers.data());
 
-        Log::SetDebugInfo(debugInfo);
+        Logger::SetDebugInfo(debugInfo);
         createInfo.pNext = &debugInfo;
     }
 }
 
 void Instance::CreateSurface()
 {
-    if (glfwCreateWindowSurface(Instance::instance, Window::window, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(instance, Window::window, nullptr, &surface) != VK_SUCCESS) {
         spdlog::error("failed to create window surface");
     }
 }
 
 Instance::~Instance()
 {
-    Instance::instance.destroySurfaceKHR(surface);
-    Instance::instance.destroy();
+    instance.destroySurfaceKHR(surface);
+    instance.destroy();
 }
-
-vk::Instance Instance::instance;
-vk::DispatchLoaderDynamic Instance::dldi;
-std::vector<const char*> Instance::extensions;
-std::vector<const char*> Instance::layers;
-VkSurfaceKHR Instance::surface;

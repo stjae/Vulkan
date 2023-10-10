@@ -8,14 +8,11 @@ vk::ShaderModule Shader::CreateModule(std::string filepath)
     createInfo.setCodeSize(sourceCode.size());
     createInfo.setPCode(reinterpret_cast<const uint32_t*>(sourceCode.data()));
 
-    return Device::device.createShaderModule(createInfo);
+    return device.createShaderModule(createInfo);
 }
 
 Shader::~Shader()
 {
-    Device::device.destroyShaderModule(vertexShaderModule);
-    Device::device.destroyShaderModule(fragmentShaderModule);
+    device.destroyShaderModule(vertexShaderModule);
+    device.destroyShaderModule(fragmentShaderModule);
 }
-
-vk::ShaderModule Shader::vertexShaderModule;
-vk::ShaderModule Shader::fragmentShaderModule;

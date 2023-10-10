@@ -17,13 +17,8 @@ std::vector<char> ReadFile(const std::string& filename)
     file.close();
 
     if (buffer.size() > 0) {
-        spdlog::info("{0} loaded with code length of {1}", filename, buffer.size());
+        Log(debug, fmt::terminal_color::white, "{0} loaded with code length of {1}", filename, buffer.size());
     }
 
     return buffer;
-}
-
-void ColorLog(const char* content, fmt::terminal_color color)
-{
-    spdlog::info(fmt::format(fmt::fg(color), content));
 }

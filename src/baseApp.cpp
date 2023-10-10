@@ -12,7 +12,7 @@ void Application::run()
 void Application::InitVulkan()
 {
     m_instance.CreateInstance();
-    m_log.CreateDebugMessenger();
+    m_logger.CreateDebugMessenger();
     m_instance.CreateSurface();
 
     m_device.PickPhysicalDevice();
@@ -25,6 +25,8 @@ void Application::InitVulkan()
     m_pipeline.CreatePipeline();
 
     m_framebuffer.CreateFramebuffer();
+    m_command.CreateCommandPool();
+    m_command.CreateCommandBuffer();
 }
 
 void Application::MainLoop()

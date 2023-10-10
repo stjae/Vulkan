@@ -2,7 +2,8 @@
 #define _FRAMEBUFFER_H_
 
 #include "../common.h"
-#include "swapchain.h"
+#include "config.h"
+#include "device.h"
 #include "pipeline.h"
 
 class Framebuffer

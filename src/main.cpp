@@ -1,7 +1,6 @@
 #include "baseApp.h"
 #include "common.h"
 
-
 int main()
 {
     Application app(800, 600, "Vulkan");

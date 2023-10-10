@@ -26,6 +26,15 @@ const bool debug = true;
 #include <spdlog/fmt/bundled/color.h>
 
 std::vector<char> ReadFile(const std::string& filename);
-void ColorLog(const char* content, fmt::terminal_color color);
+
+// spdlog::info
+template <typename... T>
+void Log(bool debug, fmt::terminal_color color, T... args)
+{
+    if (!debug) {
+        return;
+    }
+    spdlog::info(fmt::format(fmt::fg(color), args...));
+}
 
 #endif

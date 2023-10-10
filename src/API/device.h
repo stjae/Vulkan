@@ -2,9 +2,8 @@
 #define _DEVICE_H_
 
 #include "../common.h"
+#include "config.h"
 #include "instance.h"
-
-struct QueueFamilyIndices;
 
 class Device
 {
@@ -20,29 +19,6 @@ public:
     void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void SetDeviceCreateInfo(vk::DeviceCreateInfo& deviceCreateInfo, std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void CreateDevice();
-
-    // Vulkan object variable
-    static vk::PhysicalDevice physicalDevice;
-    static std::vector<const char*> extensions;
-    static QueueFamilyIndices queueFamilyIndices;
-    static vk::Device device;
-    static vk::Queue graphicsQueue;
-    static vk::Queue presentQueue;
-};
-
-struct QueueFamilyIndices {
-
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool IsComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-
-    QueueFamilyIndices() {}
-    QueueFamilyIndices(const QueueFamilyIndices&) = delete;
-    QueueFamilyIndices& operator=(const QueueFamilyIndices&) = delete;
 };
 
 #endif

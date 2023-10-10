@@ -1,11 +1,11 @@
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef _LOGGER_H_
+#define _LOGGER_H_
 
 #include "../common.h"
 #include "instance.h"
 
-struct Log {
-    ~Log();
+struct Logger {
+    ~Logger();
 
     void CreateDebugMessenger();
     static void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);

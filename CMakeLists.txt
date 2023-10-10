@@ -14,12 +14,15 @@ src/baseApp.h src/baseApp.cpp
 
 src/API/window.h src/API/window.cpp
 src/API/instance.h src/API/instance.cpp
-src/API/log.h src/API/log.cpp
+src/API/logger.h src/API/logger.cpp
 src/API/device.h src/API/device.cpp
 src/API/swapchain.h src/API/swapchain.cpp
 src/API/shader.h src/API/shader.cpp
 src/API/pipeline.h src/API/pipeline.cpp
 src/API/framebuffer.h src/API/framebuffer.cpp
+src/API/commands.h src/API/commands.cpp
+src/API/sync.h src/API/sync.cpp
+src/API/config.h
 )
 
 include(Dependency.cmake)

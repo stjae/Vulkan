@@ -2,27 +2,20 @@
 
 void Swapchain::QuerySwapchainSupportDetails()
 {
-    swapchainSupportDetails.capabilities = Device::physicalDevice.getSurfaceCapabilitiesKHR(Instance::surface);
-    swapchainSupportDetails.formats = Device::physicalDevice.getSurfaceFormatsKHR(Instance::surface);
-    swapchainSupportDetails.presentModes = Device::physicalDevice.getSurfacePresentModesKHR(Instance::surface);
+    swapchainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+    swapchainSupportDetails.formats = physicalDevice.getSurfaceFormatsKHR(surface);
+    swapchainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
     auto& capabilities = swapchainSupportDetails.capabilities;
     auto& formats = swapchainSupportDetails.formats;
     auto& presentModes = swapchainSupportDetails.presentModes;
 
-    if (debug) {
-        ColorLog("printing queries for surface supports..", fmt::terminal_color::black);
+    Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
-        spdlog::info("current surface extent width: {}", capabilities.currentExtent.width);
-        spdlog::info("current surface extent height: {}", capabilities.currentExtent.height);
+    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", capabilities.currentExtent.width);
+    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", capabilities.currentExtent.height);
 
-        // for(auto& format : formats) {
-        //     spdlog::info("supported surface color space: {}", vk::to_string(format.colorSpace));
-        //     spdlog::info("supported surface format: {}", vk::to_string(format.format));
-        // }
-
-        for (auto& mode : presentModes) {
-            spdlog::info("supported present mode: {}", vk::to_string(mode));
-        }
+    for (auto& mode : presentModes) {
+        Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
 
@@ -37,7 +30,7 @@ void Swapchain::CreateSwapchain()
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
     vk::SwapchainCreateInfoKHR createInfo;
-    createInfo.setSurface(Instance::surface);
+    createInfo.setSurface(surface);
     createInfo.setMinImageCount(imageCount);
     createInfo.setImageFormat(surfaceFormat.format);
     createInfo.setImageColorSpace(surfaceFormat.colorSpace);
@@ -45,8 +38,8 @@ void Swapchain::CreateSwapchain()
     createInfo.setImageArrayLayers(1);
     createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { Device::queueFamilyIndices.graphicsFamily.value(), Device::queueFamilyIndices.presentFamily.value() };
-    if (Device::queueFamilyIndices.graphicsFamily.value() != Device::queueFamilyIndices.presentFamily.value()) {
+    uint32_t indices[] = { queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value() };
+    if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.presentFamily.value()) {
         createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
         createInfo.setQueueFamilyIndexCount(2);
         createInfo.setPQueueFamilyIndices(indices);
@@ -58,11 +51,10 @@ void Swapchain::CreateSwapchain()
     createInfo.setClipped(VK_TRUE);
     createInfo.setOldSwapchain(nullptr);
 
-    swapchainDetails.swapchain = Device::device.createSwapchainKHR(createInfo);
-    if (debug) {
-        ColorLog("swapchain created", fmt::terminal_color::bright_green);
-    }
-    std::vector<vk::Image> images = Device::device.getSwapchainImagesKHR(swapchainDetails.swapchain);
+    swapchainDetails.swapchain = device.createSwapchainKHR(createInfo);
+    Log(debug, fmt::terminal_color::bright_green, "swapchain created");
+
+    std::vector<vk::Image> images = device.getSwapchainImagesKHR(swapchainDetails.swapchain);
     swapchainDetails.frames.resize(images.size());
 
     for (size_t i = 0; i < images.size(); ++i) {
@@ -82,7 +74,7 @@ void Swapchain::CreateSwapchain()
         createInfo.setFormat(surfaceFormat.format);
 
         swapchainDetails.frames[i].image = images[i];
-        swapchainDetails.frames[i].imageView = Device::device.createImageView(createInfo);
+        swapchainDetails.frames[i].imageView = device.createImageView(createInfo);
     }
     swapchainDetails.imageFormat = surfaceFormat.format;
     swapchainDetails.extent = extent;
@@ -90,24 +82,18 @@ void Swapchain::CreateSwapchain()
 
 vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
 {
-    if (debug) {
-        ColorLog("setting swapchain details..", fmt::terminal_color::black);
-    }
+    Log(debug, fmt::terminal_color::black, "setting swapchain details..");
 
     for (auto& format : swapchainSupportDetails.formats) {
         if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-            if (debug) {
-                spdlog::info("set surface pixel format: {}", vk::to_string(format.format));
-                spdlog::info("set surface color space: {}", vk::to_string(format.colorSpace));
-            }
+            Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
+            Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
             return format;
         }
     }
 
-    if (debug) {
-        spdlog::info("set surface pixel format: {}", vk::to_string(swapchainSupportDetails.formats[0].format));
-        spdlog::info("set surface color space: {}", vk::to_string(swapchainSupportDetails.formats[0].colorSpace));
-    }
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(swapchainSupportDetails.formats[0].format));
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(swapchainSupportDetails.formats[0].colorSpace));
     return swapchainSupportDetails.formats[0];
 }
 
@@ -121,7 +107,7 @@ vk::PresentModeKHR Swapchain::ChoosePresentMode()
         }
     }
 
-    spdlog::info("set swapchain present mode: {}", vk::to_string(mode));
+    Log(debug, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
     return mode;
 }
 
@@ -131,9 +117,7 @@ vk::Extent2D Swapchain::ChooseExtent()
 
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
-        if (debug) {
-            spdlog::info("no change in extent size");
-        }
+        Log(debug, fmt::terminal_color::white, "no change in extent size");
         return capabilities.currentExtent;
     } else {
         // extent is not set
@@ -145,16 +129,12 @@ vk::Extent2D Swapchain::ChooseExtent()
         if (extent.width > capabilities.maxImageExtent.width) {
 
             extent.width = capabilities.maxImageExtent.width;
-            if (debug) {
-                spdlog::info("extent width is clamped");
-            }
+            Log(debug, fmt::terminal_color::yellow, "extent width is clamped");
         }
         if (extent.height > capabilities.maxImageExtent.height) {
 
             extent.height = capabilities.maxImageExtent.height;
-            if (debug) {
-                spdlog::info("extent height is clamped");
-            }
+            Log(debug, fmt::terminal_color::yellow, "extent height is clamped");
         }
 
         return extent;
@@ -164,12 +144,9 @@ vk::Extent2D Swapchain::ChooseExtent()
 Swapchain::~Swapchain()
 {
     for (auto& frame : swapchainDetails.frames) {
-        Device::device.destroyImageView(frame.imageView);
-        Device::device.destroyFramebuffer(frame.framebuffer);
+        device.destroyImageView(frame.imageView);
+        device.destroyFramebuffer(frame.framebuffer);
     }
 
-    Device::device.destroySwapchainKHR(swapchainDetails.swapchain);
+    device.destroySwapchainKHR(swapchainDetails.swapchain);
 }
-
-SwapchainSupportDetails Swapchain::swapchainSupportDetails;
-SwapchainDetails Swapchain::swapchainDetails;
