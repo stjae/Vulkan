@@ -59,6 +59,9 @@ void Swapchain::CreateSwapchain()
     createInfo.setOldSwapchain(nullptr);
 
     swapchainDetails.swapchain = Device::device.createSwapchainKHR(createInfo);
+    if (debug) {
+        ColorLog("swapchain created", fmt::terminal_color::bright_green);
+    }
     std::vector<vk::Image> images = Device::device.getSwapchainImagesKHR(swapchainDetails.swapchain);
     swapchainDetails.frames.resize(images.size());
 
@@ -83,10 +86,6 @@ void Swapchain::CreateSwapchain()
     }
     swapchainDetails.imageFormat = surfaceFormat.format;
     swapchainDetails.extent = extent;
-
-    if (debug) {
-        ColorLog("swapchain created", fmt::terminal_color::bright_green);
-    }
 }
 
 vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
@@ -166,6 +165,7 @@ Swapchain::~Swapchain()
 {
     for (auto& frame : swapchainDetails.frames) {
         Device::device.destroyImageView(frame.imageView);
+        Device::device.destroyFramebuffer(frame.framebuffer);
     }
 
     Device::device.destroySwapchainKHR(swapchainDetails.swapchain);

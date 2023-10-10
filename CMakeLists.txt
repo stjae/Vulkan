@@ -19,6 +19,7 @@ src/API/device.h src/API/device.cpp
 src/API/swapchain.h src/API/swapchain.cpp
 src/API/shader.h src/API/shader.cpp
 src/API/pipeline.h src/API/pipeline.cpp
+src/API/framebuffer.h src/API/framebuffer.cpp
 )
 
 include(Dependency.cmake)

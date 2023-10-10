@@ -4,6 +4,7 @@
 #include "../common.h"
 #include "swapchain.h"
 #include "shader.h"
+#include "framebuffer.h"
 
 struct PipelineInDetails {
     std::string vertexShaderFilepath;
@@ -13,6 +14,9 @@ struct PipelineInDetails {
 };
 
 struct PipelineOutDetails {
+    vk::Pipeline graphicsPipeline;
+    vk::PipelineLayout pipelineLayout;
+    vk::RenderPass renderPass;
 };
 
 class GraphicsPipeline
@@ -28,10 +32,6 @@ public:
 
 private:
     Shader m_shader;
-
-    vk::Pipeline graphicsPipeline;
-    vk::PipelineLayout pipelineLayout;
-    vk::RenderPass renderPass;
 };
 
 #endif

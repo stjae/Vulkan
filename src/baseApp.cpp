@@ -23,6 +23,8 @@ void Application::InitVulkan()
     m_swapchain.CreateSwapchain();
 
     m_pipeline.CreatePipeline();
+
+    m_framebuffer.CreateFramebuffer();
 }
 
 void Application::MainLoop()

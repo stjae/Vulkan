@@ -7,6 +7,7 @@
 #include "API/swapchain.h"
 #include "API/window.h"
 #include "API/pipeline.h"
+#include "API/framebuffer.h"
 #include "common.h"
 
 class Application
@@ -26,6 +27,7 @@ private:
     Device m_device;
     Swapchain m_swapchain;
     GraphicsPipeline m_pipeline;
+    Framebuffer m_framebuffer;
 };
 
 #endif

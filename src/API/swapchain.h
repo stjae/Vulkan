@@ -6,6 +6,7 @@
 
 struct SwapchainSupportDetails;
 struct SwapchainDetails;
+struct SwapchainFrame;
 
 class Swapchain
 {
@@ -32,12 +33,6 @@ struct SwapchainSupportDetails {
     SwapchainSupportDetails& operator=(const SwapchainSupportDetails&) = delete;
 };
 
-struct SwapchainFrame {
-
-    vk::Image image;
-    vk::ImageView imageView;
-};
-
 struct SwapchainDetails {
 
     vk::SwapchainKHR swapchain;
@@ -48,6 +43,14 @@ struct SwapchainDetails {
     SwapchainDetails() {}
     SwapchainDetails(const SwapchainDetails&) = delete;
     SwapchainDetails& operator=(const SwapchainDetails&) = delete;
+};
+
+struct SwapchainFrame {
+
+    vk::Image image;
+    vk::ImageView imageView;
+    vk::Framebuffer framebuffer;
+    vk::CommandBuffer commandBuffer;
 };
 
 #endif

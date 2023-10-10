@@ -24,6 +24,8 @@ void GraphicsPipeline::CreatePipeline()
 
     // vertex shader
     Shader::vertexShaderModule = m_shader.CreateModule(input.vertexShaderFilepath);
+    if (debug)
+        ColorLog("created vertex shader module", fmt::terminal_color::bright_green);
     vk::PipelineShaderStageCreateInfo vertexShaderInfo;
     vertexShaderInfo.setStage(vk::ShaderStageFlagBits::eVertex);
     vertexShaderInfo.setModule(Shader::vertexShaderModule);
@@ -63,6 +65,8 @@ void GraphicsPipeline::CreatePipeline()
 
     // fragment shader
     Shader::fragmentShaderModule = m_shader.CreateModule(input.fragmentShaderFilepath);
+    if (debug)
+        ColorLog("created fragment shader module", fmt::terminal_color::bright_green);
     vk::PipelineShaderStageCreateInfo fragmentShaderInfo;
     fragmentShaderInfo.setStage(vk::ShaderStageFlagBits::eFragment);
     fragmentShaderInfo.setModule(Shader::fragmentShaderModule);
@@ -93,13 +97,15 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.setPColorBlendState(&colorBlendStateInfo);
 
     // pipeline layout
-    pipelineLayout = CreatePipelineLayout();
-    pipelineInfo.setLayout(pipelineLayout);
+    output.pipelineLayout = CreatePipelineLayout();
+    pipelineInfo.setLayout(output.pipelineLayout);
 
-    renderPass = CreateRenderPass();
-    pipelineInfo.setRenderPass(renderPass);
+    output.renderPass = CreateRenderPass();
+    pipelineInfo.setRenderPass(output.renderPass);
 
-    graphicsPipeline = (Device::device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    output.graphicsPipeline = (Device::device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    if (debug)
+        ColorLog("created graphics pipeline", fmt::terminal_color::bright_green);
 }
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
@@ -143,9 +149,9 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    Device::device.destroyPipeline(graphicsPipeline);
-    Device::device.destroyPipelineLayout(pipelineLayout);
-    Device::device.destroyRenderPass(renderPass);
+    Device::device.destroyPipeline(output.graphicsPipeline);
+    Device::device.destroyPipelineLayout(output.pipelineLayout);
+    Device::device.destroyRenderPass(output.renderPass);
 }
 
 PipelineInDetails GraphicsPipeline::input;
