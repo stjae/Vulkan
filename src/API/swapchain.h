@@ -11,10 +11,10 @@ class Swapchain
 public:
     ~Swapchain();
     void QuerySwapchainSupportDetails();
-    void CreateSwapchain();
+    void CreateSwapchain(GLFWwindow* window);
     vk::SurfaceFormatKHR ChooseSurfaceFormat();
     vk::PresentModeKHR ChoosePresentMode();
-    vk::Extent2D ChooseExtent();
+    vk::Extent2D ChooseExtent(GLFWwindow* window);
 };
 
 #endif

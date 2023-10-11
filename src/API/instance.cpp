@@ -55,9 +55,9 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     }
 }
 
-void Instance::CreateSurface()
+void Instance::CreateSurface(GLFWwindow* window)
 {
-    if (glfwCreateWindowSurface(instance, Window::window, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
         spdlog::error("failed to create window surface");
     }
 }

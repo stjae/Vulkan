@@ -12,6 +12,7 @@ public:
     ~Command();
     void CreateCommandPool();
     void CreateCommandBuffer();
+    void RecordDrawCommands();
 
     vk::CommandPool commandPool;
     vk::CommandBuffer commandBuffer;

@@ -19,13 +19,13 @@ void Swapchain::QuerySwapchainSupportDetails()
     }
 }
 
-void Swapchain::CreateSwapchain()
+void Swapchain::CreateSwapchain(GLFWwindow* window)
 {
     auto& capabilities = swapchainSupportDetails.capabilities;
 
     auto surfaceFormat = ChooseSurfaceFormat();
     auto presentMode = ChoosePresentMode();
-    auto extent = ChooseExtent();
+    auto extent = ChooseExtent(window);
 
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
@@ -111,7 +111,7 @@ vk::PresentModeKHR Swapchain::ChoosePresentMode()
     return mode;
 }
 
-vk::Extent2D Swapchain::ChooseExtent()
+vk::Extent2D Swapchain::ChooseExtent(GLFWwindow* window)
 {
     auto& capabilities = swapchainSupportDetails.capabilities;
 
@@ -122,7 +122,7 @@ vk::Extent2D Swapchain::ChooseExtent()
     } else {
         // extent is not set
         int width, height;
-        glfwGetFramebufferSize(Window::window, &width, &height);
+        glfwGetFramebufferSize(window, &width, &height);
 
         vk::Extent2D extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 

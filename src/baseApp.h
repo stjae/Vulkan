@@ -1,35 +1,20 @@
 #ifndef _BASEAPP_H_
 #define _BASEAPP_H_
 
-#include "API/device.h"
-#include "API/instance.h"
-#include "API/logger.h"
-#include "API/swapchain.h"
-#include "API/window.h"
-#include "API/pipeline.h"
-#include "API/framebuffer.h"
-#include "API/commands.h"
+#include "engine.h"
 #include "common.h"
 
 class Application
 {
 public:
     Application(const int width, const int height, const char* wName);
+    ~Application();
 
     void run();
 
 private:
-    void InitVulkan();
-    void MainLoop();
-
     Window m_window;
-    Instance m_instance;
-    Logger m_logger;
-    Device m_device;
-    Swapchain m_swapchain;
-    GraphicsPipeline m_pipeline;
-    Framebuffer m_framebuffer;
-    Command m_command;
+    GraphicsEngine* engine;
 };
 
 #endif

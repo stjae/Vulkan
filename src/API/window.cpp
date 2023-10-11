@@ -8,15 +8,8 @@ Window::Window(int width, int height, const char* wName) : width(width), height(
     window = glfwCreateWindow(width, height, wName, nullptr, nullptr);
 }
 
-int Window::ShouldClose()
-{
-    return glfwWindowShouldClose(window);
-}
-
 Window::~Window()
 {
     glfwDestroyWindow(window);
     glfwTerminate();
 }
-
-GLFWwindow* Window::window;

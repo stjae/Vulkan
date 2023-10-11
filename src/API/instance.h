@@ -14,7 +14,7 @@ public:
     void CreateInstance();
     void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
     void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
-    void CreateSurface();
+    void CreateSurface(GLFWwindow* window);
 };
 
 #endif

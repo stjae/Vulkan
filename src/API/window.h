@@ -3,16 +3,16 @@
 
 #include "../common.h"
 
-struct Window {
+class Window
+{
+public:
     Window(const int width, const int height, const char* wName);
     ~Window();
-
-    int ShouldClose();
 
     const int width;
     const int height;
 
-    static GLFWwindow* window;
+    GLFWwindow* window;
 };
 
 #endif

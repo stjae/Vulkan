@@ -3,14 +3,11 @@
 
 int main()
 {
-    Application app(800, 600, "Vulkan");
+    Application* app = new Application(800, 600, "Vulkan");
 
-    try {
-        app.run();
-    } catch (const std::exception& e) {
-        spdlog::error(e.what());
-        return 1;
-    }
+    app->run();
+
+    delete app;
 
     return 0;
 }
