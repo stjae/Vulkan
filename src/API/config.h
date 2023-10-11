@@ -27,7 +27,6 @@ inline vk::Queue graphicsQueue;
 inline vk::Queue presentQueue;
 
 // instance
-
 inline vk::Instance instance;
 inline vk::DispatchLoaderDynamic dldi;
 inline std::vector<const char*> instanceExtensions;
@@ -62,7 +61,6 @@ inline SwapchainSupportDetails swapchainSupportDetails;
 inline SwapchainDetails swapchainDetails;
 
 // pipeline
-
 inline vk::Pipeline graphicsPipeline;
 inline vk::PipelineLayout pipelineLayout;
 inline vk::RenderPass renderPass;

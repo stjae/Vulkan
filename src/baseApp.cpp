@@ -10,6 +10,7 @@ void Application::run()
 {
     while (!glfwWindowShouldClose(m_window.window)) {
         glfwPollEvents();
+        engine->Render();
     }
 }
 

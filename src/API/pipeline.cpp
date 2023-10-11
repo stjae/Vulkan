@@ -88,7 +88,7 @@ void GraphicsPipeline::CreatePipeline()
     colorBlendStateInfo.setLogicOpEnable(VK_FALSE);
     colorBlendStateInfo.setAttachmentCount(1);
     colorBlendStateInfo.setPAttachments(&colorBlendAttachmentState);
-    std::array<float, 4Ui64> blendConstants{ 0.0f, 0.0f, 0.0f, 0.0f };
+    std::array<float, 4> blendConstants{ 0.0f, 0.0f, 0.0f, 0.0f };
     colorBlendStateInfo.setBlendConstants(blendConstants);
     pipelineInfo.setPColorBlendState(&colorBlendStateInfo);
 

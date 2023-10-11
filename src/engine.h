@@ -15,6 +15,8 @@ class GraphicsEngine
 {
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window);
+    ~GraphicsEngine();
+    void Render();
 
 private:
     GLFWwindow* window;

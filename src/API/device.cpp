@@ -103,7 +103,7 @@ void Device::SetDeviceCreateInfo(vk::DeviceCreateInfo& deviceCreateInfo, std::ve
     deviceCreateInfo.setPpEnabledLayerNames(instanceLayers.data());
 
 #if defined(__APPLE__)
-    extensions.push_back("VK_KHR_portability_subset");
+    deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
     deviceCreateInfo.setEnabledExtensionCount((uint32_t)deviceExtensions.size());
     deviceCreateInfo.setPpEnabledExtensionNames(deviceExtensions.data());

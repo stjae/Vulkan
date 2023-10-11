@@ -12,10 +12,10 @@ public:
     ~Command();
     void CreateCommandPool();
     void CreateCommandBuffer();
-    void RecordDrawCommands();
+    void RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 
     vk::CommandPool commandPool;
-    vk::CommandBuffer commandBuffer;
+    vk::CommandBuffer mainCommandBuffer;
 };
 
 #endif
