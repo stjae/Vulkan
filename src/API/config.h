@@ -47,6 +47,9 @@ struct SwapchainFrame {
     vk::ImageView imageView;
     vk::Framebuffer framebuffer;
     vk::CommandBuffer commandBuffer;
+    vk::Fence inFlight;
+    vk::Semaphore imageAvailable;
+    vk::Semaphore renderFinished;
 };
 
 struct SwapchainDetails {

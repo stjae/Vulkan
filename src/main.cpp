@@ -5,7 +5,7 @@ int main()
 {
     Application* app = new Application(800, 600, "Vulkan");
 
-    app->run();
+    app->Run();
 
     delete app;
 

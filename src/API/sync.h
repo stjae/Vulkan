@@ -9,11 +9,10 @@ class Sync
 {
 public:
     ~Sync();
-    vk::Semaphore CreateVkSemaphore();
-    vk::Fence CreateVkFence();
-    vk::Fence inFlightFence;
-    vk::Semaphore imageAvailable;
-    vk::Semaphore renderFinished;
+    vk::Semaphore MakeSemaphore();
+    vk::Fence MakeFence();
+    int maxFramesInFlight;
+    int frameNumber;
 };
 
 #endif

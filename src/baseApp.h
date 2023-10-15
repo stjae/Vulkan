@@ -10,7 +10,8 @@ public:
     Application(const int width, const int height, const char* wName);
     ~Application();
 
-    void run();
+    void Run();
+    void GetFramerate();
 
 private:
     Window m_window;

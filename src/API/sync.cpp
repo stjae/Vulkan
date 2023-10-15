@@ -1,13 +1,13 @@
 #include "sync.h"
 
-vk::Semaphore Sync::CreateVkSemaphore()
+vk::Semaphore Sync::MakeSemaphore()
 {
     vk::SemaphoreCreateInfo semaphoreInfo;
 
     return device.createSemaphore(semaphoreInfo);
 }
 
-vk::Fence Sync::CreateVkFence()
+vk::Fence Sync::MakeFence()
 {
     vk::FenceCreateInfo fenceInfo;
     fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
@@ -17,7 +17,9 @@ vk::Fence Sync::CreateVkFence()
 
 Sync::~Sync()
 {
-    device.destroyFence(inFlightFence);
-    device.destroySemaphore(imageAvailable);
-    device.destroySemaphore(renderFinished);
+    for (auto& frame : swapchainDetails.frames) {
+        device.destroyFence(frame.inFlight);
+        device.destroySemaphore(frame.imageAvailable);
+        device.destroySemaphore(frame.renderFinished);
+    }
 }
