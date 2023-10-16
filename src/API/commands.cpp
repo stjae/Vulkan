@@ -26,7 +26,7 @@ void Command::CreateCommandBuffer()
     Log(debug, fmt::terminal_color::bright_green, "allocated main command buffer");
 }
 
-void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
+void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -45,7 +45,13 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 
-    commandBuffer.draw(3, 1, 0, 0);
+    for (glm::vec3 pos : scene->positions) {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
+        ObjectData objectData;
+        objectData.model = model;
+        commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(ObjectData), &objectData);
+        commandBuffer.draw(3, 1, 0, 0);
+    }
 
     commandBuffer.endRenderPass();
 

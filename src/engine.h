@@ -10,13 +10,14 @@
 #include "API/framebuffer.h"
 #include "API/commands.h"
 #include "API/sync.h"
+#include "scene.h"
 
 class GraphicsEngine
 {
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window);
     ~GraphicsEngine();
-    void Render();
+    void Render(Scene* scene);
 
 private:
     GLFWwindow* window;

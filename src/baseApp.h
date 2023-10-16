@@ -3,6 +3,7 @@
 
 #include "engine.h"
 #include "common.h"
+#include "scene.h"
 
 class Application
 {
@@ -15,7 +16,8 @@ public:
 
 private:
     Window m_window;
-    GraphicsEngine* engine;
+    GraphicsEngine* m_engine;
+    Scene* m_scene;
 };
 
 #endif

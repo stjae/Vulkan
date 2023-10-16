@@ -11,8 +11,8 @@ ExternalProject_Add(
     GIT_SHALLOW 1
     UPDATE_COMMAND ""
     PATCH_COMMAND ""
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
     TEST_COMMAND ""
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
 )
 
 set(DEP_LIST ${DEP_LIST} dep-spdlog)
@@ -40,3 +40,21 @@ ExternalProject_Add(
 
 set(DEP_LIST ${DEP_LIST} dep-glfw)
 set(DEP_LIBS ${DEP_LIBS} glfw3)
+
+#glm
+ExternalProject_Add(
+    dep-glm
+    GIT_REPOSITORY "https://github.com/g-truc/glm.git"
+    GIT_TAG "0.9.9.8"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    TEST_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_BINARY_DIR}/dep-glm-prefix/src/dep-glm/glm
+        ${DEP_INSTALL_DIR}/include/glm
+)
+
+set(DEP_LIST ${DEP_LIST} dep-glm)

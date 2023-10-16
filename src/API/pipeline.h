@@ -4,6 +4,7 @@
 #include "../common.h"
 #include "swapchain.h"
 #include "shader.h"
+#include "../structs.h"
 
 class GraphicsPipeline
 {

@@ -3,14 +3,15 @@
 Application::Application(const int width, const int height, const char* wName)
     : m_window(width, height, wName)
 {
-    engine = new GraphicsEngine(m_window.width, m_window.height, m_window.window);
+    m_engine = new GraphicsEngine(m_window.width, m_window.height, m_window.window);
+    m_scene = new Scene();
 }
 
 void Application::Run()
 {
     while (!glfwWindowShouldClose(m_window.window)) {
         glfwPollEvents();
-        engine->Render();
+        m_engine->Render(m_scene);
         GetFramerate();
     }
 }
@@ -37,5 +38,6 @@ void Application::GetFramerate()
 
 Application::~Application()
 {
-    delete engine;
+    delete m_engine;
+    delete m_scene;
 }

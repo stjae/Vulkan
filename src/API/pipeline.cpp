@@ -107,7 +107,13 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
     vk::PipelineLayoutCreateInfo layoutInfo;
     layoutInfo.setSetLayoutCount(0);
-    layoutInfo.setPushConstantRangeCount(0);
+
+    layoutInfo.setPushConstantRangeCount(1);
+    vk::PushConstantRange pushConstantInfo;
+    pushConstantInfo.setOffset(0);
+    pushConstantInfo.setSize(sizeof(ObjectData));
+    pushConstantInfo.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+    layoutInfo.setPPushConstantRanges(&pushConstantInfo);
 
     return device.createPipelineLayout(layoutInfo);
 }

@@ -30,17 +30,17 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
     }
 }
 
-void GraphicsEngine::Render()
+void GraphicsEngine::Render(Scene* scene)
 {
-    device.waitForFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight, VK_TRUE, UINT64_MAX);
-    device.resetFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight);
+    auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight);
 
     uint32_t imageIndex{ device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr).value };
 
     vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.frameNumber].commandBuffer;
 
     commandBuffer.reset();
-    m_command.RecordDrawCommands(commandBuffer, imageIndex);
+    m_command.RecordDrawCommands(commandBuffer, imageIndex, scene);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_sync.frameNumber].imageAvailable };
@@ -64,7 +64,7 @@ void GraphicsEngine::Render()
     presentInfo.setPSwapchains(swapchains);
     presentInfo.setPImageIndices(&imageIndex);
 
-    presentQueue.presentKHR(presentInfo);
+    auto resultPresent = presentQueue.presentKHR(presentInfo);
 
     m_sync.frameNumber = (m_sync.frameNumber + 1) % m_sync.maxFramesInFlight;
 }

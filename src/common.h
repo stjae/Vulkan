@@ -24,6 +24,8 @@ const bool debug = true;
 // external library
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/color.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 std::vector<char> ReadFile(const std::string& filename);
 
