@@ -14,12 +14,3 @@ vk::Fence Sync::MakeFence()
 
     return device.createFence(fenceInfo);
 }
-
-Sync::~Sync()
-{
-    for (auto& frame : swapchainDetails.frames) {
-        device.destroyFence(frame.inFlight);
-        device.destroySemaphore(frame.imageAvailable);
-        device.destroySemaphore(frame.renderFinished);
-    }
-}

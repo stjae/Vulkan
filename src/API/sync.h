@@ -8,7 +8,6 @@
 class Sync
 {
 public:
-    ~Sync();
     vk::Semaphore MakeSemaphore();
     vk::Fence MakeFence();
     int maxFramesInFlight;

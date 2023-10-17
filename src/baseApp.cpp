@@ -3,7 +3,7 @@
 Application::Application(const int width, const int height, const char* wName)
     : m_window(width, height, wName)
 {
-    m_engine = new GraphicsEngine(m_window.width, m_window.height, m_window.window);
+    m_engine = new GraphicsEngine(width, height, m_window.window);
     m_scene = new Scene();
 }
 

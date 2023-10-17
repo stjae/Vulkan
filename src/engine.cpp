@@ -3,6 +3,9 @@
 GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
 {
     this->window = window;
+    this->width = width;
+    this->height = height;
+
     m_instance.CreateInstance();
     m_logger.CreateDebugMessenger();
     m_instance.CreateSurface(window);
@@ -11,7 +14,6 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
     m_device.FindQueueFamilies();
     m_device.CreateDevice();
 
-    m_swapchain.QuerySwapchainSupportDetails();
     m_swapchain.CreateSwapchain(window);
 
     m_pipeline.CreatePipeline();
@@ -35,7 +37,13 @@ void GraphicsEngine::Render(Scene* scene)
     auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight, VK_TRUE, UINT64_MAX);
     auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight);
 
-    uint32_t imageIndex{ device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr).value };
+    uint32_t imageIndex;
+    auto resultAcquireImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr);
+    if (resultAcquireImage.result == vk::Result::eErrorOutOfDateKHR) {
+        RecreateSwapchain();
+        return;
+    }
+    imageIndex = resultAcquireImage.value;
 
     vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.frameNumber].commandBuffer;
 
@@ -64,9 +72,44 @@ void GraphicsEngine::Render(Scene* scene)
     presentInfo.setPSwapchains(swapchains);
     presentInfo.setPImageIndices(&imageIndex);
 
-    auto resultPresent = presentQueue.presentKHR(presentInfo);
+    vk::Result resultPresent;
+    try {
+        resultPresent = presentQueue.presentKHR(presentInfo);
+    } catch (vk::OutOfDateKHRError error) {
+        RecreateSwapchain();
+        return;
+    }
 
     m_sync.frameNumber = (m_sync.frameNumber + 1) % m_sync.maxFramesInFlight;
+}
+
+void GraphicsEngine::RecreateSwapchain()
+{
+    int width = 0;
+    int height = 0;
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    device.waitIdle();
+    for (auto& frame : swapchainDetails.frames) {
+        device.freeCommandBuffers(m_command.commandPool, frame.commandBuffer);
+    }
+    m_swapchain.DestroySwapchain();
+    device.destroyCommandPool(m_command.commandPool);
+
+    m_swapchain.CreateSwapchain(window);
+    m_framebuffer.CreateFramebuffer();
+
+    for (auto& frame : swapchainDetails.frames) {
+        frame.inFlight = m_sync.MakeFence();
+        frame.imageAvailable = m_sync.MakeSemaphore();
+        frame.renderFinished = m_sync.MakeSemaphore();
+    }
+
+    m_command.CreateCommandPool();
+    m_command.CreateCommandBuffer();
 }
 
 GraphicsEngine::~GraphicsEngine()

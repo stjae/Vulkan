@@ -18,9 +18,11 @@ public:
     GraphicsEngine(int width, int height, GLFWwindow* window);
     ~GraphicsEngine();
     void Render(Scene* scene);
+    void RecreateSwapchain();
 
 private:
     GLFWwindow* window;
+    int width, height;
     Instance m_instance;
     Logger m_logger;
     Device m_device;

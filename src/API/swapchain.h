@@ -15,6 +15,7 @@ public:
     vk::SurfaceFormatKHR ChooseSurfaceFormat();
     vk::PresentModeKHR ChoosePresentMode();
     vk::Extent2D ChooseExtent(GLFWwindow* window);
+    void DestroySwapchain();
 };
 
 #endif

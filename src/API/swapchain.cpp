@@ -21,6 +21,8 @@ void Swapchain::QuerySwapchainSupportDetails()
 
 void Swapchain::CreateSwapchain(GLFWwindow* window)
 {
+    QuerySwapchainSupportDetails();
+
     auto& capabilities = swapchainSupportDetails.capabilities;
 
     auto surfaceFormat = ChooseSurfaceFormat();
@@ -117,8 +119,10 @@ vk::Extent2D Swapchain::ChooseExtent(GLFWwindow* window)
 
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
+
         Log(debug, fmt::terminal_color::white, "no change in extent size");
         return capabilities.currentExtent;
+
     } else {
         // extent is not set
         int width, height;
@@ -141,12 +145,20 @@ vk::Extent2D Swapchain::ChooseExtent(GLFWwindow* window)
     }
 }
 
-Swapchain::~Swapchain()
+void Swapchain::DestroySwapchain()
 {
     for (auto& frame : swapchainDetails.frames) {
         device.destroyImageView(frame.imageView);
         device.destroyFramebuffer(frame.framebuffer);
+        device.destroyFence(frame.inFlight);
+        device.destroySemaphore(frame.imageAvailable);
+        device.destroySemaphore(frame.renderFinished);
     }
 
     device.destroySwapchainKHR(swapchainDetails.swapchain);
+}
+
+Swapchain::~Swapchain()
+{
+    DestroySwapchain();
 }
