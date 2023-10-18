@@ -2,11 +2,9 @@
 
 void Instance::CreateInstance()
 {
-    vk::ApplicationInfo appInfo;
-    appInfo.setApiVersion(vk::makeApiVersion(0, 1, 0, 0));
+    vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_0);
 
-    vk::InstanceCreateInfo createInfo;
-    createInfo.setPApplicationInfo(&appInfo);
+    vk::InstanceCreateInfo createInfo({}, &appInfo);
     SetExtensions(instanceExtensions, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
@@ -24,7 +22,7 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
 #if defined(__APPLE__)
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    createInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+    createInfo.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
 #endif
 
     uint32_t count = 0;
@@ -38,8 +36,8 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    createInfo.setEnabledExtensionCount((uint32_t)extensions.size());
-    createInfo.setPpEnabledExtensionNames(extensions.data());
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
 }
 
 void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo)
@@ -47,8 +45,8 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     if (debug) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
-        createInfo.setEnabledLayerCount((uint32_t)layers.size());
-        createInfo.setPpEnabledLayerNames(layers.data());
+        createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+        createInfo.ppEnabledLayerNames = layers.data();
 
         Logger::SetDebugInfo(debugInfo);
         createInfo.pNext = &debugInfo;

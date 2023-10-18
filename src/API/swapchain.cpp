@@ -1,24 +1,5 @@
 #include "swapchain.h"
 
-void Swapchain::QuerySwapchainSupportDetails()
-{
-    swapchainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-    swapchainSupportDetails.formats = physicalDevice.getSurfaceFormatsKHR(surface);
-    swapchainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
-    auto& capabilities = swapchainSupportDetails.capabilities;
-    auto& formats = swapchainSupportDetails.formats;
-    auto& presentModes = swapchainSupportDetails.presentModes;
-
-    Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
-
-    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", capabilities.currentExtent.width);
-    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", capabilities.currentExtent.height);
-
-    for (auto& mode : presentModes) {
-        Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
-    }
-}
-
 void Swapchain::CreateSwapchain(GLFWwindow* window)
 {
     QuerySwapchainSupportDetails();
@@ -31,27 +12,20 @@ void Swapchain::CreateSwapchain(GLFWwindow* window)
 
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR createInfo;
-    createInfo.setSurface(surface);
-    createInfo.setMinImageCount(imageCount);
-    createInfo.setImageFormat(surfaceFormat.format);
-    createInfo.setImageColorSpace(surfaceFormat.colorSpace);
-    createInfo.setImageExtent(extent);
-    createInfo.setImageArrayLayers(1);
-    createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR createInfo({}, surface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace, extent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
     uint32_t indices[] = { queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value() };
     if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.presentFamily.value()) {
-        createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
-        createInfo.setQueueFamilyIndexCount(2);
-        createInfo.setPQueueFamilyIndices(indices);
+        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = indices;
     } else {
-        createInfo.setImageSharingMode(vk::SharingMode::eExclusive);
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
     }
 
-    createInfo.setPresentMode(presentMode);
-    createInfo.setClipped(VK_TRUE);
-    createInfo.setOldSwapchain(nullptr);
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = nullptr;
 
     swapchainDetails.swapchain = device.createSwapchainKHR(createInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
@@ -62,24 +36,35 @@ void Swapchain::CreateSwapchain(GLFWwindow* window)
     for (size_t i = 0; i < images.size(); ++i) {
 
         vk::ImageViewCreateInfo createInfo;
-        createInfo.setImage(images[i]);
-        createInfo.setViewType(vk::ImageViewType::e2D);
-        createInfo.setComponents(vk::ComponentSwizzle::eIdentity);
+        createInfo.image = images[i];
+        createInfo.viewType = vk::ImageViewType::e2D;
+        createInfo.components = vk::ComponentSwizzle::eIdentity;
 
-        vk::ImageSubresourceRange range;
-        range.setAspectMask(vk::ImageAspectFlagBits::eColor);
-        range.setBaseMipLevel(0);
-        range.setLevelCount(1);
-        range.setBaseArrayLayer(0);
-        range.setLayerCount(1);
-        createInfo.setSubresourceRange(range);
-        createInfo.setFormat(surfaceFormat.format);
+        vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+        createInfo.subresourceRange = range;
+        createInfo.format = surfaceFormat.format;
 
         swapchainDetails.frames[i].image = images[i];
         swapchainDetails.frames[i].imageView = device.createImageView(createInfo);
     }
     swapchainDetails.imageFormat = surfaceFormat.format;
     swapchainDetails.extent = extent;
+}
+
+void Swapchain::QuerySwapchainSupportDetails()
+{
+    swapchainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+    swapchainSupportDetails.formats = physicalDevice.getSurfaceFormatsKHR(surface);
+    swapchainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+
+    Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
+
+    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", swapchainSupportDetails.capabilities.currentExtent.width);
+    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", swapchainSupportDetails.capabilities.currentExtent.height);
+
+    for (auto& mode : swapchainSupportDetails.presentModes) {
+        Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
+    }
 }
 
 vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()

@@ -10,7 +10,7 @@ vk::Semaphore Sync::MakeSemaphore()
 vk::Fence Sync::MakeFence()
 {
     vk::FenceCreateInfo fenceInfo;
-    fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
     return device.createFence(fenceInfo);
 }

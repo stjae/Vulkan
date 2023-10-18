@@ -5,6 +5,7 @@
 #include "swapchain.h"
 #include "shader.h"
 #include "../structs.h"
+#include "../mesh.h"
 
 class GraphicsPipeline
 {

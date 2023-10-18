@@ -10,15 +10,14 @@ class Device
 public:
     ~Device();
 
+    // Device related method
+    void CreateDevice();
+    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+
     // Physical Device related method
     void PickPhysicalDevice();
     bool IsDeviceSuitable(vk::PhysicalDevice& device);
     void FindQueueFamilies();
-
-    // Device related method
-    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
-    void SetDeviceCreateInfo(vk::DeviceCreateInfo& deviceCreateInfo, std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
-    void CreateDevice();
 };
 
 #endif

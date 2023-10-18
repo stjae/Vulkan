@@ -6,31 +6,30 @@ void Logger::CreateDebugMessenger()
         return;
     }
 
-    vk::DebugUtilsMessengerCreateInfoEXT createInfo;
-    createInfo.setMessageSeverity(
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
-    createInfo.setMessageType(
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-        vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-    createInfo.setPfnUserCallback(DebugCallback);
+    vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+                                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+                                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
 
-    debugMessenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, dldi);
+    vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                                       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                                       vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
+
+    vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo({}, severityFlags, messageTypeFlags, DebugCallback);
+
+    debugMessenger = instance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi);
 }
 
 void Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
 {
-    createInfo.setMessageSeverity(
+    createInfo.messageSeverity =
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
-    createInfo.setMessageType(
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+    createInfo.messageType =
         vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
         vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-    createInfo.setPfnUserCallback(DebugCallback);
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+    createInfo.pfnUserCallback = DebugCallback;
 }
 
 Logger::~Logger()

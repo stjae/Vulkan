@@ -9,12 +9,12 @@ void Framebuffer::CreateFramebuffer()
         std::vector<vk::ImageView> attachments = { frames[i].imageView };
 
         vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.setRenderPass(renderPass);
-        framebufferInfo.setAttachmentCount((uint32_t)attachments.size());
-        framebufferInfo.setPAttachments(attachments.data());
-        framebufferInfo.setWidth(swapchainDetails.extent.width);
-        framebufferInfo.setHeight(swapchainDetails.extent.height);
-        framebufferInfo.setLayers(1);
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = swapchainDetails.extent.width;
+        framebufferInfo.height = swapchainDetails.extent.height;
+        framebufferInfo.layers = 1;
 
         frames[i].framebuffer = device.createFramebuffer(framebufferInfo);
         Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);

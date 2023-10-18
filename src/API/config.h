@@ -3,7 +3,6 @@
 
 #include "../common.h"
 
-// device
 struct QueueFamilyIndices {
 
     std::optional<uint32_t> graphicsFamily;
@@ -19,21 +18,6 @@ struct QueueFamilyIndices {
     QueueFamilyIndices& operator=(const QueueFamilyIndices&) = delete;
 };
 
-inline vk::PhysicalDevice physicalDevice;
-inline std::vector<const char*> deviceExtensions;
-inline QueueFamilyIndices queueFamilyIndices;
-inline vk::Device device;
-inline vk::Queue graphicsQueue;
-inline vk::Queue presentQueue;
-
-// instance
-inline vk::Instance instance;
-inline vk::DispatchLoaderDynamic dldi;
-inline std::vector<const char*> instanceExtensions;
-inline std::vector<const char*> instanceLayers;
-inline VkSurfaceKHR surface;
-
-// swapchain
 struct SwapchainSupportDetails {
 
     vk::SurfaceCapabilitiesKHR capabilities;
@@ -60,6 +44,22 @@ struct SwapchainDetails {
     vk::Extent2D extent;
 };
 
+// device
+inline vk::PhysicalDevice physicalDevice;
+inline std::vector<const char*> deviceExtensions;
+inline QueueFamilyIndices queueFamilyIndices;
+inline vk::Device device;
+inline vk::Queue graphicsQueue;
+inline vk::Queue presentQueue;
+
+// instance
+inline vk::Instance instance;
+inline vk::DispatchLoaderDynamic dldi;
+inline std::vector<const char*> instanceExtensions;
+inline std::vector<const char*> instanceLayers;
+inline VkSurfaceKHR surface;
+
+// swapchain
 inline SwapchainSupportDetails swapchainSupportDetails;
 inline SwapchainDetails swapchainDetails;
 

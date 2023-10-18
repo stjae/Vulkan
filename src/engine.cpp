@@ -10,8 +10,6 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
     m_logger.CreateDebugMessenger();
     m_instance.CreateSurface(window);
 
-    m_device.PickPhysicalDevice();
-    m_device.FindQueueFamilies();
     m_device.CreateDevice();
 
     m_swapchain.CreateSwapchain(window);
@@ -38,12 +36,13 @@ void GraphicsEngine::Render(Scene* scene)
     auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight);
 
     uint32_t imageIndex;
-    auto resultAcquireImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr);
-    if (resultAcquireImage.result == vk::Result::eErrorOutOfDateKHR) {
+    auto acquiredImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr);
+    if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
+        acquiredImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         return;
     }
-    imageIndex = resultAcquireImage.value;
+    imageIndex = acquiredImage.value;
 
     vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.frameNumber].commandBuffer;
 
@@ -53,24 +52,24 @@ void GraphicsEngine::Render(Scene* scene)
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_sync.frameNumber].imageAvailable };
     vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-    submitInfo.setWaitSemaphoreCount(1);
-    submitInfo.setPWaitSemaphores(waitSemaphores);
-    submitInfo.setPWaitDstStageMask(waitStage);
-    submitInfo.setCommandBufferCount(1);
-    submitInfo.setPCommandBuffers(&commandBuffer);
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStage;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
     vk::Semaphore signalSemaphores[] = { swapchainDetails.frames[m_sync.frameNumber].renderFinished };
-    submitInfo.setSignalSemaphoreCount(1);
-    submitInfo.setPSignalSemaphores(signalSemaphores);
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
 
     graphicsQueue.submit(submitInfo, swapchainDetails.frames[m_sync.frameNumber].inFlight);
 
     vk::PresentInfoKHR presentInfo;
-    presentInfo.setWaitSemaphoreCount(1);
-    presentInfo.setPWaitSemaphores(signalSemaphores);
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
     vk::SwapchainKHR swapchains[] = { swapchainDetails.swapchain };
-    presentInfo.setSwapchainCount(1);
-    presentInfo.setPSwapchains(swapchains);
-    presentInfo.setPImageIndices(&imageIndex);
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+    presentInfo.pImageIndices = &imageIndex;
 
     vk::Result resultPresent;
     try {

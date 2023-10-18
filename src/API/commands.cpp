@@ -3,8 +3,8 @@
 void Command::CreateCommandPool()
 {
     vk::CommandPoolCreateInfo poolInfo;
-    poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-    poolInfo.setQueueFamilyIndex(queueFamilyIndices.graphicsFamily.value());
+    poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
     commandPool = device.createCommandPool(poolInfo);
     Log(debug, fmt::terminal_color::bright_green, "created command pool");
@@ -13,9 +13,9 @@ void Command::CreateCommandPool()
 void Command::CreateCommandBuffer()
 {
     vk::CommandBufferAllocateInfo allocateInfo;
-    allocateInfo.setCommandPool(commandPool);
-    allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
-    allocateInfo.setCommandBufferCount(1);
+    allocateInfo.commandPool = commandPool;
+    allocateInfo.level = vk::CommandBufferLevel::ePrimary;
+    allocateInfo.commandBufferCount = 1;
 
     for (int i = 0; i < swapchainDetails.frames.size(); ++i) {
         swapchainDetails.frames[i].commandBuffer = device.allocateCommandBuffers(allocateInfo)[0];
@@ -32,14 +32,14 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
     commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.setRenderPass(renderPass);
-    renderPassInfo.setFramebuffer(swapchainDetails.frames[imageIndex].framebuffer);
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = swapchainDetails.frames[imageIndex].framebuffer;
     vk::Rect2D renderArea(0, 0);
-    renderArea.setExtent(swapchainDetails.extent);
-    renderPassInfo.setRenderArea(renderArea);
+    renderArea.extent = swapchainDetails.extent;
+    renderPassInfo.renderArea = renderArea;
     vk::ClearValue clearColor = { std::array<float, 4>{ 0.5f, 0.5f, 0.5f, 1.0f } };
-    renderPassInfo.setClearValueCount(1);
-    renderPassInfo.setPClearValues(&clearColor);
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
