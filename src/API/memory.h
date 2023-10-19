@@ -2,6 +2,7 @@
 #define _MEMORY_H_
 
 #include "../common.h"
+#include "config.h"
 
 struct BufferInput {
 
@@ -15,11 +16,46 @@ struct Buffer {
     vk::DeviceMemory bufferMemory;
 };
 
+inline uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties)
+{
+    vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
+
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+
+        bool supported{ static_cast<bool>(supportedMemoryIndices & (1 << i)) };
+
+        bool sufficient{ (memoryProperties.memoryTypes[i].propertyFlags & requestedProperties) == requestedProperties };
+
+        if (supported && sufficient) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("failed to find suitable memory type");
+}
+
+inline void AllocateBufferMemory(Buffer& buffer, const BufferInput& input)
+{
+    vk::MemoryRequirements memoryRequirements = device.getBufferMemoryRequirements(buffer.buffer);
+
+    vk::MemoryAllocateInfo allocateInfo;
+    allocateInfo.allocationSize = memoryRequirements.size;
+    allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits,
+                                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    buffer.bufferMemory = device.allocateMemory(allocateInfo);
+    device.bindBufferMemory(buffer.buffer, buffer.bufferMemory, 0);
+}
+
 inline Buffer CreateBuffer(BufferInput input)
 {
+    vk::BufferCreateInfo bufferInfo({}, input.size, input.usage, vk::SharingMode::eExclusive);
 
-    vk::BufferCreateInfo bufferInfo;
-    bufferInfo.setSize(input.size);
+    Buffer buffer;
+    buffer.buffer = device.createBuffer(bufferInfo);
+
+    AllocateBufferMemory(buffer, input);
+    return buffer;
 }
 
 #endif

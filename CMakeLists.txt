@@ -16,7 +16,7 @@ src/engine.h            src/engine.cpp
 
 src/structs.h
 src/scene.h             src/scene.cpp
-src/mesh.h
+src/mesh.h              src/mesh.cpp
 
 # API
 src/API/window.h        src/API/window.cpp

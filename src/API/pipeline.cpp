@@ -10,15 +10,13 @@ void GraphicsPipeline::CreatePipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
 
     // vertex input
-    // vk::VertexInputBindingDescription bindingDesc = GetPosColorBindingDesc();
-    // std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = GetPosColorAttributeDescs();
+    vk::VertexInputBindingDescription bindingDesc = GetPosColorBindingDesc();
+    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = GetPosColorAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-    // vertexInputInfo.setVertexBindingDescriptionCount(1);
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    // vertexInputInfo.setPVertexBindingDescriptions(&bindingDesc);
-    // vertexInputInfo.setVertexAttributeDescriptionCount(2);
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    // vertexInputInfo.setPVertexAttributeDescriptions(attributeDescs.data());
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
+    vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescs.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
 
     // input assembly

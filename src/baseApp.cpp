@@ -38,6 +38,6 @@ void Application::GetFramerate()
 
 Application::~Application()
 {
-    delete m_engine;
     delete m_scene;
+    delete m_engine;
 }
