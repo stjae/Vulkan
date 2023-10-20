@@ -10,20 +10,15 @@ void Command::CreateCommandPool()
     Log(debug, fmt::terminal_color::bright_green, "created command pool");
 }
 
-void Command::CreateCommandBuffer()
+void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
 {
     vk::CommandBufferAllocateInfo allocateInfo;
     allocateInfo.commandPool = commandPool;
     allocateInfo.level = vk::CommandBufferLevel::ePrimary;
     allocateInfo.commandBufferCount = 1;
 
-    for (int i = 0; i < swapchainDetails.frames.size(); ++i) {
-        swapchainDetails.frames[i].commandBuffer = device.allocateCommandBuffers(allocateInfo)[0];
-        Log(debug, fmt::terminal_color::bright_green, "allocated command buffer for frame {}", i);
-    }
-
-    mainCommandBuffer = device.allocateCommandBuffers(allocateInfo)[0];
-    Log(debug, fmt::terminal_color::bright_green, "allocated main command buffer");
+    commandBuffer = device.allocateCommandBuffers(allocateInfo)[0];
+    Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
 void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene)
@@ -45,7 +40,7 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 
-    vk::Buffer vertexBuffers[] = { scene->m_triangleMesh.get()->vertexBuffer.buffer };
+    vk::Buffer vertexBuffers[] = { scene->m_triangleMesh.get()->m_vertexBuffer.buffer };
     vk::DeviceSize offsets[] = { 0 };
     commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
@@ -58,7 +53,18 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
     }
 
     commandBuffer.endRenderPass();
+    commandBuffer.end();
+}
 
+void Command::RecordCopyCommands(vk::CommandBuffer commandBuffer, vk::Buffer srcBuffer, vk::Buffer dstBuffer, size_t size)
+{
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
+
+    commandBuffer.begin(beginInfo);
+
+    vk::BufferCopy copyRegion(0, 0, size);
+
+    commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
     commandBuffer.end();
 }
 

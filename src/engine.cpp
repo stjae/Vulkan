@@ -18,7 +18,9 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
 
     m_framebuffer.CreateFramebuffer();
     m_command.CreateCommandPool();
-    m_command.CreateCommandBuffer();
+    for (auto& frame : swapchainDetails.frames) {
+        m_command.CreateCommandBuffer(frame.commandBuffer);
+    }
 
     m_sync.maxFramesInFlight = static_cast<int>(swapchainDetails.frames.size());
     m_sync.frameNumber = 0;
@@ -28,6 +30,47 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
         frame.imageAvailable = m_sync.MakeSemaphore();
         frame.renderFinished = m_sync.MakeSemaphore();
     }
+}
+
+void GraphicsEngine::Prepare(Scene* scene)
+{
+    std::vector<float>& vertices = scene->m_triangleMesh->vertices;
+
+    BufferInput stagingBufferInput;
+    stagingBufferInput.size = sizeof(float) * vertices.size();
+    stagingBufferInput.usage = vk::BufferUsageFlagBits::eTransferSrc;
+    stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
+                                    vk::MemoryPropertyFlagBits::eHostCoherent;
+
+    Buffer& stagingBuffer = scene->m_triangleMesh->m_stagingBuffer;
+    stagingBuffer = CreateBuffer(stagingBufferInput);
+
+    void* memoryLocation = device.mapMemory(stagingBuffer.memory, 0, stagingBufferInput.size);
+    memcpy(memoryLocation, vertices.data(), stagingBufferInput.size);
+    device.unmapMemory(stagingBuffer.memory);
+
+    BufferInput vertexBufferInput;
+    vertexBufferInput.size = stagingBufferInput.size;
+    vertexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+    vertexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+    Buffer& vertexBuffer = scene->m_triangleMesh->m_vertexBuffer;
+    vertexBuffer = CreateBuffer(vertexBufferInput);
+
+    Command copyCommand;
+    copyCommand.CreateCommandPool();
+
+    vk::CommandBuffer copyCommandBuffer;
+    copyCommand.CreateCommandBuffer(copyCommandBuffer);
+
+    copyCommand.RecordCopyCommands(copyCommandBuffer, stagingBuffer.buffer, vertexBuffer.buffer, stagingBufferInput.size);
+
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &copyCommandBuffer;
+
+    graphicsQueue.submit(submitInfo);
+    graphicsQueue.waitIdle();
 }
 
 void GraphicsEngine::Render(Scene* scene)
@@ -108,7 +151,9 @@ void GraphicsEngine::RecreateSwapchain()
     }
 
     m_command.CreateCommandPool();
-    m_command.CreateCommandBuffer();
+    for (auto& frame : swapchainDetails.frames) {
+        m_command.CreateCommandBuffer(frame.commandBuffer);
+    }
 }
 
 GraphicsEngine::~GraphicsEngine()

@@ -5,6 +5,7 @@ Application::Application(const int width, const int height, const char* wName)
 {
     m_engine = new GraphicsEngine(width, height, m_window.window);
     m_scene = new Scene();
+    m_engine->Prepare(m_scene);
 }
 
 void Application::Run()

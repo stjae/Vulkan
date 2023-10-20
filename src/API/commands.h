@@ -13,11 +13,11 @@ class Command
 public:
     ~Command();
     void CreateCommandPool();
-    void CreateCommandBuffer();
+    void CreateCommandBuffer(vk::CommandBuffer& commandBuffer);
     void RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+    void RecordCopyCommands(vk::CommandBuffer commandBuffer, vk::Buffer srcBuffer, vk::Buffer dstBuffer, size_t size);
 
     vk::CommandPool commandPool;
-    vk::CommandBuffer mainCommandBuffer;
 };
 
 #endif

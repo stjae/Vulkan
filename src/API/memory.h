@@ -8,12 +8,13 @@ struct BufferInput {
 
     size_t size;
     vk::BufferUsageFlags usage;
+    vk::MemoryPropertyFlags properties;
 };
 
 struct Buffer {
 
     vk::Buffer buffer;
-    vk::DeviceMemory bufferMemory;
+    vk::DeviceMemory memory;
 };
 
 inline uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties)
@@ -40,11 +41,10 @@ inline void AllocateBufferMemory(Buffer& buffer, const BufferInput& input)
 
     vk::MemoryAllocateInfo allocateInfo;
     allocateInfo.allocationSize = memoryRequirements.size;
-    allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits,
-                                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, input.properties);
 
-    buffer.bufferMemory = device.allocateMemory(allocateInfo);
-    device.bindBufferMemory(buffer.buffer, buffer.bufferMemory, 0);
+    buffer.memory = device.allocateMemory(allocateInfo);
+    device.bindBufferMemory(buffer.buffer, buffer.memory, 0);
 }
 
 inline Buffer CreateBuffer(BufferInput input)

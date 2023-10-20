@@ -17,6 +17,7 @@ class GraphicsEngine
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window);
     ~GraphicsEngine();
+    void Prepare(Scene* scene);
     void Render(Scene* scene);
     void RecreateSwapchain();
 
