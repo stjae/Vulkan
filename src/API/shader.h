@@ -11,8 +11,8 @@ public:
     ~Shader();
     vk::ShaderModule CreateModule(std::string filepath);
 
-    vk::ShaderModule vertexShaderModule;
-    vk::ShaderModule fragmentShaderModule;
+    vk::ShaderModule m_vertexShaderModule;
+    vk::ShaderModule m_fragmentShaderModule;
 };
 
 #endif

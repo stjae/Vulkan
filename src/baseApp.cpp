@@ -3,14 +3,14 @@
 Application::Application(const int width, const int height, const char* wName)
     : m_window(width, height, wName)
 {
-    m_engine = new GraphicsEngine(width, height, m_window.window);
+    m_engine = new GraphicsEngine(width, height, m_window.m_window);
     m_scene = new Scene();
     m_engine->Prepare(m_scene);
 }
 
 void Application::Run()
 {
-    while (!glfwWindowShouldClose(m_window.window)) {
+    while (!glfwWindowShouldClose(m_window.m_window)) {
         glfwPollEvents();
         m_engine->Render(m_scene);
         GetFramerate();
@@ -28,7 +28,7 @@ void Application::GetFramerate()
     if (delta > 1.0) {
         std::stringstream title;
         title << frameCount << " fps, " << 1000.0f / frameCount << " ms";
-        glfwSetWindowTitle(m_window.window, title.str().c_str());
+        glfwSetWindowTitle(m_window.m_window, title.str().c_str());
 
         lastTime = currentTime;
         frameCount = 0;

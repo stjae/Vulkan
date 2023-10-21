@@ -22,8 +22,9 @@ public:
     void RecreateSwapchain();
 
 private:
-    GLFWwindow* window;
-    int width, height;
+    GLFWwindow* m_window;
+    int m_width;
+    int m_height;
     Instance m_instance;
     Logger m_logger;
     Device m_device;

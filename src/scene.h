@@ -8,9 +8,11 @@ class Scene
 {
 public:
     Scene();
+    void CreateVertexBuffer(std::shared_ptr<Mesh> mesh);
+    void CreateIndexBuffer(std::shared_ptr<Mesh> mesh);
 
-    std::vector<glm::vec3> positions;
-    std::unique_ptr<Mesh> m_triangleMesh;
+    std::vector<std::shared_ptr<Mesh>> m_meshes;
+    std::vector<glm::vec3> m_positions;
 };
 
 #endif

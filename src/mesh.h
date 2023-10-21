@@ -9,9 +9,13 @@ class Mesh
 public:
     Mesh();
     ~Mesh();
-    std::vector<float> vertices;
-    Buffer m_stagingBuffer;
+
+    std::vector<float> m_vertices;
+    std::vector<uint16_t> m_indices;
+    Buffer m_vertexStagingBuffer;
     Buffer m_vertexBuffer;
+    Buffer m_indexStagingBuffer;
+    Buffer m_indexBuffer;
 };
 
 inline vk::VertexInputBindingDescription GetPosColorBindingDesc()

@@ -10,8 +10,9 @@ class Sync
 public:
     vk::Semaphore MakeSemaphore();
     vk::Fence MakeFence();
-    int maxFramesInFlight;
-    int frameNumber;
+
+    int m_maxFramesInFlight;
+    int m_frameNumber;
 };
 
 #endif

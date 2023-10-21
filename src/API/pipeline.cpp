@@ -25,11 +25,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
 
     // vertex shader
-    m_shader.vertexShaderModule = m_shader.CreateModule(vertexShaderFilepath);
+    m_shader.m_vertexShaderModule = m_shader.CreateModule(vertexShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created vertex shader module");
     vk::PipelineShaderStageCreateInfo vertexShaderInfo;
     vertexShaderInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertexShaderInfo.module = m_shader.vertexShaderModule;
+    vertexShaderInfo.module = m_shader.m_vertexShaderModule;
     vertexShaderInfo.pName = "main";
     shaderStageInfos.push_back(vertexShaderInfo);
 
@@ -65,11 +65,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pRasterizationState = &rasterizerInfo;
 
     // fragment shader
-    m_shader.fragmentShaderModule = m_shader.CreateModule(fragmentShaderFilepath);
+    m_shader.m_fragmentShaderModule = m_shader.CreateModule(fragmentShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created fragment shader module");
     vk::PipelineShaderStageCreateInfo fragmentShaderInfo;
     fragmentShaderInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragmentShaderInfo.module = m_shader.fragmentShaderModule;
+    fragmentShaderInfo.module = m_shader.m_fragmentShaderModule;
     fragmentShaderInfo.pName = "main";
     shaderStageInfos.push_back(fragmentShaderInfo);
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStageInfos.size());

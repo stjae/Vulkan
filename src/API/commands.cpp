@@ -6,14 +6,14 @@ void Command::CreateCommandPool()
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-    commandPool = device.createCommandPool(poolInfo);
+    m_commandPool = device.createCommandPool(poolInfo);
     Log(debug, fmt::terminal_color::bright_green, "created command pool");
 }
 
 void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
 {
     vk::CommandBufferAllocateInfo allocateInfo;
-    allocateInfo.commandPool = commandPool;
+    allocateInfo.commandPool = m_commandPool;
     allocateInfo.level = vk::CommandBufferLevel::ePrimary;
     allocateInfo.commandBufferCount = 1;
 
@@ -37,19 +37,23 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
     renderPassInfo.pClearValues = &clearColor;
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 
-    vk::Buffer vertexBuffers[] = { scene->m_triangleMesh.get()->m_vertexBuffer.buffer };
-    vk::DeviceSize offsets[] = { 0 };
-    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+    for (auto mesh : scene->m_meshes) {
 
-    for (glm::vec3 pos : scene->positions) {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
-        ObjectData objectData;
-        objectData.model = model;
-        commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(ObjectData), &objectData);
-        commandBuffer.draw(3, 1, 0, 0);
+        vk::Buffer vertexBuffers[] = { mesh->m_vertexBuffer.buffer };
+        vk::DeviceSize offsets[] = { 0 };
+
+        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+        commandBuffer.bindIndexBuffer(mesh->m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
+
+        for (glm::vec3 pos : scene->m_positions) {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
+            ObjectData objectData;
+            objectData.model = model;
+            commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(ObjectData), &objectData);
+            commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->m_indices.size()), 1, 0, 0, 0);
+        }
     }
 
     commandBuffer.endRenderPass();
@@ -70,5 +74,5 @@ void Command::RecordCopyCommands(vk::CommandBuffer commandBuffer, vk::Buffer src
 
 Command::~Command()
 {
-    device.destroyCommandPool(commandPool);
+    device.destroyCommandPool(m_commandPool);
 }

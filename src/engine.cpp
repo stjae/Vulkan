@@ -2,9 +2,9 @@
 
 GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
 {
-    this->window = window;
-    this->width = width;
-    this->height = height;
+    m_window = window;
+    m_width = width;
+    m_height = height;
 
     m_instance.CreateInstance();
     m_logger.CreateDebugMessenger();
@@ -22,8 +22,8 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
         m_command.CreateCommandBuffer(frame.commandBuffer);
     }
 
-    m_sync.maxFramesInFlight = static_cast<int>(swapchainDetails.frames.size());
-    m_sync.frameNumber = 0;
+    m_sync.m_maxFramesInFlight = static_cast<int>(swapchainDetails.frames.size());
+    m_sync.m_frameNumber = 0;
 
     for (auto& frame : swapchainDetails.frames) {
         frame.inFlight = m_sync.MakeFence();
@@ -34,40 +34,29 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
 
 void GraphicsEngine::Prepare(Scene* scene)
 {
-    std::vector<float>& vertices = scene->m_triangleMesh->vertices;
+    Command copyVertexCommand;
+    copyVertexCommand.CreateCommandPool();
 
-    BufferInput stagingBufferInput;
-    stagingBufferInput.size = sizeof(float) * vertices.size();
-    stagingBufferInput.usage = vk::BufferUsageFlagBits::eTransferSrc;
-    stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
-                                    vk::MemoryPropertyFlagBits::eHostCoherent;
+    vk::CommandBuffer copyVertexCommandBuffer;
+    copyVertexCommand.CreateCommandBuffer(copyVertexCommandBuffer);
+    for (auto mesh : scene->m_meshes) {
+        copyVertexCommand.RecordCopyCommands(copyVertexCommandBuffer, mesh->m_vertexStagingBuffer.buffer, mesh->m_vertexBuffer.buffer, sizeof(mesh->m_vertices[0]) * mesh->m_vertices.size());
+    }
 
-    Buffer& stagingBuffer = scene->m_triangleMesh->m_stagingBuffer;
-    stagingBuffer = CreateBuffer(stagingBufferInput);
+    Command copyIndexCommand;
+    copyIndexCommand.CreateCommandPool();
 
-    void* memoryLocation = device.mapMemory(stagingBuffer.memory, 0, stagingBufferInput.size);
-    memcpy(memoryLocation, vertices.data(), stagingBufferInput.size);
-    device.unmapMemory(stagingBuffer.memory);
+    vk::CommandBuffer copyIndexCommandBuffer;
+    copyIndexCommand.CreateCommandBuffer(copyIndexCommandBuffer);
+    for (auto mesh : scene->m_meshes) {
+        copyIndexCommand.RecordCopyCommands(copyIndexCommandBuffer, mesh->m_indexStagingBuffer.buffer, mesh->m_indexBuffer.buffer, sizeof(mesh->m_indices[0]) * mesh->m_indices.size());
+    }
 
-    BufferInput vertexBufferInput;
-    vertexBufferInput.size = stagingBufferInput.size;
-    vertexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
-    vertexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-    Buffer& vertexBuffer = scene->m_triangleMesh->m_vertexBuffer;
-    vertexBuffer = CreateBuffer(vertexBufferInput);
-
-    Command copyCommand;
-    copyCommand.CreateCommandPool();
-
-    vk::CommandBuffer copyCommandBuffer;
-    copyCommand.CreateCommandBuffer(copyCommandBuffer);
-
-    copyCommand.RecordCopyCommands(copyCommandBuffer, stagingBuffer.buffer, vertexBuffer.buffer, stagingBufferInput.size);
+    std::vector<vk::CommandBuffer> buffers{ copyVertexCommandBuffer, copyIndexCommandBuffer };
 
     vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &copyCommandBuffer;
+    submitInfo.commandBufferCount = static_cast<uint32_t>(buffers.size());
+    submitInfo.pCommandBuffers = buffers.data();
 
     graphicsQueue.submit(submitInfo);
     graphicsQueue.waitIdle();
@@ -75,11 +64,11 @@ void GraphicsEngine::Prepare(Scene* scene)
 
 void GraphicsEngine::Render(Scene* scene)
 {
-    auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight, VK_TRUE, UINT64_MAX);
-    auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.frameNumber].inFlight);
+    auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_sync.m_frameNumber].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.m_frameNumber].inFlight);
 
     uint32_t imageIndex;
-    auto acquiredImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.frameNumber].imageAvailable, nullptr);
+    auto acquiredImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.m_frameNumber].imageAvailable, nullptr);
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
@@ -87,24 +76,24 @@ void GraphicsEngine::Render(Scene* scene)
     }
     imageIndex = acquiredImage.value;
 
-    vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.frameNumber].commandBuffer;
+    vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.m_frameNumber].commandBuffer;
 
     commandBuffer.reset();
     m_command.RecordDrawCommands(commandBuffer, imageIndex, scene);
 
     vk::SubmitInfo submitInfo;
-    vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_sync.frameNumber].imageAvailable };
+    vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_sync.m_frameNumber].imageAvailable };
     vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStage;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    vk::Semaphore signalSemaphores[] = { swapchainDetails.frames[m_sync.frameNumber].renderFinished };
+    vk::Semaphore signalSemaphores[] = { swapchainDetails.frames[m_sync.m_frameNumber].renderFinished };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    graphicsQueue.submit(submitInfo, swapchainDetails.frames[m_sync.frameNumber].inFlight);
+    graphicsQueue.submit(submitInfo, swapchainDetails.frames[m_sync.m_frameNumber].inFlight);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
@@ -122,7 +111,7 @@ void GraphicsEngine::Render(Scene* scene)
         return;
     }
 
-    m_sync.frameNumber = (m_sync.frameNumber + 1) % m_sync.maxFramesInFlight;
+    m_sync.m_frameNumber = (m_sync.m_frameNumber + 1) % m_sync.m_maxFramesInFlight;
 }
 
 void GraphicsEngine::RecreateSwapchain()
@@ -130,18 +119,18 @@ void GraphicsEngine::RecreateSwapchain()
     int width = 0;
     int height = 0;
     while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetFramebufferSize(m_window, &width, &height);
         glfwWaitEvents();
     }
 
     device.waitIdle();
     for (auto& frame : swapchainDetails.frames) {
-        device.freeCommandBuffers(m_command.commandPool, frame.commandBuffer);
+        device.freeCommandBuffers(m_command.m_commandPool, frame.commandBuffer);
     }
     m_swapchain.DestroySwapchain();
-    device.destroyCommandPool(m_command.commandPool);
+    device.destroyCommandPool(m_command.m_commandPool);
 
-    m_swapchain.CreateSwapchain(window);
+    m_swapchain.CreateSwapchain(m_window);
     m_framebuffer.CreateFramebuffer();
 
     for (auto& frame : swapchainDetails.frames) {

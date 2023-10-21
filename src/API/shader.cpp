@@ -13,6 +13,6 @@ vk::ShaderModule Shader::CreateModule(std::string filepath)
 
 Shader::~Shader()
 {
-    device.destroyShaderModule(vertexShaderModule);
-    device.destroyShaderModule(fragmentShaderModule);
+    device.destroyShaderModule(m_vertexShaderModule);
+    device.destroyShaderModule(m_fragmentShaderModule);
 }

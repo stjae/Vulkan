@@ -47,7 +47,7 @@ inline void AllocateBufferMemory(Buffer& buffer, const BufferInput& input)
     device.bindBufferMemory(buffer.buffer, buffer.memory, 0);
 }
 
-inline Buffer CreateBuffer(BufferInput input)
+inline Buffer CreateBuffer(BufferInput& input)
 {
     vk::BufferCreateInfo bufferInfo({}, input.size, input.usage, vk::SharingMode::eExclusive);
 
