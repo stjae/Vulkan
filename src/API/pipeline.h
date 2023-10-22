@@ -6,6 +6,7 @@
 #include "shader.h"
 #include "../structs.h"
 #include "../mesh.h"
+#include "descriptor.h"
 
 class GraphicsPipeline
 {

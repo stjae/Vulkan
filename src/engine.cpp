@@ -24,11 +24,39 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
     m_sync.m_maxFramesInFlight = static_cast<int>(swapchainDetails.frames.size());
     m_sync.m_frameNumber = 0;
 
+    DescriptorSetLayoutData bindings;
+    bindings.count = 1;
+    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+    descriptorPool = CreateDescriptorPool(static_cast<uint32_t>(swapchainDetails.frames.size()), bindings);
+
     for (auto& frame : swapchainDetails.frames) {
         frame.inFlight = m_sync.MakeFence();
         frame.imageAvailable = m_sync.MakeSemaphore();
         frame.renderFinished = m_sync.MakeSemaphore();
+
+        frame.CreateResource();
+
+        frame.descriptorSet = AllocateDescriptorSet(descriptorPool, descriptorSetLayout);
     }
+}
+
+void GraphicsEngine::UpdateFrame(uint32_t imageIndex)
+{
+    glm::vec3 eye = { 1.0f, 0.0f, 1.0f };
+    glm::vec3 center = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 up = { 0.0f, 0.0f, 1.0f };
+    glm::mat4 view = glm::lookAt(eye, center, up);
+
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchainDetails.extent.width) / static_cast<float>(swapchainDetails.extent.height), 0.1f, 10.0f);
+    proj[1][1] *= -1;
+
+    swapchainDetails.frames[imageIndex].cameraData.view = view;
+    swapchainDetails.frames[imageIndex].cameraData.proj = proj;
+    // swapchainDetails.frames[imageIndex].cameraData.viewProj = proj * view;
+    swapchainDetails.frames[imageIndex].cameraData.viewProj = glm::mat4(1.0f);
+    memcpy(swapchainDetails.frames[imageIndex].cameraDataMemoryLocation, &(swapchainDetails.frames[imageIndex].cameraData), sizeof(UBO));
+
+    swapchainDetails.frames[imageIndex].WriteDescriptorSet();
 }
 
 void GraphicsEngine::Prepare(Scene* scene)
@@ -74,6 +102,8 @@ void GraphicsEngine::Render(Scene* scene)
         return;
     }
     imageIndex = acquiredImage.value;
+
+    UpdateFrame(imageIndex);
 
     vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.m_frameNumber].commandBuffer;
 
@@ -136,6 +166,7 @@ void GraphicsEngine::RecreateSwapchain()
         frame.inFlight = m_sync.MakeFence();
         frame.imageAvailable = m_sync.MakeSemaphore();
         frame.renderFinished = m_sync.MakeSemaphore();
+        frame.CreateResource();
     }
 
     m_command.CreateCommandPool();

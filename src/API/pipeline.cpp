@@ -109,8 +109,17 @@ void GraphicsPipeline::CreatePipeline()
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
+    DescriptorSetLayoutData bindings;
+    bindings.count = 1;
+    bindings.indices.push_back(0);
+    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+    bindings.counts.push_back(1);
+    bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+    descriptorSetLayout = CreateDescriptorSetLayout(bindings);
     vk::PipelineLayoutCreateInfo layoutInfo;
-    layoutInfo.setLayoutCount = 0;
+    layoutInfo.setLayoutCount = 1;
+    layoutInfo.pSetLayouts = &descriptorSetLayout;
 
     layoutInfo.pushConstantRangeCount = 1;
     vk::PushConstantRange pushConstantInfo;
@@ -154,6 +163,8 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 GraphicsPipeline::~GraphicsPipeline()
 {
+    device.destroyDescriptorSetLayout(descriptorSetLayout);
+
     device.destroyPipeline(graphicsPipeline);
     device.destroyPipelineLayout(pipelineLayout);
     device.destroyRenderPass(renderPass);

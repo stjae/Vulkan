@@ -6,6 +6,7 @@
 #include "API/logger.h"
 #include "API/swapchain.h"
 #include "API/window.h"
+#include "API/descriptor.h"
 #include "API/pipeline.h"
 #include "API/commands.h"
 #include "API/sync.h"
@@ -15,10 +16,11 @@ class GraphicsEngine
 {
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window);
-    ~GraphicsEngine();
+    void UpdateFrame(uint32_t imageIndex);
     void Prepare(Scene* scene);
     void Render(Scene* scene);
     void RecreateSwapchain();
+    ~GraphicsEngine();
 
 private:
     GLFWwindow* m_window;

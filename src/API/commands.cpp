@@ -37,6 +37,9 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
     renderPassInfo.pClearValues = &clearColor;
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, swapchainDetails.frames[imageIndex].descriptorSet, nullptr);
+
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 
     for (auto mesh : scene->m_meshes) {
