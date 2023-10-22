@@ -4,14 +4,19 @@
 #include "../common.h"
 #include "device.h"
 
-class Sync
+inline vk::Semaphore MakeSemaphore()
 {
-public:
-    vk::Semaphore MakeSemaphore();
-    vk::Fence MakeFence();
+    vk::SemaphoreCreateInfo semaphoreInfo;
 
-    int m_maxFramesInFlight;
-    int m_frameNumber;
-};
+    return device.createSemaphore(semaphoreInfo);
+}
+
+inline vk::Fence MakeFence()
+{
+    vk::FenceCreateInfo fenceInfo;
+    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
+    return device.createFence(fenceInfo);
+}
 
 #endif

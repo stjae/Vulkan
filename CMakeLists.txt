@@ -28,7 +28,7 @@ src/API/shader.h        src/API/shader.cpp
 src/API/descriptor.h    src/API/descriptor.cpp
 src/API/pipeline.h      src/API/pipeline.cpp
 src/API/commands.h      src/API/commands.cpp
-src/API/sync.h          src/API/sync.cpp
+src/API/sync.h          
 src/API/memory.h        
 )
 

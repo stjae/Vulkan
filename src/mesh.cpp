@@ -2,10 +2,10 @@
 
 Mesh::Mesh()
 {
-    std::vector<float> pos = { -0.5f, -0.5f, 0.0f,
-                               0.5f, -0.5f, 0.0f,
+    std::vector<float> pos = { -0.5f, 0.5f, 0.0f,
                                0.5f, 0.5f, 0.0f,
-                               -0.5f, 0.5f, 0.0f };
+                               0.5f, -0.5f, 0.0f,
+                               -0.5f, -0.5f, 0.0f };
 
     std::vector<float> color = { 1.0f, 0.0f, 0.0f,
                                  0.0f, 1.0f, 0.0f,

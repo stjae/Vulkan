@@ -51,6 +51,7 @@ void Command::RecordDrawCommands(vk::CommandBuffer commandBuffer, uint32_t image
         commandBuffer.bindIndexBuffer(mesh->m_indexBuffer.buffer, 0, vk::IndexType::eUint16);
 
         for (glm::vec3 pos : scene->m_positions) {
+            // glm::mat4 model = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
             glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
             ObjectData objectData;
             objectData.model = model;

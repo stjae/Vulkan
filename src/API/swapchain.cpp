@@ -151,6 +151,17 @@ void Swapchain::CreateFrameBuffer()
     }
 }
 
+void Swapchain::PrepareFrames()
+{
+    for (auto& frame : swapchainDetails.frames) {
+        frame.inFlight = MakeFence();
+        frame.imageAvailable = MakeSemaphore();
+        frame.renderFinished = MakeSemaphore();
+
+        frame.CreateResource();
+    }
+}
+
 void Swapchain::DestroySwapchain()
 {
     for (auto& frame : swapchainDetails.frames) {
@@ -159,6 +170,8 @@ void Swapchain::DestroySwapchain()
         device.destroyFence(frame.inFlight);
         device.destroySemaphore(frame.imageAvailable);
         device.destroySemaphore(frame.renderFinished);
+        device.freeMemory(frame.cameraDataBuffer.memory);
+        device.destroyBuffer(frame.cameraDataBuffer.buffer);
     }
 
     device.destroySwapchainKHR(swapchainDetails.swapchain);

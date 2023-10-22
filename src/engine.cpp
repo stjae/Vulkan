@@ -21,30 +21,23 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
         m_command.CreateCommandBuffer(frame.commandBuffer);
     }
 
-    m_sync.m_maxFramesInFlight = static_cast<int>(swapchainDetails.frames.size());
-    m_sync.m_frameNumber = 0;
+    m_maxFrameNumber = static_cast<int>(swapchainDetails.frames.size());
+    m_frameIndex = 0;
 
-    DescriptorSetLayoutData bindings;
-    bindings.count = 1;
-    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    descriptorPool = CreateDescriptorPool(static_cast<uint32_t>(swapchainDetails.frames.size()), bindings);
+    m_pipeline.CreateDescriptorPool();
+
+    m_swapchain.PrepareFrames();
 
     for (auto& frame : swapchainDetails.frames) {
-        frame.inFlight = m_sync.MakeFence();
-        frame.imageAvailable = m_sync.MakeSemaphore();
-        frame.renderFinished = m_sync.MakeSemaphore();
-
-        frame.CreateResource();
-
-        frame.descriptorSet = AllocateDescriptorSet(descriptorPool, descriptorSetLayout);
+        m_pipeline.AllocateDescriptorSet(frame.descriptorSet);
     }
 }
 
 void GraphicsEngine::UpdateFrame(uint32_t imageIndex)
 {
-    glm::vec3 eye = { 1.0f, 0.0f, 1.0f };
+    glm::vec3 eye = { 0.0f, 0.0f, 2.0f };
     glm::vec3 center = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 up = { 0.0f, 0.0f, 1.0f };
+    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
     glm::mat4 view = glm::lookAt(eye, center, up);
 
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchainDetails.extent.width) / static_cast<float>(swapchainDetails.extent.height), 0.1f, 10.0f);
@@ -52,8 +45,7 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex)
 
     swapchainDetails.frames[imageIndex].cameraData.view = view;
     swapchainDetails.frames[imageIndex].cameraData.proj = proj;
-    // swapchainDetails.frames[imageIndex].cameraData.viewProj = proj * view;
-    swapchainDetails.frames[imageIndex].cameraData.viewProj = glm::mat4(1.0f);
+    swapchainDetails.frames[imageIndex].cameraData.viewProj = proj * view;
     memcpy(swapchainDetails.frames[imageIndex].cameraDataMemoryLocation, &(swapchainDetails.frames[imageIndex].cameraData), sizeof(UBO));
 
     swapchainDetails.frames[imageIndex].WriteDescriptorSet();
@@ -91,38 +83,40 @@ void GraphicsEngine::Prepare(Scene* scene)
 
 void GraphicsEngine::Render(Scene* scene)
 {
-    auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_sync.m_frameNumber].inFlight, VK_TRUE, UINT64_MAX);
-    auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_sync.m_frameNumber].inFlight);
+    auto resultWaitFence = device.waitForFences(1, &swapchainDetails.frames[m_frameIndex].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultResetFence = device.resetFences(1, &swapchainDetails.frames[m_frameIndex].inFlight);
 
     uint32_t imageIndex;
-    auto acquiredImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_sync.m_frameNumber].imageAvailable, nullptr);
+    auto acquiredImage = device.acquireNextImageKHR(swapchainDetails.swapchain, UINT64_MAX, swapchainDetails.frames[m_frameIndex].imageAvailable, nullptr);
+
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         return;
     }
+
     imageIndex = acquiredImage.value;
 
     UpdateFrame(imageIndex);
 
-    vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_sync.m_frameNumber].commandBuffer;
+    vk::CommandBuffer commandBuffer = swapchainDetails.frames[m_frameIndex].commandBuffer;
 
     commandBuffer.reset();
     m_command.RecordDrawCommands(commandBuffer, imageIndex, scene);
 
     vk::SubmitInfo submitInfo;
-    vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_sync.m_frameNumber].imageAvailable };
+    vk::Semaphore waitSemaphores[] = { swapchainDetails.frames[m_frameIndex].imageAvailable };
     vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStage;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    vk::Semaphore signalSemaphores[] = { swapchainDetails.frames[m_sync.m_frameNumber].renderFinished };
+    vk::Semaphore signalSemaphores[] = { swapchainDetails.frames[m_frameIndex].renderFinished };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    graphicsQueue.submit(submitInfo, swapchainDetails.frames[m_sync.m_frameNumber].inFlight);
+    graphicsQueue.submit(submitInfo, swapchainDetails.frames[m_frameIndex].inFlight);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
@@ -140,7 +134,7 @@ void GraphicsEngine::Render(Scene* scene)
         return;
     }
 
-    m_sync.m_frameNumber = (m_sync.m_frameNumber + 1) % m_sync.m_maxFramesInFlight;
+    m_frameIndex = (m_frameIndex + 1) % m_maxFrameNumber;
 }
 
 void GraphicsEngine::RecreateSwapchain()
@@ -162,12 +156,7 @@ void GraphicsEngine::RecreateSwapchain()
     m_swapchain.CreateSwapchain(m_window);
     m_swapchain.CreateFrameBuffer();
 
-    for (auto& frame : swapchainDetails.frames) {
-        frame.inFlight = m_sync.MakeFence();
-        frame.imageAvailable = m_sync.MakeSemaphore();
-        frame.renderFinished = m_sync.MakeSemaphore();
-        frame.CreateResource();
-    }
+    m_swapchain.PrepareFrames();
 
     m_command.CreateCommandPool();
     for (auto& frame : swapchainDetails.frames) {

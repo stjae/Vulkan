@@ -116,10 +116,10 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     bindings.counts.push_back(1);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
-    descriptorSetLayout = CreateDescriptorSetLayout(bindings);
+    m_descriptor.CreateSetLayout(bindings);
     vk::PipelineLayoutCreateInfo layoutInfo;
     layoutInfo.setLayoutCount = 1;
-    layoutInfo.pSetLayouts = &descriptorSetLayout;
+    layoutInfo.pSetLayouts = &m_descriptor.m_setLayout;
 
     layoutInfo.pushConstantRangeCount = 1;
     vk::PushConstantRange pushConstantInfo;
@@ -161,11 +161,23 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     return device.createRenderPass(renderPassInfo);
 }
 
+void GraphicsPipeline::CreateDescriptorPool()
+{
+    DescriptorSetLayoutData bindings;
+    bindings.count = 1;
+    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+    m_descriptor.CreatePool(static_cast<uint32_t>(swapchainDetails.frames.size()), bindings);
+}
+
+void GraphicsPipeline::AllocateDescriptorSet(vk::DescriptorSet& descriptorSet)
+{
+    descriptorSet = m_descriptor.AllocateSet(m_descriptor.m_pool, m_descriptor.m_setLayout);
+}
+
 GraphicsPipeline::~GraphicsPipeline()
 {
-    device.destroyDescriptorSetLayout(descriptorSetLayout);
-
     device.destroyPipeline(graphicsPipeline);
     device.destroyPipelineLayout(pipelineLayout);
     device.destroyRenderPass(renderPass);
+    device.destroyDescriptorPool(m_descriptor.m_pool);
 }

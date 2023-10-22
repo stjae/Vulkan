@@ -1,15 +1,14 @@
 #ifndef _ENGINE_H_
 #define _ENGINE_H_
 
+#include "API/commands.h"
+#include "API/descriptor.h"
 #include "API/device.h"
 #include "API/instance.h"
 #include "API/logger.h"
+#include "API/pipeline.h"
 #include "API/swapchain.h"
 #include "API/window.h"
-#include "API/descriptor.h"
-#include "API/pipeline.h"
-#include "API/commands.h"
-#include "API/sync.h"
 #include "scene.h"
 
 class GraphicsEngine
@@ -26,13 +25,16 @@ private:
     GLFWwindow* m_window;
     int m_width;
     int m_height;
+
     Instance m_instance;
     Logger m_logger;
     Device m_device;
     Swapchain m_swapchain;
     GraphicsPipeline m_pipeline;
     Command m_command;
-    Sync m_sync;
+
+    int m_frameIndex = 0;
+    int m_maxFrameNumber;
 };
 
 #endif

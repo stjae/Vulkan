@@ -16,8 +16,12 @@ public:
     vk::PipelineLayout CreatePipelineLayout();
     vk::RenderPass CreateRenderPass();
 
+    void CreateDescriptorPool();
+    void AllocateDescriptorSet(vk::DescriptorSet& descriptorSet);
+
 private:
     Shader m_shader;
+    Descriptor m_descriptor;
 };
 
 inline vk::Pipeline graphicsPipeline;

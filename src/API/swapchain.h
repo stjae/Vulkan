@@ -4,8 +4,9 @@
 #include "../common.h"
 #include "device.h"
 #include "instance.h"
-#include "pipeline.h"
 #include "memory.h"
+#include "pipeline.h"
+#include "sync.h"
 
 class Swapchain
 {
@@ -17,6 +18,7 @@ public:
     vk::PresentModeKHR ChoosePresentMode();
     vk::Extent2D ChooseExtent(GLFWwindow* window);
     void CreateFrameBuffer();
+    void PrepareFrames();
     void DestroySwapchain();
 };
 
