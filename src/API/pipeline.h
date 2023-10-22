@@ -19,4 +19,8 @@ private:
     Shader m_shader;
 };
 
+inline vk::Pipeline graphicsPipeline;
+inline vk::PipelineLayout pipelineLayout;
+inline vk::RenderPass renderPass;
+
 #endif

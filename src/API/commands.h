@@ -2,8 +2,8 @@
 #define _COMMANDS_H_
 
 #include "../common.h"
-#include "config.h"
 #include "device.h"
+#include "pipeline.h"
 #include "../structs.h"
 #include "../scene.h"
 

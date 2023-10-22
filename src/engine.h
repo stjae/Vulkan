@@ -7,7 +7,6 @@
 #include "API/swapchain.h"
 #include "API/window.h"
 #include "API/pipeline.h"
-#include "API/framebuffer.h"
 #include "API/commands.h"
 #include "API/sync.h"
 #include "scene.h"
@@ -30,7 +29,6 @@ private:
     Device m_device;
     Swapchain m_swapchain;
     GraphicsPipeline m_pipeline;
-    Framebuffer m_framebuffer;
     Command m_command;
     Sync m_sync;
 };

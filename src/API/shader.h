@@ -2,7 +2,6 @@
 #define _SHADER_H_
 
 #include "../common.h"
-#include "config.h"
 #include "device.h"
 
 class Shader

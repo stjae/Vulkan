@@ -2,7 +2,7 @@
 #define _MEMORY_H_
 
 #include "../common.h"
-#include "config.h"
+#include "device.h"
 
 struct BufferInput {
 

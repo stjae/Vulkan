@@ -13,10 +13,9 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window)
     m_device.CreateDevice();
 
     m_swapchain.CreateSwapchain(window);
-
     m_pipeline.CreatePipeline();
+    m_swapchain.CreateFrameBuffer();
 
-    m_framebuffer.CreateFramebuffer();
     m_command.CreateCommandPool();
     for (auto& frame : swapchainDetails.frames) {
         m_command.CreateCommandBuffer(frame.commandBuffer);
@@ -131,7 +130,7 @@ void GraphicsEngine::RecreateSwapchain()
     device.destroyCommandPool(m_command.m_commandPool);
 
     m_swapchain.CreateSwapchain(m_window);
-    m_framebuffer.CreateFramebuffer();
+    m_swapchain.CreateFrameBuffer();
 
     for (auto& frame : swapchainDetails.frames) {
         frame.inFlight = m_sync.MakeFence();
