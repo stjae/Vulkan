@@ -7,11 +7,15 @@
 class Shader
 {
 public:
+    Shader(const vk::Device& vkDevice) : vkDevice(vkDevice) {}
     ~Shader();
     vk::ShaderModule CreateModule(std::string filepath);
 
-    vk::ShaderModule m_vertexShaderModule;
-    vk::ShaderModule m_fragmentShaderModule;
+    vk::ShaderModule vertexShaderModule;
+    vk::ShaderModule fragmentShaderModule;
+
+private:
+    const vk::Device& vkDevice;
 };
 
 #endif

@@ -4,19 +4,19 @@
 #include "../common.h"
 #include "device.h"
 
-inline vk::Semaphore MakeSemaphore()
+inline vk::Semaphore MakeSemaphore(vk::Device vkDevice)
 {
     vk::SemaphoreCreateInfo semaphoreInfo;
 
-    return device.createSemaphore(semaphoreInfo);
+    return vkDevice.createSemaphore(semaphoreInfo);
 }
 
-inline vk::Fence MakeFence()
+inline vk::Fence MakeFence(vk::Device vkDevice)
 {
     vk::FenceCreateInfo fenceInfo;
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-    return device.createFence(fenceInfo);
+    return vkDevice.createFence(fenceInfo);
 }
 
 #endif

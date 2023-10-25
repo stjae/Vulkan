@@ -14,27 +14,25 @@
 class GraphicsEngine
 {
 public:
-    GraphicsEngine(int width, int height, GLFWwindow* window);
+    GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene);
     void UpdateFrame(uint32_t imageIndex);
-    void Prepare(Scene* scene);
-    void Render(Scene* scene);
+    void Prepare(std::unique_ptr<Scene>& scene);
+    void Render(std::unique_ptr<Scene>& scene);
     void RecreateSwapchain();
     ~GraphicsEngine();
 
 private:
-    GLFWwindow* m_window;
-    int m_width;
-    int m_height;
+    GLFWwindow* window;
+    int width;
+    int height;
 
-    Instance m_instance;
-    Logger m_logger;
-    Device m_device;
-    Swapchain m_swapchain;
-    GraphicsPipeline m_pipeline;
-    Command m_command;
+    Device device;
+    Swapchain swapchain;
+    GraphicsPipeline pipeline;
+    Command command;
 
-    int m_frameIndex = 0;
-    int m_maxFrameNumber;
+    int frameIndex = 0;
+    int maxFrameNumber;
 };
 
 #endif

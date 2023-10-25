@@ -9,15 +9,14 @@ class Application
 {
 public:
     Application(const int width, const int height, const char* wName);
-    ~Application();
 
     void Run();
     void GetFramerate();
 
 private:
-    Window m_window;
-    GraphicsEngine* m_engine;
-    Scene* m_scene;
+    Window window;
+    std::unique_ptr<GraphicsEngine> engine;
+    std::unique_ptr<Scene> scene;
 };
 
 #endif

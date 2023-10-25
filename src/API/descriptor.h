@@ -16,13 +16,17 @@ struct DescriptorSetLayoutData {
 class Descriptor
 {
 public:
+    Descriptor(const vk::Device& vkDevice) : vkDevice(vkDevice) {}
     void CreateSetLayout(const DescriptorSetLayoutData& bindings);
     void CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings);
     vk::DescriptorSet AllocateSet(vk::DescriptorPool descriptorPool, vk::DescriptorSetLayout layout);
     ~Descriptor();
 
-    vk::DescriptorSetLayout m_setLayout;
-    vk::DescriptorPool m_pool;
+    vk::DescriptorSetLayout setLayout;
+    vk::DescriptorPool pool;
+
+private:
+    const vk::Device& vkDevice;
 };
 
 #endif

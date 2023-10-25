@@ -1,10 +1,10 @@
 #include "swapchain.h"
 
-void Swapchain::CreateSwapchain(GLFWwindow* window)
+void Swapchain::CreateSwapchain(GLFWwindow* window, Device& device)
 {
-    QuerySwapchainSupportDetails();
+    QueryswapchainSupportDetails(device);
 
-    auto& capabilities = swapchainSupportDetails.capabilities;
+    auto& capabilities = supportDetail.capabilities;
 
     auto surfaceFormat = ChooseSurfaceFormat();
     auto presentMode = ChoosePresentMode();
@@ -12,10 +12,10 @@ void Swapchain::CreateSwapchain(GLFWwindow* window)
 
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR createInfo({}, surface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace, extent, 1, vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR createInfo({}, vkSurface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace, extent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value() };
-    if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.presentFamily.value()) {
+    uint32_t indices[] = { device.queueFamilyIndices.graphicsFamily.value(), device.queueFamilyIndices.presentFamily.value() };
+    if (device.queueFamilyIndices.graphicsFamily.value() != device.queueFamilyIndices.presentFamily.value()) {
         createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = indices;
@@ -27,11 +27,11 @@ void Swapchain::CreateSwapchain(GLFWwindow* window)
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = nullptr;
 
-    swapchainDetails.swapchain = device.createSwapchainKHR(createInfo);
+    detail.vkSwapchain = device.vkDevice.createSwapchainKHR(createInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
-    std::vector<vk::Image> images = device.getSwapchainImagesKHR(swapchainDetails.swapchain);
-    swapchainDetails.frames.resize(images.size());
+    std::vector<vk::Image> images = device.vkDevice.getSwapchainImagesKHR(detail.vkSwapchain);
+    detail.frames.resize(images.size());
 
     for (size_t i = 0; i < images.size(); ++i) {
 
@@ -44,25 +44,25 @@ void Swapchain::CreateSwapchain(GLFWwindow* window)
         createInfo.subresourceRange = range;
         createInfo.format = surfaceFormat.format;
 
-        swapchainDetails.frames[i].image = images[i];
-        swapchainDetails.frames[i].imageView = device.createImageView(createInfo);
+        detail.frames[i].image = images[i];
+        detail.frames[i].imageView = device.vkDevice.createImageView(createInfo);
     }
-    swapchainDetails.imageFormat = surfaceFormat.format;
-    swapchainDetails.extent = extent;
+    detail.imageFormat = surfaceFormat.format;
+    detail.extent = extent;
 }
 
-void Swapchain::QuerySwapchainSupportDetails()
+void Swapchain::QueryswapchainSupportDetails(Device& device)
 {
-    swapchainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-    swapchainSupportDetails.formats = physicalDevice.getSurfaceFormatsKHR(surface);
-    swapchainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+    supportDetail.capabilities = device.vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
+    supportDetail.formats = device.vkPhysicalDevice.getSurfaceFormatsKHR(vkSurface);
+    supportDetail.presentModes = device.vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
 
     Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
-    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", swapchainSupportDetails.capabilities.currentExtent.width);
-    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", swapchainSupportDetails.capabilities.currentExtent.height);
+    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", supportDetail.capabilities.currentExtent.width);
+    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", supportDetail.capabilities.currentExtent.height);
 
-    for (auto& mode : swapchainSupportDetails.presentModes) {
+    for (auto& mode : supportDetail.presentModes) {
         Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
@@ -71,7 +71,7 @@ vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
 {
     Log(debug, fmt::terminal_color::black, "setting swapchain details..");
 
-    for (auto& format : swapchainSupportDetails.formats) {
+    for (auto& format : supportDetail.formats) {
         if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
@@ -79,16 +79,16 @@ vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
         }
     }
 
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(swapchainSupportDetails.formats[0].format));
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(swapchainSupportDetails.formats[0].colorSpace));
-    return swapchainSupportDetails.formats[0];
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportDetail.formats[0].format));
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportDetail.formats[0].colorSpace));
+    return supportDetail.formats[0];
 }
 
 vk::PresentModeKHR Swapchain::ChoosePresentMode()
 {
     vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
-    for (auto& presentMode : swapchainSupportDetails.presentModes) {
+    for (auto& presentMode : supportDetail.presentModes) {
         if (presentMode == vk::PresentModeKHR::eMailbox) {
             mode = vk::PresentModeKHR::eMailbox;
         }
@@ -100,7 +100,7 @@ vk::PresentModeKHR Swapchain::ChoosePresentMode()
 
 vk::Extent2D Swapchain::ChooseExtent(GLFWwindow* window)
 {
-    auto& capabilities = swapchainSupportDetails.capabilities;
+    auto& capabilities = supportDetail.capabilities;
 
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
@@ -132,49 +132,45 @@ vk::Extent2D Swapchain::ChooseExtent(GLFWwindow* window)
 
 void Swapchain::CreateFrameBuffer()
 {
-    auto& frames = swapchainDetails.frames;
+    for (int i = 0; i < detail.frames.size(); ++i) {
 
-    for (int i = 0; i < frames.size(); ++i) {
-
-        std::vector<vk::ImageView> attachments = { frames[i].imageView };
+        std::vector<vk::ImageView> attachments = { detail.frames[i].imageView };
 
         vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.renderPass = vkRenderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapchainDetails.extent.width;
-        framebufferInfo.height = swapchainDetails.extent.height;
+        framebufferInfo.width = detail.extent.width;
+        framebufferInfo.height = detail.extent.height;
         framebufferInfo.layers = 1;
 
-        frames[i].framebuffer = device.createFramebuffer(framebufferInfo);
+        detail.frames[i].framebuffer = vkDevice.createFramebuffer(framebufferInfo);
         Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
 
 void Swapchain::PrepareFrames()
 {
-    for (auto& frame : swapchainDetails.frames) {
-        frame.inFlight = MakeFence();
-        frame.imageAvailable = MakeSemaphore();
-        frame.renderFinished = MakeSemaphore();
+    for (auto& frame : detail.frames) {
+        frame.inFlight = MakeFence(vkDevice);
+        frame.imageAvailable = MakeSemaphore(vkDevice);
+        frame.renderFinished = MakeSemaphore(vkDevice);
 
-        frame.CreateResource();
+        frame.CreateResource(vkPhysicalDevice, vkDevice);
     }
 }
 
 void Swapchain::DestroySwapchain()
 {
-    for (auto& frame : swapchainDetails.frames) {
-        device.destroyImageView(frame.imageView);
-        device.destroyFramebuffer(frame.framebuffer);
-        device.destroyFence(frame.inFlight);
-        device.destroySemaphore(frame.imageAvailable);
-        device.destroySemaphore(frame.renderFinished);
-        device.freeMemory(frame.cameraDataBuffer.memory);
-        device.destroyBuffer(frame.cameraDataBuffer.buffer);
+    for (auto& frame : detail.frames) {
+        vkDevice.destroyImageView(frame.imageView);
+        vkDevice.destroyFramebuffer(frame.framebuffer);
+        vkDevice.destroyFence(frame.inFlight);
+        vkDevice.destroySemaphore(frame.imageAvailable);
+        vkDevice.destroySemaphore(frame.renderFinished);
     }
 
-    device.destroySwapchainKHR(swapchainDetails.swapchain);
+    vkDevice.destroySwapchainKHR(detail.vkSwapchain);
 }
 
 Swapchain::~Swapchain()

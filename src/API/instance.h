@@ -8,18 +8,19 @@
 class Instance
 {
 public:
-    ~Instance();
-
-    void CreateInstance();
+    Instance();
     void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
     void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
     void CreateSurface(GLFWwindow* window);
-};
+    ~Instance();
 
-inline vk::Instance instance;
-inline vk::DispatchLoaderDynamic dldi;
-inline std::vector<const char*> instanceExtensions;
-inline std::vector<const char*> instanceLayers;
-inline VkSurfaceKHR surface;
+    Logger logger;
+
+    vk::Instance vkInstance;
+    vk::DispatchLoaderDynamic dldi;
+    std::vector<const char*> instanceExtensions;
+    std::vector<const char*> instanceLayers;
+    VkSurfaceKHR vkSurface;
+};
 
 #endif

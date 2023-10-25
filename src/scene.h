@@ -8,11 +8,10 @@ class Scene
 {
 public:
     Scene();
-    void CreateVertexBuffer(std::shared_ptr<Mesh> mesh);
-    void CreateIndexBuffer(std::shared_ptr<Mesh> mesh);
+    void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
 
-    std::vector<std::shared_ptr<Mesh>> m_meshes;
-    std::vector<glm::vec3> m_positions;
+    std::vector<std::unique_ptr<Mesh>> meshes;
+    std::vector<glm::vec3> positions;
 };
 
 #endif

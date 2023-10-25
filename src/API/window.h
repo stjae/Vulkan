@@ -9,10 +9,10 @@ public:
     Window(const int width, const int height, const char* wName);
     ~Window();
 
-    const int m_width;
-    const int m_height;
+    const int width;
+    const int height;
 
-    GLFWwindow* m_window;
+    GLFWwindow* window;
 };
 
 #endif

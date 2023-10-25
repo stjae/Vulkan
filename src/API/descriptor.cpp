@@ -13,7 +13,7 @@ void Descriptor::CreateSetLayout(const DescriptorSetLayoutData& bindings)
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.count, layoutBindings.data());
 
-    m_setLayout = device.createDescriptorSetLayout(layoutInfo);
+    setLayout = vkDevice.createDescriptorSetLayout(layoutInfo);
 }
 
 void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings)
@@ -28,17 +28,17 @@ void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindin
 
     vk::DescriptorPoolCreateInfo poolInfo({}, size, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
 
-    m_pool = device.createDescriptorPool(poolInfo);
+    pool = vkDevice.createDescriptorPool(poolInfo);
 }
 
 vk::DescriptorSet Descriptor::AllocateSet(vk::DescriptorPool descriptorPool, vk::DescriptorSetLayout layout)
 {
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, 1, &layout);
 
-    return device.allocateDescriptorSets(allocateInfo)[0];
+    return vkDevice.allocateDescriptorSets(allocateInfo)[0];
 }
 
 Descriptor::~Descriptor()
 {
-    device.destroyDescriptorSetLayout(m_setLayout);
+    vkDevice.destroyDescriptorSetLayout(setLayout);
 }

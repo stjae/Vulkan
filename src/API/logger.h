@@ -2,15 +2,16 @@
 #define _LOGGER_H_
 
 #include "../common.h"
-#include "instance.h"
 
 struct Logger {
-    ~Logger();
-
+    Logger(const vk::Instance& vkInstance, const vk::DispatchLoaderDynamic& dldi) : vkInstance(vkInstance), dldi(dldi) {}
     void CreateDebugMessenger();
     static void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
 
-    static vk::DebugUtilsMessengerEXT debugMessenger;
+    const vk::Instance& vkInstance;
+    const vk::DispatchLoaderDynamic& dldi;
+
+    vk::DebugUtilsMessengerEXT debugMessenger;
 };
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

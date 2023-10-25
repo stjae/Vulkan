@@ -3,11 +3,9 @@
 
 int main()
 {
-    Application* app = new Application(800, 600, "Vulkan");
+    std::unique_ptr<Application> app = std::make_unique<Application>(800, 600, "Vulkan");
 
     app->Run();
-
-    delete app;
 
     return 0;
 }

@@ -2,49 +2,23 @@
 #define _MESH_H_
 
 #include "common.h"
-#include "API/memory.h"
+#include "API/buffer.h"
 
 class Mesh
 {
 public:
     Mesh();
-    ~Mesh();
+    vk::VertexInputBindingDescription GetPosColorBindingDesc();
+    std::array<vk::VertexInputAttributeDescription, 2> GetPosColorAttributeDescs();
+    void CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
+    void CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
 
-    std::vector<float> m_vertices;
-    std::vector<uint16_t> m_indices;
-    Buffer m_vertexStagingBuffer;
-    Buffer m_vertexBuffer;
-    Buffer m_indexStagingBuffer;
-    Buffer m_indexBuffer;
+    std::vector<float> vertices;
+    std::vector<uint16_t> indices;
+    std::unique_ptr<Buffer> vertexStagingBuffer;
+    std::unique_ptr<Buffer> vertexBuffer;
+    std::unique_ptr<Buffer> indexStagingBuffer;
+    std::unique_ptr<Buffer> indexBuffer;
 };
-
-inline vk::VertexInputBindingDescription GetPosColorBindingDesc()
-{
-    vk::VertexInputBindingDescription bindingDesc;
-    bindingDesc.setBinding(0);
-    bindingDesc.setStride(3 * sizeof(float) + 3 * sizeof(float));
-    bindingDesc.setInputRate(vk::VertexInputRate::eVertex);
-
-    return bindingDesc;
-}
-
-inline std::array<vk::VertexInputAttributeDescription, 2> GetPosColorAttributeDescs()
-{
-    std::array<vk::VertexInputAttributeDescription, 2> attributes;
-
-    // Pos
-    attributes[0].setBinding(0);
-    attributes[0].setLocation(0);
-    attributes[0].setFormat(vk::Format::eR32G32B32Sfloat);
-    attributes[0].setOffset(0);
-
-    // Color
-    attributes[1].setBinding(0);
-    attributes[1].setLocation(1);
-    attributes[1].setFormat(vk::Format::eR32G32B32Sfloat);
-    attributes[1].setOffset(3 * sizeof(float));
-
-    return attributes;
-}
 
 #endif

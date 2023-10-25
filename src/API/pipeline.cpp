@@ -10,8 +10,8 @@ void GraphicsPipeline::CreatePipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
 
     // vertex input
-    vk::VertexInputBindingDescription bindingDesc = GetPosColorBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = GetPosColorAttributeDescs();
+    vk::VertexInputBindingDescription bindingDesc = scene->meshes[0]->GetPosColorBindingDesc();
+    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = scene->meshes[0]->GetPosColorAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
@@ -25,11 +25,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
 
     // vertex shader
-    m_shader.m_vertexShaderModule = m_shader.CreateModule(vertexShaderFilepath);
+    shader.vertexShaderModule = shader.CreateModule(vertexShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created vertex shader module");
     vk::PipelineShaderStageCreateInfo vertexShaderInfo;
     vertexShaderInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertexShaderInfo.module = m_shader.m_vertexShaderModule;
+    vertexShaderInfo.module = shader.vertexShaderModule;
     vertexShaderInfo.pName = "main";
     shaderStageInfos.push_back(vertexShaderInfo);
 
@@ -37,14 +37,14 @@ void GraphicsPipeline::CreatePipeline()
     vk::Viewport viewport;
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchainDetails.extent.width);
-    viewport.height = static_cast<float>(swapchainDetails.extent.height);
+    viewport.width = static_cast<float>(swapchainDetail.extent.width);
+    viewport.height = static_cast<float>(swapchainDetail.extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
-    scissor.extent = swapchainDetails.extent;
+    scissor.extent = swapchainDetail.extent;
 
     vk::PipelineViewportStateCreateInfo viewportState;
     viewportState.viewportCount = 1;
@@ -65,11 +65,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pRasterizationState = &rasterizerInfo;
 
     // fragment shader
-    m_shader.m_fragmentShaderModule = m_shader.CreateModule(fragmentShaderFilepath);
+    shader.fragmentShaderModule = shader.CreateModule(fragmentShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created fragment shader module");
     vk::PipelineShaderStageCreateInfo fragmentShaderInfo;
     fragmentShaderInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragmentShaderInfo.module = m_shader.m_fragmentShaderModule;
+    fragmentShaderInfo.module = shader.fragmentShaderModule;
     fragmentShaderInfo.pName = "main";
     shaderStageInfos.push_back(fragmentShaderInfo);
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStageInfos.size());
@@ -97,13 +97,13 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pColorBlendState = &colorBlendStateInfo;
 
     // pipeline layout
-    pipelineLayout = CreatePipelineLayout();
-    pipelineInfo.layout = pipelineLayout;
+    vkPipelineLayout = CreatePipelineLayout();
+    pipelineInfo.layout = vkPipelineLayout;
 
-    renderPass = CreateRenderPass();
-    pipelineInfo.renderPass = renderPass;
+    vkRenderPass = CreateRenderPass();
+    pipelineInfo.renderPass = vkRenderPass;
 
-    graphicsPipeline = (device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    vkPipeline = (vkDevice.createGraphicsPipeline(nullptr, pipelineInfo)).value;
     Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
@@ -116,10 +116,10 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     bindings.counts.push_back(1);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
-    m_descriptor.CreateSetLayout(bindings);
+    descriptor.CreateSetLayout(bindings);
     vk::PipelineLayoutCreateInfo layoutInfo;
     layoutInfo.setLayoutCount = 1;
-    layoutInfo.pSetLayouts = &m_descriptor.m_setLayout;
+    layoutInfo.pSetLayouts = &descriptor.setLayout;
 
     layoutInfo.pushConstantRangeCount = 1;
     vk::PushConstantRange pushConstantInfo;
@@ -128,13 +128,13 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
     layoutInfo.pPushConstantRanges = &pushConstantInfo;
 
-    return device.createPipelineLayout(layoutInfo);
+    return vkDevice.createPipelineLayout(layoutInfo);
 }
 
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = swapchainDetails.imageFormat;
+    colorAttachmentDesc.format = swapchainDetail.imageFormat;
     colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -158,7 +158,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    return device.createRenderPass(renderPassInfo);
+    return vkDevice.createRenderPass(renderPassInfo);
 }
 
 void GraphicsPipeline::CreateDescriptorPool()
@@ -166,18 +166,19 @@ void GraphicsPipeline::CreateDescriptorPool()
     DescriptorSetLayoutData bindings;
     bindings.count = 1;
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    m_descriptor.CreatePool(static_cast<uint32_t>(swapchainDetails.frames.size()), bindings);
+
+    descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
 }
 
 void GraphicsPipeline::AllocateDescriptorSet(vk::DescriptorSet& descriptorSet)
 {
-    descriptorSet = m_descriptor.AllocateSet(m_descriptor.m_pool, m_descriptor.m_setLayout);
+    descriptorSet = descriptor.AllocateSet(descriptor.pool, descriptor.setLayout);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    device.destroyPipeline(graphicsPipeline);
-    device.destroyPipelineLayout(pipelineLayout);
-    device.destroyRenderPass(renderPass);
-    device.destroyDescriptorPool(m_descriptor.m_pool);
+    vkDevice.destroyPipeline(vkPipeline);
+    vkDevice.destroyPipelineLayout(vkPipelineLayout);
+    vkDevice.destroyRenderPass(vkRenderPass);
+    vkDevice.destroyDescriptorPool(descriptor.pool);
 }

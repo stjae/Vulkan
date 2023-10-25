@@ -16,7 +16,7 @@ void Logger::CreateDebugMessenger()
 
     vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo({}, severityFlags, messageTypeFlags, DebugCallback);
 
-    debugMessenger = instance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi);
+    debugMessenger = vkInstance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi);
 }
 
 void Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
@@ -32,14 +32,6 @@ void Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
     createInfo.pfnUserCallback = DebugCallback;
 }
 
-Logger::~Logger()
-{
-    if (debug) {
-        instance.destroyDebugUtilsMessengerEXT(debugMessenger, nullptr, dldi);
-    }
-}
-
-// callback function
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                              VkDebugUtilsMessageTypeFlagsEXT messageType,
                                              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -61,5 +53,3 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
 
     return VK_FALSE;
 }
-
-vk::DebugUtilsMessengerEXT Logger::debugMessenger;
