@@ -7,6 +7,9 @@ if (APPLE)
 endif()
 get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
 
+find_package(Vulkan REQUIRED)
+include_directories(${Vulkan_INCLUDE_DIR})
+
 project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME}
 src/main.cpp
@@ -16,6 +19,7 @@ src/engine.h            src/engine.cpp
 
 src/structs.h
 src/scene.h             src/scene.cpp
+src/meshData.h          src/meshData.cpp
 src/mesh.h              src/mesh.cpp
 
 # API
@@ -34,7 +38,6 @@ src/API/buffer.h        src/API/buffer.cpp
 )
 
 include(Dependency.cmake)
-find_package(Vulkan REQUIRED)
 include(Shader.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})

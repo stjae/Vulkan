@@ -33,24 +33,15 @@ void GraphicsPipeline::CreatePipeline()
     vertexShaderInfo.pName = "main";
     shaderStageInfos.push_back(vertexShaderInfo);
 
-    // viewport and scissor
-    vk::Viewport viewport;
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchainDetail.extent.width);
-    viewport.height = static_cast<float>(swapchainDetail.extent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    vk::Rect2D scissor;
-    scissor.offset = vk::Offset2D(0, 0);
-    scissor.extent = swapchainDetail.extent;
+    std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+    vk::PipelineDynamicStateCreateInfo dynamicStateInfo({}, static_cast<uint32_t>(dynamicStates.size()), dynamicStates.data(), nullptr);
+    pipelineInfo.pDynamicState = &dynamicStateInfo;
 
     vk::PipelineViewportStateCreateInfo viewportState;
     viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
+    // viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
+    // viewportState.pScissors = &scissor;
     pipelineInfo.pViewportState = &viewportState;
 
     // rasterizer

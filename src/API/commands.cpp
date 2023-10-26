@@ -37,10 +37,23 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     renderPassInfo.pClearValues = &clearColor;
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vkPipelineLayout, 0, pipeline.swapchainDetail.frames[imageIndex].descriptorSet, nullptr);
-
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vkPipeline);
+
+    vk::Viewport viewport;
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(pipeline.swapchainDetail.extent.width);
+    viewport.height = static_cast<float>(pipeline.swapchainDetail.extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    vk::Rect2D scissor;
+    scissor.offset = vk::Offset2D(0, 0);
+    scissor.extent = pipeline.swapchainDetail.extent;
+
+    commandBuffer.setViewport(0, viewport);
+    commandBuffer.setScissor(0, scissor);
 
     for (auto& mesh : scene->meshes) {
 
@@ -51,7 +64,6 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
         commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint16);
 
         for (glm::vec3 pos : scene->positions) {
-            // glm::mat4 model = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
             glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
             ObjectData objectData;
             objectData.model = model;

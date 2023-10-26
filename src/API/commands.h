@@ -1,7 +1,6 @@
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_
 
-#include "../common.h"
 #include "device.h"
 #include "pipeline.h"
 #include "../structs.h"
