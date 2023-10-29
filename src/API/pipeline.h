@@ -18,7 +18,6 @@ public:
     vk::PipelineLayout CreatePipelineLayout();
     vk::RenderPass CreateRenderPass();
     void CreateDescriptorPool();
-    void AllocateDescriptorSet(vk::DescriptorSet& descriptorSet);
     ~GraphicsPipeline();
 
     vk::Pipeline vkPipeline;
@@ -26,8 +25,6 @@ public:
     vk::RenderPass vkRenderPass;
     std::unique_ptr<Scene>& scene;
     const SwapchainDetail& swapchainDetail;
-
-private:
     const vk::Device& vkDevice;
     Shader shader;
     Descriptor descriptor;

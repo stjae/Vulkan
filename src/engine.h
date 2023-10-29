@@ -17,11 +17,10 @@ public:
     GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene);
     void UpdateFrame(uint32_t imageIndex);
     void Prepare(std::unique_ptr<Scene>& scene);
-    void Render(std::unique_ptr<Scene>& scene);
+    void Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData);
     void RecreateSwapchain();
     ~GraphicsEngine();
 
-private:
     GLFWwindow* window;
     int width;
     int height;

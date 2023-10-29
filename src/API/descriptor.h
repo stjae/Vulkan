@@ -19,9 +19,10 @@ public:
     Descriptor(const vk::Device& vkDevice) : vkDevice(vkDevice) {}
     void CreateSetLayout(const DescriptorSetLayoutData& bindings);
     void CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings);
-    vk::DescriptorSet AllocateSet(vk::DescriptorPool descriptorPool, vk::DescriptorSetLayout layout);
+    void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~Descriptor();
 
+    // vk::DescriptorSet descriptorSet;
     vk::DescriptorSetLayout setLayout;
     vk::DescriptorPool pool;
 

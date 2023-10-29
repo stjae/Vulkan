@@ -13,7 +13,7 @@ public:
     ~Command();
     void CreateCommandPool();
     void CreateCommandBuffer(vk::CommandBuffer& commandBuffer);
-    void RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene);
+    void RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData);
     void RecordCopyCommands(vk::CommandBuffer commandBuffer, vk::Buffer srcBuffer, vk::Buffer dstBuffer, size_t size);
 
     vk::CommandPool commandPool;

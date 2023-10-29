@@ -20,12 +20,11 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
     maxFrameNumber = static_cast<int>(swapchain.detail.frames.size());
     frameIndex = 0;
 
-    pipeline.CreateDescriptorPool();
-
     swapchain.PrepareFrames();
 
+    pipeline.CreateDescriptorPool();
     for (auto& frame : swapchain.detail.frames) {
-        pipeline.AllocateDescriptorSet(frame.descriptorSet);
+        pipeline.descriptor.AllocateSet(frame.descriptorSets);
     }
 }
 
@@ -79,7 +78,7 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     device.vkGraphicsQueue.waitIdle();
 }
 
-void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
+void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
 {
     auto resultWaitFence = device.vkDevice.waitForFences(1, &swapchain.detail.frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
     auto resultResetFence = device.vkDevice.resetFences(1, &swapchain.detail.frames[frameIndex].inFlight);
@@ -100,7 +99,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
     vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
 
     commandBuffer.reset();
-    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene);
+    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene, imDrawData);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchain.detail.frames[frameIndex].imageAvailable };

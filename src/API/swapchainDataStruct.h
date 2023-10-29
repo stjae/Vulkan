@@ -35,7 +35,7 @@ struct SwapchainFrame {
     void* cameraDataMemoryLocation;
 
     vk::DescriptorBufferInfo uniformBufferDescriptorInfo;
-    vk::DescriptorSet descriptorSet;
+    std::vector<vk::DescriptorSet> descriptorSets;
 
     void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
     {
@@ -54,7 +54,7 @@ struct SwapchainFrame {
 
     void WriteDescriptorSet(vk::Device vkDevice)
     {
-        vk::WriteDescriptorSet writeInfo(descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformBufferDescriptorInfo);
+        vk::WriteDescriptorSet writeInfo(descriptorSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformBufferDescriptorInfo);
 
         vkDevice.updateDescriptorSets(writeInfo, nullptr);
     }

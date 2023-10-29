@@ -37,6 +37,8 @@ public:
     vk::Device vkDevice;
     vk::Queue vkGraphicsQueue;
     vk::Queue vkPresentQueue;
+
+    vk::DescriptorPool imGuiDescriptorPool;
 };
 
 #endif

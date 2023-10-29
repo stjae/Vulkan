@@ -108,18 +108,18 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
     descriptor.CreateSetLayout(bindings);
-    vk::PipelineLayoutCreateInfo layoutInfo;
-    layoutInfo.setLayoutCount = 1;
-    layoutInfo.pSetLayouts = &descriptor.setLayout;
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptor.setLayout;
 
-    layoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
     vk::PushConstantRange pushConstantInfo;
     pushConstantInfo.offset = 0;
     pushConstantInfo.size = sizeof(ObjectData);
     pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
-    layoutInfo.pPushConstantRanges = &pushConstantInfo;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantInfo;
 
-    return vkDevice.createPipelineLayout(layoutInfo);
+    return vkDevice.createPipelineLayout(pipelineLayoutInfo);
 }
 
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
@@ -159,11 +159,6 @@ void GraphicsPipeline::CreateDescriptorPool()
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 
     descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
-}
-
-void GraphicsPipeline::AllocateDescriptorSet(vk::DescriptorSet& descriptorSet)
-{
-    descriptorSet = descriptor.AllocateSet(descriptor.pool, descriptor.setLayout);
 }
 
 GraphicsPipeline::~GraphicsPipeline()

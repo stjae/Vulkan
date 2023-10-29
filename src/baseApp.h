@@ -10,6 +10,7 @@ class Application
 public:
     Application(const int width, const int height, const char* wName);
 
+    void SetupImGui();
     void Run();
     void GetFramerate();
 

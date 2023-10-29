@@ -6,14 +6,81 @@ Application::Application(const int width, const int height, const char* wName)
     scene = std::make_unique<Scene>();
     engine = std::make_unique<GraphicsEngine>(width, height, window.window, scene);
 
+    SetupImGui();
+
     engine->Prepare(scene);
+}
+
+void Application::SetupImGui()
+{
+    {
+        vk::DescriptorPoolSize poolSizes[] = {
+            { vk::DescriptorType::eCombinedImageSampler, 1 },
+        };
+
+        vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes)), poolSizes);
+
+        auto result = engine->device.vkDevice.createDescriptorPool(&poolInfo, nullptr, &engine->device.imGuiDescriptorPool);
+    }
+
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(engine->window, true);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = engine->device.instance.vkInstance;
+    init_info.PhysicalDevice = engine->device.vkPhysicalDevice;
+    init_info.Device = engine->device.vkDevice;
+    init_info.QueueFamily = engine->device.queueFamilyIndices.graphicsFamily.value();
+    init_info.Queue = engine->device.vkGraphicsQueue;
+    init_info.DescriptorPool = engine->device.imGuiDescriptorPool;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = engine->swapchain.supportDetail.capabilities.minImageCount;
+    init_info.ImageCount = engine->maxFrameNumber;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    ImGui_ImplVulkan_Init(&init_info, engine->pipeline.vkRenderPass);
+
+    {
+        vk::CommandBufferAllocateInfo allocateInfo(engine->command.commandPool, vk::CommandBufferLevel::ePrimary, 1);
+
+        vk::CommandBuffer commandBuffer;
+        auto allocateResult = engine->device.vkDevice.allocateCommandBuffers(&allocateInfo, &commandBuffer);
+
+        vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        commandBuffer.begin(beginInfo);
+
+        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+
+        vk::SubmitInfo submitInfo({}, {}, {}, 1, &commandBuffer, {}, {});
+        commandBuffer.end();
+        auto submitResult = engine->device.vkGraphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
+
+        engine->device.vkDevice.waitIdle();
+        engine->device.vkDevice.freeCommandBuffers(engine->command.commandPool, 1, &commandBuffer);
+
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+    }
 }
 
 void Application::Run()
 {
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
-        engine->Render(scene);
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Begin("Hello, world!");
+        ImGui::Text("This is some useful text.");
+        ImGui::End();
+        ImGui::Render();
+        ImDrawData* draw_data = ImGui::GetDrawData();
+
+        engine->Render(scene, draw_data);
         GetFramerate();
     }
 }

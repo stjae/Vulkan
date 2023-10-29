@@ -21,7 +21,7 @@ void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
-void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene)
+void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -37,7 +37,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     renderPassInfo.pClearValues = &clearColor;
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vkPipelineLayout, 0, pipeline.swapchainDetail.frames[imageIndex].descriptorSet, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vkPipelineLayout, 0, pipeline.swapchainDetail.frames[imageIndex].descriptorSets.size(), pipeline.swapchainDetail.frames[imageIndex].descriptorSets.data(), 0, 0);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vkPipeline);
 
     vk::Viewport viewport;
@@ -71,6 +71,8 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
             commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
         }
     }
+
+    ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
 
     commandBuffer.endRenderPass();
     commandBuffer.end();
