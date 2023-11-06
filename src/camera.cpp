@@ -21,6 +21,13 @@ void Camera::Update(Window& window)
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 
+    if (isInitial) {
+        prevMouseX = mouseX;
+        prevMouseY = mouseY;
+
+        isInitial = false;
+    }
+
     glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up);
     dir = rotateX * dir;
     glm::normalize(dir);

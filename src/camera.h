@@ -9,6 +9,7 @@ struct Camera {
     void Update(Window& window);
 
     bool isControllable = false;
+    bool isInitial = true;
 
     glm::vec3 pos = { 0.0f, 0.0f, 4.0f };
     glm::vec4 dir = { 0.0f, 0.0f, -1.0f, 0.0f };

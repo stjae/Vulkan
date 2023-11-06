@@ -11,6 +11,8 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
+
+        camera->isInitial = true;
     }
 }
 
@@ -99,7 +101,9 @@ void Application::Run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Hello");
-        ImGui::Checkbox("Camera Control", &camera.isControllable);
+        if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
+            camera.isInitial = true;
+        }
         ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
