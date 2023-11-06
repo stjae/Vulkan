@@ -12,6 +12,7 @@ const bool debug = true;
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
+#include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 

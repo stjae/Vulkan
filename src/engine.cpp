@@ -28,20 +28,17 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
     }
 }
 
-void GraphicsEngine::UpdateFrame(uint32_t imageIndex)
+void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera)
 {
-    glm::vec3 eye = { 4.0f, 4.0f, 4.0f };
-    glm::vec3 center = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
-    glm::mat4 view = glm::lookAt(eye, center, up);
+    uboData.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    uboData.view = glm::lookAt(camera.pos, camera.at, camera.up);
+    uboData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
+    uboData.proj[1][1] *= -1;
 
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 10.0f);
-    proj[1][1] *= -1;
-
-    swapchain.detail.frames[imageIndex].cameraData.view = view;
-    swapchain.detail.frames[imageIndex].cameraData.proj = proj;
-    swapchain.detail.frames[imageIndex].cameraData.viewProj = proj * view;
-    memcpy(swapchain.detail.frames[imageIndex].cameraDataMemoryLocation, &(swapchain.detail.frames[imageIndex].cameraData), sizeof(UBO));
+    swapchain.detail.frames[imageIndex].uboData.model = uboData.model;
+    swapchain.detail.frames[imageIndex].uboData.view = uboData.view;
+    swapchain.detail.frames[imageIndex].uboData.proj = uboData.proj;
+    memcpy(swapchain.detail.frames[imageIndex].uboDataMemoryLocation, &(swapchain.detail.frames[imageIndex].uboData), sizeof(UBO));
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
 }
@@ -78,7 +75,7 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     device.vkGraphicsQueue.waitIdle();
 }
 
-void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
+void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera)
 {
     auto resultWaitFence = device.vkDevice.waitForFences(1, &swapchain.detail.frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
     auto resultResetFence = device.vkDevice.resetFences(1, &swapchain.detail.frames[frameIndex].inFlight);
@@ -94,7 +91,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
 
     imageIndex = acquiredImage.value;
 
-    UpdateFrame(imageIndex);
+    UpdateFrame(imageIndex, camera);
 
     vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
 

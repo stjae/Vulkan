@@ -44,6 +44,10 @@ void Application::SetupImGui()
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, engine->pipeline.vkRenderPass);
 
+    ImFontConfig fontConfig;
+    fontConfig.SizePixels = 20.0f;
+    io.Fonts->AddFontDefault(&fontConfig);
+
     {
         vk::CommandBufferAllocateInfo allocateInfo(engine->command.commandPool, vk::CommandBufferLevel::ePrimary, 1);
 
@@ -74,13 +78,13 @@ void Application::Run()
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is some useful text.");
+        ImGui::Begin("Hello");
+        ImGui::Checkbox("Camera Control", &camera.isLocked);
         ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 
-        engine->Render(scene, draw_data);
+        engine->Render(scene, draw_data, camera);
         GetFramerate();
     }
 }
@@ -88,7 +92,7 @@ void Application::Run()
 void Application::GetFramerate()
 {
     static int frameCount;
-    static double currentTime, lastTime, delta;
+    static double currentTime, lastTime;
 
     currentTime = glfwGetTime();
     delta = currentTime - lastTime;

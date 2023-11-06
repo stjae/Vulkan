@@ -4,10 +4,13 @@
 #include "engine.h"
 #include "common.h"
 #include "scene.h"
+#include "camera.h"
 
 class Application
 {
 public:
+    inline static double delta;
+
     Application(const int width, const int height, const char* wName);
 
     void SetupImGui();
@@ -18,6 +21,8 @@ private:
     Window window;
     std::unique_ptr<GraphicsEngine> engine;
     std::unique_ptr<Scene> scene;
+
+    Camera camera;
 };
 
 #endif

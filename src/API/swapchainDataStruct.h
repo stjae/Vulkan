@@ -13,9 +13,9 @@ struct SwapchainSupportDetail {
 
 struct UBO {
 
+    glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
-    glm::mat4 viewProj;
 };
 
 struct SwapchainFrame {
@@ -30,9 +30,9 @@ struct SwapchainFrame {
     vk::Semaphore imageAvailable;
     vk::Semaphore renderFinished;
 
-    UBO cameraData;
-    std::shared_ptr<Buffer> cameraDataBuffer;
-    void* cameraDataMemoryLocation;
+    UBO uboData;
+    std::shared_ptr<Buffer> uboDataBuffer;
+    void* uboDataMemoryLocation;
 
     vk::DescriptorBufferInfo uniformBufferDescriptorInfo;
     std::vector<vk::DescriptorSet> descriptorSets;
@@ -43,11 +43,11 @@ struct SwapchainFrame {
         input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
         input.size = sizeof(UBO);
         input.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-        cameraDataBuffer = std::make_shared<Buffer>(vkPhysicalDevice, vkDevice, input);
+        uboDataBuffer = std::make_shared<Buffer>(vkPhysicalDevice, vkDevice, input);
 
-        cameraDataMemoryLocation = vkDevice.mapMemory(cameraDataBuffer->vkDeviceMemory, 0, sizeof(UBO));
+        uboDataMemoryLocation = vkDevice.mapMemory(uboDataBuffer->vkDeviceMemory, 0, sizeof(UBO));
 
-        uniformBufferDescriptorInfo.buffer = cameraDataBuffer->vkBuffer;
+        uniformBufferDescriptorInfo.buffer = uboDataBuffer->vkBuffer;
         uniformBufferDescriptorInfo.offset = 0;
         uniformBufferDescriptorInfo.range = sizeof(UBO);
     }

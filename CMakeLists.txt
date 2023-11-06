@@ -21,6 +21,7 @@ src/structs.h
 src/scene.h             src/scene.cpp
 src/meshData.h          src/meshData.cpp
 src/mesh.h              src/mesh.cpp
+src/camera.h
 
 # API
 src/API/window.h        src/API/window.cpp
