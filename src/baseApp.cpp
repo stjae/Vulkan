@@ -1,7 +1,21 @@
 #include "baseApp.h"
 
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        Camera* camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
+        camera->isControllable = !camera->isControllable;
+
+        if (camera->isControllable) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+    }
+}
+
 Application::Application(const int width, const int height, const char* wName)
-    : window(width, height, wName)
+    : window(width, height, wName), camera(window.window)
 {
     scene = std::make_unique<Scene>();
     engine = std::make_unique<GraphicsEngine>(width, height, window.window, scene);
@@ -9,6 +23,8 @@ Application::Application(const int width, const int height, const char* wName)
     SetupImGui();
 
     engine->Prepare(scene);
+
+    glfwSetKeyCallback(window.window, KeyCallback);
 }
 
 void Application::SetupImGui()
@@ -75,11 +91,15 @@ void Application::Run()
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
 
+        if (camera.isControllable) {
+            camera.Update(window);
+        }
+
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Hello");
-        ImGui::Checkbox("Camera Control", &camera.isLocked);
+        ImGui::Checkbox("Camera Control", &camera.isControllable);
         ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
