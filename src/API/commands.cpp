@@ -25,7 +25,23 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
+    {
+        vk::ImageMemoryBarrier barrier;
 
+        barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
+        barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
+        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.image = pipeline.swapchainDetail.frames[imageIndex].image;
+        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.levelCount = 1;
+
+        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      vk::DependencyFlagBits::eByRegion,
+                                      0, nullptr, 0, nullptr, 1, &barrier);
+    }
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = pipeline.vkRenderPass;
     renderPassInfo.framebuffer = pipeline.swapchainDetail.frames[imageIndex].framebuffer;
@@ -75,6 +91,23 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
 
     commandBuffer.endRenderPass();
+    {
+        vk::ImageMemoryBarrier barrier;
+
+        barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+        barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.image = pipeline.swapchainDetail.frames[imageIndex].image;
+        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.levelCount = 1;
+
+        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe,
+                                      vk::DependencyFlagBits::eByRegion,
+                                      0, nullptr, 0, nullptr, 1, &barrier);
+    }
     commandBuffer.end();
 }
 

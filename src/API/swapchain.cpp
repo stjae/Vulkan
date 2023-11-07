@@ -27,10 +27,10 @@ void Swapchain::CreateSwapchain(GLFWwindow* window, Device& device)
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = nullptr;
 
-    detail.vkSwapchain = device.vkDevice.createSwapchainKHR(createInfo);
+    vkSwapchain = device.vkDevice.createSwapchainKHR(createInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
-    std::vector<vk::Image> images = device.vkDevice.getSwapchainImagesKHR(detail.vkSwapchain);
+    std::vector<vk::Image> images = device.vkDevice.getSwapchainImagesKHR(vkSwapchain);
     detail.frames.resize(images.size());
 
     for (size_t i = 0; i < images.size(); ++i) {
@@ -170,7 +170,7 @@ void Swapchain::DestroySwapchain()
         vkDevice.destroySemaphore(frame.renderFinished);
     }
 
-    vkDevice.destroySwapchainKHR(detail.vkSwapchain);
+    vkDevice.destroySwapchainKHR(vkSwapchain);
 }
 
 Swapchain::~Swapchain()

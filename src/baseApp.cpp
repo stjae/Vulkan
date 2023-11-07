@@ -24,6 +24,7 @@ Application::Application(const int width, const int height, const char* wName)
 
     SetupImGui();
 
+    engine->InitSwapchainImages();
     engine->Prepare(scene);
 
     glfwSetKeyCallback(window.window, KeyCallback);

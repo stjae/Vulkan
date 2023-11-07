@@ -7,7 +7,7 @@ Camera::Camera(GLFWwindow* window)
 
 void Camera::Update(Window& window)
 {
-    static float delta, currentTime, lastTime = 0.0f;
+    static double delta, currentTime, lastTime = 0.0;
     currentTime = glfwGetTime();
 
     delta = currentTime - lastTime;
@@ -36,22 +36,22 @@ void Camera::Update(Window& window)
     dir = rotateY * dir;
 
     if (glfwGetKey(window.window, GLFW_KEY_W)) {
-        pos += glm::vec3(dir.x, dir.y, dir.z) * delta * speed;
+        pos += glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
     }
     if (glfwGetKey(window.window, GLFW_KEY_S)) {
-        pos -= glm::vec3(dir.x, dir.y, dir.z) * delta * speed;
+        pos -= glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
     }
     if (glfwGetKey(window.window, GLFW_KEY_A)) {
-        pos -= right * delta * speed;
+        pos -= right * static_cast<float>(delta) * speed;
     }
     if (glfwGetKey(window.window, GLFW_KEY_D)) {
-        pos += right * delta * speed;
+        pos += right * static_cast<float>(delta) * speed;
     }
     if (glfwGetKey(window.window, GLFW_KEY_E)) {
-        pos += up * delta * speed;
+        pos += up * static_cast<float>(delta) * speed;
     }
     if (glfwGetKey(window.window, GLFW_KEY_Q)) {
-        pos -= up * delta * speed;
+        pos -= up * static_cast<float>(delta) * speed;
     }
 
     at = pos + glm::vec3(dir.x, dir.y, dir.z);

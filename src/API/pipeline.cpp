@@ -131,8 +131,8 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
-    colorAttachmentDesc.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    colorAttachmentDesc.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentReference colorAttachmentRef;
     colorAttachmentRef.attachment = 0;

@@ -28,6 +28,40 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
     }
 }
 
+void GraphicsEngine::InitSwapchainImages()
+{
+    vk::CommandBufferBeginInfo beginInfo;
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+    for (auto& frame : swapchain.detail.frames) {
+        frame.commandBuffer.begin(&beginInfo);
+
+        vk::ImageMemoryBarrier barrier;
+
+        barrier.oldLayout = vk::ImageLayout::eUndefined;
+        barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.image = frame.image;
+        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.levelCount = 1;
+
+        frame.commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe,
+                                            vk::DependencyFlagBits::eByRegion,
+                                            0, nullptr, 0, nullptr, 1, &barrier);
+
+        frame.commandBuffer.end();
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &frame.commandBuffer;
+
+        device.vkGraphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
+        device.vkDevice.waitIdle();
+    }
+}
+
 void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera)
 {
     uboData.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -78,16 +112,18 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
 void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera)
 {
     auto resultWaitFence = device.vkDevice.waitForFences(1, &swapchain.detail.frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
-    auto resultResetFence = device.vkDevice.resetFences(1, &swapchain.detail.frames[frameIndex].inFlight);
 
     uint32_t imageIndex;
-    auto acquiredImage = device.vkDevice.acquireNextImageKHR(swapchain.detail.vkSwapchain, UINT64_MAX, swapchain.detail.frames[frameIndex].imageAvailable, nullptr);
+    auto acquiredImage = device.vkDevice.acquireNextImageKHR(swapchain.vkSwapchain, UINT64_MAX, swapchain.detail.frames[frameIndex].imageAvailable, nullptr);
 
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
+        InitSwapchainImages();
         return;
     }
+
+    auto resultResetFence = device.vkDevice.resetFences(1, &swapchain.detail.frames[frameIndex].inFlight);
 
     imageIndex = acquiredImage.value;
 
@@ -115,7 +151,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-    vk::SwapchainKHR swapchains[] = { swapchain.detail.vkSwapchain };
+    vk::SwapchainKHR swapchains[] = { swapchain.vkSwapchain };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &imageIndex;
@@ -125,6 +161,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
         resultPresent = device.vkPresentQueue.presentKHR(presentInfo);
     } catch (vk::OutOfDateKHRError error) {
         RecreateSwapchain();
+        InitSwapchainImages();
         return;
     }
 

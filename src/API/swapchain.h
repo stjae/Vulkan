@@ -24,6 +24,7 @@ public:
     void DestroySwapchain();
     ~Swapchain();
 
+    vk::SwapchainKHR vkSwapchain;
     SwapchainSupportDetail supportDetail;
     SwapchainDetail detail;
 

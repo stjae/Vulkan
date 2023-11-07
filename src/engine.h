@@ -16,6 +16,7 @@ class GraphicsEngine
 {
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene);
+    void InitSwapchainImages();
     void UpdateFrame(uint32_t imageIndex, Camera& camera);
     void Prepare(std::unique_ptr<Scene>& scene);
     void Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera);
