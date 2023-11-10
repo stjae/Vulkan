@@ -4,7 +4,6 @@
 #include "../common.h"
 #include "swapchain.h"
 #include "shader.h"
-#include "../structs.h"
 #include "../mesh.h"
 #include "descriptor.h"
 #include "../scene.h"

@@ -1,6 +1,6 @@
 #include "meshData.h"
 
-vk::VertexInputBindingDescription MeshData::GetPosColorBindingDesc()
+vk::VertexInputBindingDescription MeshData::GetBindingDesc()
 {
     vk::VertexInputBindingDescription bindingDesc;
     bindingDesc.setBinding(0);
@@ -10,7 +10,7 @@ vk::VertexInputBindingDescription MeshData::GetPosColorBindingDesc()
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 2> MeshData::GetPosColorAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 2> MeshData::GetAttributeDescs()
 {
     std::array<vk::VertexInputAttributeDescription, 2> attributes;
 
@@ -20,7 +20,7 @@ std::array<vk::VertexInputAttributeDescription, 2> MeshData::GetPosColorAttribut
     attributes[0].setFormat(vk::Format::eR32G32B32Sfloat);
     attributes[0].setOffset(0);
 
-    // Color
+    // Normal
     attributes[1].setBinding(0);
     attributes[1].setLocation(1);
     attributes[1].setFormat(vk::Format::eR32G32B32Sfloat);

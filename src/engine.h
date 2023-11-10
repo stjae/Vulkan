@@ -17,7 +17,7 @@ class GraphicsEngine
 public:
     GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene);
     void InitSwapchainImages();
-    void UpdateFrame(uint32_t imageIndex, Camera& camera);
+    void UpdateFrame(uint32_t imageIndex, Camera& camera, std::unique_ptr<Scene>& scene);
     void Prepare(std::unique_ptr<Scene>& scene);
     void Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera);
     void RecreateSwapchain();
@@ -32,11 +32,10 @@ public:
     GraphicsPipeline pipeline;
     Command command;
 
-    UBO uboData;
-    float angle = 0.0f;
-
     int frameIndex = 0;
     int maxFrameNumber;
+
+    UBO ubo;
 };
 
 #endif

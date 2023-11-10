@@ -1,5 +1,5 @@
-#ifndef _BASEAPP_H_
-#define _BASEAPP_H_
+#ifndef __BASEAPP_H__
+#define __BASEAPP_H__
 
 #include "engine.h"
 #include "common.h"
@@ -25,4 +25,4 @@ private:
     Camera camera;
 };
 
-#endif
+#endif // __BASEAPP_H__

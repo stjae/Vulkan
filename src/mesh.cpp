@@ -18,6 +18,7 @@ void Mesh::CreateSquare()
     for (int i = 0; i < pos.size(); i += 3) {
 
         for (int j = i; j < i + 3; ++j) {
+            pos[j] *= 1.5f;
             vertices.push_back(pos[j]);
         }
 
@@ -35,24 +36,64 @@ void Mesh::CreateCube()
     std::vector<float> pos = { -1.0f, 1.0f, 1.0f,
                                1.0f, 1.0f, 1.0f,
                                1.0f, -1.0f, 1.0f,
-                               -1.0f, -1.0f, 1.0f,
+                               -1.0f, -1.0f, 1.0f, // front
 
                                -1.0f, 1.0f, -1.0f,
                                1.0f, 1.0f, -1.0f,
                                1.0f, -1.0f, -1.0f,
+                               -1.0f, -1.0f, -1.0f, // back
+
+                               -1.0f, 1.0f, -1.0f,
+                               1.0f, 1.0f, -1.0f,
+                               1.0f, 1.0f, 1.0f,
+                               -1.0f, 1.0f, 1.0f, // ceiling
+
+                               -1.0f, -1.0f, 1.0f,
+                               1.0f, -1.0f, 1.0f,
+                               1.0f, -1.0f, -1.0f,
+                               -1.0f, -1.0f, -1.0f, // bottom
+
+                               1.0f, 1.0f, 1.0f,
+                               1.0f, 1.0f, -1.0f,
+                               1.0f, -1.0f, -1.0f,
+                               1.0f, -1.0f, 1.0f, // left
+
+                               -1.0f, 1.0f, -1.0f,
+                               -1.0f, 1.0f, 1.0f,
+                               -1.0f, -1.0f, 1.0f, // right
                                -1.0f, -1.0f, -1.0f };
 
-    std::vector<float> color = { 1.0f, 0.0f, 0.0f,
-                                 0.0f, 1.0f, 0.0f,
-                                 0.0f, 0.0f, 1.0f,
-                                 1.0f, 1.0f, 1.0f,
+    std::vector<float> normal = { 0.0f, 0.0f, 1.0f,
+                                  0.0f, 0.0f, 1.0f,
+                                  0.0f, 0.0f, 1.0f,
+                                  0.0f, 0.0f, 1.0f,
 
-                                 1.0f, 0.0f, 0.0f,
-                                 0.0f, 1.0f, 0.0f,
-                                 0.0f, 0.0f, 1.0f,
-                                 1.0f, 1.0f, 1.0f };
+                                  0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, -1.0f,
 
-    vertices.reserve(pos.size() + color.size());
+                                  0.0f, 1.0f, 0.0f,
+                                  0.0f, 1.0f, 0.0f,
+                                  0.0f, 1.0f, 0.0f,
+                                  0.0f, 1.0f, 0.0f,
+
+                                  0.0f, -1.0f, 0.0f,
+                                  0.0f, -1.0f, 0.0f,
+                                  0.0f, -1.0f, 0.0f,
+                                  0.0f, -1.0f, 0.0f,
+
+                                  -1.0f, 0.0f, 0.0f,
+                                  -1.0f, 0.0f, 0.0f,
+                                  -1.0f, 0.0f, 0.0f,
+                                  -1.0f, 0.0f, 0.0f,
+
+                                  1.0f, 0.0f, 0.0f,
+                                  1.0f, 0.0f, 0.0f,
+                                  1.0f, 0.0f, 0.0f,
+                                  1.0f, 0.0f, 0.0f };
+
+    vertices.reserve(pos.size() + normal.size());
 
     for (int i = 0; i < pos.size(); i += 3) {
 
@@ -61,14 +102,14 @@ void Mesh::CreateCube()
         }
 
         for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(color[j]);
+            vertices.push_back(normal[j]);
         }
     }
 
     indices = { 0, 1, 2, 2, 3, 0,
                 5, 4, 7, 7, 6, 5,
-                4, 5, 1, 1, 0, 4,
-                3, 2, 6, 6, 7, 3,
-                4, 0, 3, 3, 7, 4,
-                1, 5, 6, 6, 2, 1 };
+                8, 9, 10, 10, 11, 8,
+                12, 13, 14, 14, 15, 12,
+                16, 17, 18, 18, 19, 16,
+                20, 21, 22, 22, 23, 20 };
 }

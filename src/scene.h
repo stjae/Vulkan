@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "mesh.h"
+#include "light.h"
 
 class Scene
 {
@@ -11,7 +12,7 @@ public:
     void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
 
     std::vector<std::unique_ptr<Mesh>> meshes;
-    std::vector<glm::vec3> positions;
+    std::unique_ptr<Light> pointLight;
 };
 
 #endif

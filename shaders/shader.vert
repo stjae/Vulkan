@@ -4,18 +4,17 @@ layout(binding = 0) uniform UBO {
     mat4 model;
     mat4 view;
     mat4 proj;
-} uboData;
+    vec3 eye;
+} ubo;
 
 layout(location = 0) in vec3 vertexPosition;
-layout(location = 1) in vec3 vertexColor;
+layout(location = 1) in vec3 vertexNormal;
 
-layout (push_constant) uniform constants {
-    mat4 model;
-} ObjectData;
-
-layout(location = 0) out vec3 fragColor;
+layout(location = 0) out vec4 modelWorld;
+layout(location = 1) out vec3 normalWorld;
 
 void main() {
-    gl_Position = uboData.proj * uboData.view * uboData.model * vec4(vertexPosition, 1.0);
-    fragColor = vertexColor;
+    modelWorld = ubo.model * vec4(vertexPosition, 1.0);
+    normalWorld = vertexNormal;
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(vertexPosition, 1.0);
 }

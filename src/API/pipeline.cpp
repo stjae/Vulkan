@@ -10,8 +10,8 @@ void GraphicsPipeline::CreatePipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
 
     // vertex input
-    vk::VertexInputBindingDescription bindingDesc = scene->meshes[0]->GetPosColorBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = scene->meshes[0]->GetPosColorAttributeDescs();
+    vk::VertexInputBindingDescription bindingDesc = scene->meshes[0]->GetBindingDesc();
+    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = scene->meshes[0]->GetAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
@@ -101,23 +101,20 @@ void GraphicsPipeline::CreatePipeline()
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
     DescriptorSetLayoutData bindings;
-    bindings.count = 1;
+    bindings.count = 2;
     bindings.indices.push_back(0);
+    bindings.indices.push_back(1);
+    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
     bindings.counts.push_back(1);
-    bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+    bindings.counts.push_back(1);
+    bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 
     descriptor.CreateSetLayout(bindings);
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptor.setLayout;
-
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    vk::PushConstantRange pushConstantInfo;
-    pushConstantInfo.offset = 0;
-    pushConstantInfo.size = sizeof(ObjectData);
-    pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstantInfo;
 
     return vkDevice.createPipelineLayout(pipelineLayoutInfo);
 }

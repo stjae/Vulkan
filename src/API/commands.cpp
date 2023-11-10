@@ -1,16 +1,16 @@
 #include "commands.h"
 
-void Command::CreateCommandPool()
+void Command::CreateCommandPool(const char* usage)
 {
     vk::CommandPoolCreateInfo poolInfo;
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
     poolInfo.queueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
 
     commandPool = device.vkDevice.createCommandPool(poolInfo);
-    Log(debug, fmt::terminal_color::bright_green, "created command pool");
+    Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
-void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
+void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer, const char* usage)
 {
     vk::CommandBufferAllocateInfo allocateInfo;
     allocateInfo.commandPool = commandPool;
@@ -18,7 +18,7 @@ void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
     allocateInfo.commandBufferCount = 1;
 
     commandBuffer = device.vkDevice.allocateCommandBuffers(allocateInfo)[0];
-    Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
+    Log(debug, fmt::terminal_color::bright_green, "allocated command buffer for {}", usage);
 }
 
 void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
@@ -48,7 +48,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = pipeline.swapchainDetail.extent;
     renderPassInfo.renderArea = renderArea;
-    vk::ClearValue clearColor = { std::array<float, 4>{ 0.5f, 0.5f, 0.5f, 1.0f } };
+    vk::ClearValue clearColor = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
@@ -79,13 +79,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint16);
 
-        for (glm::vec3 pos : scene->positions) {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
-            ObjectData objectData;
-            objectData.model = model;
-            commandBuffer.pushConstants(pipeline.vkPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(ObjectData), &objectData);
-            commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
-        }
+        commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
     }
 
     ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);

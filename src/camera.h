@@ -2,7 +2,14 @@
 #define __CAMERA_H__
 
 #include "common.h"
-#include "API/swapchain.h"
+#include "API/window.h"
+
+struct Matrix {
+
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
 
 struct Camera {
     Camera(GLFWwindow* window);
@@ -20,6 +27,8 @@ struct Camera {
     glm::mat4 invProj;
 
     float speed = 4.0f;
+
+    Matrix matrix;
 };
 
 #endif // __CAMERA_H__

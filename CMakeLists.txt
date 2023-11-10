@@ -17,11 +17,11 @@ src/common.h            src/common.cpp
 src/baseApp.h           src/baseApp.cpp
 src/engine.h            src/engine.cpp
 
-src/structs.h
 src/scene.h             src/scene.cpp
 src/meshData.h          src/meshData.cpp
 src/mesh.h              src/mesh.cpp
 src/camera.h            src/camera.cpp
+src/light.h             src/light.cpp
 
 # API
 src/API/window.h        src/API/window.cpp
@@ -29,7 +29,7 @@ src/API/instance.h      src/API/instance.cpp
 src/API/logger.h        src/API/logger.cpp
 src/API/device.h        src/API/device.cpp
 src/API/swapchain.h     src/API/swapchain.cpp
-src/API/swapchainDataStruct.h
+src/API/swapchainData.h
 src/API/shader.h        src/API/shader.cpp
 src/API/descriptor.h    src/API/descriptor.cpp
 src/API/pipeline.h      src/API/pipeline.cpp

@@ -2,7 +2,7 @@
 #define _SWAPCHAIN_H_
 
 #include "../common.h"
-#include "swapchainDataStruct.h"
+#include "swapchainData.h"
 #include "device.h"
 #include "instance.h"
 #include "memory.h"

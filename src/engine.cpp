@@ -12,9 +12,9 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
     pipeline.CreatePipeline();
     swapchain.CreateFrameBuffer();
 
-    command.CreateCommandPool();
+    command.CreateCommandPool("swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer);
+        command.CreateCommandBuffer(frame.commandBuffer, "swapchain frame");
     }
 
     maxFrameNumber = static_cast<int>(swapchain.detail.frames.size());
@@ -62,17 +62,20 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
-void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera)
+void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::unique_ptr<Scene>& scene)
 {
-    uboData.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-    uboData.view = glm::lookAt(camera.pos, camera.at, camera.up);
-    uboData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
-    uboData.proj[1][1] *= -1;
+    camera.matrix.model = glm::mat4(1.0f);
+    camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
+    camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
+    camera.matrix.proj[1][1] *= -1;
 
-    swapchain.detail.frames[imageIndex].uboData.model = uboData.model;
-    swapchain.detail.frames[imageIndex].uboData.view = uboData.view;
-    swapchain.detail.frames[imageIndex].uboData.proj = uboData.proj;
-    memcpy(swapchain.detail.frames[imageIndex].uboDataMemoryLocation, &(swapchain.detail.frames[imageIndex].uboData), sizeof(UBO));
+    ubo.model = camera.matrix.model;
+    ubo.view = camera.matrix.view;
+    ubo.proj = camera.matrix.proj;
+    ubo.eye = camera.pos;
+
+    memcpy(swapchain.detail.frames[imageIndex].matrixUniformBufferMemoryLocation, &(ubo), sizeof(UBO));
+    memcpy(swapchain.detail.frames[imageIndex].lightUniformBufferMemoryLocation, scene->pointLight.get(), sizeof(Light));
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
 }
@@ -81,32 +84,33 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
 {
     scene->CreateResource(device.vkPhysicalDevice, device.vkDevice);
 
-    Command copyVertexCommand(device);
-    copyVertexCommand.CreateCommandPool();
+    Command copyCommand(device);
+    copyCommand.CreateCommandPool("copying vertex/index staging buffers");
 
-    vk::CommandBuffer copyVertexCommandBuffer;
-    copyVertexCommand.CreateCommandBuffer(copyVertexCommandBuffer);
+    vk::CommandBuffer copyCommandBuffer;
+    copyCommand.CreateCommandBuffer(copyCommandBuffer, "copying staging buffers");
+
     for (auto& mesh : scene->meshes) {
-        copyVertexCommand.RecordCopyCommands(copyVertexCommandBuffer, mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+        copyCommand.RecordCopyCommands(copyCommandBuffer, mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &copyCommandBuffer;
+
+        device.vkGraphicsQueue.submit(submitInfo);
+        device.vkGraphicsQueue.waitIdle();
     }
 
-    Command copyIndexCommand(device);
-    copyIndexCommand.CreateCommandPool();
-
-    vk::CommandBuffer copyIndexCommandBuffer;
-    copyIndexCommand.CreateCommandBuffer(copyIndexCommandBuffer);
     for (auto& mesh : scene->meshes) {
-        copyIndexCommand.RecordCopyCommands(copyIndexCommandBuffer, mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+        copyCommand.RecordCopyCommands(copyCommandBuffer, mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &copyCommandBuffer;
+
+        device.vkGraphicsQueue.submit(submitInfo);
+        device.vkGraphicsQueue.waitIdle();
     }
-
-    std::vector<vk::CommandBuffer> buffers{ copyVertexCommandBuffer, copyIndexCommandBuffer };
-
-    vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = static_cast<uint32_t>(buffers.size());
-    submitInfo.pCommandBuffers = buffers.data();
-
-    device.vkGraphicsQueue.submit(submitInfo);
-    device.vkGraphicsQueue.waitIdle();
 }
 
 void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera)
@@ -127,7 +131,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
 
     imageIndex = acquiredImage.value;
 
-    UpdateFrame(imageIndex, camera);
+    UpdateFrame(imageIndex, camera, scene);
 
     vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
 
@@ -189,9 +193,9 @@ void GraphicsEngine::RecreateSwapchain()
 
     swapchain.PrepareFrames();
 
-    command.CreateCommandPool();
+    command.CreateCommandPool("new swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer);
+        command.CreateCommandBuffer(frame.commandBuffer, "new swapchain frame");
     }
 }
 
