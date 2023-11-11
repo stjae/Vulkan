@@ -29,7 +29,7 @@ src/API/instance.h      src/API/instance.cpp
 src/API/logger.h        src/API/logger.cpp
 src/API/device.h        src/API/device.cpp
 src/API/swapchain.h     src/API/swapchain.cpp
-src/API/swapchainData.h
+src/API/swapchainData.h src/API/swapchainData.cpp
 src/API/shader.h        src/API/shader.cpp
 src/API/descriptor.h    src/API/descriptor.cpp
 src/API/pipeline.h      src/API/pipeline.cpp

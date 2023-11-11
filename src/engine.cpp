@@ -62,6 +62,12 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
+void GraphicsEngine::CreateDepthImage()
+{
+    vk::Extent3D depthImageExtent{ swapchain.detail.extent.width, swapchain.detail.extent.height, 1 };
+    vk::ImageCreateInfo imageCreateInfo({}, vk::ImageType::e2D, vk::Format::eD32Sfloat, depthImageExtent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment);
+}
+
 void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::unique_ptr<Scene>& scene)
 {
     camera.matrix.model = glm::mat4(1.0f);

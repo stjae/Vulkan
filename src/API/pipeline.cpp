@@ -152,7 +152,8 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 void GraphicsPipeline::CreateDescriptorPool()
 {
     DescriptorSetLayoutData bindings;
-    bindings.count = 1;
+    bindings.count = 2;
+    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 
     descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
