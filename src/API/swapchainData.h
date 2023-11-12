@@ -22,16 +22,29 @@ struct SwapchainSupportDetail {
     std::vector<vk::PresentModeKHR> presentModes;
 };
 
-struct SwapchainFrame {
-
+class Image : public Memory
+{
+public:
     vk::Image image;
     vk::ImageView imageView;
+    vk::Format format;
 
-    vk::Image depthImage;
-    vk::ImageView depthImageView;
+    const vk::PhysicalDevice& vkPhysicalDevice;
+    const vk::Device& vkDevice;
+
+    Image(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
+    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::MemoryPropertyFlags properties) override;
+    ~Image();
+};
+
+struct SwapchainFrame {
+
+    vk::Image swapchainVkImage;
+    vk::ImageView swapchainVkImageView;
+
+    Image depthImage;
 
     vk::Framebuffer framebuffer;
-
     vk::CommandBuffer commandBuffer;
 
     vk::Fence inFlight;
@@ -49,11 +62,15 @@ struct SwapchainFrame {
 
     std::vector<vk::DescriptorSet> descriptorSets;
 
-    void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
-    void WriteDescriptorSet(vk::Device vkDevice);
+    const vk::PhysicalDevice& vkPhysicalDevice;
+    const vk::Device& vkDevice;
 
-    vk::Image CreateImage();
-    vk::ImageView CreateImageView();
+    SwapchainFrame(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice), depthImage(vkPhysicalDevice, vkDevice) {}
+    void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
+    void WriteDescriptorSet(const vk::Device& vkDevice);
+
+    void CreateImage(Image& image, const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent);
+    void CreateImageView(Image& image, const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::Format format, vk::ImageAspectFlags aspectFlags);
 };
 
 struct SwapchainDetail {
@@ -61,6 +78,11 @@ struct SwapchainDetail {
     std::vector<SwapchainFrame> frames;
     vk::Format imageFormat;
     vk::Extent2D extent;
+
+    const vk::PhysicalDevice& vkPhysicalDevice;
+    const vk::Device& vkDevice;
+
+    SwapchainDetail(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
 };
 
 #endif // __SWAPCHAINDATA_H__

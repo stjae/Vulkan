@@ -12,10 +12,10 @@
 class Swapchain
 {
 public:
-    Swapchain(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const VkSurfaceKHR& vkSurface, const vk::RenderPass& vkRenderPass)
-        : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice), vkSurface(vkSurface), vkRenderPass(vkRenderPass) {}
-    void CreateSwapchain(GLFWwindow* window, Device& device);
-    void QueryswapchainSupportDetails(Device& device);
+    Swapchain(const Device& device, const vk::RenderPass& vkRenderPass)
+        : vkDevice(device.vkDevice), vkPhysicalDevice(device.vkPhysicalDevice), vkSurface(device.instance.vkSurface), vkRenderPass(vkRenderPass), detail(device.vkPhysicalDevice, device.vkDevice) {}
+    void CreateSwapchain(GLFWwindow* window, const Device& device);
+    void QueryswapchainSupportDetails(const Device& device);
     vk::SurfaceFormatKHR ChooseSurfaceFormat();
     vk::PresentModeKHR ChoosePresentMode();
     vk::Extent2D ChooseExtent(GLFWwindow* window);
@@ -29,8 +29,8 @@ public:
     SwapchainDetail detail;
 
 private:
-    const vk::PhysicalDevice& vkPhysicalDevice;
     const vk::Device& vkDevice;
+    const vk::PhysicalDevice& vkPhysicalDevice;
     const VkSurfaceKHR& vkSurface;
     const vk::RenderPass& vkRenderPass;
 };

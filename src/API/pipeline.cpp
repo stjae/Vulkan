@@ -87,6 +87,15 @@ void GraphicsPipeline::CreatePipeline()
     colorBlendStateInfo.blendConstants = blendConstants;
     pipelineInfo.pColorBlendState = &colorBlendStateInfo;
 
+    // depth stencil
+    vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
+    depthStencilInfo.depthTestEnable = vk::True;
+    depthStencilInfo.depthWriteEnable = vk::True;
+    depthStencilInfo.depthCompareOp = vk::CompareOp::eLess;
+    depthStencilInfo.depthBoundsTestEnable = vk::False;
+    depthStencilInfo.stencilTestEnable = vk::False;
+    pipelineInfo.pDepthStencilState = &depthStencilInfo;
+
     // pipeline layout
     vkPipelineLayout = CreatePipelineLayout();
     pipelineInfo.layout = vkPipelineLayout;
@@ -131,18 +140,34 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     colorAttachmentDesc.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
     colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
+    vk::AttachmentDescription depthAttachmentDesc;
+    depthAttachmentDesc.format = swapchainDetail.frames[0].depthImage.format;
+    depthAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
+    depthAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
+    depthAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
+    depthAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eClear;
+    depthAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    depthAttachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
+    depthAttachmentDesc.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
     vk::AttachmentReference colorAttachmentRef;
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::AttachmentReference depthAttachmentRef;
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     vk::SubpassDescription subpassDesc;
     subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
     subpassDesc.colorAttachmentCount = 1;
     subpassDesc.pColorAttachments = &colorAttachmentRef;
+    subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
 
+    std::array<vk::AttachmentDescription, 2> attachments = { colorAttachmentDesc, depthAttachmentDesc };
     vk::RenderPassCreateInfo renderPassInfo;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachmentDesc;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 

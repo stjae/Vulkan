@@ -36,6 +36,7 @@ src/API/pipeline.h      src/API/pipeline.cpp
 src/API/commands.h      src/API/commands.cpp
 src/API/sync.h          
 src/API/buffer.h        src/API/buffer.cpp        
+src/API/memory.h        src/API/memory.cpp
 )
 
 include(Dependency.cmake)

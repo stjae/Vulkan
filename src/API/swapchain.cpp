@@ -1,6 +1,6 @@
 #include "swapchain.h"
 
-void Swapchain::CreateSwapchain(GLFWwindow* window, Device& device)
+void Swapchain::CreateSwapchain(GLFWwindow* window, const Device& device)
 {
     QueryswapchainSupportDetails(device);
 
@@ -31,7 +31,9 @@ void Swapchain::CreateSwapchain(GLFWwindow* window, Device& device)
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
     std::vector<vk::Image> images = device.vkDevice.getSwapchainImagesKHR(vkSwapchain);
-    detail.frames.resize(images.size());
+    detail.frames.resize(images.size(), SwapchainFrame(vkPhysicalDevice, vkDevice));
+    detail.imageFormat = surfaceFormat.format;
+    detail.extent = extent;
 
     for (size_t i = 0; i < images.size(); ++i) {
 
@@ -44,14 +46,16 @@ void Swapchain::CreateSwapchain(GLFWwindow* window, Device& device)
         createInfo.subresourceRange = range;
         createInfo.format = surfaceFormat.format;
 
-        detail.frames[i].image = images[i];
-        detail.frames[i].imageView = device.vkDevice.createImageView(createInfo);
+        detail.frames[i].swapchainVkImage = images[i];
+        detail.frames[i].swapchainVkImageView = device.vkDevice.createImageView(createInfo);
+
+        vk::Extent3D extent = { detail.extent.width, detail.extent.height, 1 };
+        detail.frames[i].CreateImage(detail.frames[i].depthImage, vkPhysicalDevice, vkDevice, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+        detail.frames[i].CreateImageView(detail.frames[i].depthImage, vkPhysicalDevice, vkDevice, vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
-    detail.imageFormat = surfaceFormat.format;
-    detail.extent = extent;
 }
 
-void Swapchain::QueryswapchainSupportDetails(Device& device)
+void Swapchain::QueryswapchainSupportDetails(const Device& device)
 {
     supportDetail.capabilities = device.vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
     supportDetail.formats = device.vkPhysicalDevice.getSurfaceFormatsKHR(vkSurface);
@@ -134,7 +138,10 @@ void Swapchain::CreateFrameBuffer()
 {
     for (int i = 0; i < detail.frames.size(); ++i) {
 
-        std::vector<vk::ImageView> attachments = { detail.frames[i].imageView };
+        std::vector<vk::ImageView> attachments = {
+            detail.frames[i].swapchainVkImageView,
+            detail.frames[i].depthImage.imageView
+        };
 
         vk::FramebufferCreateInfo framebufferInfo;
         framebufferInfo.renderPass = vkRenderPass;
@@ -163,7 +170,7 @@ void Swapchain::PrepareFrames()
 void Swapchain::DestroySwapchain()
 {
     for (auto& frame : detail.frames) {
-        vkDevice.destroyImageView(frame.imageView);
+        vkDevice.destroyImageView(frame.swapchainVkImageView);
         vkDevice.destroyFramebuffer(frame.framebuffer);
         vkDevice.destroyFence(frame.inFlight);
         vkDevice.destroySemaphore(frame.imageAvailable);

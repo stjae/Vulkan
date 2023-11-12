@@ -57,7 +57,7 @@ void Device::PickPhysicalDevice()
     Log(debug, fmt::terminal_color::white, "physical device: {}", vkPhysicalDevice.getProperties().deviceName);
 }
 
-bool Device::IsDeviceSuitable(vk::PhysicalDevice& device)
+bool Device::IsDeviceSuitable(const vk::PhysicalDevice& device)
 {
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     std::set<std::string> ExtensionSets(deviceExtensions.begin(), deviceExtensions.end());

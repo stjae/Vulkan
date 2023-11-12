@@ -24,7 +24,7 @@ public:
 
     // Physical Device related method
     void PickPhysicalDevice();
-    bool IsDeviceSuitable(vk::PhysicalDevice& device);
+    bool IsDeviceSuitable(const vk::PhysicalDevice& device);
     void FindQueueFamilies();
 
     ~Device();

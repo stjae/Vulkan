@@ -1,7 +1,7 @@
 #include "engine.h"
 
 GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene)
-    : device(window), swapchain(device.vkPhysicalDevice, device.vkDevice, device.instance.vkSurface, pipeline.vkRenderPass),
+    : device(window), swapchain(device, pipeline.vkRenderPass),
       pipeline(device.vkDevice, swapchain.detail, scene), command(device)
 {
     this->window = window;
@@ -42,7 +42,7 @@ void GraphicsEngine::InitSwapchainImages()
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
         barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
         barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.image = frame.image;
+        barrier.image = frame.swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;

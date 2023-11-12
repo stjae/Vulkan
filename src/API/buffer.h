@@ -2,6 +2,7 @@
 #define _BUFFER_H_
 
 #include "device.h"
+#include "memory.h"
 
 struct BufferInput {
 
@@ -10,16 +11,14 @@ struct BufferInput {
     vk::MemoryPropertyFlags properties;
 };
 
-class Buffer
+class Buffer : public Memory
 {
 public:
     Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& input);
-    uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
-    void AllocateBufferMemory();
+    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::MemoryPropertyFlags properties) override;
     ~Buffer();
 
     vk::Buffer vkBuffer;
-    vk::DeviceMemory vkDeviceMemory;
 
 private:
     const vk::PhysicalDevice& vkPhysicalDevice;

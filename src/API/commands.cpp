@@ -21,7 +21,7 @@ void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer, const char* 
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer for {}", usage);
 }
 
-void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
+void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -33,7 +33,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
         barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
         barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
         barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.image = pipeline.swapchainDetail.frames[imageIndex].image;
+        barrier.image = pipeline.swapchainDetail.frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
@@ -48,9 +48,13 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = pipeline.swapchainDetail.extent;
     renderPassInfo.renderArea = renderArea;
-    vk::ClearValue clearColor = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    vk::ClearValue clearValue;
+    clearValue.color = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
+    vk::ClearValue depthClear;
+    depthClear.depthStencil.depth = 1.0f;
+    renderPassInfo.clearValueCount = 2;
+    vk::ClearValue clearValues[] = { clearValue, depthClear };
+    renderPassInfo.pClearValues = &clearValues[0];
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vkPipelineLayout, 0, pipeline.swapchainDetail.frames[imageIndex].descriptorSets.size(), pipeline.swapchainDetail.frames[imageIndex].descriptorSets.data(), 0, 0);
@@ -93,7 +97,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
         barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
         barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.image = pipeline.swapchainDetail.frames[imageIndex].image;
+        barrier.image = pipeline.swapchainDetail.frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
@@ -105,7 +109,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, vk::CommandBuffer c
     commandBuffer.end();
 }
 
-void Command::RecordCopyCommands(vk::CommandBuffer commandBuffer, vk::Buffer srcBuffer, vk::Buffer dstBuffer, size_t size)
+void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
 
