@@ -37,18 +37,20 @@ void MeshData::CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, co
     stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
                                     vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    vertexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
+    vertexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
+    vertexStagingBuffer->CreateBuffer(stagingBufferInput);
 
-    void* memoryLocation = vkDevice.mapMemory(vertexStagingBuffer->vkDeviceMemory, 0, stagingBufferInput.size);
+    void* memoryLocation = vkDevice.mapMemory(vertexStagingBuffer->memory.vkDeviceMemory, 0, stagingBufferInput.size);
     memcpy(memoryLocation, vertices.data(), stagingBufferInput.size);
-    vkDevice.unmapMemory(vertexStagingBuffer->vkDeviceMemory);
+    vkDevice.unmapMemory(vertexStagingBuffer->memory.vkDeviceMemory);
 
     BufferInput vertexBufferInput;
     vertexBufferInput.size = stagingBufferInput.size;
     vertexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     vertexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-    vertexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, vertexBufferInput);
+    vertexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
+    vertexBuffer->CreateBuffer(vertexBufferInput);
 }
 
 void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
@@ -59,16 +61,18 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
     stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
                                     vk::MemoryPropertyFlagBits::eHostCoherent;
 
-    indexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
+    indexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
+    indexStagingBuffer->CreateBuffer(stagingBufferInput);
 
-    void* memoryLocation = vkDevice.mapMemory(indexStagingBuffer->vkDeviceMemory, 0, stagingBufferInput.size);
+    void* memoryLocation = vkDevice.mapMemory(indexStagingBuffer->memory.vkDeviceMemory, 0, stagingBufferInput.size);
     memcpy(memoryLocation, indices.data(), stagingBufferInput.size);
-    vkDevice.unmapMemory(indexStagingBuffer->vkDeviceMemory);
+    vkDevice.unmapMemory(indexStagingBuffer->memory.vkDeviceMemory);
 
     BufferInput indexBufferInput;
     indexBufferInput.size = stagingBufferInput.size;
     indexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     indexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-    indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, indexBufferInput);
+    indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
+    indexBuffer->CreateBuffer(indexBufferInput);
 }

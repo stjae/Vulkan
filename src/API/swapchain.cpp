@@ -50,8 +50,8 @@ void Swapchain::CreateSwapchain(GLFWwindow* window, const Device& device)
         detail.frames[i].swapchainVkImageView = device.vkDevice.createImageView(createInfo);
 
         vk::Extent3D extent = { detail.extent.width, detail.extent.height, 1 };
-        detail.frames[i].CreateImage(detail.frames[i].depthImage, vkPhysicalDevice, vkDevice, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
-        detail.frames[i].CreateImageView(detail.frames[i].depthImage, vkPhysicalDevice, vkDevice, vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
+        detail.frames[i].depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+        detail.frames[i].depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
 }
 

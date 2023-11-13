@@ -17,3 +17,28 @@ uint32_t Memory::FindMemoryTypeIndex(const vk::PhysicalDevice& vkPhysicalDevice,
 
     throw std::runtime_error("failed to find suitable memory type");
 }
+
+void Memory::AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties)
+{
+    vk::MemoryRequirements memoryRequirements = vkDevice.getBufferMemoryRequirements(vkBuffer);
+
+    vk::MemoryAllocateInfo allocateInfo;
+    allocateInfo.allocationSize = memoryRequirements.size;
+    allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, properties);
+
+    vkDeviceMemory = vkDevice.allocateMemory(allocateInfo);
+    vkDevice.bindBufferMemory(vkBuffer, vkDeviceMemory, 0);
+}
+
+void Memory::AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
+{
+    vk::MemoryRequirements memoryRequirements;
+    vkDevice.getImageMemoryRequirements(vkImage, &memoryRequirements);
+
+    vk::MemoryAllocateInfo allocateInfo;
+    allocateInfo.allocationSize = memoryRequirements.size;
+    allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, properties);
+
+    vkDeviceMemory = vkDevice.allocateMemory(allocateInfo);
+    vkDevice.bindImageMemory(vkImage, vkDeviceMemory, 0);
+}

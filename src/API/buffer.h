@@ -11,19 +11,19 @@ struct BufferInput {
     vk::MemoryPropertyFlags properties;
 };
 
-class Buffer : public Memory
+class Buffer
 {
 public:
-    Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& input);
-    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::MemoryPropertyFlags properties) override;
+    Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
+    void CreateBuffer(const BufferInput& bufferInput);
     ~Buffer();
 
     vk::Buffer vkBuffer;
+    Memory memory;
 
 private:
     const vk::PhysicalDevice& vkPhysicalDevice;
     const vk::Device& vkDevice;
-    const BufferInput& bufferInput;
 };
 
 #endif

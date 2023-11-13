@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "../camera.h"
 #include "../light.h"
+#include "../image.h"
 
 struct UBO {
 
@@ -20,21 +21,6 @@ struct SwapchainSupportDetail {
     vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<vk::SurfaceFormatKHR> formats;
     std::vector<vk::PresentModeKHR> presentModes;
-};
-
-class Image : public Memory
-{
-public:
-    vk::Image image;
-    vk::ImageView imageView;
-    vk::Format format;
-
-    const vk::PhysicalDevice& vkPhysicalDevice;
-    const vk::Device& vkDevice;
-
-    Image(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
-    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::MemoryPropertyFlags properties) override;
-    ~Image();
 };
 
 struct SwapchainFrame {
@@ -68,9 +54,6 @@ struct SwapchainFrame {
     SwapchainFrame(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice), depthImage(vkPhysicalDevice, vkDevice) {}
     void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void WriteDescriptorSet(const vk::Device& vkDevice);
-
-    void CreateImage(Image& image, const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent);
-    void CreateImageView(Image& image, const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, vk::Format format, vk::ImageAspectFlags aspectFlags);
 };
 
 struct SwapchainDetail {

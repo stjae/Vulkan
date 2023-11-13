@@ -22,6 +22,7 @@ src/meshData.h          src/meshData.cpp
 src/mesh.h              src/mesh.cpp
 src/camera.h            src/camera.cpp
 src/light.h             src/light.cpp
+src/image.h             src/image.cpp
 
 # API
 src/API/window.h        src/API/window.cpp
