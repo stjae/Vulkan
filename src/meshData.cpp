@@ -1,4 +1,6 @@
 #include "meshData.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 
 vk::VertexInputBindingDescription MeshData::GetBindingDesc()
 {
@@ -75,4 +77,36 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
 
     indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
     indexBuffer->CreateBuffer(indexBufferInput);
+}
+
+void MeshData::CreateTexture(const Device& device, const char* fileDir)
+{
+    int width, height, channel;
+    stbi_uc* imageData = stbi_load(fileDir, &width, &height, &channel, STBI_rgb_alpha);
+    vk::DeviceSize imageSize = width * height * 4;
+
+    textureWidth = width;
+    textureHeight = height;
+    textureSize = static_cast<size_t>(imageSize);
+
+    if (!imageData) {
+        spdlog::error("failed to load texture");
+    }
+
+    textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
+    BufferInput input;
+    input.size = imageSize;
+    input.usage = vk::BufferUsageFlagBits::eTransferSrc;
+    input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+    textureStagingBuffer->CreateBuffer(input);
+
+    void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, imageSize);
+    memcpy(memoryLocation, imageData, static_cast<size_t>(imageSize));
+    device.vkDevice.unmapMemory(textureStagingBuffer->memory.vkDeviceMemory);
+
+    stbi_image_free(imageData);
+
+    textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
+    vk::Extent3D extent(width, height, 1);
+    textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
 }

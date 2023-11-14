@@ -121,6 +121,19 @@ void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const v
     commandBuffer.end();
 }
 
+void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Image& dstImage, const int width, const int height, size_t size)
+{
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
+
+    commandBuffer.begin(beginInfo);
+
+    vk::ImageSubresourceLayers subResLayer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+    vk::BufferImageCopy copyRegion(0, 0, 0, subResLayer, { 0, 0, 0 }, { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 });
+
+    commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
+    commandBuffer.end();
+}
+
 Command::~Command()
 {
     device.vkDevice.destroyCommandPool(commandPool);

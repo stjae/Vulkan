@@ -13,10 +13,12 @@ Scene::Scene()
     pointLight = std::make_unique<Light>();
 }
 
-void Scene::CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+void Scene::CreateResource(const Device& device)
 {
     for (auto& mesh : meshes) {
-        mesh->CreateIndexBuffer(vkPhysicalDevice, vkDevice);
-        mesh->CreateVertexBuffer(vkPhysicalDevice, vkDevice);
+        mesh->CreateIndexBuffer(device.vkPhysicalDevice, device.vkDevice);
+        mesh->CreateVertexBuffer(device.vkPhysicalDevice, device.vkDevice);
+
+        mesh->CreateTexture(device, "../../image/statue.jpg");
     }
 }

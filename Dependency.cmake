@@ -73,3 +73,21 @@ add_dependencies(imgui ${DEP_LIST})
 set(DEP_INCLUDE_DIR ${DEP_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 set(DEP_LIST ${DEP_LIST} imgui)
 set(DEP_LIBS ${DEP_LIBS} imgui)
+set(DEP_LIBS ${DEP_LIBS} imgui)
+
+# stb
+ExternalProject_Add(
+    dep-stb
+    GIT_REPOSITORY "https://github.com/nothings/stb"
+    GIT_TAG "master"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    TEST_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
+        ${PROJECT_BINARY_DIR}/dep-stb-prefix/src/dep-stb/stb_image.h
+        ${DEP_INSTALL_DIR}/include/stb/stb_image.h
+    )
+set(DEP_LIST ${DEP_LIST} dep-stb)

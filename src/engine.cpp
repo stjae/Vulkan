@@ -47,9 +47,7 @@ void GraphicsEngine::InitSwapchainImages()
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
 
-        frame.commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe,
-                                            vk::DependencyFlagBits::eByRegion,
-                                            0, nullptr, 0, nullptr, 1, &barrier);
+        frame.commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
         frame.commandBuffer.end();
 
@@ -88,31 +86,47 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
 
 void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
 {
-    scene->CreateResource(device.vkPhysicalDevice, device.vkDevice);
+    scene->CreateResource(device);
 
-    Command copyCommand(device);
-    copyCommand.CreateCommandPool("copying vertex/index staging buffers");
+    Command command(device);
+    command.CreateCommandPool("copying and transit");
 
-    vk::CommandBuffer copyCommandBuffer;
-    copyCommand.CreateCommandBuffer(copyCommandBuffer, "copying staging buffers");
+    size_t numBuffers = 3;
+    std::vector<vk::CommandBuffer> commandBuffers(numBuffers * scene->meshes.size(), vk::CommandBuffer());
 
-    for (auto& mesh : scene->meshes) {
-        copyCommand.RecordCopyCommands(copyCommandBuffer, mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+    for (int j = 0; j < scene->meshes.size(); ++j) {
 
-        vk::SubmitInfo submitInfo;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &copyCommandBuffer;
+        auto& mesh = scene->meshes[j];
 
-        device.vkGraphicsQueue.submit(submitInfo);
-        device.vkGraphicsQueue.waitIdle();
+        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 0], "copying vertex");
+        command.RecordCopyCommands(commandBuffers[j * numBuffers + 0], mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 1], "copying index");
+        command.RecordCopyCommands(commandBuffers[j * numBuffers + 1], mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 2], "transitting image layout");
+        mesh->textureImage->TransitImageLayout(commandBuffers[j * numBuffers + 2], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     }
 
-    for (auto& mesh : scene->meshes) {
-        copyCommand.RecordCopyCommands(copyCommandBuffer, mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = commandBuffers.size();
+    submitInfo.pCommandBuffers = commandBuffers.data();
+
+    device.vkGraphicsQueue.submit(submitInfo);
+    device.vkGraphicsQueue.waitIdle();
+
+    {
+        std::vector<vk::CommandBuffer> commandBuffers(scene->meshes.size(), vk::CommandBuffer());
+
+        for (int i = 0; i < scene->meshes.size(); ++i) {
+
+            auto& mesh = scene->meshes[i];
+
+            command.CreateCommandBuffer(commandBuffers[i], "copying texture");
+            command.RecordCopyCommands(commandBuffers[i], mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
+        }
 
         vk::SubmitInfo submitInfo;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &copyCommandBuffer;
+        submitInfo.commandBufferCount = commandBuffers.size();
+        submitInfo.pCommandBuffers = commandBuffers.data();
 
         device.vkGraphicsQueue.submit(submitInfo);
         device.vkGraphicsQueue.waitIdle();
