@@ -9,9 +9,21 @@ void Buffer::CreateBuffer(const BufferInput& bufferInput)
     memory.AllocateMemory(vkPhysicalDevice, vkDevice, vkBuffer, bufferInput.properties);
 }
 
-Buffer::~Buffer()
+void Buffer::DestroyBuffer()
 {
     vkDevice.waitIdle();
-    vkDevice.destroyBuffer(vkBuffer);
-    vkDevice.freeMemory(memory.vkDeviceMemory);
+    if (vkBuffer != VK_NULL_HANDLE) {
+        vkDevice.destroyBuffer(vkBuffer);
+        vkBuffer = VK_NULL_HANDLE;
+    }
+    if (memory.vkDeviceMemory != VK_NULL_HANDLE) {
+        vkDevice.freeMemory(memory.vkDeviceMemory);
+        memory.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+    Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
+}
+
+Buffer::~Buffer()
+{
+    DestroyBuffer();
 }

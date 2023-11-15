@@ -110,3 +110,10 @@ void MeshData::CreateTexture(const Device& device, const char* fileDir)
     vk::Extent3D extent(width, height, 1);
     textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
 }
+
+void MeshData::DestroyStagingBuffer()
+{
+    indexStagingBuffer->DestroyBuffer();
+    vertexStagingBuffer->DestroyBuffer();
+    textureStagingBuffer->DestroyBuffer();
+}

@@ -10,7 +10,7 @@ void Command::CreateCommandPool(const char* usage)
     Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
-void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer, const char* usage)
+void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
 {
     vk::CommandBufferAllocateInfo allocateInfo;
     allocateInfo.commandPool = commandPool;
@@ -18,7 +18,7 @@ void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer, const char* 
     allocateInfo.commandBufferCount = 1;
 
     commandBuffer = device.vkDevice.allocateCommandBuffers(allocateInfo)[0];
-    Log(debug, fmt::terminal_color::bright_green, "allocated command buffer for {}", usage);
+    Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
 void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
@@ -137,4 +137,5 @@ void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const v
 Command::~Command()
 {
     device.vkDevice.destroyCommandPool(commandPool);
+    Log(debug, fmt::v9::terminal_color::bright_yellow, "command pool destroyed");
 }

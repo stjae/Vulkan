@@ -12,6 +12,7 @@ public:
     void CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void CreateTexture(const Device& device, const char* fileDir);
+    void DestroyStagingBuffer();
 
     std::vector<float> vertices;
     std::vector<uint16_t> indices;

@@ -14,7 +14,7 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
 
     command.CreateCommandPool("swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer, "swapchain frame");
+        command.CreateCommandBuffer(frame.commandBuffer);
     }
 
     maxFrameNumber = static_cast<int>(swapchain.detail.frames.size());
@@ -89,21 +89,22 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     scene->CreateResource(device);
 
     Command command(device);
-    command.CreateCommandPool("copying and transit");
+    command.CreateCommandPool("copying buffers");
 
-    size_t numBuffers = 3;
-    std::vector<vk::CommandBuffer> commandBuffers(numBuffers * scene->meshes.size(), vk::CommandBuffer());
-
+    std::vector<vk::CommandBuffer> commandBuffers;
     for (int j = 0; j < scene->meshes.size(); ++j) {
 
         auto& mesh = scene->meshes[j];
 
-        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 0], "copying vertex");
-        command.RecordCopyCommands(commandBuffers[j * numBuffers + 0], mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
-        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 1], "copying index");
-        command.RecordCopyCommands(commandBuffers[j * numBuffers + 1], mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
-        command.CreateCommandBuffer(commandBuffers[j * numBuffers + 2], "transitting image layout");
-        mesh->textureImage->TransitImageLayout(commandBuffers[j * numBuffers + 2], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        commandBuffers.emplace_back();
+        command.CreateCommandBuffer(commandBuffers.back());
+        command.RecordCopyCommands(commandBuffers.back(), mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+        commandBuffers.emplace_back();
+        command.CreateCommandBuffer(commandBuffers.back());
+        command.RecordCopyCommands(commandBuffers.back(), mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+        commandBuffers.emplace_back();
+        command.CreateCommandBuffer(commandBuffers.back());
+        mesh->textureImage->TransitImageLayout(commandBuffers.back(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     }
 
     vk::SubmitInfo submitInfo;
@@ -113,23 +114,25 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     device.vkGraphicsQueue.submit(submitInfo);
     device.vkGraphicsQueue.waitIdle();
 
-    {
-        std::vector<vk::CommandBuffer> commandBuffers(scene->meshes.size(), vk::CommandBuffer());
+    commandBuffers.clear();
 
-        for (int i = 0; i < scene->meshes.size(); ++i) {
+    for (int i = 0; i < scene->meshes.size(); ++i) {
 
-            auto& mesh = scene->meshes[i];
+        auto& mesh = scene->meshes[i];
 
-            command.CreateCommandBuffer(commandBuffers[i], "copying texture");
-            command.RecordCopyCommands(commandBuffers[i], mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
-        }
+        commandBuffers.emplace_back();
+        command.CreateCommandBuffer(commandBuffers.back());
+        command.RecordCopyCommands(commandBuffers.back(), mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
+    }
 
-        vk::SubmitInfo submitInfo;
-        submitInfo.commandBufferCount = commandBuffers.size();
-        submitInfo.pCommandBuffers = commandBuffers.data();
+    submitInfo.commandBufferCount = commandBuffers.size();
+    submitInfo.pCommandBuffers = commandBuffers.data();
 
-        device.vkGraphicsQueue.submit(submitInfo);
-        device.vkGraphicsQueue.waitIdle();
+    device.vkGraphicsQueue.submit(submitInfo);
+    device.vkGraphicsQueue.waitIdle();
+
+    for (auto& mesh : scene->meshes) {
+        mesh->DestroyStagingBuffer();
     }
 }
 
@@ -215,7 +218,7 @@ void GraphicsEngine::RecreateSwapchain()
 
     command.CreateCommandPool("new swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer, "new swapchain frame");
+        command.CreateCommandBuffer(frame.commandBuffer);
     }
 }
 

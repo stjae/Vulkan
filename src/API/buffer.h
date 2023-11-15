@@ -16,6 +16,7 @@ class Buffer
 public:
     Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
     void CreateBuffer(const BufferInput& bufferInput);
+    void DestroyBuffer();
     ~Buffer();
 
     vk::Buffer vkBuffer;
