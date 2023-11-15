@@ -56,9 +56,36 @@ void Image::TransitImageLayout(vk::CommandBuffer& commandBuffer, vk::ImageLayout
     commandBuffer.end();
 }
 
+void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+{
+    vk::SamplerCreateInfo samplerInfo;
+    samplerInfo.magFilter = vk::Filter::eLinear;
+    samplerInfo.minFilter = vk::Filter::eLinear;
+    samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.anisotropyEnable = vk::True;
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &properties);
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+    samplerInfo.unnormalizedCoordinates = vk::False;
+    samplerInfo.compareEnable = vk::False;
+    samplerInfo.compareOp = vk::CompareOp::eAlways;
+    samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkDevice.createSampler(&samplerInfo, nullptr, &sampler) != vk::Result::eSuccess) {
+        spdlog::error("failed to create sampler");
+    }
+}
+
 Image::~Image()
 {
     vkDevice.freeMemory(memory.vkDeviceMemory);
     vkDevice.destroyImage(image);
+    vkDevice.destroySampler(sampler);
     vkDevice.destroyImageView(imageView);
 }

@@ -12,7 +12,9 @@ Device::Device(GLFWwindow* window)
 #if defined(__APPLE__)
     deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
-    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance.instanceLayers.size()), instance.instanceLayers.data(), static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data());
+    vk::PhysicalDeviceFeatures supportedFeatures;
+    vkPhysicalDevice.getFeatures(&supportedFeatures);
+    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance.instanceLayers.size()), instance.instanceLayers.data(), static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data(), &supportedFeatures);
 
     // Get device handle
     vkDevice = vkPhysicalDevice.createDevice(deviceCreateInfo);

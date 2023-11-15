@@ -39,7 +39,9 @@ void Application::SetupImGui()
 
         vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes)), poolSizes);
 
-        auto result = engine->device.vkDevice.createDescriptorPool(&poolInfo, nullptr, &engine->device.imGuiDescriptorPool);
+        if (engine->device.vkDevice.createDescriptorPool(&poolInfo, nullptr, &engine->device.imGuiDescriptorPool) != vk::Result::eSuccess) {
+            spdlog::error("failed to create descriptor pool for ImGui");
+        }
     }
 
     ImGui::CreateContext();

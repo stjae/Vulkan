@@ -1,6 +1,6 @@
 #include "swapchainData.h"
 
-void SwapchainFrame::CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+void SwapchainFrame::CreateUniformBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
 {
     BufferInput input;
     input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;

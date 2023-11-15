@@ -82,6 +82,18 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
     memcpy(swapchain.detail.frames[imageIndex].lightUniformBufferMemoryLocation, scene->pointLight.get(), sizeof(Light));
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
+
+    for (auto& mesh : scene->meshes) {
+        vk::WriteDescriptorSet descriptorWrites;
+        descriptorWrites.dstSet = swapchain.detail.frames[imageIndex].descriptorSets[0];
+        descriptorWrites.dstBinding = 2;
+        descriptorWrites.dstArrayElement = 0;
+        descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites.descriptorCount = 1;
+        descriptorWrites.pImageInfo = &mesh->textureImage->imageInfo;
+
+        device.vkDevice.updateDescriptorSets(descriptorWrites, nullptr);
+    }
 }
 
 void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
@@ -132,6 +144,16 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     device.vkGraphicsQueue.waitIdle();
 
     for (auto& mesh : scene->meshes) {
+
+        mesh->textureImage->TransitImageLayout(commandBuffers.back(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+        submitInfo.commandBufferCount = commandBuffers.size();
+        submitInfo.pCommandBuffers = commandBuffers.data();
+
+        device.vkGraphicsQueue.submit(submitInfo);
+        device.vkGraphicsQueue.waitIdle();
+
+        vk::DescriptorImageInfo imageInfo(mesh->textureImage->sampler, mesh->textureImage->imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+        mesh->textureImage->imageInfo = imageInfo;
         mesh->DestroyStagingBuffer();
     }
 }

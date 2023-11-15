@@ -8,7 +8,7 @@ class MeshData
 {
 public:
     vk::VertexInputBindingDescription GetBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 2> GetAttributeDescs();
+    std::array<vk::VertexInputAttributeDescription, 3> GetAttributeDescs();
     void CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void CreateTexture(const Device& device, const char* fileDir);

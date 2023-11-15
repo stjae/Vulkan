@@ -26,7 +26,7 @@ void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindin
         poolSizes.push_back(poolSize);
     }
 
-    vk::DescriptorPoolCreateInfo poolInfo({}, size * 2, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
+    vk::DescriptorPoolCreateInfo poolInfo({}, size, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
 
     pool = vkDevice.createDescriptorPool(poolInfo);
 }

@@ -6,15 +6,15 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
 {
     vk::VertexInputBindingDescription bindingDesc;
     bindingDesc.setBinding(0);
-    bindingDesc.setStride(3 * sizeof(float) + 3 * sizeof(float));
+    bindingDesc.setStride(3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float));
     bindingDesc.setInputRate(vk::VertexInputRate::eVertex);
 
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 2> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
 {
-    std::array<vk::VertexInputAttributeDescription, 2> attributes;
+    std::array<vk::VertexInputAttributeDescription, 3> attributes;
 
     // Pos
     attributes[0].setBinding(0);
@@ -27,6 +27,12 @@ std::array<vk::VertexInputAttributeDescription, 2> MeshData::GetAttributeDescs()
     attributes[1].setLocation(1);
     attributes[1].setFormat(vk::Format::eR32G32B32Sfloat);
     attributes[1].setOffset(3 * sizeof(float));
+
+    // Texcoord
+    attributes[2].setBinding(0);
+    attributes[2].setLocation(2);
+    attributes[2].setFormat(vk::Format::eR32G32Sfloat);
+    attributes[2].setOffset(3 * sizeof(float) + 3 * sizeof(float));
 
     return attributes;
 }
@@ -109,6 +115,7 @@ void MeshData::CreateTexture(const Device& device, const char* fileDir)
     textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
     vk::Extent3D extent(width, height, 1);
     textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+    textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 }
 
 void MeshData::DestroyStagingBuffer()

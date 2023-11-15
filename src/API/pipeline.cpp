@@ -11,11 +11,11 @@ void GraphicsPipeline::CreatePipeline()
 
     // vertex input
     vk::VertexInputBindingDescription bindingDesc = scene->meshes[0]->GetBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 2> attributeDescs = scene->meshes[0]->GetAttributeDescs();
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescs = scene->meshes[0]->GetAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
-    vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    vertexInputInfo.vertexAttributeDescriptionCount = 3;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescs.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
 
@@ -110,14 +110,18 @@ void GraphicsPipeline::CreatePipeline()
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
     DescriptorSetLayoutData bindings;
-    bindings.count = 2;
+    bindings.count = 3;
     bindings.indices.push_back(0);
     bindings.indices.push_back(1);
+    bindings.indices.push_back(2);
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+    bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+    bindings.counts.push_back(1);
     bindings.counts.push_back(1);
     bindings.counts.push_back(1);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 
     descriptor.CreateSetLayout(bindings);
@@ -177,9 +181,10 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 void GraphicsPipeline::CreateDescriptorPool()
 {
     DescriptorSetLayoutData bindings;
-    bindings.count = 2;
+    bindings.count = 3;
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
     bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+    bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 
     descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
 }

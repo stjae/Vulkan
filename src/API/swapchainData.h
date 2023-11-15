@@ -52,7 +52,7 @@ struct SwapchainFrame {
     const vk::Device& vkDevice;
 
     SwapchainFrame(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice), depthImage(vkPhysicalDevice, vkDevice) {}
-    void CreateResource(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
+    void CreateUniformBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
     void WriteDescriptorSet(const vk::Device& vkDevice);
 };
 

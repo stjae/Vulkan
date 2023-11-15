@@ -93,8 +93,39 @@ void Mesh::CreateCube()
                                   1.0f, 0.0f, 0.0f,
                                   1.0f, 0.0f, 0.0f };
 
-    vertices.reserve(pos.size() + normal.size());
+    std::vector<float> texcoord = { 1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f,
 
+                                    1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f,
+
+                                    1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f,
+
+                                    1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f,
+
+                                    1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f,
+
+                                    1.0f, 0.0f,
+                                    0.0f, 0.0f,
+                                    0.0f, 1.0f,
+                                    1.0f, 1.0f };
+
+    vertices.reserve(pos.size() + normal.size() + texcoord.size());
+
+    int k = 0;
     for (int i = 0; i < pos.size(); i += 3) {
 
         for (int j = i; j < i + 3; ++j) {
@@ -104,6 +135,12 @@ void Mesh::CreateCube()
         for (int j = i; j < i + 3; ++j) {
             vertices.push_back(normal[j]);
         }
+
+        for (int j = k; j < k + 2; ++j) {
+            vertices.push_back(texcoord[j]);
+        }
+
+        k += 2;
     }
 
     indices = { 0, 1, 2, 2, 3, 0,

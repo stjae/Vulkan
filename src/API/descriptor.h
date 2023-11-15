@@ -22,7 +22,6 @@ public:
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~Descriptor();
 
-    // vk::DescriptorSet descriptorSet;
     vk::DescriptorSetLayout setLayout;
     vk::DescriptorPool pool;
 
