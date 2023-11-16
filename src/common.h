@@ -31,6 +31,8 @@ const bool debug = true;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "config.h"
+
 std::vector<char> ReadFile(const std::string& filename);
 
 // spdlog::info

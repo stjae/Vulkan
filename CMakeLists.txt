@@ -7,11 +7,15 @@ if (APPLE)
 endif()
 get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
 
+set(PROJECT_DIR {CMAKE_CURRENT_SOURCE_DIR})
+configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+
 find_package(Vulkan REQUIRED)
 include_directories(${Vulkan_INCLUDE_DIR})
 
 project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME}
+src/config.h
 src/main.cpp
 src/common.h            src/common.cpp
 src/baseApp.h           src/baseApp.cpp

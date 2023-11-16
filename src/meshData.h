@@ -3,6 +3,7 @@
 
 #include "API/buffer.h"
 #include "image.h"
+#include <filesystem>
 
 class MeshData
 {

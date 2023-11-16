@@ -19,7 +19,7 @@ void Scene::CreateResource(const Device& device)
         mesh->CreateIndexBuffer(device.vkPhysicalDevice, device.vkDevice);
         mesh->CreateVertexBuffer(device.vkPhysicalDevice, device.vkDevice);
 
-        mesh->CreateTexture(device, "../../image/box.png");
+        mesh->CreateTexture(device, "/image/box.png");
         mesh->textureImage->CreateSampler(device.vkPhysicalDevice, device.vkDevice);
     }
 }
