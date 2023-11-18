@@ -10,8 +10,8 @@ void GraphicsPipeline::CreatePipeline()
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
 
     // vertex input
-    vk::VertexInputBindingDescription bindingDesc = scene->meshes[0]->GetBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 3> attributeDescs = scene->meshes[0]->GetAttributeDescs();
+    vk::VertexInputBindingDescription bindingDesc = MeshData::GetBindingDesc();
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescs = MeshData::GetAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;

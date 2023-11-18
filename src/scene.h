@@ -4,7 +4,6 @@
 #include "common.h"
 #include "mesh.h"
 #include "light.h"
-#include <filesystem>
 
 class Scene
 {

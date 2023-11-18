@@ -65,9 +65,9 @@ void Application::SetupImGui()
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, engine->pipeline.vkRenderPass);
 
-    ImFontConfig fontConfig;
-    fontConfig.SizePixels = 20.0f;
-    io.Fonts->AddFontDefault(&fontConfig);
+    // ImFontConfig fontConfig;
+    // fontConfig.SizePixels = 20.0f;
+    // io.Fonts->AddFontDefault(&fontConfig);
 
     {
         vk::CommandBufferAllocateInfo allocateInfo(engine->command.commandPool, vk::CommandBufferLevel::ePrimary, 1);
@@ -107,7 +107,7 @@ void Application::Run()
         if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
             camera.isInitial = true;
         }
-        ImGui::End();
+                ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 

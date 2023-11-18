@@ -85,12 +85,12 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
     indexBuffer->CreateBuffer(indexBufferInput);
 }
 
-void MeshData::CreateTexture(const Device& device, const char* fileDir)
+void MeshData::CreateTexture(const Device& device)
 {
     int width, height, channel;
 
     std::string filePath(PROJECT_DIR);
-    filePath.append(fileDir);
+    filePath.append(textureFilePath);
 
     stbi_uc* imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
     vk::DeviceSize imageSize = width * height * 4;
@@ -115,7 +115,6 @@ void MeshData::CreateTexture(const Device& device, const char* fileDir)
     device.vkDevice.unmapMemory(textureStagingBuffer->memory.vkDeviceMemory);
 
     stbi_image_free(imageData);
-
     textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
     vk::Extent3D extent(width, height, 1);
     textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);

@@ -91,3 +91,20 @@ ExternalProject_Add(
         ${DEP_INSTALL_DIR}/include/stb/stb_image.h
     )
 set(DEP_LIST ${DEP_LIST} dep-stb)
+
+# tinyobjloader
+ExternalProject_Add(
+    dep-tinyobjloader
+    GIT_REPOSITORY "https://github.com/tinyobjloader/tinyobjloader.git"
+    GIT_TAG "v1.0.7"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    TEST_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
+        ${PROJECT_BINARY_DIR}/dep-tinyobjloader-prefix/src/dep-tinyobjloader/tiny_obj_loader.h
+        ${DEP_INSTALL_DIR}/include/tiny_obj_loader.h
+    )
+set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)

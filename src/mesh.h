@@ -8,6 +8,7 @@ class Mesh : public MeshData
 public:
     void CreateSquare();
     void CreateCube();
+    void LoadModel(const char* modelPath, const char* texturePath);
 };
 
 #endif

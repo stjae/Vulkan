@@ -81,7 +81,7 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
         vk::DeviceSize offsets[] = { 0 };
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint16);
+        commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint32);
 
         commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
     }

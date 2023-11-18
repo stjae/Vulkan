@@ -1,4 +1,6 @@
 #include "mesh.h"
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 void Mesh::CreateSquare()
 {
@@ -149,4 +151,41 @@ void Mesh::CreateCube()
                 12, 13, 14, 14, 15, 12,
                 16, 17, 18, 18, 19, 16,
                 20, 21, 22, 22, 23, 20 };
+}
+
+void Mesh::LoadModel(const char* modelPath, const char* texturePath)
+{
+    textureFilePath = texturePath;
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    std::string filePath(PROJECT_DIR);
+    filePath.append(modelPath);
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
+
+    for (auto& shape : shapes) {
+        for (auto& index : shape.mesh.indices) {
+
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+
+            vertices.push_back(attrib.normals[3 * index.normal_index + 0]);
+            vertices.push_back(attrib.normals[3 * index.normal_index + 1]);
+            vertices.push_back(attrib.normals[3 * index.normal_index + 2]);
+
+            vertices.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
+            vertices.push_back(1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
+
+            indices.push_back(3 * index.vertex_index + 2);
+            indices.push_back(3 * index.vertex_index + 1);
+            indices.push_back(3 * index.vertex_index + 0);
+        }
+    }
 }
