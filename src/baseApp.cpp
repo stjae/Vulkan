@@ -65,11 +65,13 @@ void Application::SetupImGui()
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, engine->pipeline.vkRenderPass);
 
+#if defined(_WIN32)
     float dpiScaleFactor = ImGui_ImplWin32_GetDpiScaleForHwnd(GetDesktopWindow());
 
     ImFontConfig fontConfig;
     fontConfig.SizePixels = 13.0f * dpiScaleFactor;
     io.Fonts->AddFontDefault(&fontConfig);
+#endif
 
     {
         vk::CommandBufferAllocateInfo allocateInfo(engine->command.commandPool, vk::CommandBufferLevel::ePrimary, 1);

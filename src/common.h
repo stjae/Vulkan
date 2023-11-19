@@ -15,7 +15,9 @@ const bool debug = true;
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
+#if defined(_WIN32)
 #include <imgui_impl_win32.h>
+#endif
 
 // std library
 #include <cstdlib>
