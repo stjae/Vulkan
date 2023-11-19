@@ -33,8 +33,10 @@ void Mesh::CreateSquare()
     indices = { 0, 1, 2, 2, 3, 0 };
 }
 
-void Mesh::CreateCube()
+void Mesh::CreateCube(const char* texturePath)
 {
+    textureFilePath = texturePath;
+
     std::vector<float> pos = { -1.0f, 1.0f, 1.0f,
                                1.0f, 1.0f, 1.0f,
                                1.0f, -1.0f, 1.0f,

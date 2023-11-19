@@ -14,7 +14,7 @@ GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::u
 
     command.CreateCommandPool("swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer);
+        command.AllocateCommandBuffer(frame.commandBuffer);
     }
 
     maxFrameNumber = static_cast<int>(swapchain.detail.frames.size());
@@ -60,20 +60,16 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
-void GraphicsEngine::CreateDepthImage()
-{
-    vk::Extent3D depthImageExtent{ swapchain.detail.extent.width, swapchain.detail.extent.height, 1 };
-    vk::ImageCreateInfo imageCreateInfo({}, vk::ImageType::e2D, vk::Format::eD32Sfloat, depthImageExtent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment);
-}
-
 void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::unique_ptr<Scene>& scene)
 {
-    camera.matrix.model = glm::mat4(1.0f);
     camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
     camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
     camera.matrix.proj[1][1] *= -1;
 
-    ubo.model = camera.matrix.model;
+    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(scene->meshes[0]->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    ubo.model = glm::rotate(ubo.model, glm::radians(scene->meshes[0]->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    ubo.model = glm::rotate(ubo.model, glm::radians(scene->meshes[0]->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::translate(ubo.model, scene->meshes[0]->pos);
     ubo.view = camera.matrix.view;
     ubo.proj = camera.matrix.proj;
     ubo.eye = camera.pos;
@@ -103,59 +99,34 @@ void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
     Command command(device);
     command.CreateCommandPool("copying buffers");
 
-    std::vector<vk::CommandBuffer> commandBuffers;
     for (int j = 0; j < scene->meshes.size(); ++j) {
 
         auto& mesh = scene->meshes[j];
 
-        commandBuffers.emplace_back();
-        command.CreateCommandBuffer(commandBuffers.back());
-        command.RecordCopyCommands(commandBuffers.back(), mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
-        commandBuffers.emplace_back();
-        command.CreateCommandBuffer(commandBuffers.back());
-        command.RecordCopyCommands(commandBuffers.back(), mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
-        commandBuffers.emplace_back();
-        command.CreateCommandBuffer(commandBuffers.back());
-        mesh->textureImage->TransitImageLayout(commandBuffers.back(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        command.RecordCopyCommands(mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
+        command.RecordCopyCommands(mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
+        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     }
 
-    vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = commandBuffers.size();
-    submitInfo.pCommandBuffers = commandBuffers.data();
-
-    device.vkGraphicsQueue.submit(submitInfo);
-    device.vkGraphicsQueue.waitIdle();
-
-    commandBuffers.clear();
+    command.Submit();
 
     for (int i = 0; i < scene->meshes.size(); ++i) {
 
         auto& mesh = scene->meshes[i];
 
-        commandBuffers.emplace_back();
-        command.CreateCommandBuffer(commandBuffers.back());
-        command.RecordCopyCommands(commandBuffers.back(), mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
+        command.RecordCopyCommands(mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
     }
 
-    submitInfo.commandBufferCount = commandBuffers.size();
-    submitInfo.pCommandBuffers = commandBuffers.data();
-
-    device.vkGraphicsQueue.submit(submitInfo);
-    device.vkGraphicsQueue.waitIdle();
+    command.Submit();
 
     for (auto& mesh : scene->meshes) {
 
-        mesh->textureImage->TransitImageLayout(commandBuffers.back(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-        submitInfo.commandBufferCount = commandBuffers.size();
-        submitInfo.pCommandBuffers = commandBuffers.data();
-
-        device.vkGraphicsQueue.submit(submitInfo);
-        device.vkGraphicsQueue.waitIdle();
-
-        vk::DescriptorImageInfo imageInfo(mesh->textureImage->sampler, mesh->textureImage->imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
-        mesh->textureImage->imageInfo = imageInfo;
+        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+        mesh->textureImage->SetTextureImageInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->DestroyStagingBuffer();
     }
+
+    command.Submit();
 }
 
 void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera)
@@ -240,7 +211,7 @@ void GraphicsEngine::RecreateSwapchain()
 
     command.CreateCommandPool("new swapchain frames");
     for (auto& frame : swapchain.detail.frames) {
-        command.CreateCommandBuffer(frame.commandBuffer);
+        command.AllocateCommandBuffer(frame.commandBuffer);
     }
 }
 

@@ -3,6 +3,8 @@
 Scene::Scene()
 {
     meshes.emplace_back(std::make_unique<Mesh>());
+    meshes.back()->CreateCube(nullptr);
+    meshes.emplace_back(std::make_unique<Mesh>());
     meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
     pointLight = std::make_unique<Light>();
 }

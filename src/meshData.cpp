@@ -87,38 +87,67 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
 
 void MeshData::CreateTexture(const Device& device)
 {
-    int width, height, channel;
+    if (textureFilePath) {
 
-    std::string filePath(PROJECT_DIR);
-    filePath.append(textureFilePath);
+        int width, height, channel;
+        vk::DeviceSize imageSize;
+        stbi_uc* imageData;
 
-    stbi_uc* imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
-    vk::DeviceSize imageSize = width * height * 4;
+        std::string filePath(PROJECT_DIR);
+        filePath.append(textureFilePath);
 
-    textureWidth = width;
-    textureHeight = height;
-    textureSize = static_cast<size_t>(imageSize);
+        imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+        imageSize = width * height * 4;
 
-    if (!imageData) {
-        spdlog::error("failed to load texture");
+        if (!imageData) {
+            spdlog::error("failed to load texture");
+            return;
+        }
+
+        textureWidth = width;
+        textureHeight = height;
+        textureSize = static_cast<size_t>(imageSize);
+
+        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
+        BufferInput input;
+        input.size = imageSize;
+        input.usage = vk::BufferUsageFlagBits::eTransferSrc;
+        input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        textureStagingBuffer->CreateBuffer(input);
+
+        void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, imageSize);
+        memcpy(memoryLocation, imageData, static_cast<size_t>(imageSize));
+        device.vkDevice.unmapMemory(textureStagingBuffer->memory.vkDeviceMemory);
+
+        stbi_image_free(imageData);
+        textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
+        vk::Extent3D extent(width, height, 1);
+        textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+        textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+
+    } else {
+
+        unsigned char dummyTexture[4] = { 255, 255, 255, 255 };
+        textureWidth = 1;
+        textureHeight = 1;
+        textureSize = 4;
+
+        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
+        BufferInput input;
+        input.size = 4;
+        input.usage = vk::BufferUsageFlagBits::eTransferSrc;
+        input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        textureStagingBuffer->CreateBuffer(input);
+
+        void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, 4);
+        memcpy(memoryLocation, &dummyTexture[0], 4);
+        device.vkDevice.unmapMemory(textureStagingBuffer->memory.vkDeviceMemory);
+
+        textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
+        vk::Extent3D extent(1, 1, 1);
+        textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+        textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
     }
-
-    textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
-    BufferInput input;
-    input.size = imageSize;
-    input.usage = vk::BufferUsageFlagBits::eTransferSrc;
-    input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-    textureStagingBuffer->CreateBuffer(input);
-
-    void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, imageSize);
-    memcpy(memoryLocation, imageData, static_cast<size_t>(imageSize));
-    device.vkDevice.unmapMemory(textureStagingBuffer->memory.vkDeviceMemory);
-
-    stbi_image_free(imageData);
-    textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
-    vk::Extent3D extent(width, height, 1);
-    textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
-    textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 }
 
 void MeshData::DestroyStagingBuffer()

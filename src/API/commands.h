@@ -9,14 +9,17 @@ class Command
 {
 public:
     Command(const Device& device) : device(device) {}
-    ~Command();
     void CreateCommandPool(const char* usage);
-    void CreateCommandBuffer(vk::CommandBuffer& commandBuffer);
+    void AllocateCommandBuffer(vk::CommandBuffer& commandBuffer);
     void RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData);
-    void RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size);
-    void RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Image& dstImage, const int width, const int height, size_t size);
+    void RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size);
+    void RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage, const int width, const int height, size_t size);
+    void TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+    void Submit();
+    ~Command();
 
     vk::CommandPool commandPool;
+    std::vector<vk::CommandBuffer> commandBuffers;
 
 private:
     const Device& device;

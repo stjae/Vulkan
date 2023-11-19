@@ -109,6 +109,10 @@ void Application::Run()
         if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
             camera.isInitial = true;
         }
+        ImGui::SliderFloat3("Translation", &scene->meshes[0]->pos[0], -10.0f, 10.0f);
+        for (auto& mesh : scene->meshes) {
+            ImGui::SliderFloat3("Rotation", &mesh->rotation[0], -180.0f, 180.0f);
+        }
         ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();

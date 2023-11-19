@@ -10,7 +10,7 @@ void Command::CreateCommandPool(const char* usage)
     Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
-void Command::CreateCommandBuffer(vk::CommandBuffer& commandBuffer)
+void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer)
 {
     vk::CommandBufferAllocateInfo allocateInfo;
     allocateInfo.commandPool = commandPool;
@@ -109,29 +109,84 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
     commandBuffer.end();
 }
 
-void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
+void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {
+    commandBuffers.emplace_back();
+    AllocateCommandBuffer(commandBuffers.back());
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
-
-    commandBuffer.begin(beginInfo);
+    commandBuffers.back().begin(beginInfo);
 
     vk::BufferCopy copyRegion(0, 0, size);
 
-    commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-    commandBuffer.end();
+    commandBuffers.back().copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+    commandBuffers.back().end();
 }
 
-void Command::RecordCopyCommands(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Image& dstImage, const int width, const int height, size_t size)
+void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage, const int width, const int height, size_t size)
 {
+    commandBuffers.emplace_back();
+    AllocateCommandBuffer(commandBuffers.back());
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
-
-    commandBuffer.begin(beginInfo);
+    commandBuffers.back().begin(beginInfo);
 
     vk::ImageSubresourceLayers subResLayer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
     vk::BufferImageCopy copyRegion(0, 0, 0, subResLayer, { 0, 0, 0 }, { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 });
 
-    commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
-    commandBuffer.end();
+    commandBuffers.back().copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
+    commandBuffers.back().end();
+}
+
+void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+{
+    commandBuffers.emplace_back();
+    AllocateCommandBuffer(commandBuffers.back());
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
+    commandBuffers.back().begin(beginInfo);
+
+    vk::PipelineStageFlags srcStage;
+    vk::PipelineStageFlags dstStage;
+
+    vk::ImageMemoryBarrier barrier;
+    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        barrier.srcAccessMask = {};
+        barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+        srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        dstStage = vk::PipelineStageFlagBits::eTransfer;
+    } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+        srcStage = vk::PipelineStageFlagBits::eTransfer;
+        dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+    } else {
+        spdlog::error("unsupported layout transition");
+    }
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
+    barrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    commandBuffers.back().pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
+    commandBuffers.back().end();
+}
+
+void Command::Submit()
+{
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = commandBuffers.size();
+    submitInfo.pCommandBuffers = commandBuffers.data();
+
+    device.vkGraphicsQueue.submit(submitInfo);
+    device.vkGraphicsQueue.waitIdle();
+
+    commandBuffers.clear();
 }
 
 Command::~Command()
