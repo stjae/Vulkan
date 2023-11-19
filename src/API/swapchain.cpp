@@ -50,6 +50,13 @@ void Swapchain::CreateSwapchain(GLFWwindow* window, const Device& device)
         detail.frames[i].swapchainVkImageView = device.vkDevice.createImageView(createInfo);
 
         vk::Extent3D extent = { detail.extent.width, detail.extent.height, 1 };
+        if (detail.frames[i].depthImage.image != VK_NULL_HANDLE) {
+            vkDevice.destroyImage(detail.frames[i].depthImage.image);
+            vkDevice.freeMemory(detail.frames[i].depthImage.memory.vkDeviceMemory);
+        }
+        if (detail.frames[i].depthImage.imageView != VK_NULL_HANDLE) {
+            vkDevice.destroyImageView(detail.frames[i].depthImage.imageView);
+        }
         detail.frames[i].depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
         detail.frames[i].depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }

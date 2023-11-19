@@ -66,6 +66,7 @@ add_library(imgui
     imgui/imgui.cpp
     imgui/imgui_impl_glfw.cpp
     imgui/imgui_impl_vulkan.cpp
+    imgui/imgui_impl_win32.cpp
 )
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
