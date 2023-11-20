@@ -119,7 +119,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
     bindings.counts.push_back(1);
     bindings.counts.push_back(1);
-    bindings.counts.push_back(1);
+    bindings.counts.push_back(2);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
     bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
@@ -128,6 +128,10 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptor.setLayout;
+
+    vk::PushConstantRange pushConstant(vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant));
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
 
     return vkDevice.createPipelineLayout(pipelineLayoutInfo);
 }

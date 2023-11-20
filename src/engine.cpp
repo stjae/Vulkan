@@ -79,17 +79,18 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
 
+    vk::WriteDescriptorSet descriptorWrites;
+    descriptorWrites.dstSet = swapchain.detail.frames[imageIndex].descriptorSets[0];
+    descriptorWrites.dstBinding = 2;
+    descriptorWrites.dstArrayElement = 0;
+    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    descriptorWrites.descriptorCount = 2;
+    std::vector<vk::DescriptorImageInfo> infos;
     for (auto& mesh : scene->meshes) {
-        vk::WriteDescriptorSet descriptorWrites;
-        descriptorWrites.dstSet = swapchain.detail.frames[imageIndex].descriptorSets[0];
-        descriptorWrites.dstBinding = 2;
-        descriptorWrites.dstArrayElement = 0;
-        descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrites.descriptorCount = 1;
-        descriptorWrites.pImageInfo = &mesh->textureImage->imageInfo;
-
-        device.vkDevice.updateDescriptorSets(descriptorWrites, nullptr);
+        infos.push_back(mesh->textureImage->imageInfo);
     }
+    descriptorWrites.pImageInfo = infos.data();
+    device.vkDevice.updateDescriptorSets(descriptorWrites, nullptr);
 }
 
 void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)

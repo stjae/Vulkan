@@ -1,5 +1,10 @@
 #version 450
 
+layout(push_constant) uniform constants
+{
+    int meshIndex;
+} pushConstant;
+
 layout(binding = 0) uniform UBO {
     mat4 model;
     mat4 view;
@@ -11,7 +16,7 @@ layout(binding = 1) uniform LightUBO {
     vec3 pos;
 } lightUBO;
 
-layout (binding = 2) uniform sampler2D textureSampler;
+layout (binding = 2) uniform sampler2D[2] textureSampler;
 
 layout(location = 0) in vec4 modelWorld;
 layout(location = 1) in vec3 normalWorld;
@@ -27,5 +32,5 @@ void main() {
 
     // outColor = vec4(vec3(1.0) * max(dot(halfway, normalWorld), 0.0), 1.0);
     // outColor += vec4(fragTexcoord, 0.0, 1.0);
-    outColor = texture(textureSampler, fragTexcoord) * 2.0;
+    outColor = texture(textureSampler[pushConstant.meshIndex], fragTexcoord) * 2.0;
 }

@@ -83,6 +83,7 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint32);
 
+        commandBuffer.pushConstants(pipeline.vkPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant), &mesh->pushConstant.index);
         commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
     }
 

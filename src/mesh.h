@@ -3,6 +3,10 @@
 
 #include "meshData.h"
 
+struct MeshPushConstant {
+    int index;
+};
+
 class Mesh : public MeshData
 {
 public:
@@ -12,6 +16,8 @@ public:
 
     glm::vec3 pos;
     glm::vec3 rotation;
+
+    MeshPushConstant pushConstant;
 };
 
 #endif
