@@ -2,7 +2,7 @@
 
 Instance::Instance() : logger(vkInstance, dldi)
 {
-    vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_0);
+    vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo createInfo({}, &appInfo);
     SetExtensions(instanceExtensions, createInfo);

@@ -12,9 +12,13 @@ Device::Device(GLFWwindow* window)
 #if defined(__APPLE__)
     deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
+
+    vk::PhysicalDeviceVulkan12Features features12;
+    features12.runtimeDescriptorArray = VK_TRUE;
+
     vk::PhysicalDeviceFeatures supportedFeatures;
     vkPhysicalDevice.getFeatures(&supportedFeatures);
-    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance.instanceLayers.size()), instance.instanceLayers.data(), static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data(), &supportedFeatures);
+    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance.instanceLayers.size()), instance.instanceLayers.data(), static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data(), &supportedFeatures, &features12);
 
     // Get device handle
     vkDevice = vkPhysicalDevice.createDevice(deviceCreateInfo);
@@ -62,6 +66,7 @@ void Device::PickPhysicalDevice()
 bool Device::IsDeviceSuitable(const vk::PhysicalDevice& device)
 {
     deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
     std::set<std::string> ExtensionSets(deviceExtensions.begin(), deviceExtensions.end());
 
     for (vk::ExtensionProperties& extension : device.enumerateDeviceExtensionProperties()) {

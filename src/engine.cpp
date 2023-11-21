@@ -66,15 +66,20 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
     camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
     camera.matrix.proj[1][1] *= -1;
 
-    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(scene->meshes[0]->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    ubo.model = glm::rotate(ubo.model, glm::radians(scene->meshes[0]->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.model = glm::rotate(ubo.model, glm::radians(scene->meshes[0]->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.model = glm::translate(ubo.model, scene->meshes[0]->pos);
-    ubo.view = camera.matrix.view;
-    ubo.proj = camera.matrix.proj;
-    ubo.eye = camera.pos;
+    for (int i = 0; i < scene->meshes.size(); i++) {
 
-    memcpy(swapchain.detail.frames[imageIndex].matrixUniformBufferMemoryLocation, &(ubo), sizeof(UBO));
+        auto& mesh = scene->meshes[i];
+
+        ubo[i].model = glm::rotate(glm::mat4(1.0f), glm::radians(mesh->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        ubo[i].model = glm::rotate(ubo[i].model, glm::radians(mesh->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo[i].model = glm::rotate(ubo[i].model, glm::radians(mesh->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo[i].model = glm::translate(ubo[i].model, mesh->pos);
+        ubo[i].view = camera.matrix.view;
+        ubo[i].proj = camera.matrix.proj;
+        ubo[i].eye = camera.pos;
+    }
+
+    memcpy(swapchain.detail.frames[imageIndex].matrixUniformBufferMemoryLocation, &(ubo), sizeof(ubo));
     memcpy(swapchain.detail.frames[imageIndex].lightUniformBufferMemoryLocation, scene->pointLight.get(), sizeof(Light));
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);

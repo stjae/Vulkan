@@ -111,10 +111,14 @@ void Application::Run()
         if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
             camera.isInitial = true;
         }
-        ImGui::SliderFloat3("Translation", &scene->meshes[0]->pos[0], -10.0f, 10.0f);
-        for (auto& mesh : scene->meshes) {
-            ImGui::SliderFloat3("Rotation", &mesh->rotation[0], -180.0f, 180.0f);
+        for (int i = 0; i < scene->meshes.size(); i++) {
+            std::string id = "##";
+            id.append(std::to_string(i));
+            std::vector<std::string> labels = { "Translation", "Rotation" };
+            ImGui::SliderFloat3(labels[0].append(id).c_str(), &scene->meshes[i]->pos[0], -10.0f, 10.0f);
+            ImGui::SliderFloat3(labels[1].append(id).c_str(), &scene->meshes[i]->rotation[0], -180.0f, 180.0f);
         }
+
         ImGui::End();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
