@@ -77,10 +77,11 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
         ubo[i].view = camera.matrix.view;
         ubo[i].proj = camera.matrix.proj;
         ubo[i].eye = camera.pos;
+
+        memcpy(swapchain.detail.frames[imageIndex].matrixUniformBuffers[i]->memory.memoryLocation, &(ubo[i]), sizeof(UBO));
     }
 
-    memcpy(swapchain.detail.frames[imageIndex].matrixUniformBufferMemoryLocation, &(ubo), sizeof(ubo));
-    memcpy(swapchain.detail.frames[imageIndex].lightUniformBufferMemoryLocation, scene->pointLight.get(), sizeof(Light));
+    memcpy(swapchain.detail.frames[imageIndex].lightUniformBuffer->memory.memoryLocation, scene->pointLight.get(), sizeof(Light));
 
     swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
 

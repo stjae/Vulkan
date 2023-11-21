@@ -11,6 +11,7 @@ public:
     void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
 
     vk::DeviceMemory vkDeviceMemory;
+    void* memoryLocation;
 };
 
 #endif // __MEMORY_H__

@@ -37,13 +37,10 @@ struct SwapchainFrame {
     vk::Semaphore imageAvailable;
     vk::Semaphore renderFinished;
 
-    std::shared_ptr<Buffer> matrixUniformBuffer;
-    void* matrixUniformBufferMemoryLocation;
-
+    std::vector<std::shared_ptr<Buffer>> matrixUniformBuffers;
     std::shared_ptr<Buffer> lightUniformBuffer;
-    void* lightUniformBufferMemoryLocation;
 
-    vk::DescriptorBufferInfo matrixUniformBufferDescriptorInfo;
+    std::vector<vk::DescriptorBufferInfo> matrixUniformBufferDescriptorInfos{ {}, {} };
     vk::DescriptorBufferInfo lightUniformBufferDescriptorInfo;
 
     std::vector<vk::DescriptorSet> descriptorSets;

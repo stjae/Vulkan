@@ -3,26 +3,29 @@
 void SwapchainFrame::CreateUniformBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
 {
     vk::PhysicalDeviceProperties props = vkPhysicalDevice.getProperties();
-    vk::DeviceSize minOffset = props.limits.minUniformBufferOffsetAlignment;
 
     BufferInput input;
     input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-    input.size = minOffset * 2;
+    input.size = sizeof(UBO);
     input.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-    matrixUniformBuffer = std::make_shared<Buffer>(vkPhysicalDevice, vkDevice);
-    matrixUniformBuffer->CreateBuffer(input);
-
-    matrixUniformBufferMemoryLocation = vkDevice.mapMemory(matrixUniformBuffer->memory.vkDeviceMemory, 0, minOffset * 2);
+    matrixUniformBuffers.emplace_back(std::make_shared<Buffer>(vkPhysicalDevice, vkDevice));
+    matrixUniformBuffers.back()->CreateBuffer(input);
+    matrixUniformBuffers.back()->memory.memoryLocation = vkDevice.mapMemory(matrixUniformBuffers.back()->memory.vkDeviceMemory, 0, sizeof(UBO));
+    matrixUniformBuffers.emplace_back(std::make_shared<Buffer>(vkPhysicalDevice, vkDevice));
+    matrixUniformBuffers.back()->CreateBuffer(input);
+    matrixUniformBuffers.back()->memory.memoryLocation = vkDevice.mapMemory(matrixUniformBuffers.back()->memory.vkDeviceMemory, 0, sizeof(UBO));
 
     input.size = sizeof(Light);
     lightUniformBuffer = std::make_shared<Buffer>(vkPhysicalDevice, vkDevice);
     lightUniformBuffer->CreateBuffer(input);
+    lightUniformBuffer->memory.memoryLocation = vkDevice.mapMemory(lightUniformBuffer->memory.vkDeviceMemory, 0, sizeof(Light));
 
-    lightUniformBufferMemoryLocation = vkDevice.mapMemory(lightUniformBuffer->memory.vkDeviceMemory, 0, sizeof(Light));
-
-    matrixUniformBufferDescriptorInfo.buffer = matrixUniformBuffer->vkBuffer;
-    matrixUniformBufferDescriptorInfo.offset = 0;
-    matrixUniformBufferDescriptorInfo.range = VK_WHOLE_SIZE;
+    matrixUniformBufferDescriptorInfos[0].buffer = matrixUniformBuffers[0]->vkBuffer;
+    matrixUniformBufferDescriptorInfos[0].offset = 0;
+    matrixUniformBufferDescriptorInfos[0].range = sizeof(UBO);
+    matrixUniformBufferDescriptorInfos[1].buffer = matrixUniformBuffers[1]->vkBuffer;
+    matrixUniformBufferDescriptorInfos[1].offset = 0;
+    matrixUniformBufferDescriptorInfos[1].range = sizeof(UBO);
 
     lightUniformBufferDescriptorInfo.buffer = lightUniformBuffer->vkBuffer;
     lightUniformBufferDescriptorInfo.offset = 0;
@@ -31,13 +34,9 @@ void SwapchainFrame::CreateUniformBuffer(const vk::PhysicalDevice& vkPhysicalDev
 
 void SwapchainFrame::WriteDescriptorSet(const vk::Device& vkDevice)
 {
-    std::array<vk::WriteDescriptorSet, 2> matrixWriteInfos;
-    vk::WriteDescriptorSet set0(descriptorSets[0], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, matrixUniformBufferDescriptorInfo);
-    matrixWriteInfos[0] = set0;
-    vk::WriteDescriptorSet set1(descriptorSets[0], 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, matrixUniformBufferDescriptorInfo);
-    matrixWriteInfos[1] = set1;
+    vk::WriteDescriptorSet matrixWriteInfo(descriptorSets[0], 0, 0, 2, vk::DescriptorType::eUniformBuffer, nullptr, matrixUniformBufferDescriptorInfos.data(), nullptr, nullptr);
     vk::WriteDescriptorSet lightWriteInfo(descriptorSets[0], 1, 0, vk::DescriptorType::eUniformBuffer, nullptr, lightUniformBufferDescriptorInfo);
 
-    vkDevice.updateDescriptorSets(matrixWriteInfos, nullptr);
+    vkDevice.updateDescriptorSets(matrixWriteInfo, nullptr);
     vkDevice.updateDescriptorSets(lightWriteInfo, nullptr);
 }

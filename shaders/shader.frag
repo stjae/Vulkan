@@ -17,7 +17,7 @@ layout(binding = 1) uniform LightUBO {
     vec3 pos;
 } lightUBO;
 
-layout (binding = 2) uniform sampler2D textureSampler[];
+layout (binding = 2) uniform sampler2D textureSampler[2];
 
 layout(location = 0) in vec4 modelWorld;
 layout(location = 1) in vec3 normalWorld;
