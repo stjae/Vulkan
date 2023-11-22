@@ -27,6 +27,7 @@ public:
     const vk::Device& vkDevice;
     Shader shader;
     Descriptor descriptor;
+    DescriptorSetLayoutData bindings;
 };
 
 #endif

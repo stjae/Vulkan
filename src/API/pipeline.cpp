@@ -109,7 +109,6 @@ void GraphicsPipeline::CreatePipeline()
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
-    DescriptorSetLayoutData bindings;
     bindings.count = 3;
     bindings.indices.push_back(0);
     bindings.indices.push_back(1);
@@ -184,12 +183,6 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    DescriptorSetLayoutData bindings;
-    bindings.count = 3;
-    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-
     descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
 }
 

@@ -20,10 +20,12 @@ void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindin
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
-    for (int i = 0; i < bindings.count; ++i) {
+    for (int i = 0; i < bindings.count; i++) {
+        for (int j = 0; j < bindings.counts[i]; j++) {
 
-        vk::DescriptorPoolSize poolSize(bindings.types[i], size);
-        poolSizes.push_back(poolSize);
+            vk::DescriptorPoolSize poolSize(bindings.types[i], size);
+            poolSizes.push_back(poolSize);
+        }
     }
 
     vk::DescriptorPoolCreateInfo poolInfo({}, size, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
