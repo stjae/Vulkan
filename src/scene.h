@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include "mesh.h"
-#include "light.h"
 
 class Scene
 {
@@ -12,7 +11,6 @@ public:
     void CreateResource(const Device& device);
 
     std::vector<std::unique_ptr<Mesh>> meshes;
-    std::unique_ptr<Light> pointLight;
 };
 
 #endif

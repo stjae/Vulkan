@@ -44,9 +44,7 @@ void MeshData::CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, co
     stagingBufferInput.usage = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
                                     vk::MemoryPropertyFlagBits::eHostCoherent;
-
-    vertexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
-    vertexStagingBuffer->CreateBuffer(stagingBufferInput);
+    vertexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
 
     void* memoryLocation = vkDevice.mapMemory(vertexStagingBuffer->memory.vkDeviceMemory, 0, stagingBufferInput.size);
     memcpy(memoryLocation, vertices.data(), stagingBufferInput.size);
@@ -56,9 +54,7 @@ void MeshData::CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, co
     vertexBufferInput.size = stagingBufferInput.size;
     vertexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     vertexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-    vertexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
-    vertexBuffer->CreateBuffer(vertexBufferInput);
+    vertexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, vertexBufferInput);
 }
 
 void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
@@ -68,9 +64,7 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
     stagingBufferInput.usage = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBufferInput.properties = vk::MemoryPropertyFlagBits::eHostVisible |
                                     vk::MemoryPropertyFlagBits::eHostCoherent;
-
-    indexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
-    indexStagingBuffer->CreateBuffer(stagingBufferInput);
+    indexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
 
     void* memoryLocation = vkDevice.mapMemory(indexStagingBuffer->memory.vkDeviceMemory, 0, stagingBufferInput.size);
     memcpy(memoryLocation, indices.data(), stagingBufferInput.size);
@@ -80,9 +74,7 @@ void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, con
     indexBufferInput.size = stagingBufferInput.size;
     indexBufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     indexBufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-    indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice);
-    indexBuffer->CreateBuffer(indexBufferInput);
+    indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, indexBufferInput);
 }
 
 void MeshData::CreateTexture(const Device& device)
@@ -108,12 +100,11 @@ void MeshData::CreateTexture(const Device& device)
         textureHeight = height;
         textureSize = static_cast<size_t>(imageSize);
 
-        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
         BufferInput input;
         input.size = imageSize;
         input.usage = vk::BufferUsageFlagBits::eTransferSrc;
         input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-        textureStagingBuffer->CreateBuffer(input);
+        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
 
         void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, imageSize);
         memcpy(memoryLocation, imageData, static_cast<size_t>(imageSize));
@@ -132,12 +123,11 @@ void MeshData::CreateTexture(const Device& device)
         textureHeight = 1;
         textureSize = 4;
 
-        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice);
         BufferInput input;
         input.size = 4;
         input.usage = vk::BufferUsageFlagBits::eTransferSrc;
         input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-        textureStagingBuffer->CreateBuffer(input);
+        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
 
         void* memoryLocation = device.vkDevice.mapMemory(textureStagingBuffer->memory.vkDeviceMemory, 0, 4);
         memcpy(memoryLocation, &dummyTexture[0], 4);

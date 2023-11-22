@@ -3,6 +3,15 @@
 
 #include "meshData.h"
 
+struct UBO {
+
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+
+    glm::vec3 eye;
+};
+
 struct MeshPushConstant {
     int index;
 };
@@ -17,7 +26,10 @@ public:
     glm::vec3 pos;
     glm::vec3 rotation;
 
+    UBO ubo;
     MeshPushConstant pushConstant;
+
+    std::unique_ptr<Buffer> matrixUniformBuffer;
 };
 
 #endif

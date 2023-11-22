@@ -66,24 +66,27 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
     camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
     camera.matrix.proj[1][1] *= -1;
 
+    std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
+
     for (int i = 0; i < scene->meshes.size(); i++) {
 
         auto& mesh = scene->meshes[i];
 
-        ubo[i].model = glm::rotate(glm::mat4(1.0f), glm::radians(mesh->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        ubo[i].model = glm::rotate(ubo[i].model, glm::radians(mesh->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        ubo[i].model = glm::rotate(ubo[i].model, glm::radians(mesh->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo[i].model = glm::translate(ubo[i].model, mesh->pos);
-        ubo[i].view = camera.matrix.view;
-        ubo[i].proj = camera.matrix.proj;
-        ubo[i].eye = camera.pos;
+        mesh->ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(mesh->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        mesh->ubo.model = glm::rotate(mesh->ubo.model, glm::radians(mesh->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        mesh->ubo.model = glm::rotate(mesh->ubo.model, glm::radians(mesh->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        mesh->ubo.model = glm::translate(mesh->ubo.model, mesh->pos);
+        mesh->ubo.view = camera.matrix.view;
+        mesh->ubo.proj = camera.matrix.proj;
+        mesh->ubo.eye = camera.pos;
 
-        memcpy(swapchain.detail.frames[imageIndex].matrixUniformBuffers[i]->memory.memoryLocation, &(ubo[i]), sizeof(UBO));
+        memcpy(mesh->matrixUniformBuffer->memory.memoryLocation, &(mesh->ubo), sizeof(UBO));
+
+        descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->descriptorBufferInfo);
     }
 
-    memcpy(swapchain.detail.frames[imageIndex].lightUniformBuffer->memory.memoryLocation, scene->pointLight.get(), sizeof(Light));
-
-    swapchain.detail.frames[imageIndex].WriteDescriptorSet(device.vkDevice);
+    vk::WriteDescriptorSet matrixWriteInfo(swapchain.detail.frames[imageIndex].descriptorSets[0], 0, 0, 2, vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfos.data(), nullptr, nullptr);
+    device.vkDevice.updateDescriptorSets(matrixWriteInfo, nullptr);
 
     vk::WriteDescriptorSet descriptorWrites;
     descriptorWrites.dstSet = swapchain.detail.frames[imageIndex].descriptorSets[0];

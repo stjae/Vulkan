@@ -14,13 +14,16 @@ struct BufferInput {
 class Buffer
 {
 public:
-    Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice) {}
-    void CreateBuffer(const BufferInput& bufferInput);
+    Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& bufferInput);
+    void MapUniformBuffer();
     void DestroyBuffer();
     ~Buffer();
 
     vk::Buffer vkBuffer;
     Memory memory;
+    size_t size;
+
+    vk::DescriptorBufferInfo descriptorBufferInfo;
 
 private:
     const vk::PhysicalDevice& vkPhysicalDevice;

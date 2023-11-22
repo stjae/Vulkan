@@ -169,8 +169,6 @@ void Swapchain::PrepareFrames()
         frame.inFlight = MakeFence(vkDevice);
         frame.imageAvailable = MakeSemaphore(vkDevice);
         frame.renderFinished = MakeSemaphore(vkDevice);
-
-        frame.CreateUniformBuffer(vkPhysicalDevice, vkDevice);
     }
 }
 

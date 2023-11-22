@@ -34,8 +34,6 @@ public:
 
     int frameIndex = 0;
     int maxFrameNumber;
-
-    UBO ubo[2];
 };
 
 #endif
