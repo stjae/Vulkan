@@ -5,6 +5,7 @@
 #include "common.h"
 #include "scene.h"
 #include "camera.h"
+#include "imgui.h"
 
 class Application
 {
@@ -13,7 +14,6 @@ public:
 
     Application(const int width, const int height, const char* wName);
 
-    void SetupImGui();
     void Run();
     void GetFramerate();
 
@@ -22,6 +22,7 @@ private:
     std::unique_ptr<GraphicsEngine> engine;
     std::unique_ptr<Scene> scene;
 
+    MyImGui imgui;
     Camera camera;
 };
 

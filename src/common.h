@@ -12,11 +12,11 @@ const bool debug = true;
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_vulkan.h>
 #if defined(_WIN32)
-#include <imgui_impl_win32.h>
+#include <imgui/imgui_impl_win32.h>
 #endif
 
 // std library
@@ -33,6 +33,7 @@ const bool debug = true;
 #include <spdlog/fmt/bundled/color.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "config.h"
 

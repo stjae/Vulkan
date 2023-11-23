@@ -108,9 +108,9 @@ void Device::FindQueueFamilies()
 
 Device::~Device()
 {
-    vkDevice.destroyDescriptorPool(imGuiDescriptorPool);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    vkDevice.destroyDescriptorPool(imGuiDescriptorPool);
     ImGui::DestroyContext();
 
     vkDevice.destroy();

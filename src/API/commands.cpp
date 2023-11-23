@@ -62,9 +62,9 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
-    viewport.y = 0.0f;
+    viewport.y = static_cast<float>(pipeline.swapchainDetail.extent.height);
     viewport.width = static_cast<float>(pipeline.swapchainDetail.extent.width);
-    viewport.height = static_cast<float>(pipeline.swapchainDetail.extent.height);
+    viewport.height = -1.0f * static_cast<float>(pipeline.swapchainDetail.extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 

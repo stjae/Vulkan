@@ -64,7 +64,6 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
 {
     camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
     camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
-    camera.matrix.proj[1][1] *= -1;
 
     std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
 

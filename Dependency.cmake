@@ -59,24 +59,40 @@ ExternalProject_Add(
 
 set(DEP_LIST ${DEP_LIST} dep-glm)
 
+ExternalProject_Add(
+    dep-imgui
+    GIT_REPOSITORY "https://github.com/ocornut/imgui.git"
+    GIT_TAG "v1.90-docking"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    TEST_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_BINARY_DIR}/dep-imgui-prefix/src/dep-imgui
+        ${DEP_INCLUDE_DIR}/imgui
+        
+        ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_BINARY_DIR}/dep-imgui-prefix/src/dep-imgui/backends
+        ${DEP_INCLUDE_DIR}/imgui
+)
+set(DEP_LIST ${DEP_LIST} dep-imgui)
 set(imguiLIBS 
-    imgui/imgui_draw.cpp
-    imgui/imgui_tables.cpp
-    imgui/imgui_widgets.cpp
-    imgui/imgui.cpp
-    imgui/imgui_impl_glfw.cpp
-    imgui/imgui_impl_vulkan.cpp)
+    ${DEP_INCLUDE_DIR}/imgui/imgui_draw.cpp
+    ${DEP_INCLUDE_DIR}/imgui/imgui_tables.cpp
+    ${DEP_INCLUDE_DIR}/imgui/imgui_widgets.cpp
+    ${DEP_INCLUDE_DIR}/imgui/imgui.cpp
+    ${DEP_INCLUDE_DIR}/imgui/imgui_impl_glfw.cpp
+    ${DEP_INCLUDE_DIR}/imgui/imgui_impl_vulkan.cpp)
 if(WIN32)
-add_library(imgui ${imguiLIBS} imgui/imgui_impl_win32.cpp)
+add_library(imgui ${imguiLIBS} ${DEP_INCLUDE_DIR}/imgui/imgui_impl_win32.cpp)
 else()
 add_library(imgui ${imguiLIBS})
 endif()
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
 add_dependencies(imgui ${DEP_LIST})
-set(DEP_INCLUDE_DIR ${DEP_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
-set(DEP_LIST ${DEP_LIST} imgui)
-set(DEP_LIBS ${DEP_LIBS} imgui)
 set(DEP_LIBS ${DEP_LIBS} imgui)
 
 # stb
@@ -92,8 +108,8 @@ ExternalProject_Add(
     TEST_COMMAND ""
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
         ${PROJECT_BINARY_DIR}/dep-stb-prefix/src/dep-stb/stb_image.h
-        ${DEP_INSTALL_DIR}/include/stb/stb_image.h
-    )
+        ${DEP_INCLUDE_DIR}/stb/stb_image.h
+)
 set(DEP_LIST ${DEP_LIST} dep-stb)
 
 # tinyobjloader
@@ -109,6 +125,27 @@ ExternalProject_Add(
     TEST_COMMAND ""
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
         ${PROJECT_BINARY_DIR}/dep-tinyobjloader-prefix/src/dep-tinyobjloader/tiny_obj_loader.h
-        ${DEP_INSTALL_DIR}/include/tiny_obj_loader.h
-    )
+        ${DEP_INCLUDE_DIR}/tiny_obj_loader.h
+)
 set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)
+
+# ImGuizmo
+ExternalProject_Add(
+    dep-imguizmo
+    GIT_REPOSITORY "https://github.com/CedricGuillemet/ImGuizmo.git"
+    GIT_TAG "1.83"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    TEST_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_BINARY_DIR}/dep-imguizmo-prefix/src/dep-imguizmo
+        ${DEP_INSTALL_DIR}/include/imguizmo
+)
+add_library(imguizmo ${DEP_INCLUDE_DIR}/imguizmo/ImGuizmo.cpp)
+add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
+target_include_directories(imguizmo PRIVATE ${DEP_INCLUDE_DIR}/imgui)
+set(DEP_LIST ${DEP_LIST} dep-imguizmo)
+set(DEP_LIBS ${DEP_LIBS} imguizmo)
