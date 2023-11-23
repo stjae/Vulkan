@@ -153,6 +153,8 @@ void Mesh::CreateCube(const char* texturePath)
                 12, 13, 14, 14, 15, 12,
                 16, 17, 18, 18, 19, 16,
                 20, 21, 22, 22, 23, 20 };
+
+    name = "cube";
 }
 
 void Mesh::LoadModel(const char* modelPath, const char* texturePath)
@@ -190,4 +192,6 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
             indices.push_back(3 * index.vertex_index + 0);
         }
     }
+
+    name = "model";
 }

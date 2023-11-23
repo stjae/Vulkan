@@ -5,7 +5,7 @@
 
 struct UBO {
 
-    glm::mat4 model;
+    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view;
     glm::mat4 proj;
 
@@ -22,6 +22,9 @@ public:
     void CreateSquare();
     void CreateCube(const char* texturePath);
     void LoadModel(const char* modelPath, const char* texturePath);
+
+    std::string name;
+    bool isSelected;
 
     glm::vec3 pos;
     glm::vec3 rotation;

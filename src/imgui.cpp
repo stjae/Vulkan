@@ -48,7 +48,6 @@ void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene)
 {
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -99,34 +98,67 @@ void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene)
     }
     ImGui::End();
 
-    ImGui::Begin("Object Attribute");
-
-    // if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
-    //     camera.isInitial = true;
-    // }
-    for (int i = 0; i < scene->meshes.size(); i++) {
-        std::string id = "##";
-        id.append(std::to_string(i));
-        std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::SliderFloat3(labels[0].append(id).c_str(), &scene->meshes[i]->pos[0], -10.0f, 10.0f);
-        ImGui::SliderFloat3(labels[1].append(id).c_str(), &scene->meshes[i]->rotation[0], -180.0f, 180.0f);
-    }
-
-    ImGui::End();
-
     ImGui::Begin("Object List");
+    ImGui::BeginListBox("Object");
+    for (auto& mesh : scene->meshes) {
+
+        ImGui::Selectable(mesh->name.c_str(), &mesh->isSelected);
+    }
+    ImGui::EndListBox();
     ImGui::End();
 
     // ImGuizmo
     ImGuizmo::BeginFrame();
+    ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
     ImGuizmo::SetRect(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
 
     for (auto& mesh : scene->meshes) {
 
-        ImGuizmo::Manipulate(glm::value_ptr(camera.matrix.view), glm::value_ptr(camera.matrix.proj),
-                             ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(mesh->ubo.model));
+        if (mesh->isSelected) {
+
+            float translation[3];
+            float rotation[3];
+            float scale[3];
+            float objectMatrix[16];
+
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->ubo.model), translation, rotation, scale);
+            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
+            ImGuizmo::Manipulate(glm::value_ptr(camera.matrix.view), glm::value_ptr(camera.matrix.proj),
+                                 ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, objectMatrix);
+            mesh->ubo.model = glm::make_mat4(objectMatrix);
+        }
     }
+
+    ImGui::Begin("Object Attribute");
+
+    if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
+        camera.isInitial = true;
+    }
+    for (int i = 0; i < scene->meshes.size(); i++) {
+        if (!scene->meshes[i]->isSelected)
+            continue;
+
+        float translation[3];
+        float rotation[3];
+        float scale[3];
+        float objectMatrix[16];
+
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene->meshes[i]->ubo.model), translation, rotation, scale);
+
+        std::string id = "##";
+        id.append(std::to_string(i));
+        std::vector<std::string> labels = { "Translation", "Rotation" };
+        ImGui::Text(scene->meshes[i]->name.c_str());
+        ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
+        ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
+
+        ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
+
+        scene->meshes[i]->ubo.model = glm::make_mat4(objectMatrix);
+    }
+
+    ImGui::End();
 
     ImGui::EndFrame();
     ImGui::Render();
