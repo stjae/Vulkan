@@ -39,9 +39,7 @@ void GraphicsPipeline::CreatePipeline()
 
     vk::PipelineViewportStateCreateInfo viewportState;
     viewportState.viewportCount = 1;
-    // viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
-    // viewportState.pScissors = &scissor;
     pipelineInfo.pViewportState = &viewportState;
 
     // rasterizer
@@ -109,6 +107,8 @@ void GraphicsPipeline::CreatePipeline()
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
+    // get data from scene
+
     bindings.count = 3;
     bindings.indices.push_back(0);
     bindings.indices.push_back(1);

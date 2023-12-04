@@ -16,7 +16,6 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui::StyleColorsDark();
@@ -44,68 +43,17 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 #endif
 }
 
-void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene)
+void MyImGui::DrawImGuizmo(Camera& camera, const std::unique_ptr<Scene>& scene)
 {
-    auto& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGuiIO& io = ImGui::GetIO();
 
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-
-    ImGui::NewFrame();
-
-    static bool p_open = true;
-    static bool opt_padding = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // and handle the pass-thru hole, so we ask Begin() to not render a background.
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        window_flags |= ImGuiWindowFlags_NoBackground;
-    if (!opt_padding)
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &p_open, window_flags);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleVar(2);
-    // Submit the DockSpace
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Options")) {
-            // Disabling fullscreen would allow the window to be moved to the front of other windows,
-            // which we can't undo at the moment without finer window depth/z control.
-            ImGui::MenuItem("Menu");
-            ImGui::Separator();
-            if (ImGui::MenuItem("Close", NULL, false, &p_open != NULL))
-                p_open = false;
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMenuBar();
-    }
-    ImGui::End();
-
-    ImGui::Begin("Object List");
-    ImGui::BeginListBox("Object");
-    for (auto& mesh : scene->meshes) {
-
-        ImGui::Selectable(mesh->name.c_str(), &mesh->isSelected);
-    }
-    ImGui::EndListBox();
-    ImGui::End();
+    static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !camera.isControllable)
+        OP = ImGuizmo::OPERATION::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !camera.isControllable)
+        OP = ImGuizmo::OPERATION::ROTATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !camera.isControllable)
+        OP = ImGuizmo::OPERATION::SCALE;
 
     // ImGuizmo
     ImGuizmo::BeginFrame();
@@ -125,16 +73,103 @@ void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene)
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->ubo.model), translation, rotation, scale);
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
             ImGuizmo::Manipulate(glm::value_ptr(camera.matrix.view), glm::value_ptr(camera.matrix.proj),
-                                 ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, objectMatrix);
+                                 OP, ImGuizmo::LOCAL, objectMatrix);
             mesh->ubo.model = glm::make_mat4(objectMatrix);
         }
     }
+}
 
-    ImGui::Begin("Object Attribute");
+void MyImGui::DrawDockSpace()
+{
+    ImGuiIO& io = ImGui::GetIO();
 
-    if (ImGui::Checkbox("Camera Control", &camera.isControllable)) {
+    static bool p_open = true;
+    static bool opt_padding = false;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
+
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        window_flags |= ImGuiWindowFlags_NoBackground;
+    if (!opt_padding)
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("DockSpace Demo", &p_open, window_flags);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
+
+    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    }
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Options")) {
+            ImGui::MenuItem("Menu");
+            ImGui::Separator();
+            if (ImGui::MenuItem("Close", NULL, false, &p_open != NULL))
+                p_open = false;
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
+    ImGui::End();
+}
+
+void MyImGui::ControlCamera(Camera& camera, GLFWwindow* window)
+{
+    if (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::Checkbox("Camera Control [c]", &camera.isControllable)) {
+        camera.isControllable = !camera.isControllable;
+        ImGuiIO& io = ImGui::GetIO();
+
+        if (camera.isControllable) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        }
+
         camera.isInitial = true;
     }
+}
+
+void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene, GLFWwindow* window)
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGui::NewFrame();
+
+    DrawDockSpace();
+
+    // Object List Window
+    ImGui::Begin("List");
+    // for (auto& mesh : scene->meshes) {
+    //     ImGui::Selectable(mesh->name.c_str(), &mesh->isSelected);
+    // }
+    static int currentItem = -1;
+    const char* items[2] = { "a", "b" };
+    ImGui::ListBox("Object", &currentItem, items, IM_ARRAYSIZE(items), 4);
+    ImGui::End();
+
+    DrawImGuizmo(camera, scene);
+
+    // Object Attribute Window
+    ImGui::Begin("Object Attribute");
+    ControlCamera(camera, window);
+
     for (int i = 0; i < scene->meshes.size(); i++) {
         if (!scene->meshes[i]->isSelected)
             continue;

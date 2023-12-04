@@ -71,10 +71,6 @@ void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::uniqu
 
         auto& mesh = scene->meshes[i];
 
-        // mesh->ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(mesh->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        // mesh->ubo.model = glm::rotate(mesh->ubo.model, glm::radians(mesh->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        // mesh->ubo.model = glm::rotate(mesh->ubo.model, glm::radians(mesh->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        // mesh->ubo.model = glm::translate(mesh->ubo.model, mesh->pos);
         mesh->ubo.view = camera.matrix.view;
         mesh->ubo.proj = camera.matrix.proj;
         mesh->ubo.eye = camera.pos;

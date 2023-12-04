@@ -1,21 +1,5 @@
 #include "baseApp.h"
 
-void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        Camera* camera = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(window));
-        camera->isControllable = !camera->isControllable;
-
-        if (camera->isControllable) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-
-        camera->isInitial = true;
-    }
-}
-
 Application::Application(const int width, const int height, const char* wName)
     : window(width, height, wName), camera(window.window)
 {
@@ -26,8 +10,6 @@ Application::Application(const int width, const int height, const char* wName)
 
     engine->InitSwapchainImages();
     engine->Prepare(scene);
-
-    glfwSetKeyCallback(window.window, KeyCallback);
 }
 
 void Application::Run()
@@ -39,8 +21,11 @@ void Application::Run()
             camera.Update(window);
         }
 
-        imgui.Draw(camera, scene);
+        imgui.Draw(camera, scene, window.window);
         ImDrawData* draw_data = ImGui::GetDrawData();
+
+        if (ImGui::IsKeyPressed(ImGuiKey_X))
+            scene->meshes.pop_back();
 
         engine->Render(scene, draw_data, camera);
         GetFramerate();

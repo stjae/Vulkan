@@ -15,7 +15,7 @@ struct Camera {
     void Update(Window& window);
 
     bool isControllable = false;
-    bool isInitial = true;
+    bool isInitial = true; // prevent sudden camera move
 
     glm::vec3 pos = { 0.0f, 0.0f, 4.0f };
     glm::vec4 dir = { 0.0f, 0.0f, -1.0f, 0.0f };
