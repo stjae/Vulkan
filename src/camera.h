@@ -11,8 +11,7 @@ struct Matrix {
 };
 
 struct Camera {
-    Camera(GLFWwindow* window);
-    void Update(Window& window);
+    void Update();
 
     bool isControllable = false;
     bool isInitial = true; // prevent sudden camera move

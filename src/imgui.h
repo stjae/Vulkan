@@ -12,10 +12,10 @@ class MyImGui
 {
 public:
     void Setup(const std::unique_ptr<GraphicsEngine>& engine);
-    void DrawImGuizmo(Camera& camera, const std::unique_ptr<Scene>& scene);
+    void DrawImGuizmo(const std::unique_ptr<Scene>& scene);
     void DrawDockSpace();
-    void ControlCamera(Camera& camera, GLFWwindow* window);
-    void Draw(Camera& camera, const std::unique_ptr<Scene>& scene, GLFWwindow* window);
+    void ControlCamera(const std::unique_ptr<Scene>& scene, GLFWwindow* window);
+    void Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window);
 };
 
 #endif // __IMGUI_H__

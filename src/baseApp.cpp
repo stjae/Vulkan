@@ -1,7 +1,7 @@
 #include "baseApp.h"
 
 Application::Application(const int width, const int height, const char* wName)
-    : window(width, height, wName), camera(window.window)
+    : window(width, height, wName)
 {
     scene = std::make_unique<Scene>();
     engine = std::make_unique<GraphicsEngine>(width, height, window.window, scene);
@@ -9,7 +9,6 @@ Application::Application(const int width, const int height, const char* wName)
     imgui.Setup(engine);
 
     engine->InitSwapchainImages();
-    engine->Prepare(scene);
 }
 
 void Application::Run()
@@ -17,17 +16,10 @@ void Application::Run()
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
 
-        if (camera.isControllable) {
-            camera.Update(window);
-        }
-
-        imgui.Draw(camera, scene, window.window);
+        imgui.Draw(scene, window.window);
         ImDrawData* draw_data = ImGui::GetDrawData();
 
-        if (ImGui::IsKeyPressed(ImGuiKey_X))
-            scene->meshes.pop_back();
-
-        engine->Render(scene, draw_data, camera);
+        engine->Render(scene, draw_data);
         GetFramerate();
     }
 }

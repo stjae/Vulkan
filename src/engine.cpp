@@ -2,7 +2,7 @@
 
 GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene)
     : device(window), swapchain(device, pipeline.vkRenderPass),
-      pipeline(device.vkDevice, swapchain.detail, scene), command(device)
+      pipeline(device.vkDevice, swapchain.detail), command(device)
 {
     this->window = window;
     this->width = width;
@@ -60,81 +60,7 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
-void GraphicsEngine::UpdateFrame(uint32_t imageIndex, Camera& camera, std::unique_ptr<Scene>& scene)
-{
-    camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
-    camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
-
-    std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
-
-    for (int i = 0; i < scene->meshes.size(); i++) {
-
-        auto& mesh = scene->meshes[i];
-
-        mesh->ubo.view = camera.matrix.view;
-        mesh->ubo.proj = camera.matrix.proj;
-        mesh->ubo.eye = camera.pos;
-
-        memcpy(mesh->matrixUniformBuffer->memory.memoryLocation, &(mesh->ubo), sizeof(UBO));
-
-        descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->descriptorBufferInfo);
-    }
-
-    vk::WriteDescriptorSet matrixWriteInfo(swapchain.detail.frames[imageIndex].descriptorSets[0], 0, 0, 2, vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfos.data(), nullptr, nullptr);
-    device.vkDevice.updateDescriptorSets(matrixWriteInfo, nullptr);
-
-    vk::WriteDescriptorSet descriptorWrites;
-    descriptorWrites.dstSet = swapchain.detail.frames[imageIndex].descriptorSets[0];
-    descriptorWrites.dstBinding = 2;
-    descriptorWrites.dstArrayElement = 0;
-    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    descriptorWrites.descriptorCount = 2;
-    std::vector<vk::DescriptorImageInfo> infos;
-    for (auto& mesh : scene->meshes) {
-        infos.push_back(mesh->textureImage->imageInfo);
-    }
-    descriptorWrites.pImageInfo = infos.data();
-    device.vkDevice.updateDescriptorSets(descriptorWrites, nullptr);
-}
-
-void GraphicsEngine::Prepare(std::unique_ptr<Scene>& scene)
-{
-    scene->CreateResource(device);
-
-    Command command(device);
-    command.CreateCommandPool("copying buffers");
-
-    for (int j = 0; j < scene->meshes.size(); ++j) {
-
-        auto& mesh = scene->meshes[j];
-
-        command.RecordCopyCommands(mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
-        command.RecordCopyCommands(mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
-        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    }
-
-    command.Submit();
-
-    for (int i = 0; i < scene->meshes.size(); ++i) {
-
-        auto& mesh = scene->meshes[i];
-
-        command.RecordCopyCommands(mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
-    }
-
-    command.Submit();
-
-    for (auto& mesh : scene->meshes) {
-
-        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-        mesh->textureImage->SetTextureImageInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
-        mesh->DestroyStagingBuffer();
-    }
-
-    command.Submit();
-}
-
-void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData, Camera& camera)
+void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
 {
     auto resultWaitFence = device.vkDevice.waitForFences(1, &swapchain.detail.frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
 
@@ -152,12 +78,12 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
 
     imageIndex = acquiredImage.value;
 
-    UpdateFrame(imageIndex, camera, scene);
+    scene->Update(imageIndex, swapchain, device.vkDevice);
 
     vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
 
     commandBuffer.reset();
-    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene, imDrawData);
+    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene->meshes_, imDrawData);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchain.detail.frames[frameIndex].imageAvailable };

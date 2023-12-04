@@ -23,7 +23,6 @@ private:
     std::unique_ptr<Scene> scene;
 
     MyImGui imgui;
-    Camera camera;
 };
 
 #endif // __BASEAPP_H__

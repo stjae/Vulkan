@@ -43,16 +43,16 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 #endif
 }
 
-void MyImGui::DrawImGuizmo(Camera& camera, const std::unique_ptr<Scene>& scene)
+void MyImGui::DrawImGuizmo(const std::unique_ptr<Scene>& scene)
 {
     ImGuiIO& io = ImGui::GetIO();
 
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !camera.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !camera.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !camera.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::SCALE;
 
     // ImGuizmo
@@ -61,7 +61,7 @@ void MyImGui::DrawImGuizmo(Camera& camera, const std::unique_ptr<Scene>& scene)
     ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
     ImGuizmo::SetRect(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
 
-    for (auto& mesh : scene->meshes) {
+    for (auto& mesh : scene->meshes_) {
 
         if (mesh->isSelected) {
 
@@ -72,7 +72,7 @@ void MyImGui::DrawImGuizmo(Camera& camera, const std::unique_ptr<Scene>& scene)
 
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->ubo.model), translation, rotation, scale);
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-            ImGuizmo::Manipulate(glm::value_ptr(camera.matrix.view), glm::value_ptr(camera.matrix.proj),
+            ImGuizmo::Manipulate(glm::value_ptr(scene->camera_.matrix.view), glm::value_ptr(scene->camera_.matrix.proj),
                                  OP, ImGuizmo::LOCAL, objectMatrix);
             mesh->ubo.model = glm::make_mat4(objectMatrix);
         }
@@ -125,13 +125,13 @@ void MyImGui::DrawDockSpace()
     ImGui::End();
 }
 
-void MyImGui::ControlCamera(Camera& camera, GLFWwindow* window)
+void MyImGui::ControlCamera(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::Checkbox("Camera Control [c]", &camera.isControllable)) {
-        camera.isControllable = !camera.isControllable;
+    if (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::Checkbox("Camera Control [c]", &scene->camera_.isControllable)) {
+        scene->camera_.isControllable = !scene->camera_.isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
-        if (camera.isControllable) {
+        if (scene->camera_.isControllable) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
@@ -139,11 +139,11 @@ void MyImGui::ControlCamera(Camera& camera, GLFWwindow* window)
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        camera.isInitial = true;
+        scene->camera_.isInitial = true;
     }
 }
 
-void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene, GLFWwindow* window)
+void MyImGui::Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -164,14 +164,14 @@ void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene, GLFWwind
     ImGui::ListBox("Object", &currentItem, items, IM_ARRAYSIZE(items), 4);
     ImGui::End();
 
-    DrawImGuizmo(camera, scene);
+    DrawImGuizmo(scene);
 
     // Object Attribute Window
     ImGui::Begin("Object Attribute");
-    ControlCamera(camera, window);
+    ControlCamera(scene, window);
 
-    for (int i = 0; i < scene->meshes.size(); i++) {
-        if (!scene->meshes[i]->isSelected)
+    for (int i = 0; i < scene->meshes_.size(); i++) {
+        if (!scene->meshes_[i]->isSelected)
             continue;
 
         float translation[3];
@@ -179,18 +179,18 @@ void MyImGui::Draw(Camera& camera, const std::unique_ptr<Scene>& scene, GLFWwind
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene->meshes[i]->ubo.model), translation, rotation, scale);
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene->meshes_[i]->ubo.model), translation, rotation, scale);
 
         std::string id = "##";
         id.append(std::to_string(i));
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text(scene->meshes[i]->name.c_str());
+        ImGui::Text(scene->meshes_[i]->name.c_str());
         ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        scene->meshes[i]->ubo.model = glm::make_mat4(objectMatrix);
+        scene->meshes_[i]->ubo.model = glm::make_mat4(objectMatrix);
     }
 
     ImGui::End();

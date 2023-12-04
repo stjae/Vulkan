@@ -1,23 +1,21 @@
 #include "camera.h"
 
-Camera::Camera(GLFWwindow* window)
-{
-    glfwSetWindowUserPointer(window, this);
-}
-
-void Camera::Update(Window& window)
+void Camera::Update()
 {
     static double delta, currentTime, lastTime = 0.0;
-    currentTime = glfwGetTime();
+    currentTime = ImGui::GetTime();
 
     delta = currentTime - lastTime;
     lastTime = currentTime;
 
-    static double prevMouseX, prevMouseY;
-    static double mouseX, mouseY;
-    glfwGetCursorPos(window.window, &mouseX, &mouseY);
-    mouseX /= window.width;
-    mouseY /= window.height;
+    static float prevMouseX, prevMouseY;
+    static float mouseX, mouseY;
+
+    ImGuiIO& io = ImGui::GetIO();
+    mouseX = io.MousePos.x;
+    mouseY = io.MousePos.y;
+    mouseX /= ImGui::GetWindowWidth();
+    mouseY /= ImGui::GetWindowHeight();
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 
@@ -35,22 +33,22 @@ void Camera::Update(Window& window)
     glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right);
     dir = rotateY * dir;
 
-    if (glfwGetKey(window.window, GLFW_KEY_W)) {
+    if (ImGui::IsKeyDown(ImGuiKey_W)) {
         pos += glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
     }
-    if (glfwGetKey(window.window, GLFW_KEY_S)) {
+    if (ImGui::IsKeyDown(ImGuiKey_S)) {
         pos -= glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
     }
-    if (glfwGetKey(window.window, GLFW_KEY_A)) {
+    if (ImGui::IsKeyDown(ImGuiKey_A)) {
         pos -= right * static_cast<float>(delta) * speed;
     }
-    if (glfwGetKey(window.window, GLFW_KEY_D)) {
+    if (ImGui::IsKeyDown(ImGuiKey_D)) {
         pos += right * static_cast<float>(delta) * speed;
     }
-    if (glfwGetKey(window.window, GLFW_KEY_E)) {
+    if (ImGui::IsKeyDown(ImGuiKey_E)) {
         pos += up * static_cast<float>(delta) * speed;
     }
-    if (glfwGetKey(window.window, GLFW_KEY_Q)) {
+    if (ImGui::IsKeyDown(ImGuiKey_Q)) {
         pos -= up * static_cast<float>(delta) * speed;
     }
 

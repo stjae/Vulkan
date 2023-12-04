@@ -21,7 +21,7 @@ void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer)
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
-void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
+void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::unique_ptr<Mesh>>& meshes, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -75,7 +75,7 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
 
-    for (auto& mesh : scene->meshes) {
+    for (auto& mesh : meshes) {
 
         vk::Buffer vertexBuffers[] = { mesh->vertexBuffer->vkBuffer };
         vk::DeviceSize offsets[] = { 0 };

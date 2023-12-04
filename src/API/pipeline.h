@@ -4,15 +4,13 @@
 #include "../common.h"
 #include "swapchain.h"
 #include "shader.h"
-#include "../mesh.h"
 #include "descriptor.h"
-#include "../scene.h"
 
 class GraphicsPipeline
 {
 public:
-    GraphicsPipeline(const vk::Device& vkDevice, const SwapchainDetail& swapchainDetail, std::unique_ptr<Scene>& scene)
-        : vkDevice(vkDevice), swapchainDetail(swapchainDetail), shader(vkDevice), descriptor(vkDevice), scene(scene) {}
+    GraphicsPipeline(const vk::Device& vkDevice, const SwapchainDetail& swapchainDetail)
+        : vkDevice(vkDevice), swapchainDetail(swapchainDetail), shader(vkDevice), descriptor(vkDevice) {}
     void CreatePipeline();
     vk::PipelineLayout CreatePipelineLayout();
     vk::RenderPass CreateRenderPass();
@@ -22,7 +20,6 @@ public:
     vk::Pipeline vkPipeline;
     vk::PipelineLayout vkPipelineLayout;
     vk::RenderPass vkRenderPass;
-    std::unique_ptr<Scene>& scene;
     const SwapchainDetail& swapchainDetail;
     const vk::Device& vkDevice;
     Shader shader;
