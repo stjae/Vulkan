@@ -4,14 +4,16 @@
 #include "common.h"
 #include "API/window.h"
 
-struct Matrix {
-
+struct Matrix
+{
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct Camera {
-    void Update();
+struct Camera
+{
+
+    void Update(GLFWwindow* window);
 
     bool isControllable = false;
     bool isInitial = true; // prevent sudden camera move

@@ -4,17 +4,17 @@ void Image::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Memory
 {
     vk::ImageCreateInfo createInfo({}, vk::ImageType::e2D, format, extent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, usage);
 
-    image = vkDevice.createImage(createInfo);
-    this->format = format;
-    memory.AllocateMemory(vkPhysicalDevice, vkDevice, image, properties);
+    image_ = vkDevice_.createImage(createInfo);
+    format_ = format;
+    memory.AllocateMemory(vkPhysicalDevice_, vkDevice_, image_, properties);
 }
 
 void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
 {
     vk::ImageSubresourceRange range(aspectFlags, 0, 1, 0, 1);
-    vk::ImageViewCreateInfo createInfo({}, image, vk::ImageViewType::e2D, format, {}, range);
+    vk::ImageViewCreateInfo createInfo({}, image_, vk::ImageViewType::e2D, format, {}, range);
 
-    imageView = vkDevice.createImageView(createInfo);
+    imageView_ = vkDevice_.createImageView(createInfo);
 }
 
 void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
@@ -38,21 +38,21 @@ void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkDevice.createSampler(&samplerInfo, nullptr, &sampler) != vk::Result::eSuccess) {
+    if (vkDevice.createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
         spdlog::error("failed to create sampler");
     }
 }
 
-void Image::SetTextureImageInfo(vk::ImageLayout imageLayout)
+void Image::SetInfo(vk::ImageLayout imageLayout)
 {
-    vk::DescriptorImageInfo imageInfo(sampler, imageView, imageLayout);
-    this->imageInfo = imageInfo;
+    vk::DescriptorImageInfo imageInfo(sampler_, imageView_, imageLayout);
+    imageInfo_ = imageInfo;
 }
 
 Image::~Image()
 {
-    vkDevice.freeMemory(memory.vkDeviceMemory);
-    vkDevice.destroyImage(image);
-    vkDevice.destroySampler(sampler);
-    vkDevice.destroyImageView(imageView);
+    memory.Free(vkDevice_);
+    vkDevice_.destroyImage(image_);
+    vkDevice_.destroySampler(sampler_);
+    vkDevice_.destroyImageView(imageView_);
 }

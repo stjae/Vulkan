@@ -15,15 +15,13 @@
 class GraphicsEngine
 {
 public:
-    GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene);
+    GraphicsEngine(GLFWwindow* window, std::unique_ptr<Scene>& scene);
     void InitSwapchainImages();
     void Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData);
     void RecreateSwapchain();
     ~GraphicsEngine();
 
     GLFWwindow* window;
-    int width;
-    int height;
 
     Device device;
     Swapchain swapchain;

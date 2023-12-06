@@ -1,6 +1,6 @@
 #include "camera.h"
 
-void Camera::Update()
+void Camera::Update(GLFWwindow* window)
 {
     static double delta, currentTime, lastTime = 0.0;
     currentTime = ImGui::GetTime();
@@ -14,8 +14,11 @@ void Camera::Update()
     ImGuiIO& io = ImGui::GetIO();
     mouseX = io.MousePos.x;
     mouseY = io.MousePos.y;
-    mouseX /= ImGui::GetWindowWidth();
-    mouseY /= ImGui::GetWindowHeight();
+
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    mouseX /= width;
+    mouseY /= height;
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 

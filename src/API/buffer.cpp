@@ -1,35 +1,33 @@
 #include "buffer.h"
 
-Buffer::Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& bufferInput) : vkPhysicalDevice(vkPhysicalDevice), vkDevice(vkDevice)
+Buffer::Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& bufferInput) : vkPhysicalDevice_(vkPhysicalDevice), vkDevice_(vkDevice)
 {
     vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage, vk::SharingMode::eExclusive);
+    vkBuffer_ = vkDevice.createBuffer(bufferInfo);
+    size_ = bufferInput.size;
 
-    vkBuffer = vkDevice.createBuffer(bufferInfo);
-
-    size = bufferInput.size;
-
-    memory.AllocateMemory(vkPhysicalDevice, vkDevice, vkBuffer, bufferInput.properties);
+    AllocateMemory(vkPhysicalDevice_, vkDevice_, vkBuffer_, bufferInput.properties);
 }
 
 void Buffer::MapUniformBuffer()
 {
-    memory.memoryLocation = vkDevice.mapMemory(memory.vkDeviceMemory, 0, static_cast<vk::DeviceSize>(size));
+    memoryLocation_ = vkDevice_.mapMemory(vkDeviceMemory_, 0, static_cast<vk::DeviceSize>(size_));
 
-    descriptorBufferInfo.buffer = vkBuffer;
-    descriptorBufferInfo.offset = 0;
-    descriptorBufferInfo.range = static_cast<vk::DeviceSize>(size);
+    descriptorBufferInfo_.buffer = vkBuffer_;
+    descriptorBufferInfo_.offset = 0;
+    descriptorBufferInfo_.range = static_cast<vk::DeviceSize>(size_);
 }
 
 void Buffer::DestroyBuffer()
 {
-    vkDevice.waitIdle();
-    if (vkBuffer != VK_NULL_HANDLE) {
-        vkDevice.destroyBuffer(vkBuffer);
-        vkBuffer = VK_NULL_HANDLE;
+    vkDevice_.waitIdle();
+    if (vkBuffer_ != VK_NULL_HANDLE) {
+        vkDevice_.destroyBuffer(vkBuffer_);
+        vkBuffer_ = VK_NULL_HANDLE;
     }
-    if (memory.vkDeviceMemory != VK_NULL_HANDLE) {
-        vkDevice.freeMemory(memory.vkDeviceMemory);
-        memory.vkDeviceMemory = VK_NULL_HANDLE;
+    if (vkDeviceMemory_ != VK_NULL_HANDLE) {
+        vkDevice_.freeMemory(vkDeviceMemory_);
+        vkDeviceMemory_ = VK_NULL_HANDLE;
     }
     Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
 }

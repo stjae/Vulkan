@@ -4,8 +4,8 @@
 #include "../common.h"
 #include "device.h"
 
-struct DescriptorSetLayoutData {
-
+struct DescriptorSetLayoutData
+{
     int count;
     std::vector<int> indices;
     std::vector<vk::DescriptorType> types;

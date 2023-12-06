@@ -3,7 +3,8 @@
 
 #include "meshData.h"
 
-struct UBO {
+struct UBO
+{
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view;
@@ -12,7 +13,8 @@ struct UBO {
     glm::vec3 eye;
 };
 
-struct MeshPushConstant {
+struct MeshPushConstant
+{
     int index;
 };
 

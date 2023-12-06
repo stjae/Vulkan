@@ -77,11 +77,11 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
 
     for (auto& mesh : meshes) {
 
-        vk::Buffer vertexBuffers[] = { mesh->vertexBuffer->vkBuffer };
+        vk::Buffer vertexBuffers[] = { mesh->vertexBuffer->GetBuffer() };
         vk::DeviceSize offsets[] = { 0 };
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(mesh->indexBuffer->vkBuffer, 0, vk::IndexType::eUint32);
+        commandBuffer.bindIndexBuffer(mesh->indexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
 
         commandBuffer.pushConstants(pipeline.vkPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant), &mesh->pushConstant.index);
 

@@ -4,8 +4,8 @@
 #include "../common.h"
 #include "instance.h"
 
-struct QueueFamilyIndices {
-
+struct QueueFamilyIndices
+{
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 

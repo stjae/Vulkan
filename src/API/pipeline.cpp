@@ -148,7 +148,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription depthAttachmentDesc;
-    depthAttachmentDesc.format = swapchainDetail.frames[0].depthImage.format;
+    depthAttachmentDesc.format = swapchainDetail.frames[0].depthImage.GetFormat();
     depthAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     depthAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;

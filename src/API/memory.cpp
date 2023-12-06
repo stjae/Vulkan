@@ -26,8 +26,8 @@ void Memory::AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory = vkDevice.allocateMemory(allocateInfo);
-    vkDevice.bindBufferMemory(vkBuffer, vkDeviceMemory, 0);
+    vkDeviceMemory_ = vkDevice.allocateMemory(allocateInfo);
+    vkDevice.bindBufferMemory(vkBuffer, vkDeviceMemory_, 0);
 }
 
 void Memory::AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
@@ -39,6 +39,11 @@ void Memory::AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory = vkDevice.allocateMemory(allocateInfo);
-    vkDevice.bindImageMemory(vkImage, vkDeviceMemory, 0);
+    vkDeviceMemory_ = vkDevice.allocateMemory(allocateInfo);
+    vkDevice.bindImageMemory(vkImage, vkDeviceMemory_, 0);
+}
+
+void Memory::Free(const vk::Device& vkDevice)
+{
+    vkDevice.freeMemory(vkDeviceMemory_);
 }

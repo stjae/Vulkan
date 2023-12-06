@@ -13,7 +13,7 @@ public:
     Scene();
     void Prepare(const Device& device);
     void CreateResource(const Device& device);
-    void Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice);
+    void Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice, GLFWwindow* window);
 
     Camera camera_;
     std::vector<std::unique_ptr<Mesh>> meshes_;

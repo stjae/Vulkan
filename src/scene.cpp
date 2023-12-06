@@ -18,21 +18,21 @@ void Scene::Prepare(const Device& device)
     command.CreateCommandPool("copying buffers");
 
     for (auto& mesh : meshes_) {
-        command.RecordCopyCommands(mesh->vertexStagingBuffer->vkBuffer, mesh->vertexBuffer->vkBuffer, sizeof(mesh->vertices[0]) * mesh->vertices.size());
-        command.RecordCopyCommands(mesh->indexStagingBuffer->vkBuffer, mesh->indexBuffer->vkBuffer, sizeof(mesh->indices[0]) * mesh->indices.size());
-        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        command.RecordCopyCommands(mesh->vertexStagingBuffer->GetBuffer(), mesh->vertexBuffer->GetBuffer(), sizeof(mesh->vertices[0]) * mesh->vertices.size());
+        command.RecordCopyCommands(mesh->indexStagingBuffer->GetBuffer(), mesh->indexBuffer->GetBuffer(), sizeof(mesh->indices[0]) * mesh->indices.size());
+        command.TransitImageLayout(mesh->textureImage->image_, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     }
 
     command.Submit();
 
     for (auto& mesh : meshes_)
-        command.RecordCopyCommands(mesh->textureStagingBuffer->vkBuffer, mesh->textureImage->image, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
+        command.RecordCopyCommands(mesh->textureStagingBuffer->GetBuffer(), mesh->textureImage->image_, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
 
     command.Submit();
 
     for (auto& mesh : meshes_) {
-        command.TransitImageLayout(mesh->textureImage->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-        mesh->textureImage->SetTextureImageInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
+        command.TransitImageLayout(mesh->textureImage->image_, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+        mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->DestroyStagingBuffer();
     }
 
@@ -48,19 +48,16 @@ void Scene::CreateResource(const Device& device)
         mesh->CreateTexture(device);
         mesh->textureImage->CreateSampler(device.vkPhysicalDevice, device.vkDevice);
 
-        BufferInput input;
-        input.properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-        input.size = sizeof(UBO);
-        input.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+        BufferInput input = { input.size = sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         mesh->matrixUniformBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
         mesh->matrixUniformBuffer->MapUniformBuffer();
     }
 }
 
-void Scene::Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice)
+void Scene::Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice, GLFWwindow* window)
 {
     if (camera_.isControllable) {
-        camera_.Update();
+        camera_.Update(window);
     }
 
     camera_.matrix.view = glm::lookAt(camera_.pos, camera_.at, camera_.up);
@@ -73,9 +70,8 @@ void Scene::Update(uint32_t index, const Swapchain& swapchain, const vk::Device&
         mesh->ubo.proj = camera_.matrix.proj;
         mesh->ubo.eye = camera_.pos;
 
-        memcpy(mesh->matrixUniformBuffer->memory.memoryLocation, &(mesh->ubo), sizeof(UBO));
-
-        descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->descriptorBufferInfo);
+        mesh->matrixUniformBuffer->UpdateResource(&(mesh->ubo), sizeof(UBO));
+        descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->GetBufferInfo());
     }
 
     if (meshes_.size() > 0) {
@@ -91,7 +87,7 @@ void Scene::Update(uint32_t index, const Swapchain& swapchain, const vk::Device&
     descriptorWrites.descriptorCount = meshes_.size();
     std::vector<vk::DescriptorImageInfo> infos;
     for (auto& mesh : meshes_) {
-        infos.push_back(mesh->textureImage->imageInfo);
+        infos.push_back(mesh->textureImage->GetInfo());
     }
     descriptorWrites.pImageInfo = infos.data();
     if (meshes_.size() > 0) {

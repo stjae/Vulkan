@@ -1,12 +1,10 @@
 #include "engine.h"
 
-GraphicsEngine::GraphicsEngine(int width, int height, GLFWwindow* window, std::unique_ptr<Scene>& scene)
+GraphicsEngine::GraphicsEngine(GLFWwindow* window, std::unique_ptr<Scene>& scene)
     : device(window), swapchain(device, pipeline.vkRenderPass),
       pipeline(device.vkDevice, swapchain.detail), command(device)
 {
     this->window = window;
-    this->width = width;
-    this->height = height;
 
     swapchain.CreateSwapchain(this->window, device);
     pipeline.CreatePipeline();
@@ -78,7 +76,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
 
     imageIndex = acquiredImage.value;
 
-    scene->Update(imageIndex, swapchain, device.vkDevice);
+    scene->Update(imageIndex, swapchain, device.vkDevice, window);
 
     vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
 
