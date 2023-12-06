@@ -5,6 +5,7 @@ Application::Application(const int width, const int height, const char* wName)
 {
     scene = std::make_unique<Scene>();
     engine = std::make_unique<GraphicsEngine>(width, height, window.window, scene);
+    scene->Prepare(engine->device);
 
     imgui.Setup(engine);
 

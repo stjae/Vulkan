@@ -1,1 +1,1 @@
-#define PROJECT_DIR "C:/Users/stjae/dev/Vulkan/"
+#define PROJECT_DIR "/Users/stjae/Dev/Vulkan/"

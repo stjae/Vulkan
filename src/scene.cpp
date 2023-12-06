@@ -2,12 +2,12 @@
 
 Scene::Scene()
 {
-    // meshes.emplace_back(std::make_unique<Mesh>());
-    // meshes.back()->CreateCube(nullptr);
-    // meshes.back()->pushConstant.index = meshes.size() - 1;
-    // meshes.emplace_back(std::make_unique<Mesh>());
-    // meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
-    // meshes.back()->pushConstant.index = meshes.size() - 1;
+    meshes_.emplace_back(std::make_unique<Mesh>());
+    meshes_.back()->CreateCube(nullptr);
+    meshes_.back()->pushConstant.index = meshes_.size() - 1;
+    meshes_.emplace_back(std::make_unique<Mesh>());
+    meshes_.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
+    meshes_.back()->pushConstant.index = meshes_.size() - 1;
 }
 
 void Scene::Prepare(const Device& device)

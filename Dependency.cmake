@@ -60,7 +60,6 @@ ExternalProject_Add(
 set(DEP_LIST ${DEP_LIST} dep-glm)
 
 #imgui
-# set(DEP_LIST ${DEP_LIST} dep-imgui)
 set(imguiLIBS 
     ${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp
     ${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp
@@ -75,7 +74,6 @@ add_library(imgui ${imguiLIBS})
 endif()
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
-# add_dependencies(imgui ${DEP_LIST})
 set(DEP_LIBS ${DEP_LIBS} imgui)
 
 # stb
@@ -113,8 +111,7 @@ ExternalProject_Add(
 set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)
 
 # ImGuizmo
-add_library(imguizmo ${PROJECT_SOURCE_DIR}/imguizmo/ImGuizmo.cpp)
+add_library(imguizmo ${PROJECT_SOURCE_DIR}/imgui/ImGuizmo.cpp)
 add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
-target_include_directories(imguizmo PRIVATE ${PROJECT_SOURCE_DIR}/imguizmo)
-# set(DEP_LIST ${DEP_LIST} dep-imguizmo)
+target_include_directories(imguizmo PRIVATE ${PROJECT_SOURCE_DIR}/imgui)
 set(DEP_LIBS ${DEP_LIBS} imguizmo)
