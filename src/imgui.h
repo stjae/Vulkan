@@ -5,7 +5,7 @@
 #include "engine.h"
 #include "camera.h"
 #include "scene.h"
-#include <imguizmo/ImGuizmo.h>
+#include "../imguizmo/ImGuizmo.h"
 #include <bitset>
 
 class MyImGui

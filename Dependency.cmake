@@ -59,40 +59,23 @@ ExternalProject_Add(
 
 set(DEP_LIST ${DEP_LIST} dep-glm)
 
-ExternalProject_Add(
-    dep-imgui
-    GIT_REPOSITORY "https://github.com/ocornut/imgui.git"
-    GIT_TAG "v1.90-docking"
-    GIT_SHALLOW 1
-    UPDATE_COMMAND ""
-    PATCH_COMMAND ""
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    TEST_COMMAND ""
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_BINARY_DIR}/dep-imgui-prefix/src/dep-imgui
-        ${DEP_INCLUDE_DIR}/imgui
-        
-        ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_BINARY_DIR}/dep-imgui-prefix/src/dep-imgui/backends
-        ${DEP_INCLUDE_DIR}/imgui
-)
-set(DEP_LIST ${DEP_LIST} dep-imgui)
+#imgui
+# set(DEP_LIST ${DEP_LIST} dep-imgui)
 set(imguiLIBS 
-    ${DEP_INCLUDE_DIR}/imgui/imgui_draw.cpp
-    ${DEP_INCLUDE_DIR}/imgui/imgui_tables.cpp
-    ${DEP_INCLUDE_DIR}/imgui/imgui_widgets.cpp
-    ${DEP_INCLUDE_DIR}/imgui/imgui.cpp
-    ${DEP_INCLUDE_DIR}/imgui/imgui_impl_glfw.cpp
-    ${DEP_INCLUDE_DIR}/imgui/imgui_impl_vulkan.cpp)
+    ${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp
+    ${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp
+    ${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp
+    ${PROJECT_SOURCE_DIR}/imgui/imgui.cpp
+    ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_glfw.cpp
+    ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_vulkan.cpp)
 if(WIN32)
-add_library(imgui ${imguiLIBS} ${DEP_INCLUDE_DIR}/imgui/imgui_impl_win32.cpp)
+add_library(imgui ${imguiLIBS} ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_win32.cpp)
 else()
 add_library(imgui ${imguiLIBS})
 endif()
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
-add_dependencies(imgui ${DEP_LIST})
+# add_dependencies(imgui ${DEP_LIST})
 set(DEP_LIBS ${DEP_LIBS} imgui)
 
 # stb
@@ -130,22 +113,8 @@ ExternalProject_Add(
 set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)
 
 # ImGuizmo
-ExternalProject_Add(
-    dep-imguizmo
-    GIT_REPOSITORY "https://github.com/CedricGuillemet/ImGuizmo.git"
-    GIT_TAG "1.83"
-    GIT_SHALLOW 1
-    UPDATE_COMMAND ""
-    PATCH_COMMAND ""
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    TEST_COMMAND ""
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_BINARY_DIR}/dep-imguizmo-prefix/src/dep-imguizmo
-        ${DEP_INSTALL_DIR}/include/imguizmo
-)
-add_library(imguizmo ${DEP_INCLUDE_DIR}/imguizmo/ImGuizmo.cpp)
+add_library(imguizmo ${PROJECT_SOURCE_DIR}/imguizmo/ImGuizmo.cpp)
 add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
-target_include_directories(imguizmo PRIVATE ${DEP_INCLUDE_DIR}/imgui)
-set(DEP_LIST ${DEP_LIST} dep-imguizmo)
+target_include_directories(imguizmo PRIVATE ${PROJECT_SOURCE_DIR}/imguizmo)
+# set(DEP_LIST ${DEP_LIST} dep-imguizmo)
 set(DEP_LIBS ${DEP_LIBS} imguizmo)
