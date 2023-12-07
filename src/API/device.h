@@ -17,28 +17,42 @@ struct QueueFamilyIndices
 
 class Device
 {
-public:
-    // Device related method
-    Device(GLFWwindow* window);
-    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    Instance instance;
+    std::vector<const char*> deviceExtensions;
 
-    // Physical Device related method
+public:
+    Device();
+    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void PickPhysicalDevice();
-    bool IsDeviceSuitable(const vk::PhysicalDevice& device);
+    bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
     void FindQueueFamilies();
+    static vk::Device& GetDevice()
+    {
+        static vk::Device vkDevice;
+        return vkDevice;
+    }
+    static vk::PhysicalDevice& GetPhysicalDevice()
+    {
+        static vk::PhysicalDevice vkPhysicalDevice;
+        return vkPhysicalDevice;
+    }
+    static QueueFamilyIndices& GetQueueFamilyIndices()
+    {
+        static QueueFamilyIndices queueFamilyIndices;
+        return queueFamilyIndices;
+    }
+    static vk::Queue& GetGraphicsQueue()
+    {
+        static vk::Queue vkGraphicsQueue;
+        return vkGraphicsQueue;
+    }
+    static vk::Queue& GetPresentQueue()
+    {
+        static vk::Queue vkPresentQueue;
+        return vkPresentQueue;
+    }
 
     ~Device();
-
-    Instance instance;
-
-    vk::PhysicalDevice vkPhysicalDevice;
-    std::vector<const char*> deviceExtensions;
-    QueueFamilyIndices queueFamilyIndices;
-    vk::Device vkDevice;
-    vk::Queue vkGraphicsQueue;
-    vk::Queue vkPresentQueue;
-
-    vk::DescriptorPool imGuiDescriptorPool;
 };
 
 #endif

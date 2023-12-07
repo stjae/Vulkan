@@ -1,6 +1,6 @@
 #include "instance.h"
 
-Instance::Instance() : logger(vkInstance, dldi)
+Instance::Instance() : logger(GetInstance())
 {
     vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_2);
 
@@ -10,11 +10,9 @@ Instance::Instance() : logger(vkInstance, dldi)
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
     SetLayers(instanceLayers, createInfo, debugInfo);
 
-    if (vk::createInstance(&createInfo, nullptr, &vkInstance) != vk::Result::eSuccess) {
+    if (vk::createInstance(&createInfo, nullptr, &GetInstance()) != vk::Result::eSuccess) {
         spdlog::error("failed to create instance");
     }
-
-    dldi = vk::DispatchLoaderDynamic(vkInstance, vkGetInstanceProcAddr);
 
     logger.CreateDebugMessenger();
 }
@@ -55,9 +53,9 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     }
 }
 
-void Instance::CreateSurface(GLFWwindow* window)
+void Instance::CreateSurface()
 {
-    if (glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(GetInstance(), *Window::GetWindow(), nullptr, &GetSurface()) != VK_SUCCESS) {
         spdlog::error("failed to create window surface");
     }
 }
@@ -65,8 +63,8 @@ void Instance::CreateSurface(GLFWwindow* window)
 Instance::~Instance()
 {
     if (debug) {
-        vkInstance.destroyDebugUtilsMessengerEXT(logger.debugMessenger, nullptr, dldi);
+        logger.Destroy();
     }
-    vkInstance.destroySurfaceKHR(vkSurface);
-    vkInstance.destroy();
+    GetInstance().destroySurfaceKHR(GetSurface());
+    GetInstance().destroy();
 }

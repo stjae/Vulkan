@@ -1,7 +1,8 @@
 #include "imgui.h"
 
-void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
+void MyImGui::Setup(std::weak_ptr<Scene> scene)
 {
+    scene_ = scene;
     {
         vk::DescriptorPoolSize poolSizes[] = {
             { vk::DescriptorType::eCombinedImageSampler, 1 },
@@ -9,7 +10,7 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 
         vk::DescriptorPoolCreateInfo poolInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes)), poolSizes);
 
-        if (engine->device.vkDevice.createDescriptorPool(&poolInfo, nullptr, &engine->device.imGuiDescriptorPool) != vk::Result::eSuccess) {
+        if (Device::GetDevice().createDescriptorPool(&poolInfo, nullptr, &imGuiDescriptorPool) != vk::Result::eSuccess) {
             spdlog::error("failed to create descriptor pool for ImGui");
         }
     }
@@ -20,19 +21,19 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(engine->window, true);
+    ImGui_ImplGlfw_InitForVulkan(*Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = engine->device.instance.vkInstance;
-    init_info.PhysicalDevice = engine->device.vkPhysicalDevice;
-    init_info.Device = engine->device.vkDevice;
-    init_info.QueueFamily = engine->device.queueFamilyIndices.graphicsFamily.value();
-    init_info.Queue = engine->device.vkGraphicsQueue;
-    init_info.DescriptorPool = engine->device.imGuiDescriptorPool;
+    init_info.Instance = Instance::GetInstance();
+    init_info.PhysicalDevice = Device::GetPhysicalDevice();
+    init_info.Device = Device::GetDevice();
+    init_info.QueueFamily = Device::GetQueueFamilyIndices().graphicsFamily.value();
+    init_info.Queue = Device::GetGraphicsQueue();
+    init_info.DescriptorPool = imGuiDescriptorPool;
     init_info.Subpass = 0;
-    init_info.MinImageCount = engine->swapchain.supportDetail.capabilities.minImageCount;
-    init_info.ImageCount = engine->maxFrameNumber;
+    init_info.MinImageCount = Swapchain::GetSupportDetail().capabilities.minImageCount;
+    init_info.ImageCount = Swapchain::GetDetail().frames.size();
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    ImGui_ImplVulkan_Init(&init_info, engine->pipeline.vkRenderPass);
+    ImGui_ImplVulkan_Init(&init_info, GraphicsPipeline::RenderPass());
 
 #if defined(_WIN32)
     float dpiScaleFactor = ImGui_ImplWin32_GetDpiScaleForHwnd(GetDesktopWindow());
@@ -43,16 +44,16 @@ void MyImGui::Setup(const std::unique_ptr<GraphicsEngine>& engine)
 #endif
 }
 
-void MyImGui::DrawImGuizmo(const std::unique_ptr<Scene>& scene)
+void MyImGui::DrawImGuizmo()
 {
     ImGuiIO& io = ImGui::GetIO();
 
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene_.lock()->camera.isControllable)
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene_.lock()->camera.isControllable)
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_.isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene_.lock()->camera.isControllable)
         OP = ImGuizmo::OPERATION::SCALE;
 
     // ImGuizmo
@@ -61,8 +62,7 @@ void MyImGui::DrawImGuizmo(const std::unique_ptr<Scene>& scene)
     ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
     ImGuizmo::SetRect(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
 
-    for (auto& mesh : scene->meshes_) {
-
+    for (auto& mesh : scene_.lock()->meshes) {
         if (mesh->isSelected) {
 
             float translation[3];
@@ -72,7 +72,7 @@ void MyImGui::DrawImGuizmo(const std::unique_ptr<Scene>& scene)
 
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->ubo.model), translation, rotation, scale);
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-            ImGuizmo::Manipulate(glm::value_ptr(scene->camera_.matrix.view), glm::value_ptr(scene->camera_.matrix.proj),
+            ImGuizmo::Manipulate(glm::value_ptr(scene_.lock()->camera.matrix.view), glm::value_ptr(scene_.lock()->camera.matrix.proj),
                                  OP, ImGuizmo::LOCAL, objectMatrix);
             mesh->ubo.model = glm::make_mat4(objectMatrix);
         }
@@ -125,25 +125,25 @@ void MyImGui::DrawDockSpace()
     ImGui::End();
 }
 
-void MyImGui::ControlCamera(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
+void MyImGui::SetCameraControl()
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::Checkbox("Camera Control [c]", &scene->camera_.isControllable)) {
-        scene->camera_.isControllable = !scene->camera_.isControllable;
+    if (ImGui::IsKeyPressed(ImGuiKey_C) || ImGui::Checkbox("Camera Control [c]", &scene_.lock()->camera.isControllable)) {
+        scene_.lock()->camera.isControllable = !scene_.lock()->camera.isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
-        if (scene->camera_.isControllable) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        if (scene_.lock()->camera.isControllable) {
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        scene->camera_.isInitial = true;
+        scene_.lock()->camera.isInitial = true;
     }
 }
 
-void MyImGui::Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
+void MyImGui::Draw()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -164,14 +164,14 @@ void MyImGui::Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
     ImGui::ListBox("Object", &currentItem, items, IM_ARRAYSIZE(items), 4);
     ImGui::End();
 
-    DrawImGuizmo(scene);
+    DrawImGuizmo();
 
     // Object Attribute Window
     ImGui::Begin("Object Attribute");
-    ControlCamera(scene, window);
+    SetCameraControl();
 
-    for (int i = 0; i < scene->meshes_.size(); i++) {
-        if (!scene->meshes_[i]->isSelected)
+    for (int i = 0; i < scene_.lock()->meshes.size(); i++) {
+        if (!scene_.lock()->meshes[i]->isSelected)
             continue;
 
         float translation[3];
@@ -179,22 +179,30 @@ void MyImGui::Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window)
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene->meshes_[i]->ubo.model), translation, rotation, scale);
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene_.lock()->meshes[i]->ubo.model), translation, rotation, scale);
 
         std::string id = "##";
         id.append(std::to_string(i));
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text(scene->meshes_[i]->name.c_str());
+        ImGui::Text(scene_.lock()->meshes[i]->name.c_str());
         ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        scene->meshes_[i]->ubo.model = glm::make_mat4(objectMatrix);
+        scene_.lock()->meshes[i]->ubo.model = glm::make_mat4(objectMatrix);
     }
 
     ImGui::End();
 
     ImGui::EndFrame();
     ImGui::Render();
+}
+
+MyImGui::~MyImGui()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    Device::GetDevice().destroyDescriptorPool(imGuiDescriptorPool);
+    ImGui::DestroyContext();
 }

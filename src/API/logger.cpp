@@ -16,7 +16,8 @@ void Logger::CreateDebugMessenger()
 
     vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo({}, severityFlags, messageTypeFlags, DebugCallback);
 
-    debugMessenger = vkInstance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi);
+    dldi_ = vk::DispatchLoaderDynamic(vkInstance_, vkGetInstanceProcAddr);
+    debugMessenger_ = vkInstance_.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi_);
 }
 
 void Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
@@ -52,4 +53,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
     }
 
     return VK_FALSE;
+}
+
+void Logger::Destroy()
+{
+    vkInstance_.destroyDebugUtilsMessengerEXT(debugMessenger_, nullptr, dldi_);
 }

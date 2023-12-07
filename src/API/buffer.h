@@ -14,7 +14,7 @@ struct BufferInput
 class Buffer : public Memory
 {
 public:
-    Buffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const BufferInput& bufferInput);
+    Buffer(const BufferInput& bufferInput);
     void MapUniformBuffer();
     vk::Buffer GetBuffer() { return vkBuffer_; }
     vk::DescriptorBufferInfo GetBufferInfo() { return descriptorBufferInfo_; }
@@ -24,9 +24,9 @@ public:
     template <typename T>
     void CopyResource(T resource, const BufferInput& bufferInput)
     {
-        memoryLocation_ = vkDevice_.mapMemory(vkDeviceMemory_, 0, bufferInput.size);
+        memoryLocation_ = Device::GetDevice().mapMemory(vkDeviceMemory_, 0, bufferInput.size);
         memcpy(memoryLocation_, resource, bufferInput.size);
-        vkDevice_.unmapMemory(vkDeviceMemory_);
+        Device::GetDevice().unmapMemory(vkDeviceMemory_);
     }
     template <typename T>
     void UpdateResource(T resource, size_t size)
@@ -38,9 +38,6 @@ private:
     vk::Buffer vkBuffer_;
     size_t size_;
     vk::DescriptorBufferInfo descriptorBufferInfo_;
-
-    const vk::PhysicalDevice& vkPhysicalDevice_;
-    const vk::Device& vkDevice_;
 };
 
 #endif

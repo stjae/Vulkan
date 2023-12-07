@@ -10,10 +10,10 @@ struct Matrix
     glm::mat4 proj;
 };
 
-struct Camera
+class Camera
 {
-
-    void Update(GLFWwindow* window);
+    friend class MyImGui;
+    friend class Scene;
 
     bool isControllable = false;
     bool isInitial = true; // prevent sudden camera move
@@ -29,6 +29,11 @@ struct Camera
     float speed = 4.0f;
 
     Matrix matrix;
+    void Update();
+
+public:
+    // void Update();
+    // bool IsControllable() { return isControllable; }
 };
 
 #endif // __CAMERA_H__

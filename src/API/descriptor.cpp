@@ -13,7 +13,7 @@ void Descriptor::CreateSetLayout(const DescriptorSetLayoutData& bindings)
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.count, layoutBindings.data());
 
-    setLayout = vkDevice.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = Device::GetDevice().createDescriptorSetLayout(layoutInfo);
 }
 
 void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings)
@@ -30,17 +30,17 @@ void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindin
 
     vk::DescriptorPoolCreateInfo poolInfo({}, size, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
 
-    pool = vkDevice.createDescriptorPool(poolInfo);
+    descriptorPool = Device::GetDevice().createDescriptorPool(poolInfo);
 }
 
 void Descriptor::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
-    vk::DescriptorSetAllocateInfo allocateInfo(pool, 1, &setLayout);
+    vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, 1, &descriptorSetLayout);
 
-    descriptorSets = vkDevice.allocateDescriptorSets(allocateInfo);
+    descriptorSets = Device::GetDevice().allocateDescriptorSets(allocateInfo);
 }
 
 Descriptor::~Descriptor()
 {
-    vkDevice.destroyDescriptorSetLayout(setLayout);
+    Device::GetDevice().destroyDescriptorSetLayout(descriptorSetLayout);
 }

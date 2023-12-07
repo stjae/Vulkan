@@ -2,14 +2,15 @@
 #define __MEMORY_H__
 
 #include "../common.h"
+#include "device.h"
 
 class Memory
 {
 public:
-    uint32_t FindMemoryTypeIndex(const vk::PhysicalDevice& vkPhysicalDevice, uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
-    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties);
-    void AllocateMemory(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice, const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
-    void Free(const vk::Device& vkDevice);
+    uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
+    void AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties);
+    void AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
+    void Free();
 
 protected:
     vk::DeviceMemory vkDeviceMemory_;

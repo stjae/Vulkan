@@ -1,28 +1,26 @@
 #include "engine.h"
 
-GraphicsEngine::GraphicsEngine(GLFWwindow* window, std::unique_ptr<Scene>& scene)
-    : device(window), swapchain(device, pipeline.vkRenderPass),
-      pipeline(device.vkDevice, swapchain.detail), command(device)
+GraphicsEngine::GraphicsEngine(std::shared_ptr<Scene>& scene)
 {
-    this->window = window;
+    scene_ = scene;
 
-    swapchain.CreateSwapchain(this->window, device);
+    swapchain.CreateSwapchain();
     pipeline.CreatePipeline();
-    swapchain.CreateFrameBuffer();
+    swapchain.CreateFrameBuffer(pipeline.RenderPass());
 
     command.CreateCommandPool("swapchain frames");
-    for (auto& frame : swapchain.detail.frames) {
+    for (auto& frame : Swapchain::GetDetail().frames) {
         command.AllocateCommandBuffer(frame.commandBuffer);
     }
 
-    maxFrameNumber = static_cast<int>(swapchain.detail.frames.size());
+    maxFrameNumber = static_cast<int>(Swapchain::GetDetail().frames.size());
     frameIndex = 0;
 
     swapchain.PrepareFrames();
 
     pipeline.CreateDescriptorPool();
-    for (auto& frame : swapchain.detail.frames) {
-        pipeline.descriptor.AllocateSet(frame.descriptorSets);
+    for (auto& frame : Swapchain::GetDetail().frames) {
+        pipeline.AllocateDescriptorSet(frame.descriptorSets);
     }
 }
 
@@ -31,15 +29,17 @@ void GraphicsEngine::InitSwapchainImages()
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
-    for (auto& frame : swapchain.detail.frames) {
-        frame.commandBuffer.begin(&beginInfo);
+    for (auto& frame : Swapchain::GetDetail().frames) {
+        if (frame.commandBuffer.begin(&beginInfo) != vk::Result::eSuccess) {
+            spdlog::error("failed to begin command buffer");
+        }
 
         vk::ImageMemoryBarrier barrier;
 
         barrier.oldLayout = vk::ImageLayout::eUndefined;
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+        barrier.srcQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
         barrier.image = frame.swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
@@ -53,17 +53,19 @@ void GraphicsEngine::InitSwapchainImages()
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &frame.commandBuffer;
 
-        device.vkGraphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
-        device.vkDevice.waitIdle();
+        if (Device::GetGraphicsQueue().submit(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess) {
+            spdlog::error("failed to get graphcis queue");
+        }
+        Device::GetDevice().waitIdle();
     }
 }
 
-void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData)
+void GraphicsEngine::Render()
 {
-    auto resultWaitFence = device.vkDevice.waitForFences(1, &swapchain.detail.frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultWaitFence = Device::GetDevice().waitForFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    auto acquiredImage = device.vkDevice.acquireNextImageKHR(swapchain.vkSwapchain, UINT64_MAX, swapchain.detail.frames[frameIndex].imageAvailable, nullptr);
+    auto acquiredImage = Device::GetDevice().acquireNextImageKHR(Swapchain::GetSwapchain(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex].imageAvailable, nullptr);
 
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
@@ -72,42 +74,42 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawDat
         return;
     }
 
-    auto resultResetFence = device.vkDevice.resetFences(1, &swapchain.detail.frames[frameIndex].inFlight);
+    auto resultResetFence = Device::GetDevice().resetFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight);
 
     imageIndex = acquiredImage.value;
 
-    scene->Update(imageIndex, swapchain, device.vkDevice, window);
+    scene_.lock()->Update(imageIndex);
 
-    vk::CommandBuffer commandBuffer = swapchain.detail.frames[frameIndex].commandBuffer;
+    vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex].commandBuffer;
 
     commandBuffer.reset();
-    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene->meshes_, imDrawData);
+    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene_.lock()->meshes, imDrawData);
 
     vk::SubmitInfo submitInfo;
-    vk::Semaphore waitSemaphores[] = { swapchain.detail.frames[frameIndex].imageAvailable };
+    vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex].imageAvailable };
     vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStage;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    vk::Semaphore signalSemaphores[] = { swapchain.detail.frames[frameIndex].renderFinished };
+    vk::Semaphore signalSemaphores[] = { Swapchain::GetDetail().frames[frameIndex].renderFinished };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    device.vkGraphicsQueue.submit(submitInfo, swapchain.detail.frames[frameIndex].inFlight);
+    Device::GetGraphicsQueue().submit(submitInfo, Swapchain::GetDetail().frames[frameIndex].inFlight);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-    vk::SwapchainKHR swapchains[] = { swapchain.vkSwapchain };
+    vk::SwapchainKHR swapchains[] = { Swapchain::GetSwapchain() };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &imageIndex;
 
     vk::Result resultPresent;
     try {
-        resultPresent = device.vkPresentQueue.presentKHR(presentInfo);
+        resultPresent = Device::GetPresentQueue().presentKHR(presentInfo);
     } catch (vk::OutOfDateKHRError error) {
         RecreateSwapchain();
         InitSwapchainImages();
@@ -122,29 +124,40 @@ void GraphicsEngine::RecreateSwapchain()
     int width = 0;
     int height = 0;
     while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetFramebufferSize(*Window::GetWindow(), &width, &height);
         glfwWaitEvents();
     }
 
-    device.vkDevice.waitIdle();
-    for (auto& frame : swapchain.detail.frames) {
-        device.vkDevice.freeCommandBuffers(command.commandPool, frame.commandBuffer);
+    Device::GetDevice().waitIdle();
+    for (auto& frame : Swapchain::GetDetail().frames) {
+        Device::GetDevice().freeCommandBuffers(command.commandPool, frame.commandBuffer);
     }
     swapchain.DestroySwapchain();
-    device.vkDevice.destroyCommandPool(command.commandPool);
+    Device::GetDevice().destroyCommandPool(command.commandPool);
 
-    swapchain.CreateSwapchain(window, device);
-    swapchain.CreateFrameBuffer();
+    swapchain.CreateSwapchain();
+    swapchain.CreateFrameBuffer(pipeline.RenderPass());
 
     swapchain.PrepareFrames();
 
     command.CreateCommandPool("new swapchain frames");
-    for (auto& frame : swapchain.detail.frames) {
+    for (auto& frame : Swapchain::GetDetail().frames) {
         command.AllocateCommandBuffer(frame.commandBuffer);
     }
 }
 
+void GraphicsEngine::SetupGui()
+{
+    imgui.Setup(scene_);
+}
+
+void GraphicsEngine::DrawGui()
+{
+    imgui.Draw();
+    imDrawData = ImGui::GetDrawData();
+}
+
 GraphicsEngine::~GraphicsEngine()
 {
-    device.vkDevice.waitIdle();
+    Device::GetDevice().waitIdle();
 }

@@ -11,28 +11,32 @@
 
 class Swapchain
 {
-public:
-    Swapchain(const Device& device, const vk::RenderPass& vkRenderPass)
-        : vkDevice(device.vkDevice), vkPhysicalDevice(device.vkPhysicalDevice), vkSurface(device.instance.vkSurface), vkRenderPass(vkRenderPass), detail(device.vkPhysicalDevice, device.vkDevice) {}
-    void CreateSwapchain(GLFWwindow* window, const Device& device);
-    void QueryswapchainSupportDetails(const Device& device);
+    void QueryswapchainSupportDetails();
     vk::SurfaceFormatKHR ChooseSurfaceFormat();
     vk::PresentModeKHR ChoosePresentMode();
-    vk::Extent2D ChooseExtent(GLFWwindow* window);
-    void CreateFrameBuffer();
+    vk::Extent2D ChooseExtent();
+
+public:
+    void CreateSwapchain();
+    void CreateFrameBuffer(const vk::RenderPass& vkRenderPass);
     void PrepareFrames();
     void DestroySwapchain();
+    static vk::SwapchainKHR& GetSwapchain()
+    {
+        static vk::SwapchainKHR swapchain;
+        return swapchain;
+    }
+    static SwapchainDetail& GetDetail()
+    {
+        static SwapchainDetail detail;
+        return detail;
+    }
+    static SwapchainSupportDetail& GetSupportDetail()
+    {
+        static SwapchainSupportDetail supportDetail;
+        return supportDetail;
+    }
     ~Swapchain();
-
-    vk::SwapchainKHR vkSwapchain;
-    SwapchainSupportDetail supportDetail;
-    SwapchainDetail detail;
-
-private:
-    const vk::Device& vkDevice;
-    const vk::PhysicalDevice& vkPhysicalDevice;
-    const VkSurfaceKHR& vkSurface;
-    const vk::RenderPass& vkRenderPass;
 };
 
 #endif

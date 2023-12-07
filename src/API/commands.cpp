@@ -4,9 +4,9 @@ void Command::CreateCommandPool(const char* usage)
 {
     vk::CommandPoolCreateInfo poolInfo;
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    poolInfo.queueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
 
-    commandPool = device.vkDevice.createCommandPool(poolInfo);
+    commandPool = Device::GetDevice().createCommandPool(poolInfo);
     Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
@@ -17,11 +17,11 @@ void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer)
     allocateInfo.level = vk::CommandBufferLevel::ePrimary;
     allocateInfo.commandBufferCount = 1;
 
-    commandBuffer = device.vkDevice.allocateCommandBuffers(allocateInfo)[0];
+    commandBuffer = Device::GetDevice().allocateCommandBuffers(allocateInfo)[0];
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
-void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::unique_ptr<Mesh>>& meshes, ImDrawData* imDrawData)
+void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::shared_ptr<Mesh>>& meshes, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -31,9 +31,9 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
         barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
         barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
         barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.image = pipeline.swapchainDetail.frames[imageIndex].swapchainVkImage;
+        barrier.srcQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.image = Swapchain::GetDetail().frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
@@ -43,10 +43,10 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
                                       0, nullptr, 0, nullptr, 1, &barrier);
     }
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = pipeline.vkRenderPass;
-    renderPassInfo.framebuffer = pipeline.swapchainDetail.frames[imageIndex].framebuffer;
+    renderPassInfo.renderPass = GraphicsPipeline::RenderPass();
+    renderPassInfo.framebuffer = Swapchain::GetDetail().frames[imageIndex].framebuffer;
     vk::Rect2D renderArea(0, 0);
-    renderArea.extent = pipeline.swapchainDetail.extent;
+    renderArea.extent = Swapchain::GetDetail().extent;
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue clearValue;
     clearValue.color = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
@@ -57,20 +57,20 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
     renderPassInfo.pClearValues = &clearValues[0];
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.vkPipelineLayout, 0, pipeline.swapchainDetail.frames[imageIndex].descriptorSets.size(), pipeline.swapchainDetail.frames[imageIndex].descriptorSets.data(), 0, 0);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vkPipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0, Swapchain::GetDetail().frames[imageIndex].descriptorSets.size(), Swapchain::GetDetail().frames[imageIndex].descriptorSets.data(), 0, 0);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.Pipeline());
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
-    viewport.y = static_cast<float>(pipeline.swapchainDetail.extent.height);
-    viewport.width = static_cast<float>(pipeline.swapchainDetail.extent.width);
-    viewport.height = -1.0f * static_cast<float>(pipeline.swapchainDetail.extent.height);
+    viewport.y = static_cast<float>(Swapchain::GetDetail().extent.height);
+    viewport.width = static_cast<float>(Swapchain::GetDetail().extent.width);
+    viewport.height = -1.0f * static_cast<float>(Swapchain::GetDetail().extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
-    scissor.extent = pipeline.swapchainDetail.extent;
+    scissor.extent = Swapchain::GetDetail().extent;
 
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
@@ -83,7 +83,7 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.bindIndexBuffer(mesh->indexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
 
-        commandBuffer.pushConstants(pipeline.vkPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant), &mesh->pushConstant.index);
+        commandBuffer.pushConstants(pipeline.PipelineLayout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant), &mesh->GetPushConstant());
 
         commandBuffer.drawIndexed(static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
     }
@@ -97,9 +97,9 @@ void Command::RecordDrawCommands(const GraphicsPipeline& pipeline, const vk::Com
         barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
         barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.srcQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.dstQueueFamilyIndex = device.queueFamilyIndices.graphicsFamily.value();
-        barrier.image = pipeline.swapchainDetail.frames[imageIndex].swapchainVkImage;
+        barrier.srcQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.dstQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.image = Swapchain::GetDetail().frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
@@ -185,14 +185,14 @@ void Command::Submit()
     submitInfo.commandBufferCount = commandBuffers.size();
     submitInfo.pCommandBuffers = commandBuffers.data();
 
-    device.vkGraphicsQueue.submit(submitInfo);
-    device.vkGraphicsQueue.waitIdle();
+    Device::GetGraphicsQueue().submit(submitInfo);
+    Device::GetGraphicsQueue().waitIdle();
 
     commandBuffers.clear();
 }
 
 Command::~Command()
 {
-    device.vkDevice.destroyCommandPool(commandPool);
+    Device::GetDevice().destroyCommandPool(commandPool);
     Log(debug, fmt::v9::terminal_color::bright_yellow, "command pool destroyed");
 }

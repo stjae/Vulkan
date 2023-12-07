@@ -2,20 +2,22 @@
 #define __IMGUI_H__
 
 #include "common.h"
-#include "engine.h"
 #include "camera.h"
 #include "scene.h"
 #include "../imgui/ImGuizmo.h"
-#include <bitset>
 
 class MyImGui
 {
+    vk::DescriptorPool imGuiDescriptorPool;
+    std::weak_ptr<Scene> scene_;
+
 public:
-    void Setup(const std::unique_ptr<GraphicsEngine>& engine);
-    void DrawImGuizmo(const std::unique_ptr<Scene>& scene);
+    void Setup(std::weak_ptr<Scene> scene);
+    void DrawImGuizmo();
     void DrawDockSpace();
-    void ControlCamera(const std::unique_ptr<Scene>& scene, GLFWwindow* window);
-    void Draw(const std::unique_ptr<Scene>& scene, GLFWwindow* window);
+    void SetCameraControl();
+    void Draw();
+    ~MyImGui();
 };
 
 #endif // __IMGUI_H__

@@ -10,9 +10,9 @@ class MeshData
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
     static std::array<vk::VertexInputAttributeDescription, 3> GetAttributeDescs();
-    void CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
-    void CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice);
-    void CreateTexture(const Device& device);
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void CreateTexture();
     void DestroyStagingBuffer();
 
     std::vector<float> vertices;

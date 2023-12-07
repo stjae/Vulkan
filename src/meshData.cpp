@@ -37,27 +37,27 @@ std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
     return attributes;
 }
 
-void MeshData::CreateVertexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+void MeshData::CreateVertexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    vertexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
+    vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
     vertexStagingBuffer->CopyResource(vertices.data(), stagingBufferInput);
 
     BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
-    vertexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, vertexBufferInput);
+    vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
 }
 
-void MeshData::CreateIndexBuffer(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+void MeshData::CreateIndexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    indexStagingBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, stagingBufferInput);
+    indexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
     indexStagingBuffer->CopyResource(indices.data(), stagingBufferInput);
 
     BufferInput indexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
-    indexBuffer = std::make_unique<Buffer>(vkPhysicalDevice, vkDevice, indexBufferInput);
+    indexBuffer = std::make_unique<Buffer>(indexBufferInput);
 }
 
-void MeshData::CreateTexture(const Device& device)
+void MeshData::CreateTexture()
 {
     if (textureFilePath) {
 
@@ -81,11 +81,11 @@ void MeshData::CreateTexture(const Device& device)
         textureSize = static_cast<size_t>(imageSize);
 
         BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
+        textureStagingBuffer = std::make_unique<Buffer>(input);
         textureStagingBuffer->CopyResource(imageData, input);
 
         stbi_image_free(imageData);
-        textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
+        textureImage = std::make_unique<Image>();
         vk::Extent3D extent(width, height, 1);
         textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
         textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
@@ -99,10 +99,10 @@ void MeshData::CreateTexture(const Device& device)
         textureSize = 4;
 
         BufferInput input = { 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        textureStagingBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
+        textureStagingBuffer = std::make_unique<Buffer>(input);
         textureStagingBuffer->CopyResource(&dummyTexture, input);
 
-        textureImage = std::make_unique<Image>(device.vkPhysicalDevice, device.vkDevice);
+        textureImage = std::make_unique<Image>();
         vk::Extent3D extent(1, 1, 1);
         textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
         textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);

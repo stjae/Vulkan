@@ -9,14 +9,15 @@
 
 class Scene
 {
-public:
-    Scene();
-    void Prepare(const Device& device);
-    void CreateResource(const Device& device);
-    void Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice, GLFWwindow* window);
+    void CreateResource();
 
-    Camera camera_;
-    std::vector<std::unique_ptr<Mesh>> meshes_;
+public:
+    Camera camera;
+    std::vector<std::shared_ptr<Mesh>> meshes;
+
+    Scene();
+    void Prepare();
+    void Update(uint32_t index);
 };
 
 #endif

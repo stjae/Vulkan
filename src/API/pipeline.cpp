@@ -95,13 +95,13 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    vkPipelineLayout = CreatePipelineLayout();
-    pipelineInfo.layout = vkPipelineLayout;
+    GraphicsPipeline::PipelineLayout() = CreatePipelineLayout();
+    pipelineInfo.layout = GraphicsPipeline::PipelineLayout();
 
-    vkRenderPass = CreateRenderPass();
-    pipelineInfo.renderPass = vkRenderPass;
+    GraphicsPipeline::RenderPass() = CreateRenderPass();
+    pipelineInfo.renderPass = GraphicsPipeline::RenderPass();
 
-    vkPipeline = (vkDevice.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    GraphicsPipeline::Pipeline() = (Device::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo)).value;
     Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
@@ -126,19 +126,19 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     descriptor.CreateSetLayout(bindings);
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptor.setLayout;
+    pipelineLayoutInfo.pSetLayouts = &descriptor.GetDescriptorSetLayout();
 
     vk::PushConstantRange pushConstant(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant));
     pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
 
-    return vkDevice.createPipelineLayout(pipelineLayoutInfo);
+    return Device::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 }
 
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = swapchainDetail.imageFormat;
+    colorAttachmentDesc.format = Swapchain::GetDetail().imageFormat;
     colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -148,7 +148,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription depthAttachmentDesc;
-    depthAttachmentDesc.format = swapchainDetail.frames[0].depthImage.GetFormat();
+    depthAttachmentDesc.format = Swapchain::GetDetail().depthImageFormat;
     depthAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     depthAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -178,18 +178,23 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    return vkDevice.createRenderPass(renderPassInfo);
+    return Device::GetDevice().createRenderPass(renderPassInfo);
 }
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    descriptor.CreatePool(static_cast<uint32_t>(swapchainDetail.frames.size()), bindings);
+    descriptor.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), bindings);
+}
+
+void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)
+{
+    descriptor.AllocateSet(descriptorSets);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    vkDevice.destroyPipeline(vkPipeline);
-    vkDevice.destroyPipelineLayout(vkPipelineLayout);
-    vkDevice.destroyRenderPass(vkRenderPass);
-    vkDevice.destroyDescriptorPool(descriptor.pool);
+    Device::GetDevice().destroyPipeline(GraphicsPipeline::Pipeline());
+    Device::GetDevice().destroyPipelineLayout(GraphicsPipeline::PipelineLayout());
+    Device::GetDevice().destroyRenderPass(GraphicsPipeline::RenderPass());
+    Device::GetDevice().destroyDescriptorPool(descriptor.GetDescriptorPool());
 }

@@ -11,25 +11,30 @@
 #include "API/window.h"
 #include "scene.h"
 #include "camera.h"
+#include "imgui.h"
 
 class GraphicsEngine
 {
-public:
-    GraphicsEngine(GLFWwindow* window, std::unique_ptr<Scene>& scene);
-    void InitSwapchainImages();
-    void Render(std::unique_ptr<Scene>& scene, ImDrawData* imDrawData);
-    void RecreateSwapchain();
-    ~GraphicsEngine();
-
-    GLFWwindow* window;
+    int frameIndex = 0;
+    int maxFrameNumber;
 
     Device device;
     Swapchain swapchain;
     GraphicsPipeline pipeline;
     Command command;
+    MyImGui imgui;
+    ImDrawData* imDrawData;
 
-    int frameIndex = 0;
-    int maxFrameNumber;
+    std::weak_ptr<Scene> scene_;
+
+public:
+    GraphicsEngine(std::shared_ptr<Scene>& scene);
+    void InitSwapchainImages();
+    void Render();
+    void RecreateSwapchain();
+    void SetupGui();
+    void DrawGui();
+    ~GraphicsEngine();
 };
 
 #endif

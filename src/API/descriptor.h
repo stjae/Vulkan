@@ -15,18 +15,18 @@ struct DescriptorSetLayoutData
 
 class Descriptor
 {
-public:
-    Descriptor(const vk::Device& vkDevice) : vkDevice(vkDevice) {}
+    friend class GraphicsPipeline;
+
+    vk::DescriptorSetLayout descriptorSetLayout;
+    vk::DescriptorPool descriptorPool;
+
     void CreateSetLayout(const DescriptorSetLayoutData& bindings);
     void CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings);
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~Descriptor();
 
-    vk::DescriptorSetLayout setLayout;
-    vk::DescriptorPool pool;
-
-private:
-    const vk::Device& vkDevice;
+    const vk::DescriptorSetLayout& GetDescriptorSetLayout() { return descriptorSetLayout; }
+    const vk::DescriptorPool& GetDescriptorPool() { return descriptorPool; }
 };
 
 #endif

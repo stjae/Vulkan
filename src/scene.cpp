@@ -2,36 +2,36 @@
 
 Scene::Scene()
 {
-    meshes_.emplace_back(std::make_unique<Mesh>());
-    meshes_.back()->CreateCube(nullptr);
-    meshes_.back()->pushConstant.index = meshes_.size() - 1;
-    meshes_.emplace_back(std::make_unique<Mesh>());
-    meshes_.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
-    meshes_.back()->pushConstant.index = meshes_.size() - 1;
+    meshes.emplace_back(std::make_shared<Mesh>());
+    meshes.back()->CreateCube(nullptr);
+    meshes.back()->pushConstant.index = meshes.size() - 1;
+    meshes.emplace_back(std::make_shared<Mesh>());
+    meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
+    meshes.back()->pushConstant.index = meshes.size() - 1;
 }
 
-void Scene::Prepare(const Device& device)
+void Scene::Prepare()
 {
-    CreateResource(device);
+    CreateResource();
 
-    Command command(device);
+    Command command;
     command.CreateCommandPool("copying buffers");
 
-    for (auto& mesh : meshes_) {
+    for (auto& mesh : meshes) {
         command.RecordCopyCommands(mesh->vertexStagingBuffer->GetBuffer(), mesh->vertexBuffer->GetBuffer(), sizeof(mesh->vertices[0]) * mesh->vertices.size());
         command.RecordCopyCommands(mesh->indexStagingBuffer->GetBuffer(), mesh->indexBuffer->GetBuffer(), sizeof(mesh->indices[0]) * mesh->indices.size());
-        command.TransitImageLayout(mesh->textureImage->image_, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        command.TransitImageLayout(mesh->textureImage->GetImage(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     }
 
     command.Submit();
 
-    for (auto& mesh : meshes_)
-        command.RecordCopyCommands(mesh->textureStagingBuffer->GetBuffer(), mesh->textureImage->image_, mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
+    for (auto& mesh : meshes)
+        command.RecordCopyCommands(mesh->textureStagingBuffer->GetBuffer(), mesh->textureImage->GetImage(), mesh->textureWidth, mesh->textureHeight, mesh->textureSize);
 
     command.Submit();
 
-    for (auto& mesh : meshes_) {
-        command.TransitImageLayout(mesh->textureImage->image_, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    for (auto& mesh : meshes) {
+        command.TransitImageLayout(mesh->textureImage->GetImage(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->DestroyStagingBuffer();
     }
@@ -39,58 +39,58 @@ void Scene::Prepare(const Device& device)
     command.Submit();
 }
 
-void Scene::CreateResource(const Device& device)
+void Scene::CreateResource()
 {
-    for (auto& mesh : meshes_) {
-        mesh->CreateIndexBuffer(device.vkPhysicalDevice, device.vkDevice);
-        mesh->CreateVertexBuffer(device.vkPhysicalDevice, device.vkDevice);
+    for (auto& mesh : meshes) {
+        mesh->CreateIndexBuffer();
+        mesh->CreateVertexBuffer();
 
-        mesh->CreateTexture(device);
-        mesh->textureImage->CreateSampler(device.vkPhysicalDevice, device.vkDevice);
+        mesh->CreateTexture();
+        mesh->textureImage->CreateSampler();
 
         BufferInput input = { input.size = sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        mesh->matrixUniformBuffer = std::make_unique<Buffer>(device.vkPhysicalDevice, device.vkDevice, input);
+        mesh->matrixUniformBuffer = std::make_unique<Buffer>(input);
         mesh->matrixUniformBuffer->MapUniformBuffer();
     }
 }
 
-void Scene::Update(uint32_t index, const Swapchain& swapchain, const vk::Device& vkDevice, GLFWwindow* window)
+void Scene::Update(uint32_t index)
 {
-    if (camera_.isControllable) {
-        camera_.Update(window);
+    if (camera.isControllable) {
+        camera.Update();
     }
 
-    camera_.matrix.view = glm::lookAt(camera_.pos, camera_.at, camera_.up);
-    camera_.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.detail.extent.width) / static_cast<float>(swapchain.detail.extent.height), 0.1f, 100.0f);
+    camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
+    camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
 
     std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
 
-    for (auto& mesh : meshes_) {
-        mesh->ubo.view = camera_.matrix.view;
-        mesh->ubo.proj = camera_.matrix.proj;
-        mesh->ubo.eye = camera_.pos;
+    for (auto& mesh : meshes) {
+        mesh->ubo.view = camera.matrix.view;
+        mesh->ubo.proj = camera.matrix.proj;
+        mesh->ubo.eye = camera.pos;
 
         mesh->matrixUniformBuffer->UpdateResource(&(mesh->ubo), sizeof(UBO));
         descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->GetBufferInfo());
     }
 
-    if (meshes_.size() > 0) {
-        vk::WriteDescriptorSet matrixWriteInfo(swapchain.detail.frames[index].descriptorSets[0], 0, 0, meshes_.size(), vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfos.data(), nullptr, nullptr);
-        vkDevice.updateDescriptorSets(matrixWriteInfo, nullptr);
+    if (meshes.size() > 0) {
+        vk::WriteDescriptorSet matrixWriteInfo(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, meshes.size(), vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfos.data(), nullptr, nullptr);
+        Device::GetDevice().updateDescriptorSets(matrixWriteInfo, nullptr);
     }
 
     vk::WriteDescriptorSet descriptorWrites;
-    descriptorWrites.dstSet = swapchain.detail.frames[index].descriptorSets[0];
+    descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[0];
     descriptorWrites.dstBinding = 2;
     descriptorWrites.dstArrayElement = 0;
     descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    descriptorWrites.descriptorCount = meshes_.size();
+    descriptorWrites.descriptorCount = meshes.size();
     std::vector<vk::DescriptorImageInfo> infos;
-    for (auto& mesh : meshes_) {
+    for (auto& mesh : meshes) {
         infos.push_back(mesh->textureImage->GetInfo());
     }
     descriptorWrites.pImageInfo = infos.data();
-    if (meshes_.size() > 0) {
-        vkDevice.updateDescriptorSets(descriptorWrites, nullptr);
+    if (meshes.size() > 0) {
+        Device::GetDevice().updateDescriptorSets(descriptorWrites, nullptr);
     }
 }

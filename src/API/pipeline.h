@@ -8,23 +8,32 @@
 
 class GraphicsPipeline
 {
+    Shader shader;
+    Descriptor descriptor;
+    DescriptorSetLayoutData bindings;
+
 public:
-    GraphicsPipeline(const vk::Device& vkDevice, const SwapchainDetail& swapchainDetail)
-        : vkDevice(vkDevice), swapchainDetail(swapchainDetail), shader(vkDevice), descriptor(vkDevice) {}
     void CreatePipeline();
     vk::PipelineLayout CreatePipelineLayout();
     vk::RenderPass CreateRenderPass();
     void CreateDescriptorPool();
+    void AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~GraphicsPipeline();
-
-    vk::Pipeline vkPipeline;
-    vk::PipelineLayout vkPipelineLayout;
-    vk::RenderPass vkRenderPass;
-    const SwapchainDetail& swapchainDetail;
-    const vk::Device& vkDevice;
-    Shader shader;
-    Descriptor descriptor;
-    DescriptorSetLayoutData bindings;
+    static vk::Pipeline& Pipeline()
+    {
+        static vk::Pipeline vkPipeline;
+        return vkPipeline;
+    }
+    static vk::PipelineLayout& PipelineLayout()
+    {
+        static vk::PipelineLayout vkPipelineLayout;
+        return vkPipelineLayout;
+    }
+    static vk::RenderPass& RenderPass()
+    {
+        static vk::RenderPass vkRenderPass;
+        return vkRenderPass;
+    }
 };
 
 #endif

@@ -5,7 +5,6 @@
 #include "common.h"
 #include "scene.h"
 #include "camera.h"
-#include "imgui.h"
 
 class Application
 {
@@ -20,9 +19,7 @@ public:
 private:
     Window window;
     std::unique_ptr<GraphicsEngine> engine;
-    std::unique_ptr<Scene> scene;
-
-    MyImGui imgui;
+    std::shared_ptr<Scene> scene;
 };
 
 #endif // __BASEAPP_H__

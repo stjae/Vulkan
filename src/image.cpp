@@ -4,9 +4,9 @@ void Image::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Memory
 {
     vk::ImageCreateInfo createInfo({}, vk::ImageType::e2D, format, extent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, usage);
 
-    image_ = vkDevice_.createImage(createInfo);
+    image_ = Device::GetDevice().createImage(createInfo);
     format_ = format;
-    memory.AllocateMemory(vkPhysicalDevice_, vkDevice_, image_, properties);
+    memory.AllocateMemory(image_, properties);
 }
 
 void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
@@ -14,10 +14,10 @@ void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
     vk::ImageSubresourceRange range(aspectFlags, 0, 1, 0, 1);
     vk::ImageViewCreateInfo createInfo({}, image_, vk::ImageViewType::e2D, format, {}, range);
 
-    imageView_ = vkDevice_.createImageView(createInfo);
+    imageView_ = Device::GetDevice().createImageView(createInfo);
 }
 
-void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::Device& vkDevice)
+void Image::CreateSampler()
 {
     vk::SamplerCreateInfo samplerInfo;
     samplerInfo.magFilter = vk::Filter::eLinear;
@@ -27,7 +27,7 @@ void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::
     samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable = vk::True;
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(Device::GetPhysicalDevice(), &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
     samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = vk::False;
@@ -38,7 +38,7 @@ void Image::CreateSampler(const vk::PhysicalDevice& vkPhysicalDevice, const vk::
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkDevice.createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
+    if (Device::GetDevice().createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
         spdlog::error("failed to create sampler");
     }
 }
@@ -49,10 +49,25 @@ void Image::SetInfo(vk::ImageLayout imageLayout)
     imageInfo_ = imageInfo;
 }
 
+void Image::DestroyImage()
+{
+    Device::GetDevice().destroyImage(image_);
+    image_ = VK_NULL_HANDLE;
+}
+
+void Image::DestroyImageView()
+{
+    Device::GetDevice().destroyImageView(imageView_);
+    imageView_ = VK_NULL_HANDLE;
+}
+
 Image::~Image()
 {
-    memory.Free(vkDevice_);
-    vkDevice_.destroyImage(image_);
-    vkDevice_.destroySampler(sampler_);
-    vkDevice_.destroyImageView(imageView_);
+    memory.Free();
+    if (image_ != VK_NULL_HANDLE)
+        Device::GetDevice().destroyImage(image_);
+    if (imageView_ != VK_NULL_HANDLE)
+        Device::GetDevice().destroyImageView(imageView_);
+    if (sampler_ != VK_NULL_HANDLE)
+        Device::GetDevice().destroySampler(sampler_);
 }
