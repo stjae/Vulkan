@@ -6,14 +6,14 @@
 
 struct DescriptorSetLayoutData
 {
-    int count;
+    int descriptorSetCount = 0;
     std::vector<int> indices;
-    std::vector<vk::DescriptorType> types;
-    std::vector<int> counts;
-    std::vector<vk::ShaderStageFlags> stages;
+    std::vector<vk::DescriptorType> descriptorTypes;
+    std::vector<int> descriptorCounts;
+    std::vector<vk::ShaderStageFlags> bindingStages;
 };
 
-class Descriptor
+class DescriptorManager
 {
     friend class GraphicsPipeline;
 
@@ -23,7 +23,7 @@ class Descriptor
     void CreateSetLayout(const DescriptorSetLayoutData& bindings);
     void CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings);
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
-    ~Descriptor();
+    ~DescriptorManager();
 
     const vk::DescriptorSetLayout& GetDescriptorSetLayout() { return descriptorSetLayout; }
     const vk::DescriptorPool& GetDescriptorPool() { return descriptorPool; }

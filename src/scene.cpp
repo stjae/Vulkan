@@ -2,16 +2,19 @@
 
 Scene::Scene()
 {
-    meshes.emplace_back(std::make_shared<Mesh>());
-    meshes.back()->CreateCube(nullptr);
-    meshes.back()->pushConstant.index = meshes.size() - 1;
+    // meshes.emplace_back(std::make_shared<Mesh>());
+    // meshes.back()->CreateCube(nullptr);
+    // meshes.back()->pushConstant.index = meshes.size() - 1;
+    // meshNames.push_back(meshes.back()->name.c_str());
     meshes.emplace_back(std::make_shared<Mesh>());
     meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
     meshes.back()->pushConstant.index = meshes.size() - 1;
+    meshNames.push_back(meshes.back()->name.c_str());
 }
 
 void Scene::Prepare()
 {
+    camera = std::make_unique<Camera>();
     CreateResource();
 
     Command command;
@@ -48,49 +51,36 @@ void Scene::CreateResource()
         mesh->CreateTexture();
         mesh->textureImage->CreateSampler();
 
-        BufferInput input = { input.size = sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        BufferInput input = { sizeof(UBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         mesh->matrixUniformBuffer = std::make_unique<Buffer>(input);
-        mesh->matrixUniformBuffer->MapUniformBuffer();
+        mesh->matrixUniformBuffer->Map();
     }
 }
 
 void Scene::Update(uint32_t index)
 {
-    if (camera.isControllable) {
-        camera.Update();
+    if (camera->isControllable) {
+        camera->Update();
     }
 
-    camera.matrix.view = glm::lookAt(camera.pos, camera.at, camera.up);
-    camera.matrix.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
+    camera->matrix_.view = glm::lookAt(camera->pos, camera->at, camera->up);
+    camera->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
 
-    std::vector<vk::DescriptorBufferInfo> descriptorBufferInfos;
+    vk::WriteDescriptorSet matrixWriteInfo(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, static_cast<uint32_t>(meshes.size()), vk::DescriptorType::eUniformBuffer, nullptr, &camera->GetBufferInfo(), nullptr, nullptr);
+    Device::GetDevice().updateDescriptorSets(matrixWriteInfo, nullptr);
 
-    for (auto& mesh : meshes) {
-        mesh->ubo.view = camera.matrix.view;
-        mesh->ubo.proj = camera.matrix.proj;
-        mesh->ubo.eye = camera.pos;
-
-        mesh->matrixUniformBuffer->UpdateResource(&(mesh->ubo), sizeof(UBO));
-        descriptorBufferInfos.push_back(mesh->matrixUniformBuffer->GetBufferInfo());
-    }
-
-    if (meshes.size() > 0) {
-        vk::WriteDescriptorSet matrixWriteInfo(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, meshes.size(), vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfos.data(), nullptr, nullptr);
-        Device::GetDevice().updateDescriptorSets(matrixWriteInfo, nullptr);
-    }
-
-    vk::WriteDescriptorSet descriptorWrites;
-    descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[0];
-    descriptorWrites.dstBinding = 2;
-    descriptorWrites.dstArrayElement = 0;
-    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    descriptorWrites.descriptorCount = meshes.size();
-    std::vector<vk::DescriptorImageInfo> infos;
-    for (auto& mesh : meshes) {
-        infos.push_back(mesh->textureImage->GetInfo());
-    }
-    descriptorWrites.pImageInfo = infos.data();
-    if (meshes.size() > 0) {
-        Device::GetDevice().updateDescriptorSets(descriptorWrites, nullptr);
-    }
+    // vk::WriteDescriptorSet descriptorWrites;
+    // descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[0];
+    // descriptorWrites.dstBinding = 2;
+    // descriptorWrites.dstArrayElement = 0;
+    // descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    // descriptorWrites.descriptorCount = meshes.size();
+    // std::vector<vk::DescriptorImageInfo> infos;
+    // for (auto& mesh : meshes) {
+    //     infos.push_back(mesh->textureImage->GetInfo());
+    // }
+    // descriptorWrites.pImageInfo = infos.data();
+    // if (meshes.size() > 0) {
+    //     Device::GetDevice().updateDescriptorSets(descriptorWrites, nullptr);
+    // }
 }

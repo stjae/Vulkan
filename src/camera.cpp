@@ -1,5 +1,12 @@
 #include "camera.h"
 
+Camera::Camera()
+{
+    BufferInput input = { sizeof(CameraMatrix), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    uniformBuffer_ = std::make_unique<Buffer>(input);
+    uniformBuffer_->Map();
+}
+
 void Camera::Update()
 {
     static double delta, currentTime, lastTime = 0.0;
@@ -59,4 +66,14 @@ void Camera::Update()
 
     prevMouseX = mouseX;
     prevMouseY = mouseY;
+}
+
+void Camera::UpdateBuffer()
+{
+    uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix));
+}
+
+vk::DescriptorBufferInfo Camera::GetBufferInfo()
+{
+    return uniformBuffer_->GetBufferInfo();
 }

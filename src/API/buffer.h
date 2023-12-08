@@ -15,21 +15,21 @@ class Buffer : public Memory
 {
 public:
     Buffer(const BufferInput& bufferInput);
-    void MapUniformBuffer();
+    void Map();
     vk::Buffer GetBuffer() { return vkBuffer_; }
     vk::DescriptorBufferInfo GetBufferInfo() { return descriptorBufferInfo_; }
-    void DestroyBuffer();
+    void Destroy();
     ~Buffer();
 
     template <typename T>
-    void CopyResource(T resource, const BufferInput& bufferInput)
+    void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
         memoryLocation_ = Device::GetDevice().mapMemory(vkDeviceMemory_, 0, bufferInput.size);
         memcpy(memoryLocation_, resource, bufferInput.size);
         Device::GetDevice().unmapMemory(vkDeviceMemory_);
     }
     template <typename T>
-    void UpdateResource(T resource, size_t size)
+    void UpdateBuffer(T resource, size_t size)
     {
         memcpy(memoryLocation_, resource, size);
     }

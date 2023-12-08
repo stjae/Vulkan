@@ -9,7 +9,7 @@ Buffer::Buffer(const BufferInput& bufferInput)
     AllocateMemory(vkBuffer_, bufferInput.properties);
 }
 
-void Buffer::MapUniformBuffer()
+void Buffer::Map()
 {
     memoryLocation_ = Device::GetDevice().mapMemory(vkDeviceMemory_, 0, static_cast<vk::DeviceSize>(size_));
 
@@ -18,7 +18,7 @@ void Buffer::MapUniformBuffer()
     descriptorBufferInfo_.range = static_cast<vk::DeviceSize>(size_);
 }
 
-void Buffer::DestroyBuffer()
+void Buffer::Destroy()
 {
     Device::GetDevice().waitIdle();
     if (vkBuffer_ != VK_NULL_HANDLE) {
@@ -34,5 +34,5 @@ void Buffer::DestroyBuffer()
 
 Buffer::~Buffer()
 {
-    DestroyBuffer();
+    Destroy();
 }

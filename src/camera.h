@@ -3,8 +3,9 @@
 
 #include "common.h"
 #include "API/window.h"
+#include "API/buffer.h"
 
-struct Matrix
+struct CameraMatrix
 {
     glm::mat4 view;
     glm::mat4 proj;
@@ -28,12 +29,14 @@ class Camera
 
     float speed = 4.0f;
 
-    Matrix matrix;
+    CameraMatrix matrix_;
+    std::unique_ptr<Buffer> uniformBuffer_;
     void Update();
+    void UpdateBuffer();
+    vk::DescriptorBufferInfo GetBufferInfo();
 
 public:
-    // void Update();
-    // bool IsControllable() { return isControllable; }
+    Camera();
 };
 
 #endif // __CAMERA_H__

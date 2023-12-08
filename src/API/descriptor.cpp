@@ -1,29 +1,30 @@
 #include "descriptor.h"
 
-void Descriptor::CreateSetLayout(const DescriptorSetLayoutData& bindings)
+void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings)
 {
     std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
-    layoutBindings.reserve(bindings.count);
+    layoutBindings.reserve(bindings.descriptorSetCount);
 
-    for (int i = 0; i < bindings.count; ++i) {
+    for (int i = 0; i < bindings.descriptorSetCount; ++i) {
 
-        vk::DescriptorSetLayoutBinding layoutBinding(bindings.indices[i], bindings.types[i], bindings.counts[i], bindings.stages[i]);
+        vk::DescriptorSetLayoutBinding layoutBinding(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorCounts[i], bindings.bindingStages[i]);
         layoutBindings.push_back(layoutBinding);
     }
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.count, layoutBindings.data());
+    vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.descriptorSetCount, layoutBindings.data());
 
     descriptorSetLayout = Device::GetDevice().createDescriptorSetLayout(layoutInfo);
 }
 
-void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings)
+void DescriptorManager::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
-    for (int i = 0; i < bindings.count; i++) {
-        for (int j = 0; j < bindings.counts[i]; j++) {
+    for (int i = 0; i < bindings.descriptorSetCount; i++) {
 
-            vk::DescriptorPoolSize poolSize(bindings.types[i], size);
+        for (int j = 0; j < bindings.descriptorCounts[i]; j++) {
+
+            vk::DescriptorPoolSize poolSize(bindings.descriptorTypes[i], size);
             poolSizes.push_back(poolSize);
         }
     }
@@ -33,14 +34,15 @@ void Descriptor::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindin
     descriptorPool = Device::GetDevice().createDescriptorPool(poolInfo);
 }
 
-void Descriptor::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
+void DescriptorManager::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
+    // TODO:: why 1?
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, 1, &descriptorSetLayout);
 
     descriptorSets = Device::GetDevice().allocateDescriptorSets(allocateInfo);
 }
 
-Descriptor::~Descriptor()
+DescriptorManager::~DescriptorManager()
 {
     Device::GetDevice().destroyDescriptorSetLayout(descriptorSetLayout);
 }

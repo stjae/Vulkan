@@ -41,7 +41,7 @@ void MeshData::CreateVertexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    vertexStagingBuffer->CopyResource(vertices.data(), stagingBufferInput);
+    vertexStagingBuffer->CopyToBuffer(vertices.data(), stagingBufferInput);
 
     BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
@@ -51,7 +51,7 @@ void MeshData::CreateIndexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     indexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    indexStagingBuffer->CopyResource(indices.data(), stagingBufferInput);
+    indexStagingBuffer->CopyToBuffer(indices.data(), stagingBufferInput);
 
     BufferInput indexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     indexBuffer = std::make_unique<Buffer>(indexBufferInput);
@@ -82,7 +82,7 @@ void MeshData::CreateTexture()
 
         BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         textureStagingBuffer = std::make_unique<Buffer>(input);
-        textureStagingBuffer->CopyResource(imageData, input);
+        textureStagingBuffer->CopyToBuffer(imageData, input);
 
         stbi_image_free(imageData);
         textureImage = std::make_unique<Image>();
@@ -100,7 +100,7 @@ void MeshData::CreateTexture()
 
         BufferInput input = { 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         textureStagingBuffer = std::make_unique<Buffer>(input);
-        textureStagingBuffer->CopyResource(&dummyTexture, input);
+        textureStagingBuffer->CopyToBuffer(&dummyTexture, input);
 
         textureImage = std::make_unique<Image>();
         vk::Extent3D extent(1, 1, 1);
@@ -111,7 +111,7 @@ void MeshData::CreateTexture()
 
 void MeshData::DestroyStagingBuffer()
 {
-    indexStagingBuffer->DestroyBuffer();
-    vertexStagingBuffer->DestroyBuffer();
-    textureStagingBuffer->DestroyBuffer();
+    indexStagingBuffer->Destroy();
+    vertexStagingBuffer->Destroy();
+    textureStagingBuffer->Destroy();
 }

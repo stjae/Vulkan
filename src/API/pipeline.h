@@ -9,8 +9,8 @@
 class GraphicsPipeline
 {
     Shader shader;
-    Descriptor descriptor;
-    DescriptorSetLayoutData bindings;
+    DescriptorManager descriptorManager;
+    DescriptorSetLayoutData layoutBindings;
 
 public:
     void CreatePipeline();

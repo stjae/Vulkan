@@ -107,26 +107,25 @@ void GraphicsPipeline::CreatePipeline()
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
-    // get data from scene
+    layoutBindings.descriptorSetCount = 2;
 
-    bindings.count = 3;
-    bindings.indices.push_back(0);
-    bindings.indices.push_back(1);
-    bindings.indices.push_back(2);
-    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
-    bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-    bindings.counts.push_back(2);
-    bindings.counts.push_back(1);
-    bindings.counts.push_back(2);
-    bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
-    bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
+    // descriptor set #0 (uniform buffer for camera matrix, global use)
+    layoutBindings.indices.push_back(0);
+    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
+    layoutBindings.descriptorCounts.push_back(1);
+    layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 
-    descriptor.CreateSetLayout(bindings);
+    // descriptor set #1 (uniform buffer for model matrix, per model)
+    layoutBindings.indices.push_back(1);
+    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
+    layoutBindings.descriptorCounts.push_back(1);
+    layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+    descriptorManager.CreateSetLayout(layoutBindings);
+
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptor.GetDescriptorSetLayout();
+    pipelineLayoutInfo.pSetLayouts = &descriptorManager.descriptorSetLayout;
 
     vk::PushConstantRange pushConstant(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant));
     pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
@@ -183,12 +182,12 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    descriptor.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), bindings);
+    descriptorManager.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), layoutBindings);
 }
 
 void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
-    descriptor.AllocateSet(descriptorSets);
+    descriptorManager.AllocateSet(descriptorSets);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -196,5 +195,5 @@ GraphicsPipeline::~GraphicsPipeline()
     Device::GetDevice().destroyPipeline(GraphicsPipeline::Pipeline());
     Device::GetDevice().destroyPipelineLayout(GraphicsPipeline::PipelineLayout());
     Device::GetDevice().destroyRenderPass(GraphicsPipeline::RenderPass());
-    Device::GetDevice().destroyDescriptorPool(descriptor.GetDescriptorPool());
+    Device::GetDevice().destroyDescriptorPool(descriptorManager.GetDescriptorPool());
 }
