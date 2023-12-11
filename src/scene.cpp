@@ -6,9 +6,9 @@ Scene::Scene()
     meshes.emplace_back(std::make_shared<Mesh>());
     meshes.back()->CreateCube(nullptr);
     meshNames.push_back(meshes.back()->name.c_str());
-    // meshes.emplace_back(std::make_shared<Mesh>());
-    // meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
-    // meshNames.push_back(meshes.back()->name.c_str());
+    meshes.emplace_back(std::make_shared<Mesh>());
+    meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
+    meshNames.push_back(meshes.back()->name.c_str());
 }
 
 void Scene::PrepareUniformBuffers()
@@ -19,7 +19,6 @@ void Scene::PrepareUniformBuffers()
     dynamicBufferAlignment = sizeof(glm::mat4);
 
     if (minUboAlignment > 0) {
-        // TODO
         dynamicBufferAlignment =
             (dynamicBufferAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
     }
@@ -29,17 +28,15 @@ void Scene::PrepareUniformBuffers()
     if (uboDataDynamic.model == nullptr) {
         spdlog::error("failed to allocate memory for dynamic buffer");
     }
+
+    for (int i = 0; i < meshes.size(); i++) {
+        uboDataDynamic.model[i] = glm::mat4(1.0f);
+    }
 }
 
 void Scene::Prepare()
 {
     PrepareUniformBuffers();
-    for (int i = 0; i < meshes.size(); i++) {
-        glm::mat4* modelMat =
-            (glm::mat4*)((uint64_t)uboDataDynamic.model + (i * dynamicBufferAlignment));
-        *modelMat = glm::mat4(1.0f);
-        std::cout << glm::to_string(*uboDataDynamic.model) << std::endl;
-    }
 
     camera = std::make_unique<Camera>();
     CreateResource();
@@ -122,13 +119,11 @@ void Scene::Update(uint32_t index)
     memoryRange.size = sizeof(uboDataDynamic);
     auto result = Device::GetDevice().flushMappedMemoryRanges(1, &memoryRange);
 
-    // for (auto& mesh : meshes) {
     vk::WriteDescriptorSet modelMatrixWrite(
         Swapchain::GetDetail().frames[index].descriptorSets[0], 1, 0, 1,
         vk::DescriptorType::eUniformBufferDynamic, nullptr,
         &matrixUniformBufferDynamic->GetBufferInfo(), nullptr, nullptr);
     Device::GetDevice().updateDescriptorSets(modelMatrixWrite, nullptr);
-    // }
 
     // vk::WriteDescriptorSet descriptorWrites;
     // descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[0];
@@ -148,7 +143,7 @@ void Scene::Update(uint32_t index)
 
 void Scene::UpdateBuffer()
 {
-    matrixUniformBufferDynamic->UpdateBuffer(&uboDataDynamic,
+    matrixUniformBufferDynamic->UpdateBuffer(uboDataDynamic.model,
                                              matrixUniformBufferDynamic->GetBufferSize());
 }
 

@@ -15,4 +15,5 @@ layout(location = 0) out vec4 outColor;
 void main() {
 
     outColor = vec4(1.0);
+    // outColor = vec4(modelWorld.x, modelWorld.y, modelWorld.z, 1.0);
 }

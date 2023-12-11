@@ -71,8 +71,7 @@ void MyImGui::DrawImGuizmo(int currentItem)
     float scale[3];
     float objectMatrix[16];
 
-    glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic.model +
-                                       (currentItem * dynamicBufferAlignment));
+    glm::mat4* modelMat = &scene_.lock()->uboDataDynamic.model[currentItem];
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
                                           rotation, scale);
@@ -161,49 +160,48 @@ void MyImGui::Draw()
     DrawDockSpace();
 
     // Object List Window
-    // ImGui::Begin("List");
-    // static int currentItem = -1;
-    // if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() ||
-    //     currentItem >
-    //         scene_.lock()->meshes.size() - 1) // Prevent index out of vector range
-    //     currentItem = -1;
-    // ImGui::ListBox("Object", &currentItem, scene_.lock()->meshNames.data(),
-    //                static_cast<int>(scene_.lock()->meshes.size()));
-    // ImGui::End();
+    ImGui::Begin("List");
+    static int currentItem = -1;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() ||
+        currentItem >
+            scene_.lock()->meshes.size() - 1) // Prevent index out of vector range
+        currentItem = -1;
+    ImGui::ListBox("Object", &currentItem, scene_.lock()->meshNames.data(),
+                   static_cast<int>(scene_.lock()->meshes.size()));
+    ImGui::End();
 
     // Object Attribute Window
-    // ImGui::Begin("Object Attribute");
+    ImGui::Begin("Object Attribute");
 
     SetCameraControl();
 
-    // if (currentItem > -1) {
-    //     DrawImGuizmo(currentItem);
+    if (currentItem > -1) {
+        DrawImGuizmo(currentItem);
 
-    //     glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic.model +
-    //                                        (currentItem * dynamicBufferAlignment));
+        glm::mat4* modelMat = &scene_.lock()->uboDataDynamic.model[currentItem];
 
-    //     float translation[3];
-    //     float rotation[3];
-    //     float scale[3];
-    //     float objectMatrix[16];
+        float translation[3];
+        float rotation[3];
+        float scale[3];
+        float objectMatrix[16];
 
-    //     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
-    //                                           rotation, scale);
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+                                              rotation, scale);
 
-    //     std::string id = "##";
-    //     id.append(scene_.lock()->meshNames[currentItem]);
-    //     std::vector<std::string> labels = { "Translation", "Rotation" };
-    //     ImGui::Text(scene_.lock()->meshNames[currentItem]);
-    //     ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
-    //     ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
+        std::string id = "##";
+        id.append(scene_.lock()->meshNames[currentItem]);
+        std::vector<std::string> labels = { "Translation", "Rotation" };
+        ImGui::Text(scene_.lock()->meshNames[currentItem]);
+        ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
+        ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
 
-    //     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale,
-    //                                             objectMatrix);
+        ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale,
+                                                objectMatrix);
 
-    //     *modelMat = glm::make_mat4(objectMatrix);
-    // }
+        *modelMat = glm::make_mat4(objectMatrix);
+    }
 
-    // ImGui::End();
+    ImGui::End();
 
     ImGui::EndFrame();
     ImGui::Render();
