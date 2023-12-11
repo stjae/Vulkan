@@ -5,12 +5,12 @@
     TabWidth: 4,
     AllowShortIfStatementsOnASingleLine: false,
     IndentCaseLabels: false,
-    ColumnLimit: 0,
+    ColumnLimit: 90,
     AccessModifierOffset: -4,
     Cpp11BracedListStyle: false,
     ReferenceAlignment: Left,
     PointerAlignment: Left,
     SortIncludes: false,
     BreakBeforeBraces: Custom,
-    BraceWrapping: { AfterStruct: true, AfterFunction: true, AfterClass: true }
+    BraceWrapping: { AfterStruct: true, AfterFunction: true, AfterClass: true },
 }

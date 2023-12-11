@@ -10,6 +10,8 @@ get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
 set(PROJECT_DIR {CMAKE_CURRENT_SOURCE_DIR})
 configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 
+find_package(glfw3 REQUIRED)
+
 find_package(Vulkan REQUIRED)
 include_directories(${Vulkan_INCLUDE_DIR})
 

@@ -1,17 +1,14 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
+// #extension GL_EXT_nonuniform_qualifier : enable
 
-layout(push_constant) uniform constants
-{
-    int meshIndex;
-} pushConstant;
-
-layout(binding = 0) uniform UBO {
-    mat4 model;
+layout(binding = 0) uniform CameraMatrix {
     mat4 view;
     mat4 proj;
-    vec3 eye;
-} ubo[2];
+} cameraMatrix;
+
+layout(binding = 1) uniform ModelMatrix {
+    mat4 model;
+} modelMatrix;
 
 layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexNormal;
@@ -22,8 +19,8 @@ layout(location = 1) out vec3 normalWorld;
 layout(location = 2) out vec2 fragTexcoord;
 
 void main() {
-    modelWorld = ubo[pushConstant.meshIndex].model * vec4(vertexPosition, 1.0);
+    modelWorld = modelMatrix.model * vec4(vertexPosition, 1.0);
     normalWorld = vertexNormal;
-    gl_Position = ubo[pushConstant.meshIndex].proj * ubo[pushConstant.meshIndex].view * ubo[pushConstant.meshIndex].model * vec4(vertexPosition, 1.0);
+    gl_Position = cameraMatrix.proj * cameraMatrix.view * modelWorld;
     fragTexcoord = vertexTexcoord;
 }

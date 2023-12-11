@@ -17,6 +17,7 @@ struct QueueFamilyIndices
 
 class Device
 {
+
     Instance instance;
     std::vector<const char*> deviceExtensions;
 

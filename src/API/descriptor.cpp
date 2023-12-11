@@ -36,7 +36,6 @@ void DescriptorManager::CreatePool(uint32_t size, const DescriptorSetLayoutData&
 
 void DescriptorManager::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
-    // TODO:: why 1?
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, 1, &descriptorSetLayout);
 
     descriptorSets = Device::GetDevice().allocateDescriptorSets(allocateInfo);

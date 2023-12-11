@@ -1,21 +1,23 @@
 #include "buffer.h"
+size_t dynamicBufferAlignment;
 
 Buffer::Buffer(const BufferInput& bufferInput)
 {
-    vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage, vk::SharingMode::eExclusive);
+    vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
+                                    vk::SharingMode::eExclusive);
     vkBuffer_ = Device::GetDevice().createBuffer(bufferInfo);
     size_ = bufferInput.size;
 
     AllocateMemory(vkBuffer_, bufferInput.properties);
 }
 
-void Buffer::Map()
+void Buffer::Map(vk::DeviceSize range)
 {
-    memoryLocation_ = Device::GetDevice().mapMemory(vkDeviceMemory_, 0, static_cast<vk::DeviceSize>(size_));
+    memoryLocation_ = Device::GetDevice().mapMemory(vkDeviceMemory_, 0, range);
 
     descriptorBufferInfo_.buffer = vkBuffer_;
     descriptorBufferInfo_.offset = 0;
-    descriptorBufferInfo_.range = static_cast<vk::DeviceSize>(size_);
+    descriptorBufferInfo_.range = range;
 }
 
 void Buffer::Destroy()
@@ -32,7 +34,4 @@ void Buffer::Destroy()
     Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
 }
 
-Buffer::~Buffer()
-{
-    Destroy();
-}
+Buffer::~Buffer() { Destroy(); }

@@ -34,14 +34,14 @@ const bool debug = true;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "config.h"
 
 std::vector<char> ReadFile(const std::string& filename);
 
 // spdlog::info
-template <typename... T>
-void Log(bool debug, fmt::terminal_color color, T... args)
+template <typename... T> void Log(bool debug, fmt::terminal_color color, T... args)
 {
     if (!debug) {
         return;

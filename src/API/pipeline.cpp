@@ -115,9 +115,9 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layoutBindings.descriptorCounts.push_back(1);
     layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 
-    // descriptor set #1 (uniform buffer for model matrix, per model)
+    // descriptor set #1 (dynamic uniform buffer for model matrix, per model)
     layoutBindings.indices.push_back(1);
-    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
+    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layoutBindings.descriptorCounts.push_back(1);
     layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
 
@@ -126,10 +126,6 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorManager.descriptorSetLayout;
-
-    vk::PushConstantRange pushConstant(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshPushConstant));
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
 
     return Device::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 }

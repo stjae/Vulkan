@@ -7,7 +7,8 @@
 class Memory
 {
 public:
-    uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
+    uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices,
+                                 vk::MemoryPropertyFlags requestedProperties);
     void AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties);
     void AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
     void Free();
@@ -15,6 +16,8 @@ public:
 protected:
     vk::DeviceMemory vkDeviceMemory_;
     void* memoryLocation_;
+
+    vk::DeviceMemory& GetMemory() { return vkDeviceMemory_; }
 };
 
 #endif // __MEMORY_H__

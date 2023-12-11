@@ -2,9 +2,11 @@
 
 Camera::Camera()
 {
-    BufferInput input = { sizeof(CameraMatrix), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    BufferInput input = { sizeof(CameraMatrix), vk::BufferUsageFlagBits::eUniformBuffer,
+                          vk::MemoryPropertyFlagBits::eHostVisible |
+                              vk::MemoryPropertyFlagBits::eHostCoherent };
     uniformBuffer_ = std::make_unique<Buffer>(input);
-    uniformBuffer_->Map();
+    uniformBuffer_->Map(input.size);
 }
 
 void Camera::Update()
@@ -36,11 +38,13 @@ void Camera::Update()
         isInitial = false;
     }
 
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up);
+    glm::mat4 rotateX =
+        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up);
     dir = rotateX * dir;
     glm::normalize(dir);
     right = glm::cross(glm::vec3(dir.x, dir.y, dir.z), up);
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right);
+    glm::mat4 rotateY =
+        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right);
     dir = rotateY * dir;
 
     if (ImGui::IsKeyDown(ImGuiKey_W)) {
@@ -73,7 +77,7 @@ void Camera::UpdateBuffer()
     uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix));
 }
 
-vk::DescriptorBufferInfo Camera::GetBufferInfo()
+vk::DescriptorBufferInfo& Camera::GetBufferInfo()
 {
     return uniformBuffer_->GetBufferInfo();
 }
