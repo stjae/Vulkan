@@ -10,7 +10,7 @@ class GraphicsPipeline
 {
     Shader shader;
     DescriptorManager descriptorManager;
-    DescriptorSetLayoutData layoutBindings;
+    std::vector<DescriptorSetLayoutData> descriptorSetLayouts;
 
 public:
     void CreatePipeline();

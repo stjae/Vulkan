@@ -24,7 +24,7 @@ void Scene::PrepareUniformBuffers()
     }
 
     size_t bufferSize = meshes.size() * dynamicBufferAlignment;
-    uboDataDynamic.model = (glm::mat4*)aligned_alloc(dynamicBufferAlignment, bufferSize);
+    uboDataDynamic.model = (glm::mat4*)AlignedAlloc(dynamicBufferAlignment, bufferSize);
     if (uboDataDynamic.model == nullptr) {
         spdlog::error("failed to allocate memory for dynamic buffer");
     }
@@ -120,7 +120,7 @@ void Scene::Update(uint32_t index)
     auto result = Device::GetDevice().flushMappedMemoryRanges(1, &memoryRange);
 
     vk::WriteDescriptorSet modelMatrixWrite(
-        Swapchain::GetDetail().frames[index].descriptorSets[0], 1, 0, 1,
+        Swapchain::GetDetail().frames[index].descriptorSets[1], 0, 0, 1,
         vk::DescriptorType::eUniformBufferDynamic, nullptr,
         &matrixUniformBufferDynamic->GetBufferInfo(), nullptr, nullptr);
     Device::GetDevice().updateDescriptorSets(modelMatrixWrite, nullptr);
@@ -147,4 +147,7 @@ void Scene::UpdateBuffer()
                                              matrixUniformBufferDynamic->GetBufferSize());
 }
 
-Scene::~Scene() { free(uboDataDynamic.model); }
+Scene::~Scene()
+{
+    AlignedFree(uboDataDynamic.model);
+}

@@ -81,6 +81,12 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
 
+    commandBuffer.bindDescriptorSets(
+        vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0,
+        1,
+        &Swapchain::GetDetail().frames[imageIndex].descriptorSets[0], 0,
+        nullptr);
+
     for (int i = 0; i < meshes.size(); i++) {
 
         vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetBuffer() };
@@ -92,9 +98,9 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
 
         uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
         commandBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0,
-            Swapchain::GetDetail().frames[imageIndex].descriptorSets.size(),
-            Swapchain::GetDetail().frames[imageIndex].descriptorSets.data(), 1,
+            vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 1,
+            1,
+            &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1,
             &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.Pipeline());
 

@@ -1,21 +1,21 @@
 #include "baseApp.h"
 
 Application::Application(const int width, const int height, const char* wName)
-    : window(width, height, wName)
+    : window_(width, height, wName)
 {
-    scene = std::make_unique<Scene>();
-    engine = std::make_unique<GraphicsEngine>(scene);
-    scene->Prepare();
-    engine->SetupGui();
-    engine->InitSwapchainImages();
+    scene_ = std::make_unique<Scene>();
+    engine_ = std::make_unique<GraphicsEngine>(scene_);
+    scene_->Prepare();
+    engine_->SetupGui();
+    engine_->InitSwapchainImages();
 }
 
 void Application::Run()
 {
     while (!glfwWindowShouldClose(*Window::GetWindow())) {
         glfwPollEvents();
-        engine->DrawGui();
-        engine->Render();
+        engine_->DrawGui();
+        engine_->Render();
         GetFramerate();
     }
 }
@@ -23,7 +23,7 @@ void Application::Run()
 void Application::GetFramerate()
 {
     static int frameCount;
-    static double currentTime, lastTime;
+    static double delta, currentTime, lastTime;
 
     currentTime = glfwGetTime();
     delta = currentTime - lastTime;

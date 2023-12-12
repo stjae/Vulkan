@@ -1,12 +1,12 @@
 #version 450
 // #extension GL_EXT_nonuniform_qualifier : enable
 
-layout(binding = 0) uniform CameraMatrix {
+layout(set = 0, binding = 0) uniform CameraMatrix {
     mat4 view;
     mat4 proj;
 } cameraMatrix;
 
-layout(binding = 1) uniform ModelMatrix {
+layout(set = 1, binding = 0) uniform ModelMatrix {
     mat4 model;
 } modelMatrix;
 

@@ -17,15 +17,15 @@ class DescriptorManager
 {
     friend class GraphicsPipeline;
 
-    vk::DescriptorSetLayout descriptorSetLayout;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
 
     void CreateSetLayout(const DescriptorSetLayoutData& bindings);
-    void CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings);
+    void CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts);
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~DescriptorManager();
 
-    const vk::DescriptorSetLayout& GetDescriptorSetLayout() { return descriptorSetLayout; }
+    const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayout() { return descriptorSetLayouts; }
     const vk::DescriptorPool& GetDescriptorPool() { return descriptorPool; }
 };
 

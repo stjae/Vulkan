@@ -13,35 +13,38 @@ void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings)
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.descriptorSetCount, layoutBindings.data());
 
-    descriptorSetLayout = Device::GetDevice().createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayouts.push_back(Device::GetDevice().createDescriptorSetLayout(layoutInfo));
 }
 
-void DescriptorManager::CreatePool(uint32_t size, const DescriptorSetLayoutData& bindings)
+void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
-    for (int i = 0; i < bindings.descriptorSetCount; i++) {
+    for (auto& layout : descriptorSetLayouts) {
+        for (int i = 0; i < layout.descriptorSetCount; i++) {
 
-        for (int j = 0; j < bindings.descriptorCounts[i]; j++) {
+            for (int j = 0; j < layout.descriptorCounts[i]; j++) {
 
-            vk::DescriptorPoolSize poolSize(bindings.descriptorTypes[i], size);
-            poolSizes.push_back(poolSize);
+                vk::DescriptorPoolSize poolSize(layout.descriptorTypes[i], size);
+                poolSizes.push_back(poolSize);
+            }
         }
     }
 
-    vk::DescriptorPoolCreateInfo poolInfo({}, size, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
+    vk::DescriptorPoolCreateInfo poolInfo({}, size * descriptorSetLayouts.size(), static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
 
     descriptorPool = Device::GetDevice().createDescriptorPool(poolInfo);
 }
 
 void DescriptorManager::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
-    vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, 1, &descriptorSetLayout);
+    vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, descriptorSetLayouts.size(), descriptorSetLayouts.data());
 
     descriptorSets = Device::GetDevice().allocateDescriptorSets(allocateInfo);
 }
 
 DescriptorManager::~DescriptorManager()
 {
-    Device::GetDevice().destroyDescriptorSetLayout(descriptorSetLayout);
+    for (auto& layout : descriptorSetLayouts)
+        Device::GetDevice().destroyDescriptorSetLayout(layout);
 }

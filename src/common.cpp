@@ -17,8 +17,27 @@ std::vector<char> ReadFile(const std::string& filename)
     file.close();
 
     if (buffer.size() > 0) {
-        Log(debug, fmt::terminal_color::white, "{0} loaded with code length of {1}", filename, buffer.size());
+        Log(debug, fmt::terminal_color::white, "{0} loaded with code length of {1}",
+            filename, buffer.size());
     }
 
     return buffer;
+}
+
+void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
+{
+#if defined(__APPLE__)
+    return aligned_alloc(dynamicBufferAlignment, bufferSize);
+#elif defined(_WIN32)
+#else
+    return nullptr;
+#endif
+}
+
+void AlignedFree(void* aligned)
+{
+#if defined(__APPLE__)
+    free(aligned);
+#elif defined(_WIN32)
+#endif
 }

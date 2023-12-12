@@ -5,7 +5,7 @@
     TabWidth: 4,
     AllowShortIfStatementsOnASingleLine: false,
     IndentCaseLabels: false,
-    ColumnLimit: 90,
+    ColumnLimit: 0,
     AccessModifierOffset: -4,
     Cpp11BracedListStyle: false,
     ReferenceAlignment: Left,

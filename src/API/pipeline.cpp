@@ -107,25 +107,33 @@ void GraphicsPipeline::CreatePipeline()
 
 vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 {
-    layoutBindings.descriptorSetCount = 2;
+    DescriptorSetLayoutData layout0;
+    layout0.descriptorSetCount = 1;
 
     // descriptor set #0 (uniform buffer for camera matrix, global use)
-    layoutBindings.indices.push_back(0);
-    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    layoutBindings.descriptorCounts.push_back(1);
-    layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    layout0.indices.push_back(0);
+    layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
+    layout0.descriptorCounts.push_back(1);
+    layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+
+    descriptorManager.CreateSetLayout(layout0);
+    descriptorSetLayouts.push_back(layout0);
+
+    DescriptorSetLayoutData layout1;
+    layout1.descriptorSetCount = 1;
 
     // descriptor set #1 (dynamic uniform buffer for model matrix, per model)
-    layoutBindings.indices.push_back(1);
-    layoutBindings.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
-    layoutBindings.descriptorCounts.push_back(1);
-    layoutBindings.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
+    layout1.indices.push_back(0);
+    layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
+    layout1.descriptorCounts.push_back(1);
+    layout1.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
 
-    descriptorManager.CreateSetLayout(layoutBindings);
+    descriptorManager.CreateSetLayout(layout1);
+    descriptorSetLayouts.push_back(layout1);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorManager.descriptorSetLayout;
+    pipelineLayoutInfo.setLayoutCount = descriptorManager.descriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = descriptorManager.descriptorSetLayouts.data();
 
     return Device::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 }
@@ -178,7 +186,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    descriptorManager.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), layoutBindings);
+    descriptorManager.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts);
 }
 
 void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)
