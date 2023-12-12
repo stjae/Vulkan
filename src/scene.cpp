@@ -30,7 +30,8 @@ void Scene::PrepareUniformBuffers()
     }
 
     for (int i = 0; i < meshes.size(); i++) {
-        uboDataDynamic.model[i] = glm::mat4(1.0f);
+        glm::mat4* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic.model + (i * dynamicBufferAlignment));
+        *modelMat = glm::mat4(1.0f);
     }
 }
 
@@ -116,7 +117,11 @@ void Scene::Update(uint32_t index)
     UpdateBuffer();
     vk::MappedMemoryRange memoryRange;
     memoryRange.memory = matrixUniformBufferDynamic->GetBufferMemory();
-    memoryRange.size = sizeof(uboDataDynamic);
+    size_t size = sizeof(uboDataDynamic);
+    size_t atomSize = Device::GetPhysicalDevice().getProperties().limits.nonCoherentAtomSize;
+    if (size < atomSize)
+        size = atomSize;
+    memoryRange.size = size;
     auto result = Device::GetDevice().flushMappedMemoryRanges(1, &memoryRange);
 
     vk::WriteDescriptorSet modelMatrixWrite(

@@ -29,6 +29,7 @@ void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
 #if defined(__APPLE__)
     return aligned_alloc(dynamicBufferAlignment, bufferSize);
 #elif defined(_WIN32)
+    return _aligned_malloc(bufferSize, dynamicBufferAlignment);
 #else
     return nullptr;
 #endif
@@ -39,5 +40,6 @@ void AlignedFree(void* aligned)
 #if defined(__APPLE__)
     free(aligned);
 #elif defined(_WIN32)
+    _aligned_free(aligned);
 #endif
 }

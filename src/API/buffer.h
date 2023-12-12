@@ -23,14 +23,16 @@ public:
     void Destroy();
     ~Buffer();
 
-    template <typename T> void CopyToBuffer(T resource, const BufferInput& bufferInput)
+    template <typename T>
+    void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
         memoryLocation_ =
             Device::GetDevice().mapMemory(vkDeviceMemory_, 0, bufferInput.size);
         memcpy(memoryLocation_, resource, bufferInput.size);
         Device::GetDevice().unmapMemory(vkDeviceMemory_);
     }
-    template <typename T> void UpdateBuffer(T resource, size_t size)
+    template <typename T>
+    void UpdateBuffer(T resource, size_t size)
     {
         memcpy(memoryLocation_, resource, size);
     }

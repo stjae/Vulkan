@@ -43,7 +43,8 @@ void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);
 
 // spdlog::info
-template <typename... T> void Log(bool debug, fmt::terminal_color color, T... args)
+template <typename... T>
+void Log(bool debug, fmt::terminal_color color, T... args)
 {
     if (!debug) {
         return;

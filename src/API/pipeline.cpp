@@ -110,7 +110,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     DescriptorSetLayoutData layout0;
     layout0.descriptorSetCount = 1;
 
-    // descriptor set #0 (uniform buffer for camera matrix, global use)
+    // descriptor set layout #0
     layout0.indices.push_back(0);
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
     layout0.descriptorCounts.push_back(1);
@@ -122,7 +122,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     DescriptorSetLayoutData layout1;
     layout1.descriptorSetCount = 1;
 
-    // descriptor set #1 (dynamic uniform buffer for model matrix, per model)
+    // descriptor set layout #1
     layout1.indices.push_back(0);
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
