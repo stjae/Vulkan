@@ -10,7 +10,11 @@
 struct UboDataDynamic
 {
     glm::mat4* model = nullptr;
-    float dummy[2];
+};
+
+struct PushConstant
+{
+    uint32_t meshIndex;
 };
 
 class Scene

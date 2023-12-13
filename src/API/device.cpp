@@ -11,10 +11,14 @@ Device::Device()
 
 #if defined(__APPLE__)
     deviceExtensions.push_back("VK_KHR_portability_subset");
+    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
 #endif
 
+    deviceExtensions.push_back("VK_EXT_descriptor_indexing");
     vk::PhysicalDeviceVulkan12Features features12;
     features12.runtimeDescriptorArray = VK_TRUE;
+    features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     GetPhysicalDevice().getFeatures(&supportedFeatures);

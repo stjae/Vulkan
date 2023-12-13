@@ -81,11 +81,8 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.bindDescriptorSets(
-        vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0,
-        1,
-        &Swapchain::GetDetail().frames[imageIndex].descriptorSets[0], 0,
-        nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[0], 0, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 2, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[2], 0, nullptr);
 
     for (int i = 0; i < meshes.size(); i++) {
 
@@ -93,16 +90,12 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
         vk::DeviceSize offsets[] = { 0 };
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetBuffer(), 0,
-                                      vk::IndexType::eUint32);
+        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
-        commandBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 1,
-            1,
-            &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1,
-            &dynamicOffset);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.Pipeline());
+        commandBuffer.pushConstants(pipeline.PipelineLayout(), vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &i);
 
         commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->indices.size()), 1, 0,
                                   0, 0);

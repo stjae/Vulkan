@@ -19,7 +19,7 @@ public:
     vk::Image GetImage() { return image_; }
     vk::ImageView GetImageView() { return imageView_; }
     vk::Format GetFormat() { return format_; }
-    vk::DescriptorImageInfo GetInfo() { return imageInfo_; };
+    vk::DescriptorImageInfo& GetInfo() { return imageInfo_; };
 
 private:
     vk::Image image_;

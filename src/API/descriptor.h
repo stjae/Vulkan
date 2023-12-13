@@ -20,7 +20,7 @@ class DescriptorManager
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
 
-    void CreateSetLayout(const DescriptorSetLayoutData& bindings);
+    void CreateSetLayout(const DescriptorSetLayoutData& bindings, const vk::DescriptorSetLayoutBindingFlagsCreateInfo* const bindingFlags);
     void CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts);
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~DescriptorManager();

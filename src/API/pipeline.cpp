@@ -115,8 +115,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
     layout0.descriptorCounts.push_back(1);
     layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-
-    descriptorManager.CreateSetLayout(layout0);
+    descriptorManager.CreateSetLayout(layout0, nullptr);
     descriptorSetLayouts.push_back(layout0);
 
     DescriptorSetLayoutData layout1;
@@ -127,11 +126,27 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
     layout1.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
-
-    descriptorManager.CreateSetLayout(layout1);
+    descriptorManager.CreateSetLayout(layout1, nullptr);
     descriptorSetLayouts.push_back(layout1);
 
+    DescriptorSetLayoutData layout2;
+    layout2.descriptorSetCount = 1;
+
+    // descriptor set layout #2
+    layout2.indices.push_back(0);
+    layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
+    layout2.descriptorCounts.push_back(2);
+    layout2.bindingStages.push_back(vk::ShaderStageFlagBits::eFragment);
+    vk::DescriptorBindingFlags flag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
+    vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlags(1, &flag);
+    descriptorManager.CreateSetLayout(layout2, &bindingFlags);
+    descriptorSetLayouts.push_back(layout2);
+
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    vk::PushConstantRange range(vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t));
+    pipelineLayoutInfo.pPushConstantRanges = &range;
+
     pipelineLayoutInfo.setLayoutCount = descriptorManager.descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorManager.descriptorSetLayouts.data();
 

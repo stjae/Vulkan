@@ -13,9 +13,7 @@ Scene::Scene()
 
 void Scene::PrepareUniformBuffers()
 {
-    size_t minUboAlignment = Device::GetPhysicalDevice()
-                                 .getProperties()
-                                 .limits.minUniformBufferOffsetAlignment;
+    size_t minUboAlignment = Device::GetPhysicalDevice().getProperties().limits.minUniformBufferOffsetAlignment;
     dynamicBufferAlignment = sizeof(glm::mat4);
 
     if (minUboAlignment > 0) {
@@ -130,20 +128,20 @@ void Scene::Update(uint32_t index)
         &matrixUniformBufferDynamic->GetBufferInfo(), nullptr, nullptr);
     Device::GetDevice().updateDescriptorSets(modelMatrixWrite, nullptr);
 
-    // vk::WriteDescriptorSet descriptorWrites;
-    // descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[0];
-    // descriptorWrites.dstBinding = 2;
-    // descriptorWrites.dstArrayElement = 0;
-    // descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    // descriptorWrites.descriptorCount = meshes.size();
-    // std::vector<vk::DescriptorImageInfo> infos;
-    // for (auto& mesh : meshes) {
-    //     infos.push_back(mesh->textureImage->GetInfo());
-    // }
-    // descriptorWrites.pImageInfo = infos.data();
-    // if (meshes.size() > 0) {
-    //     Device::GetDevice().updateDescriptorSets(descriptorWrites, nullptr);
-    // }
+    vk::WriteDescriptorSet descriptorWrites;
+    descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[2];
+    descriptorWrites.dstBinding = 0;
+    descriptorWrites.dstArrayElement = 0;
+    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    descriptorWrites.descriptorCount = meshes.size();
+    std::vector<vk::DescriptorImageInfo> infos;
+    for (auto& mesh : meshes) {
+        infos.push_back(mesh->textureImage->GetInfo());
+    }
+    descriptorWrites.pImageInfo = infos.data();
+    if (meshes.size() > 0) {
+        Device::GetDevice().updateDescriptorSets(descriptorWrites, nullptr);
+    }
 }
 
 void Scene::UpdateBuffer()
