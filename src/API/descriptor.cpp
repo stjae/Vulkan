@@ -1,6 +1,6 @@
 #include "descriptor.h"
 
-void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings, const vk::DescriptorSetLayoutBindingFlagsCreateInfo* const bindingFlags)
+void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings, const VkDescriptorSetLayoutBindingFlagsCreateInfo* const bindingFlags)
 {
     std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
     layoutBindings.reserve(bindings.descriptorSetCount);

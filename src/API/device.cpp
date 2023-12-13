@@ -19,6 +19,7 @@ Device::Device()
     features12.runtimeDescriptorArray = VK_TRUE;
     features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
     features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    features12.descriptorIndexing = VK_TRUE;
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     GetPhysicalDevice().getFeatures(&supportedFeatures);

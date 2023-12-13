@@ -137,9 +137,16 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
     layout2.descriptorCounts.push_back(2);
     layout2.bindingStages.push_back(vk::ShaderStageFlagBits::eFragment);
-    vk::DescriptorBindingFlags flag(VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
-    vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlags(1, &flag);
-    descriptorManager.CreateSetLayout(layout2, &bindingFlags);
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setLayoutBindingFlags{};
+    setLayoutBindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+    setLayoutBindingFlags.bindingCount = 1;
+    std::vector<VkDescriptorBindingFlagsEXT> descriptorBindingFlags = {
+        0,
+        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT
+    };
+    setLayoutBindingFlags.pBindingFlags = descriptorBindingFlags.data();
+
+    descriptorManager.CreateSetLayout(layout2, &setLayoutBindingFlags);
     descriptorSetLayouts.push_back(layout2);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
