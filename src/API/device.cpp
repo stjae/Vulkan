@@ -10,8 +10,14 @@ Device::Device()
     SetDeviceQueueCreateInfo(deviceQueueCreateInfos);
 
 #if defined(__APPLE__)
+    // enable argument buffers
+    MVKConfiguration mvkConfig;
+    size_t configurationSize = sizeof(MVKConfiguration);
+    vkGetMoltenVKConfigurationMVK(instance.GetInstance(), &mvkConfig, &configurationSize);
+    mvkConfig.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
+    vkSetMoltenVKConfigurationMVK(instance.GetInstance(), &mvkConfig, &configurationSize);
+
     deviceExtensions.push_back("VK_KHR_portability_subset");
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
 #endif
 
     deviceExtensions.push_back("VK_EXT_descriptor_indexing");

@@ -4,15 +4,18 @@ set(PROJECT_NAME vulkanApp)
 set(CMAKE_CXX_STANDARD 17)
 if (APPLE)
     set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL")
+    find_package(Vulkan REQUIRED MoltenVK SPIRV-Tools)
+    include_directories(${Vulkan_MoltenVK_INCLUDE_DIR})
+    include_directories(${Vulkan_INCLUDE_DIR})
+    link_directories(/usr/local/lib)
+    link_libraries(
+        Vulkan::Vulkan
+        MoltenVK
+        Vulkan::SPIRV-Tools
+)
 endif()
-get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
 
 set(PROJECT_DIR {CMAKE_CURRENT_SOURCE_DIR})
-configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
-
-find_package(Vulkan REQUIRED)
-include_directories(${Vulkan_INCLUDE_DIR})
-
 project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME}
 src/config.h
@@ -49,7 +52,7 @@ include(Shader.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS} Vulkan::Vulkan)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
 
 add_dependencies(${PROJECT_NAME} ${DEP_LIST} Shaders)
 
@@ -59,3 +62,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     "${PROJECT_BINARY_DIR}/shaders"
     "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
 )
+
+configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)

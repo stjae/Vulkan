@@ -11,6 +11,9 @@ const bool debug = true;
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
+#if defined(__APPLE__)
+#include <MoltenVK/vk_mvk_moltenvk.h>
+#endif
 
 #include "../imgui/imgui.h"
 #include "../imgui/imgui_impl_glfw.h"
