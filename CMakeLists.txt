@@ -11,8 +11,12 @@ if (APPLE)
     link_libraries(
         Vulkan::Vulkan
         MoltenVK
-        Vulkan::SPIRV-Tools
 )
+elseif(WIN32)
+find_package(Vulkan REQUIRED)
+    link_libraries(Vulkan::Vulkan)
+else()
+    message(unsupported OS)
 endif()
 
 set(PROJECT_DIR {CMAKE_CURRENT_SOURCE_DIR})
