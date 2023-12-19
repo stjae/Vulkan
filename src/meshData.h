@@ -5,18 +5,26 @@
 #include "image.h"
 #include <filesystem>
 
+struct Vertices
+{
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> texcoords;
+    std::vector<uint32_t> indices;
+    std::vector<int> textureIDs;
+};
+
 class MeshData
 {
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
-    static std::array<vk::VertexInputAttributeDescription, 3> GetAttributeDescs();
+    static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescs();
     void CreateVertexBuffer();
     void CreateIndexBuffer();
     void CreateTexture();
     void DestroyStagingBuffer();
 
-    std::vector<float> vertices;
-    std::vector<uint32_t> indices;
+    Vertices vertices;
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;

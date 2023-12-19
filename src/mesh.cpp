@@ -4,25 +4,31 @@
 
 void Mesh::CreateSquare()
 {
-    std::vector<float> pos = { -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-                               1.0f, -1.0f, 0.0f, -1.0f, -1.0f, 0.0f };
+    vertices.positions.emplace_back(-1.0f, 1.0f, 0.0f);
+    // { 1.0f, 1.0f, 0.0f },
+    // { 1.0f, -1.0f, 0.0f },
+    // { -1.0f, -1.0f, 0.0f });
 
-    std::vector<float> color = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                                 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+    std::vector<float> normal = { 1.0f, 0.0f, 0.0f,
+                                  0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f,
+                                  1.0f, 1.0f, 1.0f };
 
-    vertices.reserve(pos.size() + color.size());
-    // vertices.reserve(pos.size() + pos.size());
+    std::vector<float> texcoord = { 0.0f, 0.0f,
+                                    1.0f, 0.0f,
+                                    1.0f, 1.0f,
+                                    0.0f, 1.0f };
+
+    vertices.reserve(pos.size() + normal.size() + texcoord.size());
 
     for (int i = 0; i < pos.size(); i += 3) {
 
         for (int j = i; j < i + 3; ++j) {
-            pos[j] *= 1.5f;
             vertices.push_back(pos[j]);
         }
 
         for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(color[j]);
-            // vertices.push_back(1.0f);
+            vertices.push_back(normal[j]);
         }
     }
 

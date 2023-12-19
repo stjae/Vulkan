@@ -6,15 +6,15 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
 {
     vk::VertexInputBindingDescription bindingDesc;
     bindingDesc.setBinding(0);
-    bindingDesc.setStride(3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float));
+    bindingDesc.setStride(3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float) + 1 * sizeof(int));
     bindingDesc.setInputRate(vk::VertexInputRate::eVertex);
 
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
 {
-    std::array<vk::VertexInputAttributeDescription, 3> attributes;
+    std::array<vk::VertexInputAttributeDescription, 4> attributes;
 
     // Pos
     attributes[0].setBinding(0);
@@ -34,12 +34,18 @@ std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
     attributes[2].setFormat(vk::Format::eR32G32Sfloat);
     attributes[2].setOffset(3 * sizeof(float) + 3 * sizeof(float));
 
+    // TextureID
+    attributes[3].setBinding(0);
+    attributes[3].setLocation(3);
+    attributes[3].setFormat(vk::Format::eR32Sint);
+    attributes[3].setOffset(3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float));
+
     return attributes;
 }
 
 void MeshData::CreateVertexBuffer()
 {
-    BufferInput stagingBufferInput = { sizeof(vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    BufferInput stagingBufferInput = { sizeof(float) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
     vertexStagingBuffer->CopyToBuffer(vertices.data(), stagingBufferInput);
 
@@ -49,7 +55,7 @@ void MeshData::CreateVertexBuffer()
 
 void MeshData::CreateIndexBuffer()
 {
-    BufferInput stagingBufferInput = { sizeof(indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    BufferInput stagingBufferInput = { sizeof(uint32_t) * vertices.size() * 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     indexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
     indexStagingBuffer->CopyToBuffer(indices.data(), stagingBufferInput);
 

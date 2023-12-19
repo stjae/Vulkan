@@ -150,10 +150,6 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     descriptorSetLayouts.push_back(layout2);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    vk::PushConstantRange range(vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t));
-    pipelineLayoutInfo.pPushConstantRanges = &range;
-
     pipelineLayoutInfo.setLayoutCount = descriptorManager.descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorManager.descriptorSetLayouts.data();
 

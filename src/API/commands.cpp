@@ -95,7 +95,6 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
         uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.Pipeline());
-        commandBuffer.pushConstants(pipeline.PipelineLayout(), vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &i);
 
         commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->indices.size()), 1, 0,
                                   0, 0);

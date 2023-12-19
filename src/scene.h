@@ -12,11 +12,6 @@ struct UboDataDynamic
     glm::mat4* model = nullptr;
 };
 
-struct PushConstant
-{
-    uint32_t meshIndex;
-};
-
 class Scene
 {
     friend class MyImGui;
