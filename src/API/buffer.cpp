@@ -5,6 +5,7 @@ Buffer::Buffer(const BufferInput& bufferInput)
 {
     vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
                                     vk::SharingMode::eExclusive);
+
     vkBuffer_ = Device::GetDevice().createBuffer(bufferInfo);
     size_ = bufferInput.size;
 

@@ -4,10 +4,12 @@
 
 void Mesh::CreateSquare()
 {
-    vertices.positions.emplace_back(-1.0f, 1.0f, 0.0f);
-    // { 1.0f, 1.0f, 0.0f },
-    // { 1.0f, -1.0f, 0.0f },
-    // { -1.0f, -1.0f, 0.0f });
+    const int SQUARE_VERTEX_COUNT = 4;
+
+    std::vector<float> pos = { -1.0f, 1.0f, 0.0f,
+                               1.0f, 1.0f, 0.0f,
+                               1.0f, -1.0f, 0.0f,
+                               -1.0f, -1.0f, 0.0f };
 
     std::vector<float> normal = { 1.0f, 0.0f, 0.0f,
                                   0.0f, 1.0f, 0.0f,
@@ -19,17 +21,18 @@ void Mesh::CreateSquare()
                                     1.0f, 1.0f,
                                     0.0f, 1.0f };
 
-    vertices.reserve(pos.size() + normal.size() + texcoord.size());
+    vertices.reserve(SQUARE_VERTEX_COUNT);
 
-    for (int i = 0; i < pos.size(); i += 3) {
+    for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
-        for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(pos[j]);
-        }
+        Vertex v;
 
-        for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(normal[j]);
-        }
+        v.pos = glm::vec3(pos[i * 3 + 0], pos[i * 3 + 1], pos[i * 3 + 2]);
+        v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
+        v.texcoord = glm::vec2(texcoord[i * 2], texcoord[i * 2 + 1]);
+        v.textureID = 0;
+
+        vertices.push_back(v);
     }
 
     indices = { 0, 1, 2, 2, 3, 0 };
@@ -38,6 +41,8 @@ void Mesh::CreateSquare()
 void Mesh::CreateCube(const char* texturePath)
 {
     textureFilePath = texturePath;
+
+    const int CUBE_VERTEX_COUNT = 24;
 
     std::vector<float> pos = { -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
                                1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // front
@@ -88,24 +93,18 @@ void Mesh::CreateCube(const char* texturePath)
 
                                     1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
 
-    vertices.reserve(pos.size() + normal.size() + texcoord.size());
+    vertices.reserve(CUBE_VERTEX_COUNT);
 
-    int k = 0;
-    for (int i = 0; i < pos.size(); i += 3) {
+    for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(pos[j]);
-        }
+        Vertex v;
 
-        for (int j = i; j < i + 3; ++j) {
-            vertices.push_back(normal[j]);
-        }
+        v.pos = glm::vec3(pos[i * 3 + 0], pos[i * 3 + 1], pos[i * 3 + 2]);
+        v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
+        v.texcoord = glm::vec2(texcoord[i * 2 + 0], texcoord[i * 2 + 1]);
+        v.textureID = 0;
 
-        for (int j = k; j < k + 2; ++j) {
-            vertices.push_back(texcoord[j]);
-        }
-
-        k += 2;
+        vertices.push_back(v);
     }
 
     indices = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
@@ -130,19 +129,27 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
         throw std::runtime_error(warn + err);
     }
 
+    vertices.reserve(shapes.size() * shapes[0].mesh.indices.size());
+
     for (auto& shape : shapes) {
         for (auto& index : shape.mesh.indices) {
 
-            vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-            vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-            vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+            Vertex v;
 
-            vertices.push_back(attrib.normals[3 * index.normal_index + 0]);
-            vertices.push_back(attrib.normals[3 * index.normal_index + 1]);
-            vertices.push_back(attrib.normals[3 * index.normal_index + 2]);
+            v.pos = glm::vec3(attrib.vertices[3 * index.vertex_index + 0],
+                              attrib.vertices[3 * index.vertex_index + 1],
+                              attrib.vertices[3 * index.vertex_index + 2]);
 
-            vertices.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-            vertices.push_back(1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
+            v.normal = glm::vec3(attrib.normals[3 * index.normal_index + 0],
+                                 attrib.normals[3 * index.normal_index + 1],
+                                 attrib.normals[3 * index.normal_index + 2]);
+
+            v.texcoord = glm::vec2(attrib.texcoords[2 * index.texcoord_index + 0],
+                                   1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
+
+            v.textureID = 1;
+
+            vertices.push_back(v);
 
             indices.push_back(3 * index.vertex_index + 2);
             indices.push_back(3 * index.vertex_index + 1);

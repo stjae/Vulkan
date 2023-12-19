@@ -5,13 +5,12 @@
 #include "image.h"
 #include <filesystem>
 
-struct Vertices
+struct Vertex
 {
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec2> texcoords;
-    std::vector<uint32_t> indices;
-    std::vector<int> textureIDs;
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 texcoord;
+    int textureID;
 };
 
 class MeshData
@@ -24,7 +23,8 @@ public:
     void CreateTexture();
     void DestroyStagingBuffer();
 
-    Vertices vertices;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;

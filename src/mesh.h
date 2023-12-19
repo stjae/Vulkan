@@ -15,10 +15,6 @@ class Mesh : public MeshData
     void CreateSquare();
     void CreateCube(const char* texturePath);
     void LoadModel(const char* modelPath, const char* texturePath);
-
-public:
-    // vk::DescriptorBufferInfo& GetBufferInfo() { return
-    // matrixUniformBuffer->GetBufferInfo(); }
 };
 
 #endif

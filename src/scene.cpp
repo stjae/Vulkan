@@ -46,10 +46,10 @@ void Scene::Prepare()
     for (auto& mesh : meshes) {
         command.RecordCopyCommands(mesh->vertexStagingBuffer->GetBuffer(),
                                    mesh->vertexBuffer->GetBuffer(),
-                                   sizeof(mesh->vertices[0]) * mesh->vertices.size());
+                                   sizeof(Vertex) * mesh->vertices.size());
         command.RecordCopyCommands(mesh->indexStagingBuffer->GetBuffer(),
                                    mesh->indexBuffer->GetBuffer(),
-                                   sizeof(mesh->indices[0]) * mesh->indices.size());
+                                   sizeof(uint32_t) * mesh->indices.size());
         command.TransitImageLayout(mesh->textureImage->GetImage(),
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal);
