@@ -6,7 +6,7 @@ Camera::Camera()
                           vk::MemoryPropertyFlagBits::eHostVisible |
                               vk::MemoryPropertyFlagBits::eHostCoherent };
     uniformBuffer_ = std::make_unique<Buffer>(input);
-    uniformBuffer_->Map(input.size);
+    uniformBuffer_->MapMemory(input.size);
 }
 
 void Camera::Update()
@@ -77,7 +77,7 @@ void Camera::UpdateBuffer()
     uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix));
 }
 
-vk::DescriptorBufferInfo& Camera::GetBufferInfo()
+const vk::DescriptorBufferInfo& Camera::GetBufferInfo()
 {
     return uniformBuffer_->GetBufferInfo();
 }

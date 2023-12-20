@@ -12,7 +12,7 @@ public:
     Application(const int width, const int height, const char* wName);
 
     void Run();
-    void GetFramerate();
+    static std::string& GetFramerate();
 
 private:
     Window window_;

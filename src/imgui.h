@@ -12,7 +12,7 @@ class MyImGui
     std::weak_ptr<Scene> scene_;
 
 public:
-    void Setup(std::weak_ptr<Scene> scene);
+    void Setup(std::weak_ptr<Scene> scene, GraphicsPipeline& pipeline);
     void DrawImGuizmo(int currentItem);
     void DrawDockSpace();
     void SetCameraControl();

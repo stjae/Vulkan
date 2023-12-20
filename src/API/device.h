@@ -1,59 +1,26 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
-#include "../common.h"
 #include "instance.h"
-
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool IsComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
+#include "queue.h"
 
 class Device
 {
+    Instance instance_;
+    Queue queue_;
+    std::vector<const char*> deviceExtensions_;
 
-    Instance instance;
-    std::vector<const char*> deviceExtensions;
+    inline static DeviceHandle handle_;
 
 public:
+    inline static vk::PhysicalDeviceLimits limits;
+
     Device();
-    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void PickPhysicalDevice();
     bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
-    void FindQueueFamilies();
-    static vk::Device& GetDevice()
-    {
-        static vk::Device vkDevice;
-        return vkDevice;
-    }
-    static vk::PhysicalDevice& GetPhysicalDevice()
-    {
-        static vk::PhysicalDevice vkPhysicalDevice;
-        return vkPhysicalDevice;
-    }
-    static QueueFamilyIndices& GetQueueFamilyIndices()
-    {
-        static QueueFamilyIndices queueFamilyIndices;
-        return queueFamilyIndices;
-    }
-    static vk::Queue& GetGraphicsQueue()
-    {
-        static vk::Queue vkGraphicsQueue;
-        return vkGraphicsQueue;
-    }
-    static vk::Queue& GetPresentQueue()
-    {
-        static vk::Queue vkPresentQueue;
-        return vkPresentQueue;
-    }
-
     ~Device();
+
+    static const DeviceHandle& GetHandle() { return handle_; }
 };
 
 #endif

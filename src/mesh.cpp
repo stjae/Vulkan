@@ -36,6 +36,8 @@ void Mesh::CreateSquare()
     }
 
     indices = { 0, 1, 2, 2, 3, 0 };
+
+    name = "square";
 }
 
 void Mesh::CreateCube(const char* texturePath)
@@ -158,4 +160,13 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
     }
 
     name = "model";
+}
+
+void Mesh::CreateBuffers()
+{
+    CreateIndexBuffer();
+    CreateVertexBuffer();
+
+    CreateTexture();
+    textureImage->CreateSampler();
 }

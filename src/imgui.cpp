@@ -1,7 +1,7 @@
 #include "imgui.h"
 extern size_t dynamicBufferAlignment;
 
-void MyImGui::Setup(std::weak_ptr<Scene> scene)
+void MyImGui::Setup(std::weak_ptr<Scene> scene, GraphicsPipeline& pipeline)
 {
     scene_ = scene;
     {
@@ -13,7 +13,7 @@ void MyImGui::Setup(std::weak_ptr<Scene> scene)
             vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1,
             static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes)), poolSizes);
 
-        if (Device::GetDevice().createDescriptorPool(
+        if (Device::GetHandle().device.createDescriptorPool(
                 &poolInfo, nullptr, &imGuiDescriptorPool) != vk::Result::eSuccess) {
             spdlog::error("failed to create descriptor pool for ImGui");
         }
@@ -22,30 +22,29 @@ void MyImGui::Setup(std::weak_ptr<Scene> scene)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
 
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForVulkan(*Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = Instance::GetInstance();
-    init_info.PhysicalDevice = Device::GetPhysicalDevice();
-    init_info.Device = Device::GetDevice();
-    init_info.QueueFamily = Device::GetQueueFamilyIndices().graphicsFamily.value();
-    init_info.Queue = Device::GetGraphicsQueue();
+    init_info.Instance = Instance::GetHandle().instance;
+    init_info.PhysicalDevice = Device::GetHandle().physicalDevice;
+    init_info.Device = Device::GetHandle().device;
+    init_info.QueueFamily = Queue::GetGraphicsQueueFamilyIndex();
+    init_info.Queue = Queue::GetHandle().graphicsQueue;
     init_info.DescriptorPool = imGuiDescriptorPool;
     init_info.Subpass = 0;
     init_info.MinImageCount = Swapchain::GetSupportDetail().capabilities.minImageCount;
     init_info.ImageCount = Swapchain::GetDetail().frames.size();
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    ImGui_ImplVulkan_Init(&init_info, GraphicsPipeline::RenderPass());
+    ImGui_ImplVulkan_Init(&init_info, pipeline.GetHandle().renderPass);
 
-#if defined(_WIN32)
-    float dpiScaleFactor = ImGui_ImplWin32_GetDpiScaleForHwnd(GetDesktopWindow());
-
-    ImFontConfig fontConfig;
-    fontConfig.SizePixels = 13.0f * dpiScaleFactor;
-    io.Fonts->AddFontDefault(&fontConfig);
-#endif
+    if (viewport->DpiScale > 0.0f) {
+        ImFontConfig fontConfig;
+        fontConfig.SizePixels = 13.0f * viewport->DpiScale;
+        io.Fonts->AddFontDefault(&fontConfig);
+    }
 }
 
 void MyImGui::DrawImGuizmo(int currentItem)
@@ -116,11 +115,18 @@ void MyImGui::DrawDockSpace()
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Options")) {
-            ImGui::MenuItem("Menu");
+        if (ImGui::BeginMenu("Create")) {
+            ImGui::MenuItem("Open");
             ImGui::Separator();
-            if (ImGui::MenuItem("Close", NULL, false, &p_open != NULL))
-                p_open = false;
+            if (ImGui::MenuItem("Square")) {
+            }
+            if (ImGui::MenuItem("Cube")) {
+                scene_.lock()->meshes.emplace_back(std::make_shared<Mesh>());
+                scene_.lock()->meshes.back()->CreateCube(nullptr);
+                scene_.lock()->meshes.back()->CreateBuffers();
+                scene_.lock()->PrepareMeshes();
+            }
+
             ImGui::EndMenu();
         }
 
@@ -131,8 +137,7 @@ void MyImGui::DrawDockSpace()
 
 void MyImGui::SetCameraControl()
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_C) ||
-        ImGui::Checkbox("Camera Control [c]", &scene_.lock()->camera->isControllable)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
         scene_.lock()->camera->isControllable = !scene_.lock()->camera->isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
@@ -150,31 +155,33 @@ void MyImGui::SetCameraControl()
 
 void MyImGui::Draw()
 {
+    SetCameraControl();
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
     ImGui::NewFrame();
 
     DrawDockSpace();
 
     // Object List Window
-    ImGui::Begin("List");
     static int currentItem = -1;
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() ||
-        currentItem >
-            scene_.lock()->meshes.size() - 1) // Prevent index out of vector range
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() || currentItem > scene_.lock()->meshes.size() - 1) // Prevent index out of vector range
         currentItem = -1;
-    ImGui::ListBox("Object", &currentItem, scene_.lock()->meshNames.data(),
-                   static_cast<int>(scene_.lock()->meshes.size()));
-    ImGui::End();
+
+    ImGui::BeginListBox("Object List");
+    for (int i = 0; i < scene_.lock()->meshes.size(); i++) {
+        if (ImGui::Selectable(scene_.lock()->meshes[i]->name.c_str(), scene_.lock()->meshes[i]->isSelected))
+            currentItem = i;
+    }
+    ImGui::EndListBox();
 
     // Object Attribute Window
     ImGui::Begin("Object Attribute");
-
-    SetCameraControl();
-
     if (currentItem > -1) {
         DrawImGuizmo(currentItem);
 
@@ -189,9 +196,9 @@ void MyImGui::Draw()
                                               rotation, scale);
 
         std::string id = "##";
-        id.append(scene_.lock()->meshNames[currentItem]);
+        id.append(scene_.lock()->meshes[currentItem]->name.c_str());
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text(scene_.lock()->meshNames[currentItem]);
+        ImGui::Text(scene_.lock()->meshes[currentItem]->name.c_str());
         ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
 
@@ -200,7 +207,14 @@ void MyImGui::Draw()
 
         *modelMat = glm::make_mat4(objectMatrix);
     }
+    ImGui::End();
 
+    // Information Overlay
+    ImGui::SetNextWindowPos(ImVec2(viewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBackground;
+    ImGui::Begin("Information", nullptr, window_flags);
+    ImGui::Text("%s", GetFrameRate().c_str());
+    ImGui::Text("Camera Control: %s [press C]", scene_.lock()->camera->isControllable ? "on" : "off");
     ImGui::End();
 
     ImGui::EndFrame();
@@ -211,6 +225,6 @@ MyImGui::~MyImGui()
 {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    Device::GetDevice().destroyDescriptorPool(imGuiDescriptorPool);
+    Device::GetHandle().device.destroyDescriptorPool(imGuiDescriptorPool);
     ImGui::DestroyContext();
 }

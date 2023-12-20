@@ -13,7 +13,7 @@ void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings,
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.descriptorSetCount, layoutBindings.data(), bindingFlags);
 
-    descriptorSetLayouts.push_back(Device::GetDevice().createDescriptorSetLayout(layoutInfo));
+    descriptorSetLayouts.push_back(Device::GetHandle().device.createDescriptorSetLayout(layoutInfo));
 }
 
 void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts)
@@ -37,18 +37,18 @@ void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSe
     //     poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
     // #endif
 
-    descriptorPool = Device::GetDevice().createDescriptorPool(poolInfo);
+    descriptorPool = Device::GetHandle().device.createDescriptorPool(poolInfo);
 }
 
 void DescriptorManager::AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, descriptorSetLayouts.size(), descriptorSetLayouts.data());
 
-    descriptorSets = Device::GetDevice().allocateDescriptorSets(allocateInfo);
+    descriptorSets = Device::GetHandle().device.allocateDescriptorSets(allocateInfo);
 }
 
 DescriptorManager::~DescriptorManager()
 {
     for (auto& layout : descriptorSetLayouts)
-        Device::GetDevice().destroyDescriptorSetLayout(layout);
+        Device::GetHandle().device.destroyDescriptorSetLayout(layout);
 }

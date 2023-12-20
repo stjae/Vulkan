@@ -1,20 +1,20 @@
 #include "instance.h"
 
-Instance::Instance() : logger(GetInstance())
+Instance::Instance() : logger_(handle_.instance)
 {
     vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo createInfo({}, &appInfo);
-    SetExtensions(instanceExtensions, createInfo);
+    SetExtensions(instanceExtensions_, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    SetLayers(instanceLayers, createInfo, debugInfo);
+    SetLayers(instanceLayers_, createInfo, debugInfo);
 
-    if (vk::createInstance(&createInfo, nullptr, &GetInstance()) != vk::Result::eSuccess) {
+    if (vk::createInstance(&createInfo, nullptr, &handle_.instance) != vk::Result::eSuccess) {
         spdlog::error("failed to create instance");
     }
 
-    logger.CreateDebugMessenger();
+    logger_.CreateDebugMessenger();
 }
 
 void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
@@ -55,7 +55,7 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
 
 void Instance::CreateSurface()
 {
-    if (glfwCreateWindowSurface(GetInstance(), *Window::GetWindow(), nullptr, &GetSurface()) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(handle_.instance, *Window::GetWindow(), nullptr, &handle_.surface) != VK_SUCCESS) {
         spdlog::error("failed to create window surface");
     }
 }
@@ -63,8 +63,8 @@ void Instance::CreateSurface()
 Instance::~Instance()
 {
     if (debug) {
-        logger.Destroy();
+        logger_.Destroy();
     }
-    GetInstance().destroySurfaceKHR(GetSurface());
-    GetInstance().destroy();
+    handle_.instance.destroySurfaceKHR(handle_.surface);
+    handle_.instance.destroy();
 }

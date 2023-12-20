@@ -40,7 +40,9 @@ const bool debug = true;
 #include <glm/gtx/string_cast.hpp>
 
 #include "config.h"
+#include "API/handle.h"
 
+std::string& GetFrameRate();
 std::vector<char> ReadFile(const std::string& filename);
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);
@@ -54,5 +56,12 @@ void Log(bool debug, fmt::terminal_color color, T... args)
     }
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
+
+struct BufferInput
+{
+    size_t size;
+    vk::BufferUsageFlags usage;
+    vk::MemoryPropertyFlags properties;
+};
 
 #endif

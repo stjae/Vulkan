@@ -25,11 +25,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
 
     // vertex shader
-    shader.vertexShaderModule = shader.CreateModule(vertexShaderFilepath);
+    shader_.vertexShaderModule = shader_.CreateModule(vertexShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created vertex shader module");
     vk::PipelineShaderStageCreateInfo vertexShaderInfo;
     vertexShaderInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertexShaderInfo.module = shader.vertexShaderModule;
+    vertexShaderInfo.module = shader_.vertexShaderModule;
     vertexShaderInfo.pName = "main";
     shaderStageInfos.push_back(vertexShaderInfo);
 
@@ -54,11 +54,11 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pRasterizationState = &rasterizerInfo;
 
     // fragment shader
-    shader.fragmentShaderModule = shader.CreateModule(fragmentShaderFilepath);
+    shader_.fragmentShaderModule = shader_.CreateModule(fragmentShaderFilepath);
     Log(debug, fmt::terminal_color::bright_green, "created fragment shader module");
     vk::PipelineShaderStageCreateInfo fragmentShaderInfo;
     fragmentShaderInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragmentShaderInfo.module = shader.fragmentShaderModule;
+    fragmentShaderInfo.module = shader_.fragmentShaderModule;
     fragmentShaderInfo.pName = "main";
     shaderStageInfos.push_back(fragmentShaderInfo);
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStageInfos.size());
@@ -95,13 +95,13 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    GraphicsPipeline::PipelineLayout() = CreatePipelineLayout();
-    pipelineInfo.layout = GraphicsPipeline::PipelineLayout();
+    handle_.pipelineLayout = CreatePipelineLayout();
+    pipelineInfo.layout = handle_.pipelineLayout;
 
-    GraphicsPipeline::RenderPass() = CreateRenderPass();
-    pipelineInfo.renderPass = GraphicsPipeline::RenderPass();
+    handle_.renderPass = CreateRenderPass();
+    pipelineInfo.renderPass = handle_.renderPass;
 
-    GraphicsPipeline::Pipeline() = (Device::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    handle_.pipeline = (Device::GetHandle().device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
     Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
@@ -115,8 +115,8 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
     layout0.descriptorCounts.push_back(1);
     layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    descriptorManager.CreateSetLayout(layout0, nullptr);
-    descriptorSetLayouts.push_back(layout0);
+    descriptorManager_.CreateSetLayout(layout0, nullptr);
+    descriptorSetLayouts_.push_back(layout0);
 
     DescriptorSetLayoutData layout1;
     layout1.descriptorSetCount = 1;
@@ -126,8 +126,8 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
     layout1.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
-    descriptorManager.CreateSetLayout(layout1, nullptr);
-    descriptorSetLayouts.push_back(layout1);
+    descriptorManager_.CreateSetLayout(layout1, nullptr);
+    descriptorSetLayouts_.push_back(layout1);
 
     DescriptorSetLayoutData layout2;
     layout2.descriptorSetCount = 1;
@@ -146,14 +146,14 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     };
     setLayoutBindingFlags.pBindingFlags = descriptorBindingFlags.data();
 
-    descriptorManager.CreateSetLayout(layout2, &setLayoutBindingFlags);
-    descriptorSetLayouts.push_back(layout2);
+    descriptorManager_.CreateSetLayout(layout2, &setLayoutBindingFlags);
+    descriptorSetLayouts_.push_back(layout2);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.setLayoutCount = descriptorManager.descriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = descriptorManager.descriptorSetLayouts.data();
+    pipelineLayoutInfo.setLayoutCount = descriptorManager_.descriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = descriptorManager_.descriptorSetLayouts.data();
 
-    return Device::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+    return Device::GetHandle().device.createPipelineLayout(pipelineLayoutInfo);
 }
 
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
@@ -199,23 +199,23 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    return Device::GetDevice().createRenderPass(renderPassInfo);
+    return Device::GetHandle().device.createRenderPass(renderPassInfo);
 }
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    descriptorManager.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts);
+    descriptorManager_.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts_);
 }
 
 void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)
 {
-    descriptorManager.AllocateSet(descriptorSets);
+    descriptorManager_.AllocateSet(descriptorSets);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    Device::GetDevice().destroyPipeline(GraphicsPipeline::Pipeline());
-    Device::GetDevice().destroyPipelineLayout(GraphicsPipeline::PipelineLayout());
-    Device::GetDevice().destroyRenderPass(GraphicsPipeline::RenderPass());
-    Device::GetDevice().destroyDescriptorPool(descriptorManager.GetDescriptorPool());
+    Device::GetHandle().device.destroyPipeline(handle_.pipeline);
+    Device::GetHandle().device.destroyPipelineLayout(handle_.pipelineLayout);
+    Device::GetHandle().device.destroyRenderPass(handle_.renderPass);
+    Device::GetHandle().device.destroyDescriptorPool(descriptorManager_.GetDescriptorPool());
 }

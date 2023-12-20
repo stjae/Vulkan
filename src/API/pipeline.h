@@ -8,9 +8,11 @@
 
 class GraphicsPipeline
 {
-    Shader shader;
-    DescriptorManager descriptorManager;
-    std::vector<DescriptorSetLayoutData> descriptorSetLayouts;
+    Shader shader_;
+    DescriptorManager descriptorManager_;
+    std::vector<DescriptorSetLayoutData> descriptorSetLayouts_;
+
+    PipelineHandle handle_;
 
 public:
     void CreatePipeline();
@@ -19,21 +21,8 @@ public:
     void CreateDescriptorPool();
     void AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~GraphicsPipeline();
-    static vk::Pipeline& Pipeline()
-    {
-        static vk::Pipeline vkPipeline;
-        return vkPipeline;
-    }
-    static vk::PipelineLayout& PipelineLayout()
-    {
-        static vk::PipelineLayout vkPipelineLayout;
-        return vkPipelineLayout;
-    }
-    static vk::RenderPass& RenderPass()
-    {
-        static vk::RenderPass vkRenderPass;
-        return vkRenderPass;
-    }
+
+    const PipelineHandle& GetHandle() { return handle_; }
 };
 
 #endif

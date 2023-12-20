@@ -33,7 +33,7 @@ class Camera
     std::unique_ptr<Buffer> uniformBuffer_;
     void Update();
     void UpdateBuffer();
-    vk::DescriptorBufferInfo& GetBufferInfo();
+    const vk::DescriptorBufferInfo& GetBufferInfo();
 
 public:
     Camera();

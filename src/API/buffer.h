@@ -4,43 +4,35 @@
 #include "device.h"
 #include "memory.h"
 
-struct BufferInput
-{
-    size_t size;
-    vk::BufferUsageFlags usage;
-    vk::MemoryPropertyFlags properties;
-};
-
 class Buffer : public Memory
 {
+    vk::Buffer bufferHandle_;
+    vk::DescriptorBufferInfo bufferInfo_;
+    size_t bufferSize_;
+
 public:
     Buffer(const BufferInput& bufferInput);
-    void Map(vk::DeviceSize range);
-    vk::Buffer& GetBuffer() { return vkBuffer_; }
-    vk::DescriptorBufferInfo& GetBufferInfo() { return descriptorBufferInfo_; }
-    size_t GetBufferSize() { return size_; }
-    vk::DeviceMemory& GetBufferMemory() { return GetMemory(); }
+    void MapMemory(vk::DeviceSize range);
+    const vk::Buffer& GetBufferHandle() { return bufferHandle_; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return bufferInfo_; }
+    size_t GetBufferSize() { return bufferSize_; }
+    const vk::DeviceMemory& GetBufferMemory() { return GetMemory(); }
     void Destroy();
     ~Buffer();
 
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        memoryLocation_ =
-            Device::GetDevice().mapMemory(vkDeviceMemory_, 0, bufferInput.size);
+        memoryLocation_ = Device::GetHandle().device.mapMemory(vkDeviceMemory_, 0, bufferInput.size);
         memcpy(memoryLocation_, resource, bufferInput.size);
-        Device::GetDevice().unmapMemory(vkDeviceMemory_);
+        Device::GetHandle().device.unmapMemory(vkDeviceMemory_);
     }
+
     template <typename T>
     void UpdateBuffer(T resource, size_t size)
     {
         memcpy(memoryLocation_, resource, size);
     }
-
-private:
-    vk::Buffer vkBuffer_;
-    size_t size_;
-    vk::DescriptorBufferInfo descriptorBufferInfo_;
 };
 
 #endif

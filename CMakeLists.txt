@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(PROJECT_NAME vulkanApp)
+project(${PROJECT_NAME})
+
 set(CMAKE_CXX_STANDARD 17)
 if (APPLE)
     set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL")
@@ -13,14 +15,12 @@ if (APPLE)
         MoltenVK
 )
 elseif(WIN32)
-find_package(Vulkan REQUIRED)
+    find_package(Vulkan REQUIRED)
     link_libraries(Vulkan::Vulkan)
 else()
     message(unsupported OS)
 endif()
 
-set(PROJECT_DIR {CMAKE_CURRENT_SOURCE_DIR})
-project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME}
 src/config.h
 src/main.cpp
@@ -36,10 +36,12 @@ src/image.h             src/image.cpp
 src/imgui.h             src/imgui.cpp
 
 # API
+src/API/handle.h
 src/API/window.h        src/API/window.cpp
 src/API/instance.h      src/API/instance.cpp
 src/API/logger.h        src/API/logger.cpp
 src/API/device.h        src/API/device.cpp
+src/API/queue.h         src/API/queue.cpp
 src/API/swapchain.h     src/API/swapchain.cpp
 src/API/swapchainData.h
 src/API/shader.h        src/API/shader.cpp
@@ -66,5 +68,12 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     "${PROJECT_BINARY_DIR}/shaders"
     "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
 )
+
+# Create config.h contains project directory
+if(APPLE)
+    set(PROJECT_DIR_OSX ${CMAKE_CURRENT_SOURCE_DIR})
+elseif(WIN32)
+    set(PROJECT_DIR_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
 configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)

@@ -6,6 +6,7 @@
 class Mesh : public MeshData
 {
     friend class Scene;
+    friend class MyImGui;
 
     bool isSelected;
     std::string name;
@@ -15,6 +16,8 @@ class Mesh : public MeshData
     void CreateSquare();
     void CreateCube(const char* texturePath);
     void LoadModel(const char* modelPath, const char* texturePath);
+
+    void CreateBuffers();
 };
 
 #endif

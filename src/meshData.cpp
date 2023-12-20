@@ -99,7 +99,7 @@ void MeshData::CreateTexture()
     } else {
 
         // Create dummy texture
-        unsigned char dummyTexture[4] = { 255, 255, 255, 255 };
+        unsigned char dummyTexture[4] = { 128, 128, 128, 128 };
         textureWidth = 1;
         textureHeight = 1;
         textureSize = 4;

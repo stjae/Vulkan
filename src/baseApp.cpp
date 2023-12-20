@@ -5,7 +5,7 @@ Application::Application(const int width, const int height, const char* wName)
 {
     scene_ = std::make_unique<Scene>();
     engine_ = std::make_unique<GraphicsEngine>(scene_);
-    scene_->Prepare();
+    scene_->PrepareScene();
     engine_->SetupGui();
     engine_->InitSwapchainImages();
 }
@@ -20,10 +20,11 @@ void Application::Run()
     }
 }
 
-void Application::GetFramerate()
+std::string& Application::GetFramerate()
 {
     static int frameCount;
     static double delta, currentTime, lastTime;
+    static std::string frameRate;
 
     currentTime = glfwGetTime();
     delta = currentTime - lastTime;
@@ -31,11 +32,14 @@ void Application::GetFramerate()
     if (delta > 1.0) {
         std::stringstream title;
         title << frameCount << " fps, " << 1000.0f / frameCount << " ms";
-        glfwSetWindowTitle(*Window::GetWindow(), title.str().c_str());
+
+        frameRate = title.str().c_str();
 
         lastTime = currentTime;
         frameCount = 0;
     }
 
     frameCount++;
+
+    return frameRate;
 }

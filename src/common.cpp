@@ -1,5 +1,29 @@
 #include "common.h"
 
+std::string& GetFrameRate()
+{
+    static int frameCount;
+    static double delta, currentTime, lastTime;
+    static std::string frameRate;
+
+    currentTime = glfwGetTime();
+    delta = currentTime - lastTime;
+
+    if (delta > 1.0) {
+        std::stringstream title;
+        title << frameCount << " fps, " << 1000.0f / frameCount << " ms";
+
+        frameRate = title.str().c_str();
+
+        lastTime = currentTime;
+        frameCount = 0;
+    }
+
+    frameCount++;
+
+    return frameRate;
+}
+
 std::vector<char> ReadFile(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);

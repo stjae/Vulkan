@@ -6,7 +6,7 @@ GraphicsEngine::GraphicsEngine(std::shared_ptr<Scene>& scene)
 
     swapchain.CreateSwapchain();
     pipeline.CreatePipeline();
-    swapchain.CreateFrameBuffer(pipeline.RenderPass());
+    swapchain.CreateFrameBuffer(pipeline.GetHandle().renderPass);
 
     command.CreateCommandPool("swapchain frames");
     for (auto& frame : Swapchain::GetDetail().frames) {
@@ -38,8 +38,8 @@ void GraphicsEngine::InitSwapchainImages()
 
         barrier.oldLayout = vk::ImageLayout::eUndefined;
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.srcQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
-        barrier.dstQueueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.srcQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
+        barrier.dstQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
         barrier.image = frame.swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
@@ -53,19 +53,19 @@ void GraphicsEngine::InitSwapchainImages()
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &frame.commandBuffer;
 
-        if (Device::GetGraphicsQueue().submit(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess) {
+        if (Queue::GetHandle().graphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess) {
             spdlog::error("failed to get graphcis queue");
         }
-        Device::GetDevice().waitIdle();
+        Device::GetHandle().device.waitIdle();
     }
 }
 
 void GraphicsEngine::Render()
 {
-    auto resultWaitFence = Device::GetDevice().waitForFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultWaitFence = Device::GetHandle().device.waitForFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    auto acquiredImage = Device::GetDevice().acquireNextImageKHR(Swapchain::GetSwapchain(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex].imageAvailable, nullptr);
+    auto acquiredImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetSwapchain(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex].imageAvailable, nullptr);
 
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
@@ -74,7 +74,7 @@ void GraphicsEngine::Render()
         return;
     }
 
-    auto resultResetFence = Device::GetDevice().resetFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight);
+    auto resultResetFence = Device::GetHandle().device.resetFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight);
 
     imageIndex = acquiredImage.value;
 
@@ -97,7 +97,7 @@ void GraphicsEngine::Render()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    Device::GetGraphicsQueue().submit(submitInfo, Swapchain::GetDetail().frames[frameIndex].inFlight);
+    Queue::GetHandle().graphicsQueue.submit(submitInfo, Swapchain::GetDetail().frames[frameIndex].inFlight);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
@@ -109,7 +109,7 @@ void GraphicsEngine::Render()
 
     vk::Result resultPresent;
     try {
-        resultPresent = Device::GetPresentQueue().presentKHR(presentInfo);
+        resultPresent = Queue::GetHandle().presentQueue.presentKHR(presentInfo);
     } catch (vk::OutOfDateKHRError error) {
         RecreateSwapchain();
         InitSwapchainImages();
@@ -128,15 +128,15 @@ void GraphicsEngine::RecreateSwapchain()
         glfwWaitEvents();
     }
 
-    Device::GetDevice().waitIdle();
+    Device::GetHandle().device.waitIdle();
     for (auto& frame : Swapchain::GetDetail().frames) {
-        Device::GetDevice().freeCommandBuffers(command.commandPool, frame.commandBuffer);
+        Device::GetHandle().device.freeCommandBuffers(command.commandPool, frame.commandBuffer);
     }
     swapchain.DestroySwapchain();
-    Device::GetDevice().destroyCommandPool(command.commandPool);
+    Device::GetHandle().device.destroyCommandPool(command.commandPool);
 
     swapchain.CreateSwapchain();
-    swapchain.CreateFrameBuffer(pipeline.RenderPass());
+    swapchain.CreateFrameBuffer(pipeline.GetHandle().renderPass);
 
     swapchain.PrepareFrames();
 
@@ -148,7 +148,7 @@ void GraphicsEngine::RecreateSwapchain()
 
 void GraphicsEngine::SetupGui()
 {
-    imgui.Setup(scene_);
+    imgui.Setup(scene_, pipeline);
 }
 
 void GraphicsEngine::DrawGui()
@@ -159,5 +159,5 @@ void GraphicsEngine::DrawGui()
 
 GraphicsEngine::~GraphicsEngine()
 {
-    Device::GetDevice().waitIdle();
+    Device::GetHandle().device.waitIdle();
 }

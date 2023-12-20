@@ -2,7 +2,7 @@
 
 uint32_t Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties)
 {
-    vk::PhysicalDeviceMemoryProperties memoryProperties = Device::GetPhysicalDevice().getMemoryProperties();
+    vk::PhysicalDeviceMemoryProperties memoryProperties = Device::GetHandle().physicalDevice.getMemoryProperties();
 
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
 
@@ -20,33 +20,33 @@ uint32_t Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::Memory
 
 void Memory::AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties)
 {
-    vk::MemoryRequirements memoryRequirements = Device::GetDevice().getBufferMemoryRequirements(vkBuffer);
+    vk::MemoryRequirements memoryRequirements = Device::GetHandle().device.getBufferMemoryRequirements(vkBuffer);
 
     vk::MemoryAllocateInfo allocateInfo;
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory_ = Device::GetDevice().allocateMemory(allocateInfo);
-    Device::GetDevice().bindBufferMemory(vkBuffer, vkDeviceMemory_, 0);
+    vkDeviceMemory_ = Device::GetHandle().device.allocateMemory(allocateInfo);
+    Device::GetHandle().device.bindBufferMemory(vkBuffer, vkDeviceMemory_, 0);
 }
 
 void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
 {
     vk::MemoryRequirements memoryRequirements;
-    Device::GetDevice().getImageMemoryRequirements(vkImage, &memoryRequirements);
+    Device::GetHandle().device.getImageMemoryRequirements(vkImage, &memoryRequirements);
 
     vk::MemoryAllocateInfo allocateInfo;
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory_ = Device::GetDevice().allocateMemory(allocateInfo);
-    Device::GetDevice().bindImageMemory(vkImage, vkDeviceMemory_, 0);
+    vkDeviceMemory_ = Device::GetHandle().device.allocateMemory(allocateInfo);
+    Device::GetHandle().device.bindImageMemory(vkImage, vkDeviceMemory_, 0);
 }
 
 void Memory::Free()
 {
     if (vkDeviceMemory_ != VK_NULL_HANDLE) {
-        Device::GetDevice().freeMemory(vkDeviceMemory_);
+        Device::GetHandle().device.freeMemory(vkDeviceMemory_);
         vkDeviceMemory_ = VK_NULL_HANDLE;
     }
 }

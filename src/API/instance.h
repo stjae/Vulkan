@@ -7,9 +7,11 @@
 
 class Instance
 {
-    Logger logger;
-    std::vector<const char*> instanceExtensions;
-    std::vector<const char*> instanceLayers;
+    Logger logger_;
+    std::vector<const char*> instanceExtensions_;
+    std::vector<const char*> instanceLayers_;
+
+    inline static InstanceHandle handle_;
 
 public:
     Instance();
@@ -18,20 +20,12 @@ public:
     void CreateSurface();
     ~Instance();
 
-    const char** GetInstanceExtensions() { return instanceExtensions.data(); }
-    size_t GetNumInstanceExtensions() { return instanceExtensions.size(); }
-    const char** GetInstanceLayers() { return instanceLayers.data(); }
-    size_t GetNumInstanceLayers() { return instanceLayers.size(); }
-    static VkSurfaceKHR& GetSurface()
-    {
-        static VkSurfaceKHR vkSurface;
-        return vkSurface;
-    }
-    static vk::Instance& GetInstance()
-    {
-        static vk::Instance vkInstance;
-        return vkInstance;
-    }
+    static const InstanceHandle& GetHandle() { return handle_; }
+
+    const char** GetInstanceExtensions() { return instanceExtensions_.data(); }
+    size_t GetNumInstanceExtensions() { return instanceExtensions_.size(); }
+    const char** GetInstanceLayers() { return instanceLayers_.data(); }
+    size_t GetNumInstanceLayers() { return instanceLayers_.size(); }
 };
 
 #endif

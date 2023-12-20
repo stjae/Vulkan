@@ -4,7 +4,7 @@ void Image::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Memory
 {
     vk::ImageCreateInfo createInfo({}, vk::ImageType::e2D, format, extent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, usage);
 
-    image_ = Device::GetDevice().createImage(createInfo);
+    image_ = Device::GetHandle().device.createImage(createInfo);
     format_ = format;
     memory.AllocateMemory(image_, properties);
 }
@@ -14,7 +14,7 @@ void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
     vk::ImageSubresourceRange range(aspectFlags, 0, 1, 0, 1);
     vk::ImageViewCreateInfo createInfo({}, image_, vk::ImageViewType::e2D, format, {}, range);
 
-    imageView_ = Device::GetDevice().createImageView(createInfo);
+    imageView_ = Device::GetHandle().device.createImageView(createInfo);
 }
 
 void Image::CreateSampler()
@@ -26,9 +26,7 @@ void Image::CreateSampler()
     samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable = vk::True;
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(Device::GetPhysicalDevice(), &properties);
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.maxAnisotropy = Device::limits.maxSamplerAnisotropy;
     samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = vk::False;
     samplerInfo.compareEnable = vk::False;
@@ -38,7 +36,7 @@ void Image::CreateSampler()
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (Device::GetDevice().createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
+    if (Device::GetHandle().device.createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
         spdlog::error("failed to create sampler");
     }
 }
@@ -51,13 +49,13 @@ void Image::SetInfo(vk::ImageLayout imageLayout)
 
 void Image::DestroyImage()
 {
-    Device::GetDevice().destroyImage(image_);
+    Device::GetHandle().device.destroyImage(image_);
     image_ = VK_NULL_HANDLE;
 }
 
 void Image::DestroyImageView()
 {
-    Device::GetDevice().destroyImageView(imageView_);
+    Device::GetHandle().device.destroyImageView(imageView_);
     imageView_ = VK_NULL_HANDLE;
 }
 
@@ -65,9 +63,9 @@ Image::~Image()
 {
     memory.Free();
     if (image_ != VK_NULL_HANDLE)
-        Device::GetDevice().destroyImage(image_);
+        Device::GetHandle().device.destroyImage(image_);
     if (imageView_ != VK_NULL_HANDLE)
-        Device::GetDevice().destroyImageView(imageView_);
+        Device::GetHandle().device.destroyImageView(imageView_);
     if (sampler_ != VK_NULL_HANDLE)
-        Device::GetDevice().destroySampler(sampler_);
+        Device::GetHandle().device.destroySampler(sampler_);
 }

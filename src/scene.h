@@ -19,17 +19,17 @@ class Scene
     UboDataDynamic uboDataDynamic;
     std::unique_ptr<Buffer> matrixUniformBufferDynamic;
 
-    void PrepareUniformBuffers();
-    void CreateResource();
+    void SetDynamicBufferAlignmentSize();
+    void CreateUniformBuffers();
     void UpdateBuffer();
 
 public:
     std::unique_ptr<Camera> camera;
     std::vector<std::shared_ptr<Mesh>> meshes;
-    std::vector<const char*> meshNames;
 
     Scene();
-    void Prepare();
+    void PrepareScene();
+    void PrepareMeshes();
     void Update(uint32_t index);
     ~Scene();
 };

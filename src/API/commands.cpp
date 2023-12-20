@@ -5,9 +5,9 @@ void Command::CreateCommandPool(const char* usage)
 {
     vk::CommandPoolCreateInfo poolInfo;
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    poolInfo.queueFamilyIndex = Device::GetQueueFamilyIndices().graphicsFamily.value();
+    poolInfo.queueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
 
-    commandPool = Device::GetDevice().createCommandPool(poolInfo);
+    commandPool = Device::GetHandle().device.createCommandPool(poolInfo);
     Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
@@ -18,15 +18,11 @@ void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer)
     allocateInfo.level = vk::CommandBufferLevel::ePrimary;
     allocateInfo.commandBufferCount = 1;
 
-    commandBuffer = Device::GetDevice().allocateCommandBuffers(allocateInfo)[0];
+    commandBuffer = Device::GetHandle().device.allocateCommandBuffers(allocateInfo)[0];
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
-void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
-                                 const vk::CommandBuffer& commandBuffer,
-                                 uint32_t imageIndex,
-                                 std::vector<std::shared_ptr<Mesh>>& meshes,
-                                 ImDrawData* imDrawData)
+void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::shared_ptr<Mesh>>& meshes, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -36,10 +32,8 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
         barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
         barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
         barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        barrier.srcQueueFamilyIndex =
-            Device::GetQueueFamilyIndices().graphicsFamily.value();
-        barrier.dstQueueFamilyIndex =
-            Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.srcQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
+        barrier.dstQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
         barrier.image = Swapchain::GetDetail().frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
@@ -51,7 +45,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
                                       nullptr, 1, &barrier);
     }
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = GraphicsPipeline::RenderPass();
+    renderPassInfo.renderPass = pipeline.GetHandle().renderPass;
     renderPassInfo.framebuffer = Swapchain::GetDetail().frames[imageIndex].framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = Swapchain::GetDetail().extent;
@@ -81,23 +75,22 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 0, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[0], 0, nullptr);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 2, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[2], 0, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 0, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[0], 0, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 2, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[2], 0, nullptr);
 
     for (int i = 0; i < meshes.size(); i++) {
 
-        vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetBuffer() };
+        vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetBufferHandle() };
         vk::DeviceSize offsets[] = { 0 };
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetBufferHandle(), 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.PipelineLayout(), 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.Pipeline());
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipeline);
 
-        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->indices.size()), 1, 0,
-                                  0, 0);
+        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->indices.size()), 1, 0, 0, 0);
     }
 
     ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
@@ -109,10 +102,8 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline,
         barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
         barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
         barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.srcQueueFamilyIndex =
-            Device::GetQueueFamilyIndices().graphicsFamily.value();
-        barrier.dstQueueFamilyIndex =
-            Device::GetQueueFamilyIndices().graphicsFamily.value();
+        barrier.srcQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
+        barrier.dstQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
         barrier.image = Swapchain::GetDetail().frames[imageIndex].swapchainVkImage;
         barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier.subresourceRange.layerCount = 1;
@@ -212,14 +203,14 @@ void Command::Submit()
     submitInfo.commandBufferCount = commandBuffers.size();
     submitInfo.pCommandBuffers = commandBuffers.data();
 
-    Device::GetGraphicsQueue().submit(submitInfo);
-    Device::GetGraphicsQueue().waitIdle();
+    Queue::GetHandle().graphicsQueue.submit(submitInfo);
+    Queue::GetHandle().graphicsQueue.waitIdle();
 
     commandBuffers.clear();
 }
 
 Command::~Command()
 {
-    Device::GetDevice().destroyCommandPool(commandPool);
+    Device::GetHandle().device.destroyCommandPool(commandPool);
     Log(debug, fmt::v9::terminal_color::bright_yellow, "command pool destroyed");
 }

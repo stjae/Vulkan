@@ -12,10 +12,10 @@ void Swapchain::CreateSwapchain()
 
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR createInfo({}, Instance::GetSurface(), imageCount, surfaceFormat.format, surfaceFormat.colorSpace, extent, 1, vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR createInfo({}, Instance::GetHandle().surface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace, extent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { Device::GetQueueFamilyIndices().graphicsFamily.value(), Device::GetQueueFamilyIndices().presentFamily.value() };
-    if (Device::GetQueueFamilyIndices().graphicsFamily.value() != Device::GetQueueFamilyIndices().presentFamily.value()) {
+    uint32_t indices[] = { Queue::GetGraphicsQueueFamilyIndex(), Queue::GetPresentQueueFamilyIndex() };
+    if (Queue::GetGraphicsQueueFamilyIndex() != Queue::GetPresentQueueFamilyIndex()) {
         createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = indices;
@@ -27,10 +27,10 @@ void Swapchain::CreateSwapchain()
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = nullptr;
 
-    GetSwapchain() = Device::GetDevice().createSwapchainKHR(createInfo);
+    GetSwapchain() = Device::GetHandle().device.createSwapchainKHR(createInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
-    std::vector<vk::Image> images = Device::GetDevice().getSwapchainImagesKHR(GetSwapchain());
+    std::vector<vk::Image> images = Device::GetHandle().device.getSwapchainImagesKHR(GetSwapchain());
     GetDetail().frames.resize(images.size());
     GetDetail().imageFormat = surfaceFormat.format;
     GetDetail().extent = extent;
@@ -47,7 +47,7 @@ void Swapchain::CreateSwapchain()
         createInfo.format = surfaceFormat.format;
 
         GetDetail().frames[i].swapchainVkImage = images[i];
-        GetDetail().frames[i].swapchainVkImageView = Device::GetDevice().createImageView(createInfo);
+        GetDetail().frames[i].swapchainVkImageView = Device::GetHandle().device.createImageView(createInfo);
 
         vk::Extent3D extent = { GetDetail().extent.width, GetDetail().extent.height, 1 };
         if (GetDetail().frames[i].depthImage.GetImage() != VK_NULL_HANDLE) {
@@ -65,9 +65,9 @@ void Swapchain::CreateSwapchain()
 
 void Swapchain::QueryswapchainSupportDetails()
 {
-    GetSupportDetail().capabilities = Device::GetPhysicalDevice().getSurfaceCapabilitiesKHR(Instance::GetSurface());
-    GetSupportDetail().formats = Device::GetPhysicalDevice().getSurfaceFormatsKHR(Instance::GetSurface());
-    GetSupportDetail().presentModes = Device::GetPhysicalDevice().getSurfacePresentModesKHR(Instance::GetSurface());
+    GetSupportDetail().capabilities = Device::GetHandle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetHandle().surface);
+    GetSupportDetail().formats = Device::GetHandle().physicalDevice.getSurfaceFormatsKHR(Instance::GetHandle().surface);
+    GetSupportDetail().presentModes = Device::GetHandle().physicalDevice.getSurfacePresentModesKHR(Instance::GetHandle().surface);
 
     Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
@@ -159,7 +159,7 @@ void Swapchain::CreateFrameBuffer(const vk::RenderPass& vkRenderPass)
         framebufferInfo.height = GetDetail().extent.height;
         framebufferInfo.layers = 1;
 
-        GetDetail().frames[i].framebuffer = Device::GetDevice().createFramebuffer(framebufferInfo);
+        GetDetail().frames[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
         Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
@@ -176,17 +176,17 @@ void Swapchain::PrepareFrames()
 void Swapchain::DestroySwapchain()
 {
     for (auto& frame : GetDetail().frames) {
-        Device::GetDevice().destroyImageView(frame.swapchainVkImageView);
-        Device::GetDevice().destroyFramebuffer(frame.framebuffer);
-        Device::GetDevice().destroyFence(frame.inFlight);
-        Device::GetDevice().destroySemaphore(frame.imageAvailable);
-        Device::GetDevice().destroySemaphore(frame.renderFinished);
+        Device::GetHandle().device.destroyImageView(frame.swapchainVkImageView);
+        Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
+        Device::GetHandle().device.destroyFence(frame.inFlight);
+        Device::GetHandle().device.destroySemaphore(frame.imageAvailable);
+        Device::GetHandle().device.destroySemaphore(frame.renderFinished);
         frame.depthImage.memory.Free();
         frame.depthImage.DestroyImage();
         frame.depthImage.DestroyImageView();
     }
 
-    Device::GetDevice().destroySwapchainKHR(GetSwapchain());
+    Device::GetHandle().device.destroySwapchainKHR(GetSwapchain());
 }
 
 Swapchain::~Swapchain()
