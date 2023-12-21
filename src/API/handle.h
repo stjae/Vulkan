@@ -28,4 +28,20 @@ struct PipelineHandle
     vk::RenderPass renderPass;
 };
 
+struct BufferHandle
+{
+    vk::Buffer buffer;
+    vk::DescriptorBufferInfo bufferInfo;
+    vk::DeviceMemory bufferMemory;
+};
+
+struct ImageHandle
+{
+    vk::Image image;
+    vk::ImageView imageView;
+    vk::Format format;
+    vk::Sampler sampler;
+    vk::DescriptorImageInfo imageInfo;
+};
+
 #endif // _HANDLE_H_

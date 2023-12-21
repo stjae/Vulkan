@@ -2,9 +2,9 @@
 
 void Swapchain::CreateSwapchain()
 {
-    QueryswapchainSupportDetails();
+    QuerySwapchainSupportDetail();
 
-    auto& capabilities = GetSupportDetail().capabilities;
+    auto& capabilities = supportDetail_.capabilities;
 
     auto surfaceFormat = ChooseSurfaceFormat();
     auto presentMode = ChoosePresentMode();
@@ -27,13 +27,13 @@ void Swapchain::CreateSwapchain()
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = nullptr;
 
-    GetSwapchain() = Device::GetHandle().device.createSwapchainKHR(createInfo);
+    handle_ = Device::GetHandle().device.createSwapchainKHR(createInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
-    std::vector<vk::Image> images = Device::GetHandle().device.getSwapchainImagesKHR(GetSwapchain());
-    GetDetail().frames.resize(images.size());
-    GetDetail().imageFormat = surfaceFormat.format;
-    GetDetail().extent = extent;
+    std::vector<vk::Image> images = Device::GetHandle().device.getSwapchainImagesKHR(GetHandle());
+    detail_.frames.resize(images.size());
+    detail_.imageFormat = surfaceFormat.format;
+    detail_.extent = extent;
 
     for (size_t i = 0; i < images.size(); ++i) {
 
@@ -46,35 +46,35 @@ void Swapchain::CreateSwapchain()
         createInfo.subresourceRange = range;
         createInfo.format = surfaceFormat.format;
 
-        GetDetail().frames[i].swapchainVkImage = images[i];
-        GetDetail().frames[i].swapchainVkImageView = Device::GetHandle().device.createImageView(createInfo);
+        detail_.frames[i].swapchainVkImage = images[i];
+        detail_.frames[i].swapchainVkImageView = Device::GetHandle().device.createImageView(createInfo);
 
-        vk::Extent3D extent = { GetDetail().extent.width, GetDetail().extent.height, 1 };
-        if (GetDetail().frames[i].depthImage.GetImage() != VK_NULL_HANDLE) {
-            GetDetail().frames[i].depthImage.DestroyImage();
-            GetDetail().frames[i].depthImage.memory.Free();
+        vk::Extent3D extent = { detail_.extent.width, detail_.extent.height, 1 };
+        if (detail_.frames[i].depthImage.GetHandle().image != VK_NULL_HANDLE) {
+            detail_.frames[i].depthImage.DestroyImage();
+            detail_.frames[i].depthImage.memory.Free();
         }
-        if (GetDetail().frames[i].depthImage.GetImageView() != VK_NULL_HANDLE) {
-            GetDetail().frames[i].depthImage.DestroyImageView();
+        if (detail_.frames[i].depthImage.GetHandle().imageView != VK_NULL_HANDLE) {
+            detail_.frames[i].depthImage.DestroyImageView();
         }
-        GetDetail().frames[i].depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
-        GetDetail().frames[i].depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
-        GetDetail().depthImageFormat = vk::Format::eD32Sfloat;
+        detail_.frames[i].depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
+        detail_.frames[i].depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
+        detail_.depthImageFormat = vk::Format::eD32Sfloat;
     }
 }
 
-void Swapchain::QueryswapchainSupportDetails()
+void Swapchain::QuerySwapchainSupportDetail()
 {
-    GetSupportDetail().capabilities = Device::GetHandle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetHandle().surface);
-    GetSupportDetail().formats = Device::GetHandle().physicalDevice.getSurfaceFormatsKHR(Instance::GetHandle().surface);
-    GetSupportDetail().presentModes = Device::GetHandle().physicalDevice.getSurfacePresentModesKHR(Instance::GetHandle().surface);
+    supportDetail_.capabilities = Device::GetHandle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetHandle().surface);
+    supportDetail_.formats = Device::GetHandle().physicalDevice.getSurfaceFormatsKHR(Instance::GetHandle().surface);
+    supportDetail_.presentModes = Device::GetHandle().physicalDevice.getSurfacePresentModesKHR(Instance::GetHandle().surface);
 
     Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
-    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", GetSupportDetail().capabilities.currentExtent.width);
-    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", GetSupportDetail().capabilities.currentExtent.height);
+    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", supportDetail_.capabilities.currentExtent.width);
+    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", supportDetail_.capabilities.currentExtent.height);
 
-    for (auto& mode : GetSupportDetail().presentModes) {
+    for (auto& mode : supportDetail_.presentModes) {
         Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
@@ -83,7 +83,7 @@ vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
 {
     Log(debug, fmt::terminal_color::black, "setting swapchain details..");
 
-    for (auto& format : GetSupportDetail().formats) {
+    for (auto& format : supportDetail_.formats) {
         if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
@@ -91,16 +91,16 @@ vk::SurfaceFormatKHR Swapchain::ChooseSurfaceFormat()
         }
     }
 
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(GetSupportDetail().formats[0].format));
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(GetSupportDetail().formats[0].colorSpace));
-    return GetSupportDetail().formats[0];
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportDetail_.formats[0].format));
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportDetail_.formats[0].colorSpace));
+    return supportDetail_.formats[0];
 }
 
 vk::PresentModeKHR Swapchain::ChoosePresentMode()
 {
     vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
-    for (auto& presentMode : GetSupportDetail().presentModes) {
+    for (auto& presentMode : supportDetail_.presentModes) {
         if (presentMode == vk::PresentModeKHR::eMailbox) {
             mode = vk::PresentModeKHR::eMailbox;
         }
@@ -112,7 +112,7 @@ vk::PresentModeKHR Swapchain::ChoosePresentMode()
 
 vk::Extent2D Swapchain::ChooseExtent()
 {
-    auto& capabilities = GetSupportDetail().capabilities;
+    auto& capabilities = supportDetail_.capabilities;
 
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
@@ -144,29 +144,29 @@ vk::Extent2D Swapchain::ChooseExtent()
 
 void Swapchain::CreateFrameBuffer(const vk::RenderPass& vkRenderPass)
 {
-    for (int i = 0; i < GetDetail().frames.size(); ++i) {
+    for (int i = 0; i < detail_.frames.size(); ++i) {
 
         std::vector<vk::ImageView> attachments = {
-            GetDetail().frames[i].swapchainVkImageView,
-            GetDetail().frames[i].depthImage.GetImageView()
+            detail_.frames[i].swapchainVkImageView,
+            detail_.frames[i].depthImage.GetHandle().imageView
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
         framebufferInfo.renderPass = vkRenderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = GetDetail().extent.width;
-        framebufferInfo.height = GetDetail().extent.height;
+        framebufferInfo.width = detail_.extent.width;
+        framebufferInfo.height = detail_.extent.height;
         framebufferInfo.layers = 1;
 
-        GetDetail().frames[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
+        detail_.frames[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
         Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
 
 void Swapchain::PrepareFrames()
 {
-    for (auto& frame : GetDetail().frames) {
+    for (auto& frame : detail_.frames) {
         frame.inFlight = MakeFence();
         frame.imageAvailable = MakeSemaphore();
         frame.renderFinished = MakeSemaphore();
@@ -175,7 +175,7 @@ void Swapchain::PrepareFrames()
 
 void Swapchain::DestroySwapchain()
 {
-    for (auto& frame : GetDetail().frames) {
+    for (auto& frame : detail_.frames) {
         Device::GetHandle().device.destroyImageView(frame.swapchainVkImageView);
         Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
         Device::GetHandle().device.destroyFence(frame.inFlight);
@@ -186,7 +186,7 @@ void Swapchain::DestroySwapchain()
         frame.depthImage.DestroyImageView();
     }
 
-    Device::GetHandle().device.destroySwapchainKHR(GetSwapchain());
+    Device::GetHandle().device.destroySwapchainKHR(GetHandle());
 }
 
 Swapchain::~Swapchain()

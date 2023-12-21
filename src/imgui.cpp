@@ -70,7 +70,7 @@ void MyImGui::DrawImGuizmo(int currentItem)
     float scale[3];
     float objectMatrix[16];
 
-    glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic.model + (currentItem * dynamicBufferAlignment));
+    glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic_.model + (currentItem * dynamicBufferAlignment));
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
                                           rotation, scale);
@@ -185,7 +185,7 @@ void MyImGui::Draw()
     if (currentItem > -1) {
         DrawImGuizmo(currentItem);
 
-        glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic.model + (currentItem * dynamicBufferAlignment));
+        glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic_.model + (currentItem * dynamicBufferAlignment));
 
         float translation[3];
         float rotation[3];

@@ -32,7 +32,6 @@ src/scene.h             src/scene.cpp
 src/meshData.h          src/meshData.cpp
 src/mesh.h              src/mesh.cpp
 src/camera.h            src/camera.cpp
-src/image.h             src/image.cpp
 src/imgui.h             src/imgui.cpp
 
 # API
@@ -51,6 +50,7 @@ src/API/commands.h      src/API/commands.cpp
 src/API/sync.h          
 src/API/buffer.h        src/API/buffer.cpp        
 src/API/memory.h        src/API/memory.cpp
+src/API/image.h         src/API/image.cpp
 )
 
 include(Dependency.cmake)

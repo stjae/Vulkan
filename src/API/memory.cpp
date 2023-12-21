@@ -26,8 +26,8 @@ void Memory::AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags 
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory_ = Device::GetHandle().device.allocateMemory(allocateInfo);
-    Device::GetHandle().device.bindBufferMemory(vkBuffer, vkDeviceMemory_, 0);
+    handle_ = Device::GetHandle().device.allocateMemory(allocateInfo);
+    Device::GetHandle().device.bindBufferMemory(vkBuffer, handle_, 0);
 }
 
 void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
@@ -39,14 +39,14 @@ void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags pr
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    vkDeviceMemory_ = Device::GetHandle().device.allocateMemory(allocateInfo);
-    Device::GetHandle().device.bindImageMemory(vkImage, vkDeviceMemory_, 0);
+    handle_ = Device::GetHandle().device.allocateMemory(allocateInfo);
+    Device::GetHandle().device.bindImageMemory(vkImage, handle_, 0);
 }
 
 void Memory::Free()
 {
-    if (vkDeviceMemory_ != VK_NULL_HANDLE) {
-        Device::GetHandle().device.freeMemory(vkDeviceMemory_);
-        vkDeviceMemory_ = VK_NULL_HANDLE;
+    if (handle_ != VK_NULL_HANDLE) {
+        Device::GetHandle().device.freeMemory(handle_);
+        handle_ = VK_NULL_HANDLE;
     }
 }

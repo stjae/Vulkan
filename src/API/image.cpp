@@ -4,17 +4,17 @@ void Image::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Memory
 {
     vk::ImageCreateInfo createInfo({}, vk::ImageType::e2D, format, extent, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, usage);
 
-    image_ = Device::GetHandle().device.createImage(createInfo);
-    format_ = format;
-    memory.AllocateMemory(image_, properties);
+    handle_.image = Device::GetHandle().device.createImage(createInfo);
+    handle_.format = format;
+    memory.AllocateMemory(handle_.image, properties);
 }
 
 void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
 {
     vk::ImageSubresourceRange range(aspectFlags, 0, 1, 0, 1);
-    vk::ImageViewCreateInfo createInfo({}, image_, vk::ImageViewType::e2D, format, {}, range);
+    vk::ImageViewCreateInfo createInfo({}, handle_.image, vk::ImageViewType::e2D, format, {}, range);
 
-    imageView_ = Device::GetHandle().device.createImageView(createInfo);
+    handle_.imageView = Device::GetHandle().device.createImageView(createInfo);
 }
 
 void Image::CreateSampler()
@@ -36,36 +36,36 @@ void Image::CreateSampler()
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (Device::GetHandle().device.createSampler(&samplerInfo, nullptr, &sampler_) != vk::Result::eSuccess) {
+    if (Device::GetHandle().device.createSampler(&samplerInfo, nullptr, &handle_.sampler) != vk::Result::eSuccess) {
         spdlog::error("failed to create sampler");
     }
 }
 
 void Image::SetInfo(vk::ImageLayout imageLayout)
 {
-    vk::DescriptorImageInfo imageInfo(sampler_, imageView_, imageLayout);
-    imageInfo_ = imageInfo;
+    vk::DescriptorImageInfo imageInfo(handle_.sampler, handle_.imageView, imageLayout);
+    handle_.imageInfo = imageInfo;
 }
 
 void Image::DestroyImage()
 {
-    Device::GetHandle().device.destroyImage(image_);
-    image_ = VK_NULL_HANDLE;
+    Device::GetHandle().device.destroyImage(handle_.image);
+    handle_.image = VK_NULL_HANDLE;
 }
 
 void Image::DestroyImageView()
 {
-    Device::GetHandle().device.destroyImageView(imageView_);
-    imageView_ = VK_NULL_HANDLE;
+    Device::GetHandle().device.destroyImageView(handle_.imageView);
+    handle_.imageView = VK_NULL_HANDLE;
 }
 
 Image::~Image()
 {
     memory.Free();
-    if (image_ != VK_NULL_HANDLE)
-        Device::GetHandle().device.destroyImage(image_);
-    if (imageView_ != VK_NULL_HANDLE)
-        Device::GetHandle().device.destroyImageView(imageView_);
-    if (sampler_ != VK_NULL_HANDLE)
-        Device::GetHandle().device.destroySampler(sampler_);
+    if (handle_.image != VK_NULL_HANDLE)
+        Device::GetHandle().device.destroyImage(handle_.image);
+    if (handle_.imageView != VK_NULL_HANDLE)
+        Device::GetHandle().device.destroyImageView(handle_.imageView);
+    if (handle_.sampler != VK_NULL_HANDLE)
+        Device::GetHandle().device.destroySampler(handle_.sampler);
 }

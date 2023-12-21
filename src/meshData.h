@@ -2,19 +2,14 @@
 #define _MESHDATA_H_
 
 #include "API/buffer.h"
-#include "image.h"
-#include <filesystem>
-
-struct Vertex
-{
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 texcoord;
-    int textureID;
-};
+#include "API/image.h"
 
 class MeshData
 {
+protected:
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
     static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescs();
@@ -23,8 +18,8 @@ public:
     void CreateTexture();
     void DestroyStagingBuffer();
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    size_t GetVertexCount() { return vertices.size(); }
+    size_t GetIndexCount() { return indices.size(); }
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;

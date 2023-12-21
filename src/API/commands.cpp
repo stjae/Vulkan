@@ -80,17 +80,17 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBu
 
     for (int i = 0; i < meshes.size(); i++) {
 
-        vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetBufferHandle() };
+        vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetHandle().buffer };
         vk::DeviceSize offsets[] = { 0 };
 
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetBufferHandle(), 0, vk::IndexType::eUint32);
+        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipeline);
 
-        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->indices.size()), 1, 0, 0, 0);
+        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->GetIndexCount()), 1, 0, 0, 0);
     }
 
     ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);

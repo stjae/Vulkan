@@ -16,8 +16,8 @@ class Scene
 {
     friend class MyImGui;
 
-    UboDataDynamic uboDataDynamic;
-    std::unique_ptr<Buffer> matrixUniformBufferDynamic;
+    UboDataDynamic uboDataDynamic_;
+    std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
 
     void SetDynamicBufferAlignmentSize();
     void CreateUniformBuffers();

@@ -57,6 +57,14 @@ void Log(bool debug, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
+struct Vertex
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 texcoord;
+    int textureID;
+};
+
 struct BufferInput
 {
     size_t size;

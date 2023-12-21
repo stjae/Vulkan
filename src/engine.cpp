@@ -4,23 +4,23 @@ GraphicsEngine::GraphicsEngine(std::shared_ptr<Scene>& scene)
 {
     scene_ = scene;
 
-    swapchain.CreateSwapchain();
-    pipeline.CreatePipeline();
-    swapchain.CreateFrameBuffer(pipeline.GetHandle().renderPass);
+    swapchain_.CreateSwapchain();
+    pipeline_.CreatePipeline();
+    swapchain_.CreateFrameBuffer(pipeline_.GetHandle().renderPass);
 
-    command.CreateCommandPool("swapchain frames");
+    command_.CreateCommandPool("swapchain frames");
     for (auto& frame : Swapchain::GetDetail().frames) {
-        command.AllocateCommandBuffer(frame.commandBuffer);
+        command_.AllocateCommandBuffer(frame.commandBuffer);
     }
 
-    maxFrameNumber = static_cast<int>(Swapchain::GetDetail().frames.size());
-    frameIndex = 0;
+    maxFrameNumber_ = static_cast<int>(Swapchain::GetDetail().frames.size());
+    frameIndex_ = 0;
 
-    swapchain.PrepareFrames();
+    swapchain_.PrepareFrames();
 
-    pipeline.CreateDescriptorPool();
+    pipeline_.CreateDescriptorPool();
     for (auto& frame : Swapchain::GetDetail().frames) {
-        pipeline.AllocateDescriptorSet(frame.descriptorSets);
+        pipeline_.AllocateDescriptorSet(frame.descriptorSets);
     }
 }
 
@@ -62,10 +62,10 @@ void GraphicsEngine::InitSwapchainImages()
 
 void GraphicsEngine::Render()
 {
-    auto resultWaitFence = Device::GetHandle().device.waitForFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight, VK_TRUE, UINT64_MAX);
+    auto resultWaitFence = Device::GetHandle().device.waitForFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    auto acquiredImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetSwapchain(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex].imageAvailable, nullptr);
+    auto acquiredImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetHandle(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex_].imageAvailable, nullptr);
 
     if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
         acquiredImage.result == vk::Result::eSuboptimalKHR) {
@@ -74,35 +74,35 @@ void GraphicsEngine::Render()
         return;
     }
 
-    auto resultResetFence = Device::GetHandle().device.resetFences(1, &Swapchain::GetDetail().frames[frameIndex].inFlight);
+    auto resultResetFence = Device::GetHandle().device.resetFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight);
 
     imageIndex = acquiredImage.value;
 
     scene_.lock()->Update(imageIndex);
 
-    vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex].commandBuffer;
+    vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex_].commandBuffer;
 
     commandBuffer.reset();
-    command.RecordDrawCommands(pipeline, commandBuffer, imageIndex, scene_.lock()->meshes, imDrawData);
+    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene_.lock()->meshes, imDrawData_);
 
     vk::SubmitInfo submitInfo;
-    vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex].imageAvailable };
+    vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex_].imageAvailable };
     vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStage;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    vk::Semaphore signalSemaphores[] = { Swapchain::GetDetail().frames[frameIndex].renderFinished };
+    vk::Semaphore signalSemaphores[] = { Swapchain::GetDetail().frames[frameIndex_].renderFinished };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    Queue::GetHandle().graphicsQueue.submit(submitInfo, Swapchain::GetDetail().frames[frameIndex].inFlight);
+    Queue::GetHandle().graphicsQueue.submit(submitInfo, Swapchain::GetDetail().frames[frameIndex_].inFlight);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-    vk::SwapchainKHR swapchains[] = { Swapchain::GetSwapchain() };
+    vk::SwapchainKHR swapchains[] = { Swapchain::GetHandle() };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &imageIndex;
@@ -116,7 +116,7 @@ void GraphicsEngine::Render()
         return;
     }
 
-    frameIndex = (frameIndex + 1) % maxFrameNumber;
+    frameIndex_ = (frameIndex_ + 1) % maxFrameNumber_;
 }
 
 void GraphicsEngine::RecreateSwapchain()
@@ -130,31 +130,31 @@ void GraphicsEngine::RecreateSwapchain()
 
     Device::GetHandle().device.waitIdle();
     for (auto& frame : Swapchain::GetDetail().frames) {
-        Device::GetHandle().device.freeCommandBuffers(command.commandPool, frame.commandBuffer);
+        Device::GetHandle().device.freeCommandBuffers(command_.commandPool, frame.commandBuffer);
     }
-    swapchain.DestroySwapchain();
-    Device::GetHandle().device.destroyCommandPool(command.commandPool);
+    swapchain_.DestroySwapchain();
+    Device::GetHandle().device.destroyCommandPool(command_.commandPool);
 
-    swapchain.CreateSwapchain();
-    swapchain.CreateFrameBuffer(pipeline.GetHandle().renderPass);
+    swapchain_.CreateSwapchain();
+    swapchain_.CreateFrameBuffer(pipeline_.GetHandle().renderPass);
 
-    swapchain.PrepareFrames();
+    swapchain_.PrepareFrames();
 
-    command.CreateCommandPool("new swapchain frames");
+    command_.CreateCommandPool("new swapchain frames");
     for (auto& frame : Swapchain::GetDetail().frames) {
-        command.AllocateCommandBuffer(frame.commandBuffer);
+        command_.AllocateCommandBuffer(frame.commandBuffer);
     }
 }
 
 void GraphicsEngine::SetupGui()
 {
-    imgui.Setup(scene_, pipeline);
+    imgui_.Setup(scene_, pipeline_);
 }
 
 void GraphicsEngine::DrawGui()
 {
-    imgui.Draw();
-    imDrawData = ImGui::GetDrawData();
+    imgui_.Draw();
+    imDrawData_ = ImGui::GetDrawData();
 }
 
 GraphicsEngine::~GraphicsEngine()

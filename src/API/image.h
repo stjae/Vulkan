@@ -1,10 +1,13 @@
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
 
-#include "API/memory.h"
+#include "handle.h"
+#include "memory.h"
 
 class Image
 {
+    ImageHandle handle_;
+
 public:
     Memory memory;
 
@@ -16,17 +19,7 @@ public:
     void DestroyImageView();
     ~Image();
 
-    vk::Image GetImage() { return image_; }
-    vk::ImageView GetImageView() { return imageView_; }
-    vk::Format GetFormat() { return format_; }
-    vk::DescriptorImageInfo& GetInfo() { return imageInfo_; };
-
-private:
-    vk::Image image_;
-    vk::ImageView imageView_;
-    vk::Format format_;
-    vk::Sampler sampler_;
-    vk::DescriptorImageInfo imageInfo_;
+    const ImageHandle& GetHandle() { return handle_; }
 };
 
 #endif // __IMAGE_H__

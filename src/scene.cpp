@@ -39,13 +39,13 @@ void Scene::PrepareMeshes()
     command.CreateCommandPool("copying buffers");
 
     for (auto& mesh : meshes) {
-        command.RecordCopyCommands(mesh->vertexStagingBuffer->GetBufferHandle(),
-                                   mesh->vertexBuffer->GetBufferHandle(),
+        command.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
+                                   mesh->vertexBuffer->GetHandle().buffer,
                                    sizeof(Vertex) * mesh->vertices.size());
-        command.RecordCopyCommands(mesh->indexStagingBuffer->GetBufferHandle(),
-                                   mesh->indexBuffer->GetBufferHandle(),
+        command.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
+                                   mesh->indexBuffer->GetHandle().buffer,
                                    sizeof(uint32_t) * mesh->indices.size());
-        command.TransitImageLayout(mesh->textureImage->GetImage(),
+        command.TransitImageLayout(mesh->textureImage->GetHandle().image,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal);
     }
@@ -53,14 +53,14 @@ void Scene::PrepareMeshes()
     command.Submit();
 
     for (auto& mesh : meshes)
-        command.RecordCopyCommands(mesh->textureStagingBuffer->GetBufferHandle(),
-                                   mesh->textureImage->GetImage(), mesh->textureWidth,
+        command.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
+                                   mesh->textureImage->GetHandle().image, mesh->textureWidth,
                                    mesh->textureHeight, mesh->textureSize);
 
     command.Submit();
 
     for (auto& mesh : meshes) {
-        command.TransitImageLayout(mesh->textureImage->GetImage(),
+        command.TransitImageLayout(mesh->textureImage->GetHandle().image,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -74,27 +74,27 @@ void Scene::PrepareMeshes()
 
 void Scene::CreateUniformBuffers()
 {
-    if (matrixUniformBufferDynamic != nullptr) {
-        matrixUniformBufferDynamic.~unique_ptr();
+    if (matrixUniformBufferDynamic_ != nullptr) {
+        matrixUniformBufferDynamic_.~unique_ptr();
     }
 
     size_t bufferSize = meshes.size() * dynamicBufferAlignment;
-    uboDataDynamic.model = (glm::mat4*)AlignedAlloc(dynamicBufferAlignment, bufferSize);
+    uboDataDynamic_.model = (glm::mat4*)AlignedAlloc(dynamicBufferAlignment, bufferSize);
 
-    if (uboDataDynamic.model == nullptr) {
+    if (uboDataDynamic_.model == nullptr) {
         spdlog::error("failed to allocate memory for dynamic buffer");
     }
 
     for (int i = 0; i < meshes.size(); i++) {
-        glm::mat4* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic.model + (i * dynamicBufferAlignment));
+        glm::mat4* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (i * dynamicBufferAlignment));
         *modelMat = glm::mat4(1.0f);
     }
 
     BufferInput input = { meshes.size() * dynamicBufferAlignment,
                           vk::BufferUsageFlagBits::eUniformBuffer,
                           vk::MemoryPropertyFlagBits::eHostVisible };
-    matrixUniformBufferDynamic = std::make_unique<Buffer>(input);
-    matrixUniformBufferDynamic->MapMemory(dynamicBufferAlignment);
+    matrixUniformBufferDynamic_ = std::make_unique<Buffer>(input);
+    matrixUniformBufferDynamic_->MapMemory(dynamicBufferAlignment);
 }
 
 void Scene::Update(uint32_t index)
@@ -113,8 +113,8 @@ void Scene::Update(uint32_t index)
     if (meshes.size() > 0) {
         UpdateBuffer();
         vk::MappedMemoryRange memoryRange;
-        memoryRange.memory = matrixUniformBufferDynamic->GetBufferMemory();
-        size_t size = sizeof(uboDataDynamic);
+        memoryRange.memory = matrixUniformBufferDynamic_->GetHandle().bufferMemory;
+        size_t size = sizeof(uboDataDynamic_);
         size_t atomSize = Device::GetHandle().physicalDevice.getProperties().limits.nonCoherentAtomSize;
         if (size < atomSize)
             size = atomSize;
@@ -124,7 +124,7 @@ void Scene::Update(uint32_t index)
         vk::WriteDescriptorSet modelMatrixWrite(
             Swapchain::GetDetail().frames[index].descriptorSets[1], 0, 0, 1,
             vk::DescriptorType::eUniformBufferDynamic, nullptr,
-            &matrixUniformBufferDynamic->GetBufferInfo(), nullptr, nullptr);
+            &matrixUniformBufferDynamic_->GetHandle().bufferInfo, nullptr, nullptr);
         Device::GetHandle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
 
         vk::WriteDescriptorSet descriptorWrites;
@@ -135,7 +135,7 @@ void Scene::Update(uint32_t index)
         descriptorWrites.descriptorCount = meshes.size();
         std::vector<vk::DescriptorImageInfo> infos;
         for (auto& mesh : meshes) {
-            infos.push_back(mesh->textureImage->GetInfo());
+            infos.push_back(mesh->textureImage->GetHandle().imageInfo);
         }
         descriptorWrites.pImageInfo = infos.data();
         Device::GetHandle().device.updateDescriptorSets(descriptorWrites, nullptr);
@@ -144,10 +144,10 @@ void Scene::Update(uint32_t index)
 
 void Scene::UpdateBuffer()
 {
-    matrixUniformBufferDynamic->UpdateBuffer(uboDataDynamic.model, matrixUniformBufferDynamic->GetBufferSize());
+    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->GetSize());
 }
 
 Scene::~Scene()
 {
-    AlignedFree(uboDataDynamic.model);
+    AlignedFree(uboDataDynamic_.model);
 }

@@ -3,8 +3,8 @@
 
 #include "../common.h"
 #include "buffer.h"
+#include "image.h"
 #include "../camera.h"
-#include "../image.h"
 #include "../mesh.h"
 
 struct SwapchainSupportDetail

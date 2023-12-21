@@ -15,15 +15,15 @@
 
 class GraphicsEngine
 {
-    int frameIndex = 0;
-    int maxFrameNumber;
+    int frameIndex_ = 0;
+    int maxFrameNumber_;
 
-    Device device;
-    Swapchain swapchain;
-    GraphicsPipeline pipeline;
-    Command command;
-    MyImGui imgui;
-    ImDrawData* imDrawData;
+    Device device_;
+    Swapchain swapchain_;
+    GraphicsPipeline pipeline_;
+    Command command_;
+    MyImGui imgui_;
+    ImDrawData* imDrawData_;
 
     std::weak_ptr<Scene> scene_;
 

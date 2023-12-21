@@ -79,5 +79,5 @@ void Camera::UpdateBuffer()
 
 const vk::DescriptorBufferInfo& Camera::GetBufferInfo()
 {
-    return uniformBuffer_->GetBufferInfo();
+    return uniformBuffer_->GetHandle().bufferInfo;
 }
