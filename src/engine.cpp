@@ -1,9 +1,7 @@
 #include "engine.h"
 
-GraphicsEngine::GraphicsEngine(std::shared_ptr<Scene>& scene)
+GraphicsEngine::GraphicsEngine()
 {
-    scene_ = scene;
-
     swapchain_.CreateSwapchain();
     pipeline_.CreatePipeline();
     swapchain_.CreateFrameBuffer(pipeline_.GetHandle().renderPass);
@@ -60,9 +58,11 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
-void GraphicsEngine::Render()
+void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
 {
-    auto resultWaitFence = Device::GetHandle().device.waitForFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
+    if (Device::GetHandle().device.waitForFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+        spdlog::error("failed to wait for fences");
+    }
 
     uint32_t imageIndex;
     auto acquiredImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetHandle(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex_].imageAvailable, nullptr);
@@ -74,16 +74,18 @@ void GraphicsEngine::Render()
         return;
     }
 
-    auto resultResetFence = Device::GetHandle().device.resetFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight);
+    if (Device::GetHandle().device.resetFences(1, &Swapchain::GetDetail().frames[frameIndex_].inFlight) != vk::Result::eSuccess) {
+        spdlog::error("failed to reset fences");
+    }
 
     imageIndex = acquiredImage.value;
 
-    scene_.lock()->Update(imageIndex);
+    scene->Update(imageIndex);
 
     vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex_].commandBuffer;
 
     commandBuffer.reset();
-    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene_.lock()->meshes, imDrawData_);
+    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene->meshes, imDrawData_);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex_].imageAvailable };
@@ -107,10 +109,7 @@ void GraphicsEngine::Render()
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &imageIndex;
 
-    vk::Result resultPresent;
-    try {
-        resultPresent = Queue::GetHandle().presentQueue.presentKHR(presentInfo);
-    } catch (vk::OutOfDateKHRError error) {
+    if (Queue::GetHandle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
         return;
@@ -148,12 +147,12 @@ void GraphicsEngine::RecreateSwapchain()
 
 void GraphicsEngine::SetupGui()
 {
-    imgui_.Setup(scene_, pipeline_);
+    imgui_.Setup(pipeline_);
 }
 
-void GraphicsEngine::DrawGui()
+void GraphicsEngine::DrawGui(std::unique_ptr<Scene>& scene)
 {
-    imgui_.Draw();
+    imgui_.Draw(scene);
     imDrawData_ = ImGui::GetDrawData();
 }
 

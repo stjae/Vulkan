@@ -1,5 +1,5 @@
-#ifndef __SWAPCHAINDATA_H__
-#define __SWAPCHAINDATA_H__
+#ifndef SWAPCHAINDATA_H
+#define SWAPCHAINDATA_H
 
 #include "../common.h"
 #include "buffer.h"

@@ -1,5 +1,5 @@
-#ifndef _SYNC_H_
-#define _SYNC_H_
+#ifndef SYNC_H
+#define SYNC_H
 
 #include "../common.h"
 #include "device.h"

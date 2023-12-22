@@ -1,5 +1,5 @@
-#ifndef _DESCRIPTOR_H_
-#define _DESCRIPTOR_H_
+#ifndef DESCRIPTOR_H
+#define DESCRIPTOR_H
 
 #include "../common.h"
 #include "device.h"
@@ -11,6 +11,8 @@ struct DescriptorSetLayoutData
     std::vector<vk::DescriptorType> descriptorTypes;
     std::vector<int> descriptorCounts;
     std::vector<vk::ShaderStageFlags> bindingStages;
+    std::vector<vk::DescriptorBindingFlags> bindingFlags;
+    vk::DescriptorSetLayoutCreateFlags layoutCreateFlags;
 };
 
 class DescriptorManager
@@ -20,12 +22,11 @@ class DescriptorManager
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
 
-    void CreateSetLayout(const DescriptorSetLayoutData& bindings, const VkDescriptorSetLayoutBindingFlagsCreateInfo* const bindingFlags);
-    void CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts);
+    void CreateSetLayout(const DescriptorSetLayoutData& bindings);
+    void CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& poolCreateFlags);
     void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
     ~DescriptorManager();
 
-    const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayout() { return descriptorSetLayouts; }
     const vk::DescriptorPool& GetDescriptorPool() { return descriptorPool; }
 };
 

@@ -1,5 +1,5 @@
-#ifndef __BASEAPP_H__
-#define __BASEAPP_H__
+#ifndef BASEAPP_H
+#define BASEAPP_H
 
 #include "engine.h"
 #include "common.h"
@@ -17,7 +17,7 @@ public:
 private:
     Window window_;
     std::unique_ptr<GraphicsEngine> engine_;
-    std::shared_ptr<Scene> scene_;
+    std::unique_ptr<Scene> scene_;
 };
 
-#endif // __BASEAPP_H__
+#endif

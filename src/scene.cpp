@@ -1,35 +1,23 @@
 #include "scene.h"
-extern size_t dynamicBufferAlignment;
 
 Scene::Scene()
 {
-    meshes.emplace_back(std::make_shared<Mesh>());
-    meshes.back()->CreateCube(nullptr);
-    meshes.emplace_back(std::make_shared<Mesh>());
-    meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
-}
+    /*
+         meshes.emplace_back(std::make_shared<Mesh>());
+         meshes.back()->CreateCube(nullptr);
+         meshes.emplace_back(std::make_shared<Mesh>());
+         meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
+    */
 
-void Scene::SetDynamicBufferAlignmentSize()
-{
-    size_t minUboAlignment = Device::limits.minUniformBufferOffsetAlignment;
-    dynamicBufferAlignment = sizeof(glm::mat4);
+    camera_ = std::make_unique<Camera>();
 
-    if (minUboAlignment > 0) {
-        dynamicBufferAlignment = (dynamicBufferAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
-    }
-}
-
-void Scene::PrepareScene()
-{
-    SetDynamicBufferAlignmentSize();
-
-    camera = std::make_unique<Camera>();
+    uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
 
     for (auto& mesh : meshes) {
         mesh->CreateBuffers();
     }
 
-    if (meshes.size() > 0)
+    if (!meshes.empty())
         PrepareMeshes();
 }
 
@@ -55,7 +43,7 @@ void Scene::PrepareMeshes()
     for (auto& mesh : meshes)
         command.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
                                    mesh->textureImage->GetHandle().image, mesh->textureWidth,
-                                   mesh->textureHeight, mesh->textureSize);
+                                   mesh->textureHeight);
 
     command.Submit();
 
@@ -72,45 +60,89 @@ void Scene::PrepareMeshes()
     CreateUniformBuffers();
 }
 
+void Scene::UpdateMesh()
+{
+    Command command;
+    command.CreateCommandPool("copying buffers");
+
+    auto& mesh = meshes.back();
+
+    command.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
+                               mesh->vertexBuffer->GetHandle().buffer,
+                               sizeof(Vertex) * mesh->vertices.size());
+    command.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
+                               mesh->indexBuffer->GetHandle().buffer,
+                               sizeof(uint32_t) * mesh->indices.size());
+    command.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                               vk::ImageLayout::eUndefined,
+                               vk::ImageLayout::eTransferDstOptimal);
+
+    command.Submit();
+
+    command.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
+                               mesh->textureImage->GetHandle().image, mesh->textureWidth,
+                               mesh->textureHeight);
+
+    command.Submit();
+
+    command.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                               vk::ImageLayout::eTransferDstOptimal,
+                               vk::ImageLayout::eShaderReadOnlyOptimal);
+    mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
+    mesh->DestroyStagingBuffer();
+
+    command.Submit();
+
+    CreateUniformBuffers();
+}
+
 void Scene::CreateUniformBuffers()
 {
+    size_t bufferSize = meshes.size() * uboDataDynamic_.alignment;
+    void* newAlignedMemory = AlignedAlloc(uboDataDynamic_.alignment, bufferSize);
+
     if (matrixUniformBufferDynamic_ != nullptr) {
+        for (int i = 0; i < meshes.size() - 1; i++) {
+            auto* prevMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (i * uboDataDynamic_.alignment));
+            auto* currentMat = (glm::mat4*)((uint64_t)newAlignedMemory + (i * uboDataDynamic_.alignment));
+
+            *currentMat = *prevMat;
+        }
+        AlignedFree(uboDataDynamic_.model);
         matrixUniformBufferDynamic_.~unique_ptr();
     }
 
-    size_t bufferSize = meshes.size() * dynamicBufferAlignment;
-    uboDataDynamic_.model = (glm::mat4*)AlignedAlloc(dynamicBufferAlignment, bufferSize);
+    uboDataDynamic_.model = (glm::mat4*)newAlignedMemory;
 
     if (uboDataDynamic_.model == nullptr) {
         spdlog::error("failed to allocate memory for dynamic buffer");
     }
 
-    for (int i = 0; i < meshes.size(); i++) {
-        glm::mat4* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (i * dynamicBufferAlignment));
-        *modelMat = glm::mat4(1.0f);
-    }
+    size_t indexLastMesh = meshes.size() - 1;
+    auto* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (indexLastMesh * uboDataDynamic_.alignment));
+    *modelMat = glm::mat4(1.0f);
 
-    BufferInput input = { meshes.size() * dynamicBufferAlignment,
+    BufferInput input = { meshes.size() * uboDataDynamic_.alignment,
                           vk::BufferUsageFlagBits::eUniformBuffer,
                           vk::MemoryPropertyFlagBits::eHostVisible };
     matrixUniformBufferDynamic_ = std::make_unique<Buffer>(input);
-    matrixUniformBufferDynamic_->MapMemory(dynamicBufferAlignment);
+    matrixUniformBufferDynamic_->MapMemory(uboDataDynamic_.alignment);
 }
 
 void Scene::Update(uint32_t index)
 {
-    if (camera->isControllable) {
-        camera->Update();
+    if (camera_->isControllable) {
+        camera_->Update();
     }
 
-    camera->matrix_.view = glm::lookAt(camera->pos, camera->at, camera->up);
-    camera->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
-    camera->UpdateBuffer();
+    camera_->matrix_.view = glm::lookAt(camera_->pos, camera_->at, camera_->up);
+    camera_->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
+    camera_->UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera->GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraMatrixWrite(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_->GetBufferInfo(), nullptr, nullptr);
     Device::GetHandle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
 
-    if (meshes.size() > 0) {
+    if (!meshes.empty()) {
         UpdateBuffer();
         vk::MappedMemoryRange memoryRange;
         memoryRange.memory = matrixUniformBufferDynamic_->GetHandle().bufferMemory;
@@ -119,7 +151,9 @@ void Scene::Update(uint32_t index)
         if (size < atomSize)
             size = atomSize;
         memoryRange.size = size;
-        auto result = Device::GetHandle().device.flushMappedMemoryRanges(1, &memoryRange);
+        if (Device::GetHandle().device.flushMappedMemoryRanges(1, &memoryRange) != vk::Result::eSuccess) {
+            spdlog::error("failed to flush mapped memory ranges");
+        }
 
         vk::WriteDescriptorSet modelMatrixWrite(
             Swapchain::GetDetail().frames[index].descriptorSets[1], 0, 0, 1,
@@ -144,7 +178,7 @@ void Scene::Update(uint32_t index)
 
 void Scene::UpdateBuffer()
 {
-    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->GetSize());
+    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->Size());
 }
 
 Scene::~Scene()

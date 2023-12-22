@@ -1,5 +1,5 @@
-#ifndef _PIPELINE_H_
-#define _PIPELINE_H_
+#ifndef PIPELINE_H
+#define PIPELINE_H
 
 #include "../common.h"
 #include "swapchain.h"
@@ -11,6 +11,7 @@ class GraphicsPipeline
     Shader shader_;
     DescriptorManager descriptorManager_;
     std::vector<DescriptorSetLayoutData> descriptorSetLayouts_;
+    vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
 
     PipelineHandle handle_;
 

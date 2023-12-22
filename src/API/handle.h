@@ -1,5 +1,5 @@
-#ifndef _HANDLE_H_
-#define _HANDLE_H_
+#ifndef HANDLE_H
+#define HANDLE_H
 
 #include <vulkan/vulkan.hpp>
 
@@ -17,7 +17,7 @@ struct QueueHandle
 
 struct InstanceHandle
 {
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface{};
     vk::Instance instance;
 };
 
@@ -44,4 +44,4 @@ struct ImageHandle
     vk::DescriptorImageInfo imageInfo;
 };
 
-#endif // _HANDLE_H_
+#endif

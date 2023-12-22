@@ -1,5 +1,5 @@
-#ifndef _INSTANCE_H_
-#define _INSTANCE_H_
+#ifndef INSTANCE_H
+#define INSTANCE_H
 
 #include "../common.h"
 #include "logger.h"

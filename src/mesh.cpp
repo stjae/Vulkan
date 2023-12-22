@@ -2,14 +2,16 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-void Mesh::CreateSquare()
+void Mesh::CreateSquare(const char* texturePath, int index)
 {
+    textureFilePath = texturePath;
+
     const int SQUARE_VERTEX_COUNT = 4;
 
-    std::vector<float> pos = { -1.0f, 1.0f, 0.0f,
-                               1.0f, 1.0f, 0.0f,
-                               1.0f, -1.0f, 0.0f,
-                               -1.0f, -1.0f, 0.0f };
+    std::vector<float> position = { -1.0f, 1.0f, 0.0f,
+                                    1.0f, 1.0f, 0.0f,
+                                    1.0f, -1.0f, 0.0f,
+                                    -1.0f, -1.0f, 0.0f };
 
     std::vector<float> normal = { 1.0f, 0.0f, 0.0f,
                                   0.0f, 1.0f, 0.0f,
@@ -25,9 +27,9 @@ void Mesh::CreateSquare()
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
-        Vertex v;
+        Vertex v{};
 
-        v.pos = glm::vec3(pos[i * 3 + 0], pos[i * 3 + 1], pos[i * 3 + 2]);
+        v.pos = glm::vec3(position[i * 3 + 0], position[i * 3 + 1], position[i * 3 + 2]);
         v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
         v.texcoord = glm::vec2(texcoord[i * 2], texcoord[i * 2 + 1]);
         v.textureID = 0;
@@ -38,32 +40,33 @@ void Mesh::CreateSquare()
     indices = { 0, 1, 2, 2, 3, 0 };
 
     name = "square";
+    name.append(std::to_string(index));
 }
 
-void Mesh::CreateCube(const char* texturePath)
+void Mesh::CreateCube(const char* texturePath, int index)
 {
     textureFilePath = texturePath;
 
     const int CUBE_VERTEX_COUNT = 24;
 
-    std::vector<float> pos = { -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-                               1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // front
+    std::vector<float> position = { -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+                                    1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // front
 
-                               -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-                               1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // back
+                                    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
+                                    1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // back
 
-                               -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-                               1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, // ceiling
+                                    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
+                                    1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, // ceiling
 
-                               -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
-                               1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // bottom
+                                    -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
+                                    1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // bottom
 
-                               1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
-                               1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, // left
+                                    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+                                    1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, // left
 
-                               -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
-                               -1.0f, -1.0f, 1.0f, // right
-                               -1.0f, -1.0f, -1.0f };
+                                    -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
+                                    -1.0f, -1.0f, 1.0f, // right
+                                    -1.0f, -1.0f, -1.0f };
 
     std::vector<float> normal = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
                                   0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -99,9 +102,9 @@ void Mesh::CreateCube(const char* texturePath)
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        Vertex v;
+        Vertex v{};
 
-        v.pos = glm::vec3(pos[i * 3 + 0], pos[i * 3 + 1], pos[i * 3 + 2]);
+        v.pos = glm::vec3(position[i * 3 + 0], position[i * 3 + 1], position[i * 3 + 2]);
         v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
         v.texcoord = glm::vec2(texcoord[i * 2 + 0], texcoord[i * 2 + 1]);
         v.textureID = 0;
@@ -113,6 +116,7 @@ void Mesh::CreateCube(const char* texturePath)
                 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
 
     name = "cube";
+    name.append(std::to_string(index));
 }
 
 void Mesh::LoadModel(const char* modelPath, const char* texturePath)
@@ -136,7 +140,7 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
     for (auto& shape : shapes) {
         for (auto& index : shape.mesh.indices) {
 
-            Vertex v;
+            Vertex v{};
 
             v.pos = glm::vec3(attrib.vertices[3 * index.vertex_index + 0],
                               attrib.vertices[3 * index.vertex_index + 1],

@@ -1,5 +1,5 @@
-#ifndef _WINDOW_H_
-#define _WINDOW_H_
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include "../common.h"
 
@@ -12,7 +12,11 @@ public:
     Window(const int width, const int height, const char* wName);
     ~Window();
 
-    static GLFWwindow** GetWindow() { static GLFWwindow* window; return &window; }
+    static GLFWwindow** GetWindow()
+    {
+        static GLFWwindow* window;
+        return &window;
+    }
 };
 
 #endif

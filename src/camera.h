@@ -1,5 +1,5 @@
-#ifndef __CAMERA_H__
-#define __CAMERA_H__
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include "common.h"
 #include "API/window.h"
@@ -17,7 +17,7 @@ class Camera
     friend class Scene;
 
     bool isControllable = false;
-    bool isInitial = true; // prevent sudden camera move
+    bool isInitial = true; // prevent sudden camera_ move
 
     glm::vec3 pos = { 0.0f, 0.0f, 4.0f };
     glm::vec4 dir = { 0.0f, 0.0f, -1.0f, 0.0f };
@@ -39,4 +39,4 @@ public:
     Camera();
 };
 
-#endif // __CAMERA_H__
+#endif

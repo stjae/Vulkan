@@ -1,5 +1,4 @@
 #include "commands.h"
-extern size_t dynamicBufferAlignment;
 
 void Command::CreateCommandPool(const char* usage)
 {
@@ -11,7 +10,7 @@ void Command::CreateCommandPool(const char* usage)
     Log(debug, fmt::terminal_color::bright_green, "created command pool for {}", usage);
 }
 
-void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer)
+void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer) const
 {
     vk::CommandBufferAllocateInfo allocateInfo;
     allocateInfo.commandPool = commandPool;
@@ -86,7 +85,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBu
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
 
-        uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicBufferAlignment);
+        uint32_t dynamicOffset = i * static_cast<uint32_t>(Buffer::GetDynamicBufferOffset(sizeof(glm::mat4)));
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipeline);
 
@@ -117,8 +116,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBu
     commandBuffer.end();
 }
 
-void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer,
-                                 size_t size)
+void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {
     commandBuffers.emplace_back();
     AllocateCommandBuffer(commandBuffers.back());
@@ -132,32 +130,25 @@ void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& 
     commandBuffers.back().end();
 }
 
-void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage,
-                                 const int width, const int height, size_t size)
+void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage, int width, int height)
 {
     commandBuffers.emplace_back();
     AllocateCommandBuffer(commandBuffers.back());
-    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
-                                         {});
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
     commandBuffers.back().begin(beginInfo);
 
     vk::ImageSubresourceLayers subResLayer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
-    vk::BufferImageCopy copyRegion(
-        0, 0, 0, subResLayer, { 0, 0, 0 },
-        { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 });
+    vk::BufferImageCopy copyRegion(0, 0, 0, subResLayer, { 0, 0, 0 }, { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 });
 
-    commandBuffers.back().copyBufferToImage(
-        srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
+    commandBuffers.back().copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
     commandBuffers.back().end();
 }
 
-void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout,
-                                 vk::ImageLayout newLayout)
+void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
     commandBuffers.emplace_back();
     AllocateCommandBuffer(commandBuffers.back());
-    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
-                                         {});
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
     commandBuffers.back().begin(beginInfo);
 
     vk::PipelineStageFlags srcStage;
@@ -192,8 +183,7 @@ void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayo
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
-    commandBuffers.back().pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr,
-                                          1, &barrier);
+    commandBuffers.back().pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
     commandBuffers.back().end();
 }
 

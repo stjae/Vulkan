@@ -1,5 +1,5 @@
-#ifndef _ENGINE_H_
-#define _ENGINE_H_
+#ifndef ENGINE_H
+#define ENGINE_H
 
 #include "API/commands.h"
 #include "API/descriptor.h"
@@ -23,17 +23,17 @@ class GraphicsEngine
     GraphicsPipeline pipeline_;
     Command command_;
     MyImGui imgui_;
-    ImDrawData* imDrawData_;
+    ImDrawData* imDrawData_{};
 
-    std::weak_ptr<Scene> scene_;
+    std::unique_ptr<Scene> scene_;
 
 public:
-    GraphicsEngine(std::shared_ptr<Scene>& scene);
+    GraphicsEngine();
     void InitSwapchainImages();
-    void Render();
+    void Render(std::unique_ptr<Scene>& scene);
     void RecreateSwapchain();
     void SetupGui();
-    void DrawGui();
+    void DrawGui(std::unique_ptr<Scene>& scene);
     ~GraphicsEngine();
 };
 

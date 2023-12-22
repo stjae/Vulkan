@@ -1,5 +1,5 @@
-#ifndef _DEVICE_H_
-#define _DEVICE_H_
+#ifndef DEVICE_H
+#define DEVICE_H
 
 #include "instance.h"
 #include "queue.h"

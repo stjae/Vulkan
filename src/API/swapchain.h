@@ -1,5 +1,5 @@
-#ifndef _SWAPCHAIN_H_
-#define _SWAPCHAIN_H_
+#ifndef SWAPCHAIN_H
+#define SWAPCHAIN_H
 
 #include "../common.h"
 #include "swapchainData.h"

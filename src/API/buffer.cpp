@@ -1,5 +1,4 @@
 #include "buffer.h"
-size_t dynamicBufferAlignment;
 
 Buffer::Buffer(const BufferInput& bufferInput)
 {
@@ -14,9 +13,9 @@ Buffer::Buffer(const BufferInput& bufferInput)
 
 void Buffer::MapMemory(vk::DeviceSize range)
 {
-    void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetHandle(), 0, range);
+    void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetMemoryHandle(), 0, range);
     Memory::SetAddress(bufferMemoryAddress);
-    handle_.bufferMemory = Memory::GetHandle(); 
+    handle_.bufferMemory = Memory::GetMemoryHandle();
 
     handle_.bufferInfo.buffer = handle_.buffer;
     handle_.bufferInfo.offset = 0;
@@ -30,11 +29,27 @@ void Buffer::Destroy()
         Device::GetHandle().device.destroyBuffer(handle_.buffer);
         handle_.buffer = VK_NULL_HANDLE;
     }
-    if (Memory::GetHandle() != VK_NULL_HANDLE) {
-        Device::GetHandle().device.freeMemory(Memory::GetHandle());
-        Memory::SetHandle(VK_NULL_HANDLE);
+    if (Memory::GetMemoryHandle() != VK_NULL_HANDLE) {
+        Device::GetHandle().device.freeMemory(Memory::GetMemoryHandle());
+        Memory::SetMemoryHandle(VK_NULL_HANDLE);
     }
     Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
+}
+
+size_t Buffer::GetDynamicBufferOffset(size_t size)
+{
+    size_t minOffset = Device::limits.minUniformBufferOffsetAlignment;
+    size_t dynamicBufferOffset = 0;
+
+    if (minOffset > 0) {
+        int i = 1;
+        while (minOffset * i <= size) {
+            dynamicBufferOffset = minOffset * i;
+            i++;
+        }
+    }
+
+    return dynamicBufferOffset;
 }
 
 Buffer::~Buffer() { Destroy(); }

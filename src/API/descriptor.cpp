@@ -1,22 +1,23 @@
 #include "descriptor.h"
 
-void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings, const VkDescriptorSetLayoutBindingFlagsCreateInfo* const bindingFlags)
+void DescriptorManager::CreateSetLayout(const DescriptorSetLayoutData& bindings)
 {
     std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
+    std::vector<vk::DescriptorSetLayoutBindingFlagsCreateInfo> layoutBindingFlags;
     layoutBindings.reserve(bindings.descriptorSetCount);
 
     for (int i = 0; i < bindings.descriptorSetCount; ++i) {
 
-        vk::DescriptorSetLayoutBinding layoutBinding(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorCounts[i], bindings.bindingStages[i]);
-        layoutBindings.push_back(layoutBinding);
+        layoutBindings.emplace_back(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorCounts[i], bindings.bindingStages[i]);
+        layoutBindingFlags.emplace_back(bindings.bindingFlags[i]);
     }
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings.descriptorSetCount, layoutBindings.data(), bindingFlags);
+    vk::DescriptorSetLayoutCreateInfo layoutInfo(bindings.layoutCreateFlags, bindings.descriptorSetCount, layoutBindings.data(), layoutBindingFlags.data());
 
     descriptorSetLayouts.push_back(Device::GetHandle().device.createDescriptorSetLayout(layoutInfo));
 }
 
-void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts)
+void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& poolCreateFlags)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
@@ -31,11 +32,7 @@ void DescriptorManager::CreatePool(uint32_t size, const std::vector<DescriptorSe
         }
     }
 
-    vk::DescriptorPoolCreateInfo poolInfo({}, size * descriptorSetLayouts.size(), static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
-    // #if defined(__APPLE__)
-    //     // SRS - increase the per-stage descriptor samplers limit on macOS (maxPerStageDescriptorUpdateAfterBindSamplers > maxPerStageDescriptorSamplers)
-    //     poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
-    // #endif
+    vk::DescriptorPoolCreateInfo poolInfo(poolCreateFlags, size * descriptorSetLayouts.size(), static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
 
     descriptorPool = Device::GetHandle().device.createDescriptorPool(poolInfo);
 }

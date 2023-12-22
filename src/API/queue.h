@@ -1,5 +1,5 @@
-#ifndef _QUEUE_H_
-#define _QUEUE_H_
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #include "../common.h"
 
@@ -23,4 +23,4 @@ public:
     static uint32_t GetPresentQueueFamilyIndex() { return presentFamily_.value(); }
 };
 
-#endif // _QUEUE_H_
+#endif

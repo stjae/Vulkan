@@ -1,5 +1,5 @@
-#ifndef _SHADER_H_
-#define _SHADER_H_
+#ifndef SHADER_H
+#define SHADER_H
 
 #include "../common.h"
 #include "device.h"

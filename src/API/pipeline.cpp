@@ -115,7 +115,8 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
     layout0.descriptorCounts.push_back(1);
     layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    descriptorManager_.CreateSetLayout(layout0, nullptr);
+    layout0.bindingFlags.push_back({});
+    descriptorManager_.CreateSetLayout(layout0);
     descriptorSetLayouts_.push_back(layout0);
 
     DescriptorSetLayoutData layout1;
@@ -126,7 +127,8 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
     layout1.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
-    descriptorManager_.CreateSetLayout(layout1, nullptr);
+    layout1.bindingFlags.push_back({});
+    descriptorManager_.CreateSetLayout(layout1);
     descriptorSetLayouts_.push_back(layout1);
 
     DescriptorSetLayoutData layout2;
@@ -135,19 +137,13 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
     // descriptor set layout #2
     layout2.indices.push_back(0);
     layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    layout2.descriptorCounts.push_back(2);
+    layout2.descriptorCounts.push_back(Device::limits.maxDescriptorSetSamplers);
     layout2.bindingStages.push_back(vk::ShaderStageFlagBits::eFragment);
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setLayoutBindingFlags{};
-    setLayoutBindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-    setLayoutBindingFlags.bindingCount = 1;
-    std::vector<VkDescriptorBindingFlagsEXT> descriptorBindingFlags = {
-        0,
-        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT
-    };
-    setLayoutBindingFlags.pBindingFlags = descriptorBindingFlags.data();
-
-    descriptorManager_.CreateSetLayout(layout2, &setLayoutBindingFlags);
+    layout2.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+    layout2.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
+    descriptorManager_.CreateSetLayout(layout2);
     descriptorSetLayouts_.push_back(layout2);
+    descriptorPoolCreateFlags_ = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = descriptorManager_.descriptorSetLayouts.size();
@@ -204,7 +200,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
 
 void GraphicsPipeline::CreateDescriptorPool()
 {
-    descriptorManager_.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts_);
+    descriptorManager_.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts_, descriptorPoolCreateFlags_);
 }
 
 void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)

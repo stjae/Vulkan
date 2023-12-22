@@ -1,5 +1,5 @@
-#ifndef _MESH_H_
-#define _MESH_H_
+#ifndef MESH_H
+#define MESH_H
 
 #include "meshData.h"
 
@@ -13,8 +13,8 @@ class Mesh : public MeshData
     glm::vec3 pos;
     glm::vec3 rotation;
 
-    void CreateSquare();
-    void CreateCube(const char* texturePath);
+    void CreateSquare(const char* texturePath, int index);
+    void CreateCube(const char* texturePath, int index);
     void LoadModel(const char* modelPath, const char* texturePath);
 
     void CreateBuffers();

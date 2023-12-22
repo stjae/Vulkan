@@ -1,11 +1,11 @@
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
+#ifndef LOGGER_H
+#define LOGGER_H
 
 #include "../common.h"
 
 struct Logger
 {
-    Logger(const vk::Instance& vkInstance) : vkInstance_(vkInstance) {}
+    explicit Logger(const vk::Instance& vkInstance) : vkInstance_(vkInstance) {}
     void CreateDebugMessenger();
     static void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
     void Destroy();
@@ -16,9 +16,6 @@ private:
     vk::DebugUtilsMessengerEXT debugMessenger_;
 };
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                             VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                             void* pUserData);
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
 #endif

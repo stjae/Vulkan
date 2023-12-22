@@ -4,7 +4,7 @@ Device::Device()
 {
     PickPhysicalDevice();
     instance_.CreateSurface();
-    queue_.FindQueueFamilies(handle_.physicalDevice, instance_.GetHandle().surface);
+    queue_.FindQueueFamilies(handle_.physicalDevice, Instance::GetHandle().surface);
 
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     queue_.SetDeviceQueueCreateInfo(deviceQueueCreateInfos);
@@ -13,19 +13,20 @@ Device::Device()
     // enable argument buffers
     MVKConfiguration mvkConfig;
     size_t configurationSize = sizeof(MVKConfiguration);
-    vkGetMoltenVKConfigurationMVK(instance_.GetHandle().instance, &mvkConfig, &configurationSize);
+    vkGetMoltenVKConfigurationMVK(Instance::GetHandle().instance, &mvkConfig, &configurationSize);
     mvkConfig.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
-    vkSetMoltenVKConfigurationMVK(instance_.GetHandle().instance, &mvkConfig, &configurationSize);
+    vkSetMoltenVKConfigurationMVK(Instance::GetHandle().instance, &mvkConfig, &configurationSize);
 
     deviceExtensions_.push_back("VK_KHR_portability_subset");
 #endif
 
     deviceExtensions_.push_back("VK_EXT_descriptor_indexing");
     vk::PhysicalDeviceVulkan12Features features12;
-    features12.runtimeDescriptorArray = VK_TRUE;
-    features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
-    features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     features12.descriptorIndexing = VK_TRUE;
+    features12.runtimeDescriptorArray = VK_TRUE;
+    features12.descriptorBindingPartiallyBound = VK_TRUE;
+    features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    features12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     handle_.physicalDevice.getFeatures(&supportedFeatures);
@@ -36,15 +37,14 @@ Device::Device()
     handle_.device = handle_.physicalDevice.createDevice(deviceCreateInfo);
 
     // Set queue handle
-    vk::Queue graphicsQueue = handle_.device.getQueue(queue_.GetGraphicsQueueFamilyIndex(), 0);
-    vk::Queue presentQueue = handle_.device.getQueue(queue_.GetGraphicsQueueFamilyIndex(), 0);
+    vk::Queue graphicsQueue = handle_.device.getQueue(Queue::GetGraphicsQueueFamilyIndex(), 0);
+    vk::Queue presentQueue = handle_.device.getQueue(Queue::GetGraphicsQueueFamilyIndex(), 0);
     queue_.SetHandle(graphicsQueue, presentQueue);
 }
 
 void Device::PickPhysicalDevice()
 {
-    uint32_t deviceCount = 0;
-    auto deviceList = instance_.GetHandle().instance.enumeratePhysicalDevices();
+    auto deviceList = Instance::GetHandle().instance.enumeratePhysicalDevices();
 
     for (auto& device : deviceList) {
         if (IsDeviceSuitable(device)) {
@@ -69,7 +69,7 @@ bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
         ExtensionSets.erase(extension.extensionName);
     }
 
-    return ExtensionSets.empty() ? true : false;
+    return ExtensionSets.empty();
 }
 
 Device::~Device()

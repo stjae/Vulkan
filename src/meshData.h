@@ -1,5 +1,5 @@
-#ifndef _MESHDATA_H_
-#define _MESHDATA_H_
+#ifndef MESHDATA_H
+#define MESHDATA_H
 
 #include "API/buffer.h"
 #include "API/image.h"

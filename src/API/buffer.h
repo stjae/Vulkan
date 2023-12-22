@@ -1,5 +1,5 @@
-#ifndef _BUFFER_H_
-#define _BUFFER_H_
+#ifndef BUFFER_H
+#define BUFFER_H
 
 #include "device.h"
 #include "memory.h"
@@ -10,22 +10,23 @@ class Buffer : public Memory
     size_t bufferSize_;
 
 public:
-    Buffer(const BufferInput& bufferInput);
+    explicit Buffer(const BufferInput& bufferInput);
     void MapMemory(vk::DeviceSize range);
-    size_t GetSize() { return bufferSize_; }
+    [[nodiscard]] size_t Size() const { return bufferSize_; }
     void Destroy();
     ~Buffer();
 
     const BufferHandle& GetHandle() { return handle_; }
+    static size_t GetDynamicBufferOffset(size_t size);
 
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetHandle(), 0, bufferInput.size);
+        void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetMemoryHandle(), 0, bufferInput.size);
 
         Memory::SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
-        Device::GetHandle().device.unmapMemory(Memory::GetHandle());
+        Device::GetHandle().device.unmapMemory(Memory::GetMemoryHandle());
     }
 
     template <typename T>

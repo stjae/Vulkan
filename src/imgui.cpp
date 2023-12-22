@@ -1,9 +1,7 @@
 #include "imgui.h"
-extern size_t dynamicBufferAlignment;
 
-void MyImGui::Setup(std::weak_ptr<Scene> scene, GraphicsPipeline& pipeline)
+void MyImGui::Setup(GraphicsPipeline& pipeline)
 {
-    scene_ = scene;
     {
         vk::DescriptorPoolSize poolSizes[] = {
             { vk::DescriptorType::eCombinedImageSampler, 1 },
@@ -47,16 +45,16 @@ void MyImGui::Setup(std::weak_ptr<Scene> scene, GraphicsPipeline& pipeline)
     }
 }
 
-void MyImGui::DrawImGuizmo(int currentItem)
+void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem)
 {
     ImGuiIO& io = ImGui::GetIO();
 
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene_.lock()->camera->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_->isControllable)
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene_.lock()->camera->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_->isControllable)
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene_.lock()->camera->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_->isControllable)
         OP = ImGuizmo::OPERATION::SCALE;
 
     // ImGuizmo
@@ -70,18 +68,18 @@ void MyImGui::DrawImGuizmo(int currentItem)
     float scale[3];
     float objectMatrix[16];
 
-    glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic_.model + (currentItem * dynamicBufferAlignment));
+    auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene_.lock()->camera->matrix_.view),
-                         glm::value_ptr(scene_.lock()->camera->matrix_.proj), OP,
+    ImGuizmo::Manipulate(glm::value_ptr(scene->camera_->matrix_.view),
+                         glm::value_ptr(scene->camera_->matrix_.proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
     *modelMat = glm::make_mat4(objectMatrix);
 }
 
-void MyImGui::DrawDockSpace()
+void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -119,12 +117,18 @@ void MyImGui::DrawDockSpace()
             ImGui::MenuItem("Open");
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
+                scene->meshCount_.square++;
+                scene->meshes.emplace_back(std::make_shared<Mesh>());
+                scene->meshes.back()->CreateSquare(nullptr, scene->meshCount_.square);
+                scene->meshes.back()->CreateBuffers();
+                scene->UpdateMesh();
             }
             if (ImGui::MenuItem("Cube")) {
-                scene_.lock()->meshes.emplace_back(std::make_shared<Mesh>());
-                scene_.lock()->meshes.back()->CreateCube(nullptr);
-                scene_.lock()->meshes.back()->CreateBuffers();
-                scene_.lock()->PrepareMeshes();
+                scene->meshCount_.cube++;
+                scene->meshes.emplace_back(std::make_shared<Mesh>());
+                scene->meshes.back()->CreateCube(nullptr, scene->meshCount_.cube);
+                scene->meshes.back()->CreateBuffers();
+                scene->UpdateMesh();
             }
 
             ImGui::EndMenu();
@@ -135,13 +139,13 @@ void MyImGui::DrawDockSpace()
     ImGui::End();
 }
 
-void MyImGui::SetCameraControl()
+void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
 {
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        scene_.lock()->camera->isControllable = !scene_.lock()->camera->isControllable;
+        scene->camera_->isControllable = !scene->camera_->isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
-        if (scene_.lock()->camera->isControllable) {
+        if (scene->camera_->isControllable) {
             glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
@@ -149,13 +153,13 @@ void MyImGui::SetCameraControl()
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        scene_.lock()->camera->isInitial = true;
+        scene->camera_->isInitial = true;
     }
 }
 
-void MyImGui::Draw()
+void MyImGui::Draw(std::unique_ptr<Scene>& scene)
 {
-    SetCameraControl();
+    SetCameraControl(scene);
 
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -166,55 +170,66 @@ void MyImGui::Draw()
 
     ImGui::NewFrame();
 
-    DrawDockSpace();
+    DrawDockSpace(scene);
 
     // Object List Window
-    static int currentItem = -1;
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() || currentItem > scene_.lock()->meshes.size() - 1) // Prevent index out of vector range
-        currentItem = -1;
+    if (scene) {
 
-    ImGui::BeginListBox("Object List");
-    for (int i = 0; i < scene_.lock()->meshes.size(); i++) {
-        if (ImGui::Selectable(scene_.lock()->meshes[i]->name.c_str(), scene_.lock()->meshes[i]->isSelected))
-            currentItem = i;
+        static int currentItem = -1;
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
+            currentItem = -1;
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete) && currentItem > -1) {
+            scene->meshes.erase(scene->meshes.begin() + currentItem);
+            currentItem = -1;
+        }
+
+        ImGui::Begin("Object List");
+        ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f));
+        for (int i = 0; i < scene->meshes.size(); i++) {
+            if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
+                currentItem = i;
+            }
+        }
+        ImGui::EndListBox();
+        ImGui::End();
+
+        // Object Attribute Window
+        ImGui::Begin("Object Attribute");
+        if (currentItem > -1) {
+            DrawImGuizmo(scene, currentItem);
+
+            auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
+
+            float translation[3];
+            float rotation[3];
+            float scale[3];
+            float objectMatrix[16];
+
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+                                                  rotation, scale);
+
+            std::string id = "##";
+            id.append(scene->meshes[currentItem]->name);
+            std::vector<std::string> labels = { "Translation", "Rotation" };
+            ImGui::Text("%s", scene->meshes[currentItem]->name.c_str());
+            ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
+            ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
+
+            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale,
+                                                    objectMatrix);
+
+            *modelMat = glm::make_mat4(objectMatrix);
+        }
+        ImGui::End();
     }
-    ImGui::EndListBox();
-
-    // Object Attribute Window
-    ImGui::Begin("Object Attribute");
-    if (currentItem > -1) {
-        DrawImGuizmo(currentItem);
-
-        glm::mat4* modelMat = (glm::mat4*)((uint64_t)scene_.lock()->uboDataDynamic_.model + (currentItem * dynamicBufferAlignment));
-
-        float translation[3];
-        float rotation[3];
-        float scale[3];
-        float objectMatrix[16];
-
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
-                                              rotation, scale);
-
-        std::string id = "##";
-        id.append(scene_.lock()->meshes[currentItem]->name.c_str());
-        std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text(scene_.lock()->meshes[currentItem]->name.c_str());
-        ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
-        ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
-
-        ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale,
-                                                objectMatrix);
-
-        *modelMat = glm::make_mat4(objectMatrix);
-    }
-    ImGui::End();
 
     // Information Overlay
     ImGui::SetNextWindowPos(ImVec2(viewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBackground;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene_.lock()->camera->isControllable ? "on" : "off");
+    ImGui::Text("Camera Control: %s [press C]", scene->camera_->isControllable ? "on" : "off");
     ImGui::End();
 
     ImGui::EndFrame();

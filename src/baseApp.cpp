@@ -3,10 +3,9 @@
 Application::Application(const int width, const int height, const char* wName)
     : window_(width, height, wName)
 {
+    engine_ = std::make_unique<GraphicsEngine>();
     scene_ = std::make_unique<Scene>();
-    engine_ = std::make_unique<GraphicsEngine>(scene_);
-    scene_->PrepareScene();
-    engine_->SetupGui();
+    engine_->SetupGui(scene_);
     engine_->InitSwapchainImages();
 }
 
@@ -14,8 +13,8 @@ void Application::Run()
 {
     while (!glfwWindowShouldClose(*Window::GetWindow())) {
         glfwPollEvents();
-        engine_->DrawGui();
-        engine_->Render();
+        engine_->DrawGui(scene_);
+        engine_->Render(scene_);
         GetFramerate();
     }
 }
@@ -31,9 +30,9 @@ std::string& Application::GetFramerate()
 
     if (delta > 1.0) {
         std::stringstream title;
-        title << frameCount << " fps, " << 1000.0f / frameCount << " ms";
+        title << frameCount << " fps, " << 1000.0f / (float)frameCount << " ms";
 
-        frameRate = title.str().c_str();
+        frameRate = title.str();
 
         lastTime = currentTime;
         frameCount = 0;

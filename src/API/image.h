@@ -1,5 +1,5 @@
-#ifndef __IMAGE_H__
-#define __IMAGE_H__
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include "handle.h"
 #include "memory.h"
@@ -22,4 +22,4 @@ public:
     const ImageHandle& GetHandle() { return handle_; }
 };
 
-#endif // __IMAGE_H__
+#endif
