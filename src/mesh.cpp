@@ -128,10 +128,7 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    std::string filePath(PROJECT_DIR);
-    filePath.append(modelPath);
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.c_str())) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath)) {
         throw std::runtime_error(warn + err);
     }
 
@@ -153,7 +150,7 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
             v.texcoord = glm::vec2(attrib.texcoords[2 * index.texcoord_index + 0],
                                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
 
-            v.textureID = 1;
+            v.textureID = 0;
 
             vertices.push_back(v);
 

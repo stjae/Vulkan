@@ -114,7 +114,13 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
     }
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
-            ImGui::MenuItem("Open");
+            if (ImGui::MenuItem("Open")) {
+                std::string filePath = LaunchNfd();
+                scene->meshes.emplace_back(std::make_shared<Mesh>());
+                scene->meshes.back()->LoadModel(filePath.c_str(), nullptr);
+                scene->meshes.back()->CreateBuffers();
+                scene->UpdateMesh();
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
                 scene->meshCount_.square++;
@@ -172,11 +178,10 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene)
 
     DrawDockSpace(scene);
 
-    // Object List Window
     if (scene) {
 
         static int currentItem = -1;
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
             currentItem = -1;
 
         if (ImGui::IsKeyPressed(ImGuiKey_Delete) && currentItem > -1) {
@@ -185,16 +190,16 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene)
         }
 
         ImGui::Begin("Object List");
-        ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f));
-        for (int i = 0; i < scene->meshes.size(); i++) {
-            if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
-                currentItem = i;
+        if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
+            for (int i = 0; i < scene->meshes.size(); i++) {
+                if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
+                    currentItem = i;
+                }
             }
+            ImGui::EndListBox();
         }
-        ImGui::EndListBox();
         ImGui::End();
 
-        // Object Attribute Window
         ImGui::Begin("Object Attribute");
         if (currentItem > -1) {
             DrawImGuizmo(scene, currentItem);
@@ -221,6 +226,9 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene)
 
             *modelMat = glm::make_mat4(objectMatrix);
         }
+        ImGui::End();
+
+        ImGui::Begin("Resource Library");
         ImGui::End();
     }
 

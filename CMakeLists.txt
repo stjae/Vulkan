@@ -5,7 +5,7 @@ project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
 if (APPLE)
-    set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL")
+    set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework AppKit -framework UniformTypeIdentifiers")
     find_package(Vulkan REQUIRED MoltenVK SPIRV-Tools)
     include_directories(${Vulkan_MoltenVK_INCLUDE_DIR})
     include_directories(${Vulkan_INCLUDE_DIR})

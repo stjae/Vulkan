@@ -5,7 +5,7 @@ Application::Application(const int width, const int height, const char* wName)
 {
     engine_ = std::make_unique<GraphicsEngine>();
     scene_ = std::make_unique<Scene>();
-    engine_->SetupGui(scene_);
+    engine_->SetupGui();
     engine_->InitSwapchainImages();
 }
 

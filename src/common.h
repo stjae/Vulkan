@@ -38,12 +38,14 @@ const bool debug = true;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <nfd.h>
 
 #include "config.h"
 #include "API/handle.h"
 
 std::string& GetFrameRate();
 std::vector<char> ReadFile(const std::string& filename);
+std::string LaunchNfd();
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);
 

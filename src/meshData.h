@@ -29,9 +29,9 @@ public:
 
     std::unique_ptr<Image> textureImage;
     std::unique_ptr<Buffer> textureStagingBuffer;
-    int textureWidth, textureHeight;
-    size_t textureSize;
-    const char* textureFilePath;
+    int textureWidth{}, textureHeight{};
+    size_t textureSize{};
+    const char* textureFilePath{};
 };
 
 #endif

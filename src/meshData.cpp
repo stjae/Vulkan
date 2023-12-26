@@ -71,10 +71,7 @@ void MeshData::CreateTexture()
         vk::DeviceSize imageSize;
         stbi_uc* imageData;
 
-        std::string filePath(PROJECT_DIR);
-        filePath.append(textureFilePath);
-
-        imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+        imageData = stbi_load(textureFilePath, &width, &height, &channel, STBI_rgb_alpha);
         imageSize = width * height * 4;
 
         if (!imageData) {

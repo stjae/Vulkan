@@ -21,7 +21,7 @@ void Command::AllocateCommandBuffer(vk::CommandBuffer& commandBuffer) const
     Log(debug, fmt::terminal_color::bright_green, "allocated command buffer");
 }
 
-void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::shared_ptr<Mesh>>& meshes, ImDrawData* imDrawData)
+void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
 {
     vk::CommandBufferBeginInfo beginInfo;
     commandBuffer.begin(beginInfo);
@@ -85,7 +85,7 @@ void Command::RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBu
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
         commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
 
-        uint32_t dynamicOffset = i * static_cast<uint32_t>(Buffer::GetDynamicBufferOffset(sizeof(glm::mat4)));
+        uint32_t dynamicOffset = i * dynamicOffsetSize;
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 1, 1, &Swapchain::GetDetail().frames[imageIndex].descriptorSets[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipeline);
 

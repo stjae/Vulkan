@@ -8,7 +8,6 @@ Scene::Scene()
          meshes.emplace_back(std::make_shared<Mesh>());
          meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
     */
-
     camera_ = std::make_unique<Camera>();
 
     uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
@@ -178,7 +177,7 @@ void Scene::Update(uint32_t index)
 
 void Scene::UpdateBuffer()
 {
-    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->Size());
+    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->GetSize());
 }
 
 Scene::~Scene()

@@ -85,7 +85,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
     vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex_].commandBuffer;
 
     commandBuffer.reset();
-    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene->meshes, imDrawData_);
+    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex_].imageAvailable };

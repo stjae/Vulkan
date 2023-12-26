@@ -48,6 +48,29 @@ std::vector<char> ReadFile(const std::string& filename)
     return buffer;
 }
 
+std::string LaunchNfd()
+{
+    NFD_Init();
+    std::string filePath;
+
+    nfdchar_t* outPath;
+    nfdfilteritem_t filterItem[2] = { { "Image", "jpg, png" }, { "Model", "obj" } };
+    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 2, NULL);
+    if (result == NFD_OKAY) {
+        puts("Success!");
+        puts(outPath);
+        filePath = outPath;
+        NFD_FreePath(outPath);
+    } else if (result == NFD_CANCEL) {
+        puts("User pressed cancel.");
+    } else {
+        printf("Error: %s\n", NFD_GetError());
+    }
+
+    NFD_Quit();
+    return filePath;
+}
+
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
 {
 #if defined(__APPLE__)

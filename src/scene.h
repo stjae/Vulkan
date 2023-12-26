@@ -17,13 +17,13 @@ struct MeshCount
 struct UboDataDynamic
 {
     glm::mat4* model = nullptr;
-    size_t alignment;
+    uint32_t alignment;
 };
 
 class Scene
 {
+    friend class GraphicsEngine;
     friend class MyImGui;
-    friend class Command;
 
     MeshCount meshCount_;
     UboDataDynamic uboDataDynamic_;
