@@ -25,10 +25,10 @@ class Scene
     friend class GraphicsEngine;
     friend class MyImGui;
 
+    std::vector<std::array<std::string, 2>> resources_;
     MeshCount meshCount_;
     UboDataDynamic uboDataDynamic_;
     std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
-
     std::unique_ptr<Camera> camera_;
 
     void CreateUniformBuffers();
@@ -40,7 +40,7 @@ public:
     Scene();
     void PrepareMeshes();
     void UpdateMesh();
-    void Update(uint32_t index);
+    void Update(uint32_t frameIndex);
     ~Scene();
 };
 

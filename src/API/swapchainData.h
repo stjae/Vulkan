@@ -34,9 +34,9 @@ struct SwapchainFrame
 struct SwapchainDetail
 {
     std::vector<SwapchainFrame> frames;
-    vk::Format imageFormat;
+    vk::Format swapchainImageFormat;
     vk::Format depthImageFormat;
     vk::Extent2D extent;
 };
 
-#endif // __SWAPCHAINDATA_H__
+#endif

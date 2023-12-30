@@ -32,7 +32,7 @@ void Swapchain::CreateSwapchain()
 
     std::vector<vk::Image> images = Device::GetHandle().device.getSwapchainImagesKHR(GetHandle());
     detail_.frames.resize(images.size());
-    detail_.imageFormat = surfaceFormat.format;
+    detail_.swapchainImageFormat = surfaceFormat.format;
     detail_.extent = extent;
 
     for (size_t i = 0; i < images.size(); ++i) {

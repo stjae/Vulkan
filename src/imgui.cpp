@@ -1,4 +1,5 @@
 #include "imgui.h"
+#include <font/IconsFontAwesome5.h>
 
 void MyImGui::Setup(GraphicsPipeline& pipeline)
 {
@@ -38,6 +39,22 @@ void MyImGui::Setup(GraphicsPipeline& pipeline)
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, pipeline.GetHandle().renderPass);
 
+    io.Fonts->AddFontDefault();
+    float baseFontSize = 13.0f;                      // 13.0f is the size of the default font. Change to the font size you use.
+    float iconFontSize = baseFontSize * 2.0f / 2.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+
+    // merge in icons from Font Awesome
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    std::string path(PROJECT_DIR "ttf/");
+    path.append(FONT_ICON_FILE_NAME_FAS);
+    io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
+    // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
+
+    // Scale DPI
     if (viewport->DpiScale > 0.0f) {
         ImFontConfig fontConfig;
         fontConfig.SizePixels = 13.0f * viewport->DpiScale;
@@ -85,23 +102,20 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
 
     static bool p_open = true;
     static bool opt_padding = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+                                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                    ImGuiWindowFlags_NoBackground;
 
-    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
-
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        window_flags |= ImGuiWindowFlags_NoBackground;
     if (!opt_padding)
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("DockSpace Demo", &p_open, window_flags);
@@ -163,7 +177,7 @@ void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
     }
 }
 
-void MyImGui::Draw(std::unique_ptr<Scene>& scene)
+void MyImGui::Draw(std::unique_ptr<Scene>& scene, int frameIndex)
 {
     SetCameraControl(scene);
 
@@ -178,59 +192,79 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene)
 
     DrawDockSpace(scene);
 
-    if (scene) {
+    static int currentItem = -1;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
+        currentItem = -1;
 
-        static int currentItem = -1;
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
-            currentItem = -1;
-
-        if (ImGui::IsKeyPressed(ImGuiKey_Delete) && currentItem > -1) {
-            scene->meshes.erase(scene->meshes.begin() + currentItem);
-            currentItem = -1;
-        }
-
-        ImGui::Begin("Object List");
-        if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
-            for (int i = 0; i < scene->meshes.size(); i++) {
-                if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
-                    currentItem = i;
-                }
-            }
-            ImGui::EndListBox();
-        }
-        ImGui::End();
-
-        ImGui::Begin("Object Attribute");
-        if (currentItem > -1) {
-            DrawImGuizmo(scene, currentItem);
-
-            auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
-
-            float translation[3];
-            float rotation[3];
-            float scale[3];
-            float objectMatrix[16];
-
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
-                                                  rotation, scale);
-
-            std::string id = "##";
-            id.append(scene->meshes[currentItem]->name);
-            std::vector<std::string> labels = { "Translation", "Rotation" };
-            ImGui::Text("%s", scene->meshes[currentItem]->name.c_str());
-            ImGui::SliderFloat3(labels[0].append(id).c_str(), translation, -10.0f, 10.0f);
-            ImGui::SliderFloat3(labels[1].append(id).c_str(), rotation, -180.0f, 180.0f);
-
-            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale,
-                                                    objectMatrix);
-
-            *modelMat = glm::make_mat4(objectMatrix);
-        }
-        ImGui::End();
-
-        ImGui::Begin("Resource Library");
-        ImGui::End();
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && currentItem > -1) {
+        scene->meshes.erase(scene->meshes.begin() + currentItem);
+        currentItem = -1;
     }
+
+    ImGui::Begin("Object List");
+    if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
+        for (int i = 0; i < scene->meshes.size(); i++) {
+            if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
+                currentItem = i;
+            }
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("delete")) {
+                    scene->meshes.erase(scene->meshes.begin() + i);
+                    currentItem = -1;
+                }
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::EndListBox();
+    }
+    ImGui::End();
+
+    ImGui::Begin("Object Attribute");
+    if (currentItem > -1) {
+        DrawImGuizmo(scene, currentItem);
+
+        auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
+
+        float translation[3];
+        float rotation[3];
+        float scale[3];
+        float objectMatrix[16];
+
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+                                              rotation, scale);
+
+        std::vector<std::string> labels = { "Translation", "Rotation" };
+        ImGui::Text("%s", scene->meshes[currentItem]->name.c_str());
+        ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
+        ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
+
+        ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
+
+        *modelMat = glm::make_mat4(objectMatrix);
+    }
+    ImGui::End();
+
+    ImGui::Begin("Resources");
+    ImGui::BeginChild("##", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize, ImGuiWindowFlags_ChildWindow);
+    if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
+        std::string path = LaunchNfd();
+        scene->resources_.push_back({ "model", path });
+    }
+    ImGui::EndChild();
+
+    // Drag Drop Source
+    for (auto& resource : scene->resources_) {
+        ImGui::Button(ICON_FA_CUBE, { 100, 100 });
+
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::Text("%s", resource.at(1).c_str());
+            ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)resource.at(1).c_str(), sizeof(char) * resource.at(1).length());
+            ImGui::EndDragDropSource();
+        }
+
+        ImGui::TextWrapped("%s", resource.at(0).c_str());
+    }
+    ImGui::End();
 
     // Information Overlay
     ImGui::SetNextWindowPos(ImVec2(viewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));

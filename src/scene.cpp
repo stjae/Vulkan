@@ -2,12 +2,6 @@
 
 Scene::Scene()
 {
-    /*
-         meshes.emplace_back(std::make_shared<Mesh>());
-         meshes.back()->CreateCube(nullptr);
-         meshes.emplace_back(std::make_shared<Mesh>());
-         meshes.back()->LoadModel("models/viking_room.obj", "textures/viking_room.png");
-    */
     camera_ = std::make_unique<Camera>();
 
     uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
@@ -128,7 +122,7 @@ void Scene::CreateUniformBuffers()
     matrixUniformBufferDynamic_->MapMemory(uboDataDynamic_.alignment);
 }
 
-void Scene::Update(uint32_t index)
+void Scene::Update(uint32_t frameIndex)
 {
     if (camera_->isControllable) {
         camera_->Update();
@@ -138,7 +132,7 @@ void Scene::Update(uint32_t index)
     camera_->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
     camera_->UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(Swapchain::GetDetail().frames[index].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_->GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraMatrixWrite(Swapchain::GetDetail().frames[frameIndex].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_->GetBufferInfo(), nullptr, nullptr);
     Device::GetHandle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
 
     if (!meshes.empty()) {
@@ -155,13 +149,13 @@ void Scene::Update(uint32_t index)
         }
 
         vk::WriteDescriptorSet modelMatrixWrite(
-            Swapchain::GetDetail().frames[index].descriptorSets[1], 0, 0, 1,
+            Swapchain::GetDetail().frames[frameIndex].descriptorSets[1], 0, 0, 1,
             vk::DescriptorType::eUniformBufferDynamic, nullptr,
             &matrixUniformBufferDynamic_->GetHandle().bufferInfo, nullptr, nullptr);
         Device::GetHandle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
 
         vk::WriteDescriptorSet descriptorWrites;
-        descriptorWrites.dstSet = Swapchain::GetDetail().frames[index].descriptorSets[2];
+        descriptorWrites.dstSet = Swapchain::GetDetail().frames[frameIndex].descriptorSets[2];
         descriptorWrites.dstBinding = 0;
         descriptorWrites.dstArrayElement = 0;
         descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;

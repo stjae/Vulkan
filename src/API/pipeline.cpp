@@ -155,7 +155,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = Swapchain::GetDetail().imageFormat;
+    colorAttachmentDesc.format = Swapchain::GetDetail().swapchainImageFormat;
     colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;

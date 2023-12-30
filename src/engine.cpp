@@ -64,11 +64,10 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
         spdlog::error("failed to wait for fences");
     }
 
-    uint32_t imageIndex;
-    auto acquiredImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetHandle(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex_].imageAvailable, nullptr);
+    auto waitFrameImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::GetHandle(), UINT64_MAX, Swapchain::GetDetail().frames[frameIndex_].imageAvailable, nullptr);
 
-    if (acquiredImage.result == vk::Result::eErrorOutOfDateKHR ||
-        acquiredImage.result == vk::Result::eSuboptimalKHR) {
+    if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR ||
+        waitFrameImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
         return;
@@ -78,14 +77,12 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
         spdlog::error("failed to reset fences");
     }
 
-    imageIndex = acquiredImage.value;
-
-    scene->Update(imageIndex);
+    scene->Update(waitFrameImage.value);
 
     vk::CommandBuffer commandBuffer = Swapchain::GetDetail().frames[frameIndex_].commandBuffer;
 
     commandBuffer.reset();
-    command_.RecordDrawCommands(pipeline_, commandBuffer, imageIndex, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
+    command_.RecordDrawCommands(pipeline_, commandBuffer, waitFrameImage.value, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { Swapchain::GetDetail().frames[frameIndex_].imageAvailable };
@@ -107,7 +104,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
     vk::SwapchainKHR swapchains[] = { Swapchain::GetHandle() };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pImageIndices = &waitFrameImage.value;
 
     if (Queue::GetHandle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
         RecreateSwapchain();
@@ -152,7 +149,7 @@ void GraphicsEngine::SetupGui()
 
 void GraphicsEngine::DrawGui(std::unique_ptr<Scene>& scene)
 {
-    imgui_.Draw(scene);
+    imgui_.Draw(scene, frameIndex_);
     imDrawData_ = ImGui::GetDrawData();
 }
 
