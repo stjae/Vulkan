@@ -15,19 +15,16 @@ struct DescriptorSetLayoutData
     vk::DescriptorSetLayoutCreateFlags layoutCreateFlags;
 };
 
-class DescriptorManager
+class Descriptor
 {
-    friend class GraphicsPipeline;
+public:
+    vk::DescriptorPool descriptorPool_;
+    std::vector<vk::DescriptorSet> descriptorSets_;
 
-    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-    vk::DescriptorPool descriptorPool;
-
-    void CreateSetLayout(const DescriptorSetLayoutData& bindings);
-    void CreatePool(uint32_t size, const std::vector<DescriptorSetLayoutData>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& poolCreateFlags);
-    void AllocateSet(std::vector<vk::DescriptorSet>& descriptorSets);
-    ~DescriptorManager();
-
-    const vk::DescriptorPool& GetDescriptorPool() { return descriptorPool; }
+    static vk::DescriptorSetLayout CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings);
+    void CreateDescriptorPool(uint32_t frameCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
+    void AllocateDescriptorSets(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
+    ~Descriptor();
 };
 
 #endif

@@ -2,8 +2,9 @@
 
 Scene::Scene()
 {
-    camera_ = std::make_unique<Camera>();
+    command_.CreateCommandPool();
 
+    camera_ = std::make_unique<Camera>();
     uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
 
     for (auto& mesh : meshes) {
@@ -16,75 +17,69 @@ Scene::Scene()
 
 void Scene::PrepareMeshes()
 {
-    Command command;
-    command.CreateCommandPool("copying buffers");
-
     for (auto& mesh : meshes) {
-        command.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
-                                   mesh->vertexBuffer->GetHandle().buffer,
-                                   sizeof(Vertex) * mesh->vertices.size());
-        command.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
-                                   mesh->indexBuffer->GetHandle().buffer,
-                                   sizeof(uint32_t) * mesh->indices.size());
-        command.TransitImageLayout(mesh->textureImage->GetHandle().image,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal);
+        command_.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
+                                    mesh->vertexBuffer->GetHandle().buffer,
+                                    sizeof(Vertex) * mesh->vertices.size());
+        command_.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
+                                    mesh->indexBuffer->GetHandle().buffer,
+                                    sizeof(uint32_t) * mesh->indices.size());
+        command_.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                                    vk::ImageLayout::eUndefined,
+                                    vk::ImageLayout::eTransferDstOptimal);
     }
 
-    command.Submit();
+    command_.Submit();
 
     for (auto& mesh : meshes)
-        command.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
-                                   mesh->textureImage->GetHandle().image, mesh->textureWidth,
-                                   mesh->textureHeight);
+        command_.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
+                                    mesh->textureImage->GetHandle().image, mesh->textureWidth,
+                                    mesh->textureHeight);
 
-    command.Submit();
+    command_.Submit();
 
     for (auto& mesh : meshes) {
-        command.TransitImageLayout(mesh->textureImage->GetHandle().image,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal);
+        command_.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                                    vk::ImageLayout::eTransferDstOptimal,
+                                    vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh->DestroyStagingBuffer();
     }
 
-    command.Submit();
+    command_.Submit();
 
     CreateUniformBuffers();
 }
 
 void Scene::UpdateMesh()
 {
-    Command command;
-    command.CreateCommandPool("copying buffers");
-
     auto& mesh = meshes.back();
 
-    command.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
-                               mesh->vertexBuffer->GetHandle().buffer,
-                               sizeof(Vertex) * mesh->vertices.size());
-    command.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
-                               mesh->indexBuffer->GetHandle().buffer,
-                               sizeof(uint32_t) * mesh->indices.size());
-    command.TransitImageLayout(mesh->textureImage->GetHandle().image,
-                               vk::ImageLayout::eUndefined,
-                               vk::ImageLayout::eTransferDstOptimal);
+    command_.RecordCopyCommands(mesh->vertexStagingBuffer->GetHandle().buffer,
+                                mesh->vertexBuffer->GetHandle().buffer,
+                                sizeof(Vertex) * mesh->vertices.size());
+    command_.RecordCopyCommands(mesh->indexStagingBuffer->GetHandle().buffer,
+                                mesh->indexBuffer->GetHandle().buffer,
+                                sizeof(uint32_t) * mesh->indices.size());
+    command_.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                                vk::ImageLayout::eUndefined,
+                                vk::ImageLayout::eTransferDstOptimal);
 
-    command.Submit();
+    command_.Submit();
 
-    command.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
-                               mesh->textureImage->GetHandle().image, mesh->textureWidth,
-                               mesh->textureHeight);
+    command_.RecordCopyCommands(mesh->textureStagingBuffer->GetHandle().buffer,
+                                mesh->textureImage->GetHandle().image, mesh->textureWidth,
+                                mesh->textureHeight);
 
-    command.Submit();
+    command_.Submit();
 
-    command.TransitImageLayout(mesh->textureImage->GetHandle().image,
-                               vk::ImageLayout::eTransferDstOptimal,
-                               vk::ImageLayout::eShaderReadOnlyOptimal);
+    command_.TransitImageLayout(mesh->textureImage->GetHandle().image,
+                                vk::ImageLayout::eTransferDstOptimal,
+                                vk::ImageLayout::eShaderReadOnlyOptimal);
     mesh->textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
     mesh->DestroyStagingBuffer();
 
-    command.Submit();
+    command_.Submit();
 
     CreateUniformBuffers();
 }
@@ -122,17 +117,17 @@ void Scene::CreateUniformBuffers()
     matrixUniformBufferDynamic_->MapMemory(uboDataDynamic_.alignment);
 }
 
-void Scene::Update(uint32_t frameIndex)
+void Scene::Update(uint32_t frameIndex, const std::vector<SwapchainFrame>& swapchainFrames)
 {
     if (camera_->isControllable) {
         camera_->Update();
     }
 
     camera_->matrix_.view = glm::lookAt(camera_->pos, camera_->at, camera_->up);
-    camera_->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetDetail().extent.width) / static_cast<float>(Swapchain::GetDetail().extent.height), 0.1f, 100.0f);
+    camera_->matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(Swapchain::Get().swapchainImageExtent.height), 0.1f, 100.0f);
     camera_->UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(Swapchain::GetDetail().frames[frameIndex].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_->GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraMatrixWrite(swapchainFrames[frameIndex].descriptor.descriptorSets_[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_->GetBufferInfo(), nullptr, nullptr);
     Device::GetHandle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
 
     if (!meshes.empty()) {
@@ -149,13 +144,13 @@ void Scene::Update(uint32_t frameIndex)
         }
 
         vk::WriteDescriptorSet modelMatrixWrite(
-            Swapchain::GetDetail().frames[frameIndex].descriptorSets[1], 0, 0, 1,
+            swapchainFrames[frameIndex].descriptor.descriptorSets_[1], 0, 0, 1,
             vk::DescriptorType::eUniformBufferDynamic, nullptr,
             &matrixUniformBufferDynamic_->GetHandle().bufferInfo, nullptr, nullptr);
         Device::GetHandle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
 
         vk::WriteDescriptorSet descriptorWrites;
-        descriptorWrites.dstSet = Swapchain::GetDetail().frames[frameIndex].descriptorSets[2];
+        descriptorWrites.dstSet = swapchainFrames[frameIndex].descriptor.descriptorSets_[2];
         descriptorWrites.dstBinding = 0;
         descriptorWrites.dstArrayElement = 0;
         descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;

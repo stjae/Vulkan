@@ -8,17 +8,17 @@
 class Command
 {
 public:
-    void CreateCommandPool(const char* usage);
-    void AllocateCommandBuffer(vk::CommandBuffer& commandBuffer) const;
-    void RecordDrawCommands(GraphicsPipeline& pipeline, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffset, ImDrawData* imDrawData);
+    vk::CommandPool commandPool_;
+    std::vector<vk::CommandBuffer> commandBuffers_;
+
+    void CreateCommandPool();
+    void AllocateCommandBuffer();
+    void RecordDrawCommands(GraphicsPipeline& pipeline, const vk::Image& image, uint32_t imageIndex, const vk::Framebuffer& framebuffer, const vk::Extent2D& extent, std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffset, ImDrawData* imDrawData);
     void RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size);
     void RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage, int width, int height);
     void TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
     void Submit();
     ~Command();
-
-    vk::CommandPool commandPool;
-    std::vector<vk::CommandBuffer> commandBuffers;
 };
 
 #endif

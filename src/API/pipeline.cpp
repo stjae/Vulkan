@@ -1,6 +1,6 @@
 #include "pipeline.h"
 
-void GraphicsPipeline::CreatePipeline()
+void GraphicsPipeline::CreatePipeline(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     std::string vertexShaderFilepath = "shaders/shader.vert.spv";
     std::string fragmentShaderFilepath = "shaders/shader.frag.spv";
@@ -95,7 +95,7 @@ void GraphicsPipeline::CreatePipeline()
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    handle_.pipelineLayout = CreatePipelineLayout();
+    handle_.pipelineLayout = CreatePipelineLayout(descriptorSetLayouts);
     pipelineInfo.layout = handle_.pipelineLayout;
 
     handle_.renderPass = CreateRenderPass();
@@ -105,49 +105,11 @@ void GraphicsPipeline::CreatePipeline()
     Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
-vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
+vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
-    DescriptorSetLayoutData layout0;
-    layout0.descriptorSetCount = 1;
-
-    // descriptor set layout #0
-    layout0.indices.push_back(0);
-    layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    layout0.descriptorCounts.push_back(1);
-    layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    layout0.bindingFlags.push_back({});
-    descriptorManager_.CreateSetLayout(layout0);
-    descriptorSetLayouts_.push_back(layout0);
-
-    DescriptorSetLayoutData layout1;
-    layout1.descriptorSetCount = 1;
-
-    // descriptor set layout #1
-    layout1.indices.push_back(0);
-    layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
-    layout1.descriptorCounts.push_back(1);
-    layout1.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex);
-    layout1.bindingFlags.push_back({});
-    descriptorManager_.CreateSetLayout(layout1);
-    descriptorSetLayouts_.push_back(layout1);
-
-    DescriptorSetLayoutData layout2;
-    layout2.descriptorSetCount = 1;
-
-    // descriptor set layout #2
-    layout2.indices.push_back(0);
-    layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    layout2.descriptorCounts.push_back(Device::limits.maxDescriptorSetSamplers);
-    layout2.bindingStages.push_back(vk::ShaderStageFlagBits::eFragment);
-    layout2.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-    layout2.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
-    descriptorManager_.CreateSetLayout(layout2);
-    descriptorSetLayouts_.push_back(layout2);
-    descriptorPoolCreateFlags_ = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
-
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.setLayoutCount = descriptorManager_.descriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = descriptorManager_.descriptorSetLayouts.data();
+    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
     return Device::GetHandle().device.createPipelineLayout(pipelineLayoutInfo);
 }
@@ -155,7 +117,7 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout()
 vk::RenderPass GraphicsPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = Swapchain::GetDetail().swapchainImageFormat;
+    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
     colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -165,7 +127,7 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription depthAttachmentDesc;
-    depthAttachmentDesc.format = Swapchain::GetDetail().depthImageFormat;
+    depthAttachmentDesc.format = vk::Format::eD32Sfloat;
     depthAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     depthAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -198,20 +160,9 @@ vk::RenderPass GraphicsPipeline::CreateRenderPass()
     return Device::GetHandle().device.createRenderPass(renderPassInfo);
 }
 
-void GraphicsPipeline::CreateDescriptorPool()
-{
-    descriptorManager_.CreatePool(static_cast<uint32_t>(Swapchain::GetDetail().frames.size()), descriptorSetLayouts_, descriptorPoolCreateFlags_);
-}
-
-void GraphicsPipeline::AllocateDescriptorSet(std::vector<vk::DescriptorSet>& descriptorSets)
-{
-    descriptorManager_.AllocateSet(descriptorSets);
-}
-
 GraphicsPipeline::~GraphicsPipeline()
 {
     Device::GetHandle().device.destroyPipeline(handle_.pipeline);
     Device::GetHandle().device.destroyPipelineLayout(handle_.pipelineLayout);
     Device::GetHandle().device.destroyRenderPass(handle_.renderPass);
-    Device::GetHandle().device.destroyDescriptorPool(descriptorManager_.GetDescriptorPool());
 }

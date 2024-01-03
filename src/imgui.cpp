@@ -34,8 +34,8 @@ void MyImGui::Setup(GraphicsPipeline& pipeline)
     init_info.Queue = Queue::GetHandle().graphicsQueue;
     init_info.DescriptorPool = imGuiDescriptorPool;
     init_info.Subpass = 0;
-    init_info.MinImageCount = Swapchain::GetSupportDetail().capabilities.minImageCount;
-    init_info.ImageCount = Swapchain::GetDetail().frames.size();
+    init_info.MinImageCount = Swapchain::Get().support.capabilities.minImageCount;
+    init_info.ImageCount = Swapchain::Get().frameCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, pipeline.GetHandle().renderPass);
 
@@ -177,7 +177,7 @@ void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
     }
 }
 
-void MyImGui::Draw(std::unique_ptr<Scene>& scene, int frameIndex)
+void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
 {
     SetCameraControl(scene);
 

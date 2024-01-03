@@ -15,13 +15,11 @@
 
 class GraphicsEngine
 {
-    int frameIndex_ = 0;
-    int maxFrameNumber_;
+    size_t frameIndex_ = 0;
 
     Device device_;
     Swapchain swapchain_;
     GraphicsPipeline pipeline_;
-    Command command_;
     MyImGui imgui_;
     ImDrawData* imDrawData_{};
 

@@ -2,12 +2,14 @@
 #define SWAPCHAINDATA_H
 
 #include "../common.h"
+#include "commands.h"
+#include "descriptor.h"
 #include "buffer.h"
 #include "image.h"
 #include "../camera.h"
 #include "../mesh.h"
 
-struct SwapchainSupportDetail
+struct SwapchainSupport
 {
     vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<vk::SurfaceFormatKHR> formats;
@@ -16,27 +18,26 @@ struct SwapchainSupportDetail
 
 struct SwapchainFrame
 {
-    vk::Image swapchainVkImage;
-    vk::ImageView swapchainVkImageView;
+    vk::Framebuffer framebuffer;
 
+    vk::Image swapchainImage;
+    vk::ImageView swapchainImageView;
     Image depthImage;
 
-    vk::Framebuffer framebuffer;
-    vk::CommandBuffer commandBuffer;
+    Command command;
+    Descriptor descriptor;
 
     vk::Fence inFlight;
     vk::Semaphore imageAvailable;
     vk::Semaphore renderFinished;
-
-    std::vector<vk::DescriptorSet> descriptorSets;
 };
 
-struct SwapchainDetail
+struct SwapchainBundle
 {
-    std::vector<SwapchainFrame> frames;
-    vk::Format swapchainImageFormat;
-    vk::Format depthImageFormat;
-    vk::Extent2D extent;
+    SwapchainSupport support;
+    vk::Extent2D swapchainImageExtent;
+    vk::SwapchainKHR swapchain;
+    size_t frameCount;
 };
 
 #endif

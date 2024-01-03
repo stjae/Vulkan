@@ -2,6 +2,7 @@
 #define SCENE_H
 
 #include "common.h"
+#include "scene.h"
 #include "camera.h"
 #include "mesh.h"
 #include "API/swapchain.h"
@@ -25,6 +26,7 @@ class Scene
     friend class GraphicsEngine;
     friend class MyImGui;
 
+    Command command_;
     std::vector<std::array<std::string, 2>> resources_;
     MeshCount meshCount_;
     UboDataDynamic uboDataDynamic_;
@@ -40,7 +42,7 @@ public:
     Scene();
     void PrepareMeshes();
     void UpdateMesh();
-    void Update(uint32_t frameIndex);
+    void Update(uint32_t frameIndex, const std::vector<SwapchainFrame>& swapchainFrames);
     ~Scene();
 };
 

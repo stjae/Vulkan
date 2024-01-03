@@ -15,7 +15,7 @@ public:
     void DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem);
     void DrawDockSpace(std::unique_ptr<Scene>& scene);
     void SetCameraControl(std::unique_ptr<Scene>& scene);
-    void Draw(std::unique_ptr<Scene>& scene, int frameIndex);
+    void Draw(std::unique_ptr<Scene>& scene, size_t frameIndex);
     ~MyImGui();
 };
 

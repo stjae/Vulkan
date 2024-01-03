@@ -11,14 +11,19 @@
 
 class Swapchain
 {
-    void QuerySwapchainSupportDetail();
-    vk::SurfaceFormatKHR ChooseSurfaceFormat();
-    vk::PresentModeKHR ChoosePresentMode();
-    vk::Extent2D ChooseExtent();
+    vk::SurfaceFormatKHR surfaceFormat_;
+    vk::PresentModeKHR presentMode_;
 
-    inline static vk::SwapchainKHR handle_;
-    inline static SwapchainSupportDetail supportDetail_;
-    inline static SwapchainDetail detail_;
+    inline static SwapchainBundle swapchainBundle_;
+
+    std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
+    vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
+
+    void QuerySwapchainSupport();
+    void ChooseSurfaceFormat();
+    void ChoosePresentMode();
+    void ChooseExtent();
 
 public:
     void CreateSwapchain();
@@ -27,9 +32,13 @@ public:
     void DestroySwapchain();
     ~Swapchain();
 
-    static const vk::SwapchainKHR& GetHandle() { return handle_; }
-    static const SwapchainSupportDetail& GetSupportDetail() { return supportDetail_; }
-    static SwapchainDetail& GetDetail() { return detail_; }
+    void CreateDescriptorSetLayout();
+    void RecordDrawCommand(GraphicsPipeline& pipeline, int frameIndex, const std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
+
+    static const SwapchainBundle& Get() { return swapchainBundle_; }
+    std::vector<SwapchainFrame> frames_;
+
+    const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayouts() { return descriptorSetLayouts_; }
 };
 
 #endif
