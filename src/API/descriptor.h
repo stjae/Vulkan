@@ -22,7 +22,7 @@ public:
     std::vector<vk::DescriptorSet> descriptorSets_;
 
     static vk::DescriptorSetLayout CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings);
-    void CreateDescriptorPool(uint32_t frameCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
+    void CreateDescriptorPool(uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
     void AllocateDescriptorSets(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     ~Descriptor();
 };

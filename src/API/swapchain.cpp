@@ -1,5 +1,13 @@
 #include "swapchain.h"
 
+Swapchain::Swapchain()
+{
+    CreateSwapchain();
+    CreateRenderPass();
+    CreateFrameBuffer();
+    PrepareFrames();
+}
+
 void Swapchain::CreateSwapchain()
 {
     QuerySwapchainSupport();
@@ -45,20 +53,7 @@ void Swapchain::CreateSwapchain()
 
         frames_[i].swapchainImage = images[i];
         frames_[i].swapchainImageView = Device::GetHandle().device.createImageView(imageViewCreateInfo);
-
-        vk::Extent3D extent = { swapchainBundle_.swapchainImageExtent.width, swapchainBundle_.swapchainImageExtent.height, 1 };
-        if (frames_[i].depthImage.GetHandle().image != VK_NULL_HANDLE) {
-            frames_[i].depthImage.DestroyImage();
-            frames_[i].depthImage.memory.Free();
-        }
-        if (frames_[i].depthImage.GetHandle().imageView != VK_NULL_HANDLE) {
-            frames_[i].depthImage.DestroyImageView();
-        }
-        frames_[i].depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
-        frames_[i].depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
-
-    CreateDescriptorSetLayout();
 }
 
 void Swapchain::QuerySwapchainSupport()
@@ -147,59 +142,47 @@ void Swapchain::ChooseExtent()
     }
 }
 
-void Swapchain::CreateDescriptorSetLayout()
+void Swapchain::CreateRenderPass()
 {
-    DescriptorSetLayoutData layout0;
-    layout0.descriptorSetCount = 1;
+    vk::AttachmentDescription colorAttachmentDesc;
+    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
+    colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
+    colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
+    colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
+    colorAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    colorAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    colorAttachmentDesc.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
-    // descriptor set layout #0
-    layout0.indices.push_back(0);
-    layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    layout0.descriptorCounts.push_back(1);
-    layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    layout0.bindingFlags.emplace_back();
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout0));
-    descriptorSetLayoutData_.push_back(layout0);
+    vk::AttachmentReference colorAttachmentRef;
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-    DescriptorSetLayoutData layout1;
-    layout1.descriptorSetCount = 1;
+    vk::SubpassDescription subpassDesc;
+    subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpassDesc.colorAttachmentCount = 1;
+    subpassDesc.pColorAttachments = &colorAttachmentRef;
 
-    // descriptor set layout #1
-    layout1.indices.push_back(0);
-    layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
-    layout1.descriptorCounts.push_back(1);
-    layout1.bindingStages.emplace_back(vk::ShaderStageFlagBits::eVertex);
-    layout1.bindingFlags.emplace_back();
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout1));
-    descriptorSetLayoutData_.push_back(layout1);
+    std::array<vk::AttachmentDescription, 1> attachments = { colorAttachmentDesc };
+    vk::RenderPassCreateInfo renderPassInfo;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpassDesc;
 
-    DescriptorSetLayoutData layout2;
-    layout2.descriptorSetCount = 1;
-
-    // descriptor set layout #2
-    layout2.indices.push_back(0);
-    layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    layout2.descriptorCounts.push_back(Device::limits.maxDescriptorSetSamplers);
-    layout2.bindingStages.emplace_back(vk::ShaderStageFlagBits::eFragment);
-    layout2.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-    layout2.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout2));
-    descriptorSetLayoutData_.push_back(layout2);
-
-    descriptorPoolCreateFlags_ = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
+    renderPass_ = Device::GetHandle().device.createRenderPass(renderPassInfo);
 }
 
-void Swapchain::CreateFrameBuffer(const vk::RenderPass& vkRenderPass)
+void Swapchain::CreateFrameBuffer()
 {
     for (int i = 0; i < frames_.size(); ++i) {
 
         std::vector<vk::ImageView> attachments = {
             frames_[i].swapchainImageView,
-            frames_[i].depthImage.GetHandle().imageView
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.renderPass = vkRenderPass;
+        framebufferInfo.renderPass = renderPass_;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = swapchainBundle_.swapchainImageExtent.width;
@@ -220,13 +203,10 @@ void Swapchain::PrepareFrames()
 
         frame.command.CreateCommandPool();
         frame.command.AllocateCommandBuffer();
-
-        frame.descriptor.CreateDescriptorPool(frames_.size(), descriptorSetLayoutData_, descriptorSetLayouts_, descriptorPoolCreateFlags_);
-        frame.descriptor.AllocateDescriptorSets(descriptorSetLayouts_);
     }
 }
 
-void Swapchain::RecordDrawCommand(GraphicsPipeline& pipeline, int frameIndex, const std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
+void Swapchain::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
 {
     auto& frame = frames_[frameIndex];
     auto& commandBuffer = frame.command.commandBuffers_.back();
@@ -252,7 +232,7 @@ void Swapchain::RecordDrawCommand(GraphicsPipeline& pipeline, int frameIndex, co
                                       nullptr, 1, &barrier);
     }
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = pipeline.GetHandle().renderPass;
+    renderPassInfo.renderPass = renderPass_;
     renderPassInfo.framebuffer = frame.framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = swapchainBundle_.swapchainImageExtent;
@@ -281,24 +261,6 @@ void Swapchain::RecordDrawCommand(GraphicsPipeline& pipeline, int frameIndex, co
 
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
-
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 0, 1, &frames_[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 2, 1, &frames_[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
-
-    for (int i = 0; i < meshes.size(); i++) {
-
-        vk::Buffer vertexBuffers[] = { meshes[i]->vertexBuffer->GetHandle().buffer };
-        vk::DeviceSize offsets[] = { 0 };
-
-        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(meshes[i]->indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
-
-        uint32_t dynamicOffset = i * dynamicOffsetSize;
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipelineLayout, 1, 1, &frames_[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.GetHandle().pipeline);
-
-        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i]->GetIndexCount()), 1, 0, 0, 0);
-    }
 
     ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
 
@@ -332,9 +294,6 @@ void Swapchain::DestroySwapchain()
         Device::GetHandle().device.destroyFence(frame.inFlight);
         Device::GetHandle().device.destroySemaphore(frame.imageAvailable);
         Device::GetHandle().device.destroySemaphore(frame.renderFinished);
-        frame.depthImage.memory.Free();
-        frame.depthImage.DestroyImage();
-        frame.depthImage.DestroyImageView();
     }
 
     Device::GetHandle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
@@ -346,4 +305,5 @@ Swapchain::~Swapchain()
     for (auto& layout : descriptorSetLayouts_) {
         Device::GetHandle().device.destroyDescriptorSetLayout(layout);
     }
+    Device::GetHandle().device.destroyRenderPass(renderPass_);
 }

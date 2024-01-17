@@ -16,6 +16,8 @@ class Swapchain
 
     inline static SwapchainBundle swapchainBundle_;
 
+    Pipeline pipeline_;
+    vk::RenderPass renderPass_;
     std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
     vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
@@ -26,19 +28,19 @@ class Swapchain
     void ChooseExtent();
 
 public:
+    Swapchain();
     void CreateSwapchain();
-    void CreateFrameBuffer(const vk::RenderPass& vkRenderPass);
+    void CreateFrameBuffer();
     void PrepareFrames();
     void DestroySwapchain();
     ~Swapchain();
 
-    void CreateDescriptorSetLayout();
-    void RecordDrawCommand(GraphicsPipeline& pipeline, int frameIndex, const std::vector<std::shared_ptr<Mesh>>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
+    void CreateRenderPass();
+    void RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
 
     static const SwapchainBundle& Get() { return swapchainBundle_; }
+    const vk::RenderPass& GetRenderPass() { return renderPass_; }
     std::vector<SwapchainFrame> frames_;
-
-    const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayouts() { return descriptorSetLayouts_; }
 };
 
 #endif

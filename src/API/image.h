@@ -19,7 +19,7 @@ public:
     void DestroyImageView();
     ~Image();
 
-    const ImageHandle& GetHandle() { return handle_; }
+    const ImageHandle& GetHandle() const { return handle_; }
 };
 
 #endif

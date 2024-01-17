@@ -22,7 +22,7 @@ struct SwapchainFrame
 
     vk::Image swapchainImage;
     vk::ImageView swapchainImageView;
-    Image depthImage;
+    //    Image depthImage;
 
     Command command;
     Descriptor descriptor;

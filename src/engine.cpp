@@ -1,16 +1,6 @@
 #include "engine.h"
 
-GraphicsEngine::GraphicsEngine()
-{
-    swapchain_.CreateSwapchain();
-    pipeline_.CreatePipeline(swapchain_.GetDescriptorSetLayouts());
-    swapchain_.CreateFrameBuffer(pipeline_.GetHandle().renderPass);
-
-    frameIndex_ = 0;
-    swapchain_.PrepareFrames();
-}
-
-void GraphicsEngine::InitSwapchainImages()
+void Engine::InitSwapchainImages()
 {
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -46,19 +36,21 @@ void GraphicsEngine::InitSwapchainImages()
     }
 }
 
-void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
+void Engine::Render(std::unique_ptr<Scene>& scene)
 {
     if (Device::GetHandle().device.waitForFences(1, &swapchain_.frames_[frameIndex_].inFlight, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
         spdlog::error("failed to wait for fences");
     }
 
     auto waitFrameImage = Device::GetHandle().device.acquireNextImageKHR(Swapchain::Get().swapchain, UINT64_MAX, swapchain_.frames_[frameIndex_].imageAvailable, nullptr);
-    int nextFrameIndex = (int)waitFrameImage.value;
 
     if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR ||
         waitFrameImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
+        viewport_.RecreateViewportImages();
+        imgui_.RecreateViewportDescriptorSets(viewport_);
+
         return;
     }
 
@@ -66,9 +58,20 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
         spdlog::error("failed to reset fences");
     }
 
-    scene->Update(nextFrameIndex, swapchain_.frames_);
+    scene->Update(frameIndex_, viewport_.frames_);
 
-    swapchain_.RecordDrawCommand(pipeline_, nextFrameIndex, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
+    swapchain_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
+    viewport_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic_.alignment);
+    viewport_.frames_[frameIndex_].command.Submit();
+
+    viewport_.frames_[frameIndex_].command.TransitImageLayout(&viewport_.frames_[frameIndex_].viewportImage,
+                                                              vk::ImageLayout::eColorAttachmentOptimal,
+                                                              vk::ImageLayout::eShaderReadOnlyOptimal,
+                                                              vk::AccessFlagBits::eColorAttachmentRead,
+                                                              vk::AccessFlagBits::eShaderRead,
+                                                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                              vk::PipelineStageFlagBits::eFragmentShader);
+    viewport_.frames_[frameIndex_].command.Submit();
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchain_.frames_[frameIndex_].imageAvailable };
@@ -77,7 +80,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStage;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = swapchain_.frames_[nextFrameIndex].command.commandBuffers_.data();
+    submitInfo.pCommandBuffers = swapchain_.frames_[frameIndex_].command.commandBuffers_.data();
     vk::Semaphore signalSemaphores[] = { swapchain_.frames_[frameIndex_].renderFinished };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
@@ -101,7 +104,7 @@ void GraphicsEngine::Render(std::unique_ptr<Scene>& scene)
     frameIndex_ = (frameIndex_ + 1) % Swapchain::Get().frameCount;
 }
 
-void GraphicsEngine::RecreateSwapchain()
+void Engine::RecreateSwapchain()
 {
     int width = 0;
     int height = 0;
@@ -114,31 +117,28 @@ void GraphicsEngine::RecreateSwapchain()
     for (auto& frame : swapchain_.frames_) {
         Device::GetHandle().device.freeCommandBuffers(frame.command.commandPool_, frame.command.commandBuffers_);
         Device::GetHandle().device.destroyCommandPool(frame.command.commandPool_);
+        frame.command.commandBuffers_.clear();
     }
     swapchain_.DestroySwapchain();
 
     swapchain_.CreateSwapchain();
-    swapchain_.CreateFrameBuffer(pipeline_.GetHandle().renderPass);
+    swapchain_.CreateFrameBuffer();
 
     swapchain_.PrepareFrames();
-
-    for (auto& frame : swapchain_.frames_) {
-        //        frame.ReallocateCommandBuffers();
-    }
 }
 
-void GraphicsEngine::SetupGui()
+void Engine::SetupGui()
 {
-    imgui_.Setup(pipeline_);
+    imgui_.Setup(swapchain_.GetRenderPass(), viewport_);
 }
 
-void GraphicsEngine::DrawGui(std::unique_ptr<Scene>& scene)
+void Engine::DrawGui(std::unique_ptr<Scene>& scene)
 {
-    imgui_.Draw(scene, frameIndex_);
+    imgui_.Draw(scene, viewport_, frameIndex_);
     imDrawData_ = ImGui::GetDrawData();
 }
 
-GraphicsEngine::~GraphicsEngine()
+Engine::~Engine()
 {
     Device::GetHandle().device.waitIdle();
 }

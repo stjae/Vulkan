@@ -25,7 +25,6 @@ struct PipelineHandle
 {
     vk::Pipeline pipeline;
     vk::PipelineLayout pipelineLayout;
-    vk::RenderPass renderPass;
 };
 
 struct BufferHandle

@@ -3,7 +3,7 @@
 Application::Application(const int width, const int height, const char* wName)
     : window_(width, height, wName)
 {
-    engine_ = std::make_unique<GraphicsEngine>();
+    engine_ = std::make_unique<Engine>();
     scene_ = std::make_unique<Scene>();
     engine_->SetupGui();
     engine_->InitSwapchainImages();

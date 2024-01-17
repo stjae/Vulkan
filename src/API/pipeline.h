@@ -6,16 +6,15 @@
 #include "descriptor.h"
 #include "../meshData.h"
 
-class GraphicsPipeline
+class Pipeline
 {
     Shader shader_;
     PipelineHandle handle_;
 
 public:
-    void CreatePipeline(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
+    void CreatePipeline(const vk::RenderPass& renderPass, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     vk::PipelineLayout CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
-    vk::RenderPass CreateRenderPass();
-    ~GraphicsPipeline();
+    ~Pipeline();
 
     const PipelineHandle& GetHandle() { return handle_; }
 };

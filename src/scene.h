@@ -7,6 +7,7 @@
 #include "mesh.h"
 #include "API/swapchain.h"
 #include "API/commands.h"
+#include "viewport.h"
 
 struct MeshCount
 {
@@ -23,7 +24,7 @@ struct UboDataDynamic
 
 class Scene
 {
-    friend class GraphicsEngine;
+    friend class Engine;
     friend class MyImGui;
 
     Command command_;
@@ -31,18 +32,18 @@ class Scene
     MeshCount meshCount_;
     UboDataDynamic uboDataDynamic_;
     std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
-    std::unique_ptr<Camera> camera_;
+    Camera camera_;
 
     void CreateUniformBuffers();
     void UpdateBuffer();
 
 public:
-    std::vector<std::shared_ptr<Mesh>> meshes;
+    std::vector<Mesh> meshes;
 
     Scene();
     void PrepareMeshes();
     void UpdateMesh();
-    void Update(uint32_t frameIndex, const std::vector<SwapchainFrame>& swapchainFrames);
+    void Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames);
     ~Scene();
 };
 

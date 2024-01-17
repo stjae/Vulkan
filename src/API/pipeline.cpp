@@ -1,6 +1,6 @@
 #include "pipeline.h"
 
-void GraphicsPipeline::CreatePipeline(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
+void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     std::string vertexShaderFilepath = "shaders/shader.vert.spv";
     std::string fragmentShaderFilepath = "shaders/shader.frag.spv";
@@ -98,14 +98,13 @@ void GraphicsPipeline::CreatePipeline(const std::vector<vk::DescriptorSetLayout>
     handle_.pipelineLayout = CreatePipelineLayout(descriptorSetLayouts);
     pipelineInfo.layout = handle_.pipelineLayout;
 
-    handle_.renderPass = CreateRenderPass();
-    pipelineInfo.renderPass = handle_.renderPass;
+    pipelineInfo.renderPass = renderPass;
 
     handle_.pipeline = (Device::GetHandle().device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
-    Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
+    Log(debug, fmt::terminal_color::bright_green, "created pipeline");
 }
 
-vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
+vk::PipelineLayout Pipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
@@ -114,55 +113,8 @@ vk::PipelineLayout GraphicsPipeline::CreatePipelineLayout(const std::vector<vk::
     return Device::GetHandle().device.createPipelineLayout(pipelineLayoutInfo);
 }
 
-vk::RenderPass GraphicsPipeline::CreateRenderPass()
-{
-    vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
-    colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
-    colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
-    colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
-    colorAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    colorAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachmentDesc.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentDescription depthAttachmentDesc;
-    depthAttachmentDesc.format = vk::Format::eD32Sfloat;
-    depthAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
-    depthAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
-    depthAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
-    depthAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eClear;
-    depthAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    depthAttachmentDesc.initialLayout = vk::ImageLayout::eUndefined;
-    depthAttachmentDesc.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::AttachmentReference colorAttachmentRef;
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference depthAttachmentRef;
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::SubpassDescription subpassDesc;
-    subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpassDesc.colorAttachmentCount = 1;
-    subpassDesc.pColorAttachments = &colorAttachmentRef;
-    subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
-
-    std::array<vk::AttachmentDescription, 2> attachments = { colorAttachmentDesc, depthAttachmentDesc };
-    vk::RenderPassCreateInfo renderPassInfo;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassDesc;
-
-    return Device::GetHandle().device.createRenderPass(renderPassInfo);
-}
-
-GraphicsPipeline::~GraphicsPipeline()
+Pipeline::~Pipeline()
 {
     Device::GetHandle().device.destroyPipeline(handle_.pipeline);
     Device::GetHandle().device.destroyPipelineLayout(handle_.pipelineLayout);
-    Device::GetHandle().device.destroyRenderPass(handle_.renderPass);
 }

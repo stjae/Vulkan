@@ -17,22 +17,22 @@ vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const DescriptorSe
     return Device::GetHandle().device.createDescriptorSetLayout(layoutInfo);
 }
 
-void Descriptor::CreateDescriptorPool(uint32_t frameCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
+void Descriptor::CreateDescriptorPool(uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
-    for (auto& layoutData : descriptorSetLayoutData) {
-        for (int i = 0; i < layoutData.descriptorSetCount; i++) {
+    for (auto& layout : descriptorSetLayoutData) {
+        for (int i = 0; i < layout.descriptorSetCount; i++) {
 
-            for (int j = 0; j < layoutData.descriptorCounts[i]; j++) {
+            for (int j = 0; j < layout.descriptorCounts[i]; j++) {
 
-                vk::DescriptorPoolSize poolSize(layoutData.descriptorTypes[i], frameCount);
+                vk::DescriptorPoolSize poolSize(layout.descriptorTypes[i], descriptorCount);
                 poolSizes.push_back(poolSize);
             }
         }
     }
 
-    vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, frameCount * descriptorSetLayouts.size(), static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
+    vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, descriptorCount * descriptorSetLayoutCount, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
     descriptorPool_ = Device::GetHandle().device.createDescriptorPool(poolInfo);
 }
 

@@ -12,7 +12,7 @@ class Buffer : public Memory
 public:
     explicit Buffer(const BufferInput& bufferInput);
     void MapMemory(vk::DeviceSize range);
-    [[nodiscard]] size_t GetSize() const { return bufferSize_; }
+    size_t GetSize() const { return bufferSize_; }
     void Destroy();
     ~Buffer();
 

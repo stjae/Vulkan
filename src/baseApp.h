@@ -16,7 +16,7 @@ public:
 
 private:
     Window window_;
-    std::unique_ptr<GraphicsEngine> engine_;
+    std::unique_ptr<Engine> engine_;
     std::unique_ptr<Scene> scene_;
 };
 

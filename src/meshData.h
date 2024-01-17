@@ -18,8 +18,8 @@ public:
     void CreateTexture();
     void DestroyStagingBuffer();
 
-    size_t GetVertexCount() { return vertices.size(); }
-    size_t GetIndexCount() { return indices.size(); }
+    //    size_t GetVertexCount() { return vertices.size(); }
+    size_t GetIndexCount() const { return indices.size(); }
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;
@@ -29,6 +29,7 @@ public:
 
     std::unique_ptr<Image> textureImage;
     std::unique_ptr<Buffer> textureStagingBuffer;
+
     int textureWidth{}, textureHeight{};
     size_t textureSize{};
     const char* textureFilePath{};

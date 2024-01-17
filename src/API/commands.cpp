@@ -23,7 +23,6 @@ void Command::AllocateCommandBuffer()
 
 void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {
-    AllocateCommandBuffer();
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
                                          {});
     commandBuffers_.back().begin(beginInfo);
@@ -36,7 +35,6 @@ void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Buffer& 
 
 void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& dstImage, int width, int height)
 {
-    AllocateCommandBuffer();
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
     commandBuffers_.back().begin(beginInfo);
 
@@ -47,9 +45,8 @@ void Command::RecordCopyCommands(const vk::Buffer& srcBuffer, const vk::Image& d
     commandBuffers_.back().end();
 }
 
-void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+void Command::TransitImageLayout(Image* image, vk::ImageLayout srcImageLayout, vk::ImageLayout dstImageLayout, vk::AccessFlags srcAccessFlags, vk::AccessFlags dstAccessFlags, vk::PipelineStageFlags srcPipelineStageFlags, vk::PipelineStageFlags dstPipelineStageFlags)
 {
-    AllocateCommandBuffer();
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
     commandBuffers_.back().begin(beginInfo);
 
@@ -57,28 +54,17 @@ void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayo
     vk::PipelineStageFlags dstStage;
 
     vk::ImageMemoryBarrier barrier;
-    if (oldLayout == vk::ImageLayout::eUndefined &&
-        newLayout == vk::ImageLayout::eTransferDstOptimal) {
-        barrier.srcAccessMask = {};
-        barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+    barrier.srcAccessMask = srcAccessFlags;
+    barrier.dstAccessMask = dstAccessFlags;
 
-        srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
-        dstStage = vk::PipelineStageFlagBits::eTransfer;
-    } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
-               newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-        barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-        barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+    srcStage = srcPipelineStageFlags;
+    dstStage = dstPipelineStageFlags;
 
-        srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-    } else {
-        spdlog::error("unsupported layout transition");
-    }
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
+    barrier.oldLayout = srcImageLayout;
+    barrier.newLayout = dstImageLayout;
     barrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
     barrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
-    barrier.image = image;
+    barrier.image = image->GetHandle().image;
     barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
@@ -87,6 +73,8 @@ void Command::TransitImageLayout(const vk::Image& image, vk::ImageLayout oldLayo
 
     commandBuffers_.back().pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
     commandBuffers_.back().end();
+
+    image->SetInfo(dstImageLayout);
 }
 
 void Command::Submit()
@@ -97,8 +85,6 @@ void Command::Submit()
 
     Queue::GetHandle().graphicsQueue.submit(submitInfo);
     Queue::GetHandle().graphicsQueue.waitIdle();
-
-    commandBuffers_.clear();
 }
 
 Command::~Command()

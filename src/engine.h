@@ -12,27 +12,27 @@
 #include "scene.h"
 #include "camera.h"
 #include "imgui.h"
+#include "viewport.h"
 
-class GraphicsEngine
+class Engine
 {
     size_t frameIndex_ = 0;
 
     Device device_;
     Swapchain swapchain_;
-    GraphicsPipeline pipeline_;
+    Viewport viewport_;
     MyImGui imgui_;
     ImDrawData* imDrawData_{};
 
     std::unique_ptr<Scene> scene_;
 
 public:
-    GraphicsEngine();
     void InitSwapchainImages();
     void Render(std::unique_ptr<Scene>& scene);
     void RecreateSwapchain();
     void SetupGui();
     void DrawGui(std::unique_ptr<Scene>& scene);
-    ~GraphicsEngine();
+    ~Engine();
 };
 
 #endif

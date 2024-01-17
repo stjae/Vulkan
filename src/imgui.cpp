@@ -1,27 +1,21 @@
 #include "imgui.h"
 #include <font/IconsFontAwesome5.h>
 
-void MyImGui::Setup(GraphicsPipeline& pipeline)
+void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
-    {
-        vk::DescriptorPoolSize poolSizes[] = {
-            { vk::DescriptorType::eCombinedImageSampler, 1 },
-        };
+    DescriptorSetLayoutData layout;
+    layout.descriptorSetCount = 1;
+    layout.indices.push_back(0);
+    layout.descriptorCounts.push_back(1);
+    layout.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
+    descriptorSetLayoutData_.push_back(layout);
 
-        vk::DescriptorPoolCreateInfo poolInfo(
-            vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1,
-            static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes)), poolSizes);
-
-        if (Device::GetHandle().device.createDescriptorPool(
-                &poolInfo, nullptr, &imGuiDescriptorPool) != vk::Result::eSuccess) {
-            spdlog::error("failed to create descriptor pool for ImGui");
-        }
-    }
+    descriptor_.CreateDescriptorPool(4, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui::StyleColorsDark();
 
@@ -32,12 +26,12 @@ void MyImGui::Setup(GraphicsPipeline& pipeline)
     init_info.Device = Device::GetHandle().device;
     init_info.QueueFamily = Queue::GetGraphicsQueueFamilyIndex();
     init_info.Queue = Queue::GetHandle().graphicsQueue;
-    init_info.DescriptorPool = imGuiDescriptorPool;
+    init_info.DescriptorPool = descriptor_.descriptorPool_;
     init_info.Subpass = 0;
     init_info.MinImageCount = Swapchain::Get().support.capabilities.minImageCount;
     init_info.ImageCount = Swapchain::Get().frameCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    ImGui_ImplVulkan_Init(&init_info, pipeline.GetHandle().renderPass);
+    ImGui_ImplVulkan_Init(&init_info, renderPass);
 
     io.Fonts->AddFontDefault();
     float baseFontSize = 13.0f;                      // 13.0f is the size of the default font. Change to the font size you use.
@@ -55,11 +49,28 @@ void MyImGui::Setup(GraphicsPipeline& pipeline)
     // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
 
     // Scale DPI
-    if (viewport->DpiScale > 0.0f) {
+    if (imguiViewport->DpiScale > 0.0f) {
         ImFontConfig fontConfig;
-        fontConfig.SizePixels = 13.0f * viewport->DpiScale;
+        fontConfig.SizePixels = 13.0f * imguiViewport->DpiScale;
         io.Fonts->AddFontDefault(&fontConfig);
     }
+
+    viewportDescriptorSets_.resize(Swapchain::Get().frameCount);
+    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
+        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames_[i].viewportImage.GetHandle().sampler,
+                                                                 viewport.frames_[i].viewportImage.GetHandle().imageView,
+                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void MyImGui::RecreateViewportDescriptorSets(Viewport& viewport)
+{
+    for (auto& descriptorSet : viewportDescriptorSets_)
+        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+
+    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
+        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames_[i].viewportImage.GetHandle().sampler,
+                                                                 viewport.frames_[i].viewportImage.GetHandle().imageView,
+                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem)
@@ -67,11 +78,11 @@ void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem)
     ImGuiIO& io = ImGui::GetIO();
 
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_->isControllable)
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_.isControllable)
         OP = ImGuizmo::OPERATION::SCALE;
 
     // ImGuizmo
@@ -90,13 +101,13 @@ void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem)
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene->camera_->matrix_.view),
-                         glm::value_ptr(scene->camera_->matrix_.proj), OP,
+    ImGuizmo::Manipulate(glm::value_ptr(scene->camera_.matrix_.view),
+                         glm::value_ptr(scene->camera_.matrix_.proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
     *modelMat = glm::make_mat4(objectMatrix);
 }
 
-void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
+void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -104,10 +115,10 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
     static bool opt_padding = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
+    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(imguiViewport->WorkPos);
+    ImGui::SetNextWindowSize(imguiViewport->WorkSize);
+    ImGui::SetNextWindowViewport(imguiViewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
@@ -130,24 +141,24 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Open")) {
                 std::string filePath = LaunchNfd();
-                scene->meshes.emplace_back(std::make_shared<Mesh>());
-                scene->meshes.back()->LoadModel(filePath.c_str(), nullptr);
-                scene->meshes.back()->CreateBuffers();
+                scene->meshes.emplace_back();
+                scene->meshes.back().LoadModel(filePath.c_str(), nullptr);
+                scene->meshes.back().CreateBuffers();
                 scene->UpdateMesh();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
                 scene->meshCount_.square++;
-                scene->meshes.emplace_back(std::make_shared<Mesh>());
-                scene->meshes.back()->CreateSquare(nullptr, scene->meshCount_.square);
-                scene->meshes.back()->CreateBuffers();
+                scene->meshes.emplace_back();
+                scene->meshes.back().CreateSquare(nullptr, scene->meshCount_.square);
+                scene->meshes.back().CreateBuffers();
                 scene->UpdateMesh();
             }
             if (ImGui::MenuItem("Cube")) {
                 scene->meshCount_.cube++;
-                scene->meshes.emplace_back(std::make_shared<Mesh>());
-                scene->meshes.back()->CreateCube(nullptr, scene->meshCount_.cube);
-                scene->meshes.back()->CreateBuffers();
+                scene->meshes.emplace_back();
+                scene->meshes.back().CreateCube(nullptr, scene->meshCount_.cube);
+                scene->meshes.back().CreateBuffers();
                 scene->UpdateMesh();
             }
 
@@ -157,15 +168,40 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene)
         ImGui::EndMenuBar();
     }
     ImGui::End();
+
+    viewport.frames_[frameIndex].command.TransitImageLayout(&viewport.frames_[frameIndex].viewportImage,
+                                                            vk::ImageLayout::eUndefined,
+                                                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                                                            {},
+                                                            vk::AccessFlagBits::eShaderRead,
+                                                            vk::PipelineStageFlagBits::eTopOfPipe,
+                                                            vk::PipelineStageFlagBits::eFragmentShader);
+    viewport.frames_[frameIndex].command.Submit();
+
+    ImGui::Begin("Viewport");
+
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+
+    ImGui::End();
+
+    viewport.frames_[frameIndex].command.TransitImageLayout(&viewport.frames_[frameIndex].viewportImage,
+                                                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                                                            vk::ImageLayout::eColorAttachmentOptimal,
+                                                            vk::AccessFlagBits::eShaderRead,
+                                                            vk::AccessFlagBits::eColorAttachmentRead,
+                                                            vk::PipelineStageFlagBits::eFragmentShader,
+                                                            vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    viewport.frames_[frameIndex].command.Submit();
 }
 
 void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
 {
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        scene->camera_->isControllable = !scene->camera_->isControllable;
+        scene->camera_.isControllable = !scene->camera_.isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
-        if (scene->camera_->isControllable) {
+        if (scene->camera_.isControllable) {
             glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
@@ -173,11 +209,11 @@ void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        scene->camera_->isInitial = true;
+        scene->camera_.isInitial = true;
     }
 }
 
-void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
+void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
 {
     SetCameraControl(scene);
 
@@ -186,11 +222,11 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui::NewFrame();
 
-    DrawDockSpace(scene);
+    DrawDockSpace(scene, viewport, frameIndex);
 
     static int currentItem = -1;
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
@@ -204,7 +240,7 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
     ImGui::Begin("Object List");
     if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene->meshes.size(); i++) {
-            if (ImGui::Selectable(scene->meshes[i]->name.c_str(), scene->meshes[i]->isSelected)) {
+            if (ImGui::Selectable(scene->meshes[i].name.c_str(), scene->meshes[i].isSelected)) {
                 currentItem = i;
             }
             if (ImGui::BeginPopupContextItem()) {
@@ -234,7 +270,7 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text("%s", scene->meshes[currentItem]->name.c_str());
+        ImGui::Text("%s", scene->meshes[currentItem].name.c_str());
         ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
 
@@ -267,11 +303,11 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
     ImGui::End();
 
     // Information Overlay
-    ImGui::SetNextWindowPos(ImVec2(viewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBackground;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene->camera_->isControllable ? "on" : "off");
+    ImGui::Text("Camera Control: %s [press C]", scene->camera_.isControllable ? "on" : "off");
     ImGui::End();
 
     ImGui::EndFrame();
@@ -280,8 +316,9 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, size_t frameIndex)
 
 MyImGui::~MyImGui()
 {
+    for (auto& descriptorSet : viewportDescriptorSets_)
+        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    Device::GetHandle().device.destroyDescriptorPool(imGuiDescriptorPool);
     ImGui::DestroyContext();
 }
