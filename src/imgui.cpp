@@ -62,49 +62,53 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
                                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void MyImGui::RecreateViewportDescriptorSets(Viewport& viewport)
+void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
 {
-    for (auto& descriptorSet : viewportDescriptorSets_)
-        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+    SetCameraControl(scene);
 
-    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
-        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames_[i].viewportImage.GetHandle().sampler,
-                                                                 viewport.frames_[i].viewportImage.GetHandle().imageView,
-                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    ImGui::NewFrame();
+
+    DrawDockSpace(scene, viewport, frameIndex);
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || itemSelected_ > scene->meshes.size() - 1) // Prevent index out of vector range
+        itemSelected_ = -1;
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && itemSelected_ > -1) {
+        scene->meshes.erase(scene->meshes.begin() + itemSelected_);
+        itemSelected_ = -1;
+    }
+
+    DrawObjectListWindow(scene);
+    DrawObjectAttribWindow(scene);
+    DrawResourceWindow(scene);
+    ShowInformationOverlay(scene);
+
+    ImGui::EndFrame();
+    ImGui::Render();
 }
 
-void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, int currentItem)
+void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
 {
-    ImGuiIO& io = ImGui::GetIO();
+    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+        scene->camera_.isControllable = !scene->camera_.isControllable;
+        ImGuiIO& io = ImGui::GetIO();
 
-    static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_.isControllable)
-        OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_.isControllable)
-        OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_.isControllable)
-        OP = ImGuizmo::OPERATION::SCALE;
+        if (scene->camera_.isControllable) {
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        } else {
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        }
 
-    // ImGuizmo
-    ImGuizmo::BeginFrame();
-    ImGuizmo::AllowAxisFlip(false);
-    ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
-    ImGuizmo::SetRect(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
-
-    float translation[3];
-    float rotation[3];
-    float scale[3];
-    float objectMatrix[16];
-
-    auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
-
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
-                                          rotation, scale);
-    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene->camera_.matrix_.view),
-                         glm::value_ptr(scene->camera_.matrix_.proj), OP,
-                         ImGuizmo::LOCAL, objectMatrix);
-    *modelMat = glm::make_mat4(objectMatrix);
+        scene->camera_.isInitial = true;
+    }
 }
 
 void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
@@ -169,6 +173,11 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, s
     }
     ImGui::End();
 
+    DrawViewport(scene, viewport, frameIndex);
+}
+
+void MyImGui::DrawViewport(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
+{
     viewport.frames_[frameIndex].command.TransitImageLayout(&viewport.frames_[frameIndex].viewportImage,
                                                             vk::ImageLayout::eUndefined,
                                                             vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -181,6 +190,7 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, s
     ImGui::Begin("Viewport");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    ImVec2 viewportPanelPos = ImGui::GetWindowPos();
     float swapchainRatio = (float)Swapchain::Get().swapchainImageExtent.width / (float)Swapchain::Get().swapchainImageExtent.height;
     float viewportRatio = viewportPanelSize.x / viewportPanelSize.y;
     float t = swapchainRatio / viewportRatio;
@@ -201,6 +211,9 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, s
 
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
 
+    if (itemSelected_ > -1)
+        DrawImGuizmo(scene, viewportPanelPos);
+
     ImGui::End();
 
     viewport.frames_[frameIndex].command.TransitImageLayout(&viewport.frames_[frameIndex].viewportImage,
@@ -213,58 +226,52 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, s
     viewport.frames_[frameIndex].command.Submit();
 }
 
-void MyImGui::SetCameraControl(std::unique_ptr<Scene>& scene)
+void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, ImVec2& viewportPanelPos)
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        scene->camera_.isControllable = !scene->camera_.isControllable;
-        ImGuiIO& io = ImGui::GetIO();
+    auto& io = ImGui::GetIO();
 
-        if (scene->camera_.isControllable) {
-            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-        } else {
-            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-        }
+    static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene->camera_.isControllable)
+        OP = ImGuizmo::OPERATION::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene->camera_.isControllable)
+        OP = ImGuizmo::OPERATION::ROTATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene->camera_.isControllable)
+        OP = ImGuizmo::OPERATION::SCALE;
 
-        scene->camera_.isInitial = true;
-    }
+    // ImGuizmo
+    ImGuizmo::BeginFrame();
+    ImGuizmo::AllowAxisFlip(false);
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, io.DisplaySize.x, io.DisplaySize.y);
+
+    float translation[3];
+    float rotation[3];
+    float scale[3];
+    float objectMatrix[16];
+
+    auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (itemSelected_ * scene->uboDataDynamic_.alignment));
+
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+                                          rotation, scale);
+    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
+    ImGuizmo::Manipulate(glm::value_ptr(scene->camera_.matrix_.view),
+                         glm::value_ptr(scene->camera_.matrix_.proj), OP,
+                         ImGuizmo::LOCAL, objectMatrix);
+    *modelMat = glm::make_mat4(objectMatrix);
 }
 
-void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex)
+void MyImGui::DrawObjectListWindow(std::unique_ptr<Scene>& scene)
 {
-    SetCameraControl(scene);
-
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
-
-    ImGui::NewFrame();
-
-    DrawDockSpace(scene, viewport, frameIndex);
-
-    static int currentItem = -1;
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered() || currentItem > scene->meshes.size() - 1) // Prevent index out of vector range
-        currentItem = -1;
-
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && currentItem > -1) {
-        scene->meshes.erase(scene->meshes.begin() + currentItem);
-        currentItem = -1;
-    }
-
     ImGui::Begin("Object List");
     if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene->meshes.size(); i++) {
             if (ImGui::Selectable(scene->meshes[i].name.c_str(), scene->meshes[i].isSelected)) {
-                currentItem = i;
+                itemSelected_ = i;
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("delete")) {
                     scene->meshes.erase(scene->meshes.begin() + i);
-                    currentItem = -1;
+                    itemSelected_ = -1;
                 }
                 ImGui::EndPopup();
             }
@@ -272,12 +279,14 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
         ImGui::EndListBox();
     }
     ImGui::End();
+}
 
+void MyImGui::DrawObjectAttribWindow(std::unique_ptr<Scene>& scene)
+{
     ImGui::Begin("Object Attribute");
-    if (currentItem > -1) {
-        DrawImGuizmo(scene, currentItem);
+    if (itemSelected_ > -1) {
 
-        auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (currentItem * scene->uboDataDynamic_.alignment));
+        auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic_.model + (itemSelected_ * scene->uboDataDynamic_.alignment));
 
         float translation[3];
         float rotation[3];
@@ -288,7 +297,7 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text("%s", scene->meshes[currentItem].name.c_str());
+        ImGui::Text("%s", scene->meshes[itemSelected_].name.c_str());
         ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
 
@@ -297,7 +306,10 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
         *modelMat = glm::make_mat4(objectMatrix);
     }
     ImGui::End();
+}
 
+void MyImGui::DrawResourceWindow(std::unique_ptr<Scene>& scene)
+{
     ImGui::Begin("Resources");
     ImGui::BeginChild("##", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize, ImGuiWindowFlags_ChildWindow);
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
@@ -306,7 +318,7 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
     }
     ImGui::EndChild();
 
-    // Drag Drop Source
+    // Drag & Drop Implementation
     for (auto& resource : scene->resources_) {
         ImGui::Button(ICON_FA_CUBE, { 100, 100 });
 
@@ -319,17 +331,29 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
         ImGui::TextWrapped("%s", resource.at(0).c_str());
     }
     ImGui::End();
+}
 
-    // Information Overlay
+void MyImGui::ShowInformationOverlay(std::unique_ptr<Scene>& scene)
+{
+    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
+
     ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBackground;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
     ImGui::Text("Camera Control: %s [press C]", scene->camera_.isControllable ? "on" : "off");
     ImGui::End();
+}
 
-    ImGui::EndFrame();
-    ImGui::Render();
+void MyImGui::RecreateViewportDescriptorSets(Viewport& viewport)
+{
+    for (auto& descriptorSet : viewportDescriptorSets_)
+        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+
+    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
+        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames_[i].viewportImage.GetHandle().sampler,
+                                                                 viewport.frames_[i].viewportImage.GetHandle().imageView,
+                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 MyImGui::~MyImGui()
