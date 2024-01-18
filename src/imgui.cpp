@@ -181,6 +181,24 @@ void MyImGui::DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, s
     ImGui::Begin("Viewport");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    float swapchainRatio = (float)Swapchain::Get().swapchainImageExtent.width / (float)Swapchain::Get().swapchainImageExtent.height;
+    float viewportRatio = viewportPanelSize.x / viewportPanelSize.y;
+    float t = swapchainRatio / viewportRatio;
+
+    if (viewport.ratio_ != viewportRatio) {
+        viewport.ratio_ = viewportRatio;
+        if (t <= 1.0f) {
+            viewport.extent_.width = (uint32_t)(Swapchain::Get().swapchainImageExtent.width);
+            viewport.extent_.height = (uint32_t)((float)Swapchain::Get().swapchainImageExtent.height * t);
+        } else {
+            viewport.extent_.width = (uint32_t)((float)Swapchain::Get().swapchainImageExtent.width / t);
+            viewport.extent_.height = (uint32_t)(Swapchain::Get().swapchainImageExtent.height);
+        }
+
+        viewport.RecreateViewportImages();
+        RecreateViewportDescriptorSets(viewport);
+    }
+
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
 
     ImGui::End();

@@ -3,6 +3,7 @@
 Viewport::Viewport()
 {
     frames_.resize(Swapchain::Get().frameCount);
+    extent_ = vk::Extent2D((uint32_t)Swapchain::Get().swapchainImageExtent.width, (uint32_t)Swapchain::Get().swapchainImageExtent.height);
 
     CreateDescriptorSetLayout();
     CreateRenderPass();
@@ -16,12 +17,12 @@ Viewport::Viewport()
         frame.descriptor.CreateDescriptorPool(1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
         frame.descriptor.AllocateDescriptorSets(descriptorSetLayouts_);
 
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { Swapchain::Get().swapchainImageExtent.width, Swapchain::Get().swapchainImageExtent.height, 1 });
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent_.width, extent_.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.CreateSampler();
-        frame.viewportImage.SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
+        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { Swapchain::Get().swapchainImageExtent.width, Swapchain::Get().swapchainImageExtent.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent_.width, extent_.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
 
@@ -129,12 +130,12 @@ void Viewport::CreateFrameBuffer()
         framebufferInfo.renderPass = renderPass_;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = Swapchain::Get().swapchainImageExtent.width;
-        framebufferInfo.height = Swapchain::Get().swapchainImageExtent.height;
+        framebufferInfo.width = extent_.width;
+        framebufferInfo.height = extent_.height;
         framebufferInfo.layers = 1;
 
         frames_[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
-        Log(debug, fmt::terminal_color::bright_green, "created viewport framebuffer for frame {}", i);
+        //        Log(debug, fmt::terminal_color::bright_green, "created viewport framebuffer for frame {}", i);
     }
 }
 
@@ -153,12 +154,22 @@ void Viewport::RecreateViewportImages()
     }
 
     for (auto& frame : frames_) {
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { Swapchain::Get().swapchainImageExtent.width, Swapchain::Get().swapchainImageExtent.height, 1 });
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent_.width, extent_.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
-        frame.viewportImage.SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
+        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { Swapchain::Get().swapchainImageExtent.width, Swapchain::Get().swapchainImageExtent.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent_.width, extent_.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
+
+        frame.command.TransitImageLayout(&frame.viewportImage,
+                                         vk::ImageLayout::eUndefined,
+                                         vk::ImageLayout::eShaderReadOnlyOptimal,
+                                         {},
+                                         vk::AccessFlagBits::eShaderRead,
+                                         vk::PipelineStageFlagBits::eTopOfPipe,
+                                         vk::PipelineStageFlagBits::eFragmentShader);
+
+        frame.command.Submit();
     }
 
     CreateFrameBuffer();
@@ -176,7 +187,7 @@ void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& mes
     renderPassInfo.renderPass = renderPass_;
     renderPassInfo.framebuffer = frame.framebuffer;
     vk::Rect2D renderArea(0, 0);
-    renderArea.extent = Swapchain::Get().swapchainImageExtent;
+    renderArea.extent = extent_;
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue clearValue;
     clearValue.color = { std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f } };

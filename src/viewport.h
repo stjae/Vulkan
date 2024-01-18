@@ -28,6 +28,9 @@ public:
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
     vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
 
+    vk::Extent2D extent_;
+    float ratio_{};
+
     void CreateDescriptorSetLayout();
     void CreateRenderPass();
     void CreateFrameBuffer();
