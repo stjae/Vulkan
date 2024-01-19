@@ -187,34 +187,30 @@ void MyImGui::DrawViewport(std::unique_ptr<Scene>& scene, Viewport& viewport, si
                                                             vk::PipelineStageFlagBits::eFragmentShader);
     viewport.frames_[frameIndex].command.Submit();
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
 
-    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportPanelPos = ImGui::GetWindowPos();
-    float swapchainRatio = (float)Swapchain::Get().swapchainImageExtent.width / (float)Swapchain::Get().swapchainImageExtent.height;
-    float viewportRatio = viewportPanelSize.x / viewportPanelSize.y;
-    float t = swapchainRatio / viewportRatio;
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    float viewportPanelRatio = viewportPanelSize.x / viewportPanelSize.y;
 
-    if (viewport.ratio_ != viewportRatio) {
-        viewport.ratio_ = viewportRatio;
-        if (t <= 1.0f) {
-            viewport.extent_.width = (uint32_t)(Swapchain::Get().swapchainImageExtent.width);
-            viewport.extent_.height = (uint32_t)((float)Swapchain::Get().swapchainImageExtent.height * t);
-        } else {
-            viewport.extent_.width = (uint32_t)((float)Swapchain::Get().swapchainImageExtent.width / t);
-            viewport.extent_.height = (uint32_t)(Swapchain::Get().swapchainImageExtent.height);
-        }
+    if (viewport.panelRatio_ != viewportPanelRatio || viewport.outDated_) {
+        viewport.panelRatio_ = viewportPanelRatio;
+
+        viewport.extent_.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
+        viewport.extent_.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
 
         viewport.RecreateViewportImages();
         RecreateViewportDescriptorSets(viewport);
+
+        viewport.outDated_ = false;
     }
 
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
-
     if (itemSelected_ > -1)
         DrawImGuizmo(scene, viewportPanelPos);
-
     ImGui::End();
+    ImGui::PopStyleVar();
 
     viewport.frames_[frameIndex].command.TransitImageLayout(&viewport.frames_[frameIndex].viewportImage,
                                                             vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -314,7 +310,8 @@ void MyImGui::DrawResourceWindow(std::unique_ptr<Scene>& scene)
     ImGui::BeginChild("##", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize, ImGuiWindowFlags_ChildWindow);
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
         std::string path = LaunchNfd();
-        scene->resources_.push_back({ "model", path });
+        if (!path.empty())
+            scene->resources_.push_back({ "model", path });
     }
     ImGui::EndChild();
 

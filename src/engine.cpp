@@ -48,6 +48,7 @@ void Engine::Render(std::unique_ptr<Scene>& scene)
         waitFrameImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
+        viewport_.outDated_ = true;
         viewport_.RecreateViewportImages();
         imgui_.RecreateViewportDescriptorSets(viewport_);
 
@@ -98,6 +99,7 @@ void Engine::Render(std::unique_ptr<Scene>& scene)
     if (Queue::GetHandle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
+
         return;
     }
 

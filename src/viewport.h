@@ -29,7 +29,9 @@ public:
     vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
 
     vk::Extent2D extent_;
-    float ratio_{};
+    float panelRatio_{};
+    ImVec2 panelSize_;
+    bool outDated_;
 
     void CreateDescriptorSetLayout();
     void CreateRenderPass();

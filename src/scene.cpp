@@ -6,6 +6,10 @@ Scene::Scene()
 
     uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
 
+    meshCount_.square++;
+    meshes.emplace_back();
+    meshes.back().CreateSquare(nullptr, meshCount_.square);
+
     for (auto& mesh : meshes) {
         mesh.CreateBuffers();
     }
