@@ -3,12 +3,7 @@
 Scene::Scene()
 {
     command_.CreateCommandPool();
-
-    uboDataDynamic_.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
-
-    meshCount_.square++;
-    meshes.emplace_back();
-    meshes.back().CreateSquare(nullptr, meshCount_.square);
+    uboDataDynamic.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
 
     for (auto& mesh : meshes) {
         mesh.CreateBuffers();
@@ -16,6 +11,44 @@ Scene::Scene()
 
     if (!meshes.empty())
         PrepareMeshes();
+}
+
+void Scene::AddMesh(MeshType type)
+{
+    switch (type) {
+    case SQUARE:
+        meshes.emplace_back();
+        meshes.back().CreateSquare(nullptr);
+        meshes.back().CreateBuffers();
+        meshes.back().meshType_ = SQUARE;
+        meshes.back().name_.append(std::to_string(++meshCount_[SQUARE]));
+        break;
+    case CUBE:
+        meshes.emplace_back();
+        meshes.back().CreateCube(nullptr);
+        meshes.back().CreateBuffers();
+        meshes.back().meshType_ = CUBE;
+        meshes.back().name_.append(std::to_string(++meshCount_[CUBE]));
+        break;
+    default:
+        break;
+    }
+
+    UpdateMesh();
+}
+
+void Scene::AddMesh(MeshType type, const std::string& filePath)
+{
+    if (filePath.empty())
+        return;
+
+    meshes.emplace_back();
+    meshes.back().LoadModel(filePath, nullptr);
+    meshes.back().CreateBuffers();
+    meshes.back().meshType_ = type;
+    meshes.back().name_.append(std::to_string(++meshCount_[type]));
+
+    UpdateMesh();
 }
 
 void Scene::PrepareMeshes()
@@ -71,7 +104,7 @@ void Scene::PrepareMeshes()
     Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
     command_.commandBuffers_.clear();
 
-    CreateUniformBuffers();
+    CreateUniformBuffer();
 }
 
 void Scene::UpdateMesh()
@@ -123,60 +156,61 @@ void Scene::UpdateMesh()
     Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
     command_.commandBuffers_.clear();
 
-    CreateUniformBuffers();
+    CreateUniformBuffer();
 }
 
-void Scene::CreateUniformBuffers()
+void Scene::CreateUniformBuffer()
 {
-    size_t bufferSize = meshes.size() * uboDataDynamic_.alignment;
-    void* newAlignedMemory = AlignedAlloc(uboDataDynamic_.alignment, bufferSize);
+    size_t bufferSize = meshes.size() * uboDataDynamic.alignment;
+    void* newAlignedMemory = AlignedAlloc(uboDataDynamic.alignment, bufferSize);
 
     if (matrixUniformBufferDynamic_ != nullptr) {
         for (int i = 0; i < meshes.size() - 1; i++) {
-            auto* prevMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (i * uboDataDynamic_.alignment));
-            auto* currentMat = (glm::mat4*)((uint64_t)newAlignedMemory + (i * uboDataDynamic_.alignment));
+            auto* prevMat = (glm::mat4*)((uint64_t)uboDataDynamic.model + (i * uboDataDynamic.alignment));
+            auto* currentMat = (glm::mat4*)((uint64_t)newAlignedMemory + (i * uboDataDynamic.alignment));
 
             *currentMat = *prevMat;
         }
-        AlignedFree(uboDataDynamic_.model);
-        matrixUniformBufferDynamic_.~unique_ptr();
+
+        AlignedFree(uboDataDynamic.model);
+        matrixUniformBufferDynamic_.reset();
     }
 
-    uboDataDynamic_.model = (glm::mat4*)newAlignedMemory;
+    uboDataDynamic.model = (glm::mat4*)newAlignedMemory;
 
-    if (uboDataDynamic_.model == nullptr) {
+    if (uboDataDynamic.model == nullptr) {
         spdlog::error("failed to allocate memory for dynamic buffer");
     }
 
     size_t indexLastMesh = meshes.size() - 1;
-    auto* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic_.model + (indexLastMesh * uboDataDynamic_.alignment));
+    auto* modelMat = (glm::mat4*)((uint64_t)uboDataDynamic.model + (indexLastMesh * uboDataDynamic.alignment));
     *modelMat = glm::mat4(1.0f);
 
-    BufferInput input = { meshes.size() * uboDataDynamic_.alignment,
+    BufferInput input = { meshes.size() * uboDataDynamic.alignment,
                           vk::BufferUsageFlagBits::eUniformBuffer,
                           vk::MemoryPropertyFlagBits::eHostVisible };
     matrixUniformBufferDynamic_ = std::make_unique<Buffer>(input);
-    matrixUniformBufferDynamic_->MapMemory(uboDataDynamic_.alignment);
+    matrixUniformBufferDynamic_->MapMemory(uboDataDynamic.alignment);
 }
 
 void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames)
 {
-    if (camera_.isControllable) {
-        camera_.Update();
+    if (camera.isControllable_) {
+        camera.Update();
     }
 
-    camera_.matrix_.view = glm::lookAt(camera_.pos, camera_.at, camera_.up);
-    camera_.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(Swapchain::Get().swapchainImageExtent.height), 0.1f, 100.0f);
-    camera_.UpdateBuffer();
+    camera.matrix_.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
+    camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(Swapchain::Get().swapchainImageExtent.height), 0.1f, 100.0f);
+    camera.UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptor.descriptorSets_[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera_.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptor.descriptorSets_[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera.GetBufferInfo(), nullptr, nullptr);
     Device::GetHandle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
 
     if (!meshes.empty()) {
         UpdateBuffer();
         vk::MappedMemoryRange memoryRange;
         memoryRange.memory = matrixUniformBufferDynamic_->GetHandle().bufferMemory;
-        size_t size = sizeof(uboDataDynamic_);
+        size_t size = sizeof(uboDataDynamic);
         size_t atomSize = Device::GetHandle().physicalDevice.getProperties().limits.nonCoherentAtomSize;
         if (size < atomSize)
             size = atomSize;
@@ -208,10 +242,16 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
 
 void Scene::UpdateBuffer()
 {
-    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic_.model, matrixUniformBufferDynamic_->GetSize());
+    matrixUniformBufferDynamic_->UpdateBuffer(uboDataDynamic.model, matrixUniformBufferDynamic_->GetSize());
+}
+
+void Scene::DeleteMesh(long index, MeshType type)
+{
+    meshes.erase(meshes.begin() + index);
+    meshCount_[type]--;
 }
 
 Scene::~Scene()
 {
-    AlignedFree(uboDataDynamic_.model);
+    AlignedFree(uboDataDynamic.model);
 }

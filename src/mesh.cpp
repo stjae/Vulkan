@@ -2,7 +2,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-void Mesh::CreateSquare(const char* texturePath, int index)
+void Mesh::CreateSquare(const char* texturePath)
 {
     textureFilePath = texturePath;
 
@@ -39,11 +39,10 @@ void Mesh::CreateSquare(const char* texturePath, int index)
 
     indices = { 0, 1, 2, 2, 3, 0 };
 
-    name = "square";
-    name.append(std::to_string(index));
+    name_ = "square";
 }
 
-void Mesh::CreateCube(const char* texturePath, int index)
+void Mesh::CreateCube(const char* texturePath)
 {
     textureFilePath = texturePath;
 
@@ -65,7 +64,7 @@ void Mesh::CreateCube(const char* texturePath, int index)
                                     1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, // left
 
                                     -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
-                                    -1.0f, -1.0f, 1.0f, // right
+                                    -1.0f, -1.0f, 1.0f, // right_
                                     -1.0f, -1.0f, -1.0f };
 
     std::vector<float> normal = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -115,11 +114,10 @@ void Mesh::CreateCube(const char* texturePath, int index)
     indices = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
                 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
 
-    name = "cube";
-    name.append(std::to_string(index));
+    name_ = "cube";
 }
 
-void Mesh::LoadModel(const char* modelPath, const char* texturePath)
+void Mesh::LoadModel(const std::string& modelPath, const char* texturePath)
 {
     textureFilePath = texturePath;
 
@@ -128,7 +126,7 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath)) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str())) {
         throw std::runtime_error(warn + err);
     }
 
@@ -160,7 +158,7 @@ void Mesh::LoadModel(const char* modelPath, const char* texturePath)
         }
     }
 
-    name = "model";
+    name_ = modelPath.substr(modelPath.rfind('/') + 1, modelPath.rfind('.') - modelPath.rfind('/') - 1);
 }
 
 void Mesh::CreateBuffers()

@@ -19,27 +19,25 @@ struct ViewportFrame
 
 class Viewport
 {
-public:
-    std::vector<ViewportFrame> frames_;
-
     Pipeline pipeline_;
     vk::RenderPass renderPass_;
     std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
     vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
 
-    vk::Extent2D extent_;
-    float panelRatio_{};
-    ImVec2 panelSize_;
-    bool outDated_;
-
     void CreateDescriptorSetLayout();
     void CreateRenderPass();
     void CreateFrameBuffer();
-    void RecreateViewportImages();
+
+public:
+    std::vector<ViewportFrame> frames;
+    vk::Extent2D extent;
+    float panelRatio{};
+    bool outDated{};
 
     Viewport();
     void RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
+    void RecreateViewportImages();
     ~Viewport();
 };
 

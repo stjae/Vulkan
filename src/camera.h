@@ -13,30 +13,35 @@ struct CameraMatrix
 
 class Camera
 {
-    friend class MyImGui;
+    //    friend class MyImGui;
     friend class Scene;
 
-    bool isControllable = false;
-    bool isInitial = true; // prevent sudden camera_ move
+    bool isControllable_ = false;
+    bool isInitial_ = true; // prevent sudden camera move
 
-    glm::vec3 pos = { 0.0f, 0.0f, 4.0f };
-    glm::vec4 dir = { 0.0f, 0.0f, -1.0f, 0.0f };
-    glm::vec3 at = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 up = { 0.0f, 1.0f, 0.0f };
-    glm::vec3 right = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 pos_ = { 0.0f, 0.0f, 4.0f };
+    glm::vec4 dir_ = { 0.0f, 0.0f, -1.0f, 0.0f };
+    glm::vec3 at_ = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 up_ = { 0.0f, 1.0f, 0.0f };
+    glm::vec3 right_ = { 0.0f, 0.0f, 0.0f };
 
-    glm::mat4 invProj;
+    glm::mat4 invProj_;
 
-    float speed = 4.0f;
+    float speed_ = 4.0f;
 
     CameraMatrix matrix_;
     std::unique_ptr<Buffer> uniformBuffer_;
+
     void Update();
     void UpdateBuffer();
     const vk::DescriptorBufferInfo& GetBufferInfo();
 
 public:
     Camera();
+    bool IsControllable() { return isControllable_; }
+    void SetCameraControl() { isControllable_ = !isControllable_; }
+    void InitCamera() { isInitial_ = true; }
+    const CameraMatrix& GetMatrix() { return matrix_; }
 };
 
 #endif

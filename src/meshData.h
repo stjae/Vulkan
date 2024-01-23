@@ -18,7 +18,6 @@ public:
     void CreateTexture();
     void DestroyStagingBuffer();
 
-    //    size_t GetVertexCount() { return vertices.size(); }
     size_t GetIndexCount() const { return indices.size(); }
 
     std::unique_ptr<Buffer> vertexStagingBuffer;

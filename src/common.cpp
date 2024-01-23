@@ -54,8 +54,8 @@ std::string LaunchNfd()
     std::string filePath;
 
     nfdchar_t* outPath;
-    nfdfilteritem_t filterItem[2] = { { "Image", "jpg, png" }, { "Model", "obj" } };
-    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 2, NULL);
+    nfdfilteritem_t filterItem[3] = { { "Image", "jpg" }, { "Image", "png" }, { "Model", "obj" } };
+    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 3, NULL);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts(outPath);

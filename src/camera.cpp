@@ -31,42 +31,42 @@ void Camera::Update()
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 
-    if (isInitial) {
+    if (isInitial_) {
         prevMouseX = mouseX;
         prevMouseY = mouseY;
 
-        isInitial = false;
+        isInitial_ = false;
     }
 
     glm::mat4 rotateX =
-        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up);
-    dir = rotateX * dir;
-    glm::normalize(dir);
-    right = glm::cross(glm::vec3(dir.x, dir.y, dir.z), up);
+        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up_);
+    dir_ = rotateX * dir_;
+    glm::normalize(dir_);
+    right_ = glm::cross(glm::vec3(dir_.x, dir_.y, dir_.z), up_);
     glm::mat4 rotateY =
-        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right);
-    dir = rotateY * dir;
+        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right_);
+    dir_ = rotateY * dir_;
 
     if (ImGui::IsKeyDown(ImGuiKey_W)) {
-        pos += glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
+        pos_ += glm::vec3(dir_.x, dir_.y, dir_.z) * static_cast<float>(delta) * speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        pos -= glm::vec3(dir.x, dir.y, dir.z) * static_cast<float>(delta) * speed;
+        pos_ -= glm::vec3(dir_.x, dir_.y, dir_.z) * static_cast<float>(delta) * speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_A)) {
-        pos -= right * static_cast<float>(delta) * speed;
+        pos_ -= right_ * static_cast<float>(delta) * speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_D)) {
-        pos += right * static_cast<float>(delta) * speed;
+        pos_ += right_ * static_cast<float>(delta) * speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_E)) {
-        pos += up * static_cast<float>(delta) * speed;
+        pos_ += up_ * static_cast<float>(delta) * speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-        pos -= up * static_cast<float>(delta) * speed;
+        pos_ -= up_ * static_cast<float>(delta) * speed_;
     }
 
-    at = pos + glm::vec3(dir.x, dir.y, dir.z);
+    at_ = pos_ + glm::vec3(dir_.x, dir_.y, dir_.z);
 
     prevMouseX = mouseX;
     prevMouseY = mouseY;

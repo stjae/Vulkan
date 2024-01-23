@@ -2,14 +2,14 @@
 
 Viewport::Viewport()
 {
-    frames_.resize(Swapchain::Get().frameCount);
-    extent_ = vk::Extent2D((uint32_t)Swapchain::Get().swapchainImageExtent.width, (uint32_t)Swapchain::Get().swapchainImageExtent.height);
+    frames.resize(Swapchain::Get().frameCount);
+    extent = vk::Extent2D((uint32_t)Swapchain::Get().swapchainImageExtent.width, (uint32_t)Swapchain::Get().swapchainImageExtent.height);
 
     CreateDescriptorSetLayout();
     CreateRenderPass();
     pipeline_.CreatePipeline(renderPass_, descriptorSetLayouts_);
 
-    for (auto& frame : frames_) {
+    for (auto& frame : frames) {
 
         frame.command.CreateCommandPool();
         frame.command.AllocateCommandBuffer();
@@ -17,12 +17,12 @@ Viewport::Viewport()
         frame.descriptor.CreateDescriptorPool(1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
         frame.descriptor.AllocateDescriptorSets(descriptorSetLayouts_);
 
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent_.width, extent_.height, 1 });
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.CreateSampler();
         frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent_.width, extent_.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
 
@@ -119,29 +119,28 @@ void Viewport::CreateRenderPass()
 
 void Viewport::CreateFrameBuffer()
 {
-    for (int i = 0; i < frames_.size(); ++i) {
+    for (int i = 0; i < frames.size(); ++i) {
 
         std::vector<vk::ImageView> attachments = {
-            frames_[i].viewportImage.GetHandle().imageView,
-            frames_[i].depthImage.GetHandle().imageView,
+            frames[i].viewportImage.GetHandle().imageView,
+            frames[i].depthImage.GetHandle().imageView,
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
         framebufferInfo.renderPass = renderPass_;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = extent_.width;
-        framebufferInfo.height = extent_.height;
+        framebufferInfo.width = extent.width;
+        framebufferInfo.height = extent.height;
         framebufferInfo.layers = 1;
 
-        frames_[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
-        //        Log(debug, fmt::terminal_color::bright_green, "created viewport framebuffer for frame {}", i);
+        frames[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
     }
 }
 
 void Viewport::RecreateViewportImages()
 {
-    for (auto& frame : frames_) {
+    for (auto& frame : frames) {
         Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
 
         frame.viewportImage.DestroyImage();
@@ -153,12 +152,12 @@ void Viewport::RecreateViewportImages()
         frame.depthImage.memory.Free();
     }
 
-    for (auto& frame : frames_) {
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent_.width, extent_.height, 1 });
+    for (auto& frame : frames) {
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent_.width, extent_.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
 
         frame.command.TransitImageLayout(&frame.viewportImage,
@@ -177,7 +176,7 @@ void Viewport::RecreateViewportImages()
 
 void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize)
 {
-    auto& frame = frames_[frameIndex];
+    auto& frame = frames[frameIndex];
     auto& commandBuffer = frame.command.commandBuffers_.back();
 
     vk::CommandBufferBeginInfo beginInfo;
@@ -187,7 +186,7 @@ void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& mes
     renderPassInfo.renderPass = renderPass_;
     renderPassInfo.framebuffer = frame.framebuffer;
     vk::Rect2D renderArea(0, 0);
-    renderArea.extent = extent_;
+    renderArea.extent = extent;
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue clearValue;
     clearValue.color = { std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f } };
@@ -214,8 +213,8 @@ void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& mes
     commandBuffer.setViewport(0, viewport);
     commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 0, 1, &frames_[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 2, 1, &frames_[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 0, 1, &frames[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 2, 1, &frames[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
 
     for (int i = 0; i < meshes.size(); i++) {
 
@@ -226,7 +225,7 @@ void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& mes
         commandBuffer.bindIndexBuffer(meshes[i].indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * dynamicOffsetSize;
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 1, 1, &frames_[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 1, 1, &frames[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipeline);
 
         commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i].GetIndexCount()), 1, 0, 0, 0);
@@ -241,6 +240,6 @@ Viewport::~Viewport()
     Device::GetHandle().device.destroyRenderPass(renderPass_);
     for (auto& layout : descriptorSetLayouts_)
         Device::GetHandle().device.destroyDescriptorSetLayout(layout);
-    for (auto& frame : frames_)
+    for (auto& frame : frames)
         Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
 }

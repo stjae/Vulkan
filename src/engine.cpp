@@ -48,7 +48,7 @@ void Engine::Render(std::unique_ptr<Scene>& scene)
         waitFrameImage.result == vk::Result::eSuboptimalKHR) {
         RecreateSwapchain();
         InitSwapchainImages();
-        viewport_.outDated_ = true;
+        viewport_.outDated = true;
         viewport_.RecreateViewportImages();
         imgui_.RecreateViewportDescriptorSets(viewport_);
 
@@ -59,20 +59,20 @@ void Engine::Render(std::unique_ptr<Scene>& scene)
         spdlog::error("failed to reset fences");
     }
 
-    scene->Update(frameIndex_, viewport_.frames_);
+    scene->Update(frameIndex_, viewport_.frames);
 
-    swapchain_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic_.alignment, imDrawData_);
-    viewport_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic_.alignment);
-    viewport_.frames_[frameIndex_].command.Submit();
+    swapchain_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment, imDrawData_);
+    viewport_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment);
+    viewport_.frames[frameIndex_].command.Submit();
 
-    viewport_.frames_[frameIndex_].command.TransitImageLayout(&viewport_.frames_[frameIndex_].viewportImage,
-                                                              vk::ImageLayout::eColorAttachmentOptimal,
-                                                              vk::ImageLayout::eShaderReadOnlyOptimal,
-                                                              vk::AccessFlagBits::eColorAttachmentRead,
-                                                              vk::AccessFlagBits::eShaderRead,
-                                                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                              vk::PipelineStageFlagBits::eFragmentShader);
-    viewport_.frames_[frameIndex_].command.Submit();
+    viewport_.frames[frameIndex_].command.TransitImageLayout(&viewport_.frames[frameIndex_].viewportImage,
+                                                             vk::ImageLayout::eColorAttachmentOptimal,
+                                                             vk::ImageLayout::eShaderReadOnlyOptimal,
+                                                             vk::AccessFlagBits::eColorAttachmentRead,
+                                                             vk::AccessFlagBits::eShaderRead,
+                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                             vk::PipelineStageFlagBits::eFragmentShader);
+    viewport_.frames[frameIndex_].command.Submit();
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = { swapchain_.frames_[frameIndex_].imageAvailable };

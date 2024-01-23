@@ -9,40 +9,35 @@
 #include "API/commands.h"
 #include "viewport.h"
 
-struct MeshCount
-{
-    int square = 0;
-    int cube = 0;
-    int model = 0;
-};
-
 struct UboDataDynamic
 {
     glm::mat4* model = nullptr;
-    uint32_t alignment;
+    uint32_t alignment{};
 };
 
 class Scene
 {
-    friend class Engine;
-    friend class MyImGui;
-
     Command command_;
-    std::vector<std::array<std::string, 2>> resources_;
-    MeshCount meshCount_;
-    UboDataDynamic uboDataDynamic_;
+    size_t meshCount_[3]{};
     std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
-    Camera camera_;
 
-    void CreateUniformBuffers();
+    void CreateUniformBuffer();
     void UpdateBuffer();
+    void UpdateMesh();
 
 public:
     std::vector<Mesh> meshes;
+    std::vector<std::array<std::string, 3>> resources;
+    Camera camera;
+    UboDataDynamic uboDataDynamic;
 
     Scene();
+    void AddMesh(MeshType type);
+    void AddMesh(MeshType type, const std::string& filePath);
+    const char* GetMeshName(size_t index) { return meshes[index].name_.c_str(); }
+    bool IsMeshSelected(size_t index) { return meshes[index].isSelected_; }
     void PrepareMeshes();
-    void UpdateMesh();
+    void DeleteMesh(long index, MeshType type);
     void Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames);
     ~Scene();
 };

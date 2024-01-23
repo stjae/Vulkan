@@ -20,7 +20,6 @@ public:
     void Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex);
     void DrawDockSpace(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex);
     void DrawViewport(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t frameIndex);
-    void UpdateViewport(Viewport& viewport);
     void DrawImGuizmo(std::unique_ptr<Scene>& scene, ImVec2& viewportPanelPos);
     void DrawObjectListWindow(std::unique_ptr<Scene>& scene);
     void DrawObjectAttribWindow(std::unique_ptr<Scene>& scene);
