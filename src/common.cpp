@@ -11,9 +11,9 @@ std::string& GetFrameRate()
 
     if (delta > 1.0) {
         std::stringstream title;
-        title << frameCount << " fps, " << 1000.0f / frameCount << " ms";
+        title << frameCount << " fps, " << 1000.0f / (float)frameCount << " ms";
 
-        frameRate = title.str().c_str();
+        frameRate = title.str();
 
         lastTime = currentTime;
         frameCount = 0;
@@ -24,7 +24,7 @@ std::string& GetFrameRate()
     return frameRate;
 }
 
-std::vector<char> ReadFile(const std::string& filename)
+std::vector<char> ReadCode(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -36,11 +36,11 @@ std::vector<char> ReadFile(const std::string& filename)
     std::vector<char> buffer(fileSize);
 
     file.seekg(0);
-    file.read(buffer.data(), fileSize);
+    file.read(buffer.data(), (std::streamsize)fileSize);
 
     file.close();
 
-    if (buffer.size() > 0) {
+    if (!buffer.empty()) {
         Log(debug, fmt::terminal_color::white, "{0} loaded with code length of {1}",
             filename, buffer.size());
     }
@@ -54,8 +54,8 @@ std::string LaunchNfd()
     std::string filePath;
 
     nfdchar_t* outPath;
-    nfdfilteritem_t filterItem[3] = { { "Image", "jpg" }, { "Image", "png" }, { "Model", "obj" } };
-    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 3, NULL);
+    nfdfilteritem_t filterItem[2] = { { "Image", "jpg,png" }, { "Model", "obj,stl" } };
+    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 2, NULL);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts(outPath);

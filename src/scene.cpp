@@ -2,7 +2,9 @@
 
 Scene::Scene()
 {
-    command_.CreateCommandPool();
+    command_.CreateCommandPool("Scene");
+    command_.AllocateCommandBuffer(commandBuffer_);
+
     uboDataDynamic.alignment = Buffer::GetDynamicBufferOffset(sizeof(glm::mat4));
 
     for (auto& mesh : meshes) {
@@ -55,13 +57,13 @@ void Scene::PrepareMeshes()
 {
     for (auto& mesh : meshes) {
         command_.AllocateCommandBuffer();
-        command_.RecordCopyCommands(mesh.vertexStagingBuffer->GetHandle().buffer,
-                                    mesh.vertexBuffer->GetHandle().buffer,
-                                    sizeof(Vertex) * mesh.vertices.size());
+        //        command_.RecordCopyCommands(mesh.vertexStagingBuffer->GetHandle().buffer,
+        //                                    mesh.vertexBuffer->GetHandle().buffer,
+        //                                    sizeof(Vertex) * mesh.vertices.size());
         command_.AllocateCommandBuffer();
-        command_.RecordCopyCommands(mesh.indexStagingBuffer->GetHandle().buffer,
-                                    mesh.indexBuffer->GetHandle().buffer,
-                                    sizeof(uint32_t) * mesh.indices.size());
+        //        command_.RecordCopyCommands(mesh.indexStagingBuffer->GetHandle().buffer,
+        //                                    mesh.indexBuffer->GetHandle().buffer,
+        //                                    sizeof(uint32_t) * mesh.indices.size());
         command_.AllocateCommandBuffer();
         command_.TransitImageLayout(mesh.textureImage.get(),
                                     vk::ImageLayout::eUndefined,
@@ -78,9 +80,9 @@ void Scene::PrepareMeshes()
 
     for (auto& mesh : meshes) {
         command_.AllocateCommandBuffer();
-        command_.RecordCopyCommands(mesh.textureStagingBuffer->GetHandle().buffer,
-                                    mesh.textureImage->GetHandle().image, mesh.textureWidth,
-                                    mesh.textureHeight);
+        //        command_.RecordCopyCommands(mesh.textureStagingBuffer->GetHandle().buffer,
+        //                                    mesh.textureImage->GetHandle().image, mesh.textureWidth,
+        //                                    mesh.textureHeight);
     }
 
     command_.Submit();
@@ -96,7 +98,6 @@ void Scene::PrepareMeshes()
                                     vk::AccessFlagBits::eShaderRead,
                                     vk::PipelineStageFlagBits::eTransfer,
                                     vk::PipelineStageFlagBits::eFragmentShader);
-        mesh.textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         mesh.DestroyStagingBuffer();
     }
 
@@ -111,50 +112,47 @@ void Scene::UpdateMesh()
 {
     auto& mesh = meshes.back();
 
-    command_.AllocateCommandBuffer();
-    command_.RecordCopyCommands(mesh.vertexStagingBuffer->GetHandle().buffer,
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit, {});
+    commandBuffer_.begin(beginInfo);
+    // Copy vertices from staging buffer
+    Command::RecordCopyCommands(commandBuffer_,
+                                mesh.vertexStagingBuffer->GetHandle().buffer,
                                 mesh.vertexBuffer->GetHandle().buffer,
                                 sizeof(Vertex) * mesh.vertices.size());
-    command_.AllocateCommandBuffer();
-    command_.RecordCopyCommands(mesh.indexStagingBuffer->GetHandle().buffer,
+    // Copy indices from staging buffer
+    Command::RecordCopyCommands(commandBuffer_,
+                                mesh.indexStagingBuffer->GetHandle().buffer,
                                 mesh.indexBuffer->GetHandle().buffer,
                                 sizeof(uint32_t) * mesh.indices.size());
-    command_.AllocateCommandBuffer();
-    command_.TransitImageLayout(mesh.textureImage.get(),
-                                vk::ImageLayout::eUndefined,
-                                vk::ImageLayout::eTransferDstOptimal,
-                                {},
-                                vk::AccessFlagBits::eTransferWrite,
-                                vk::PipelineStageFlagBits::eTopOfPipe,
-                                vk::PipelineStageFlagBits::eTransfer);
-
-    command_.Submit();
-    Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    command_.commandBuffers_.clear();
-
-    command_.AllocateCommandBuffer();
-    command_.RecordCopyCommands(mesh.textureStagingBuffer->GetHandle().buffer,
+    // Set texture image layout to transfer dst optimal
+    Command::Transit(commandBuffer_,
+                     mesh.textureImage.get(),
+                     vk::ImageLayout::eUndefined,
+                     vk::ImageLayout::eTransferDstOptimal,
+                     {},
+                     vk::AccessFlagBits::eTransferWrite,
+                     vk::PipelineStageFlagBits::eTopOfPipe,
+                     vk::PipelineStageFlagBits::eTransfer);
+    // Copy texture image from staging buffer
+    Command::RecordCopyCommands(commandBuffer_,
+                                mesh.textureStagingBuffer->GetHandle().buffer,
                                 mesh.textureImage->GetHandle().image, mesh.textureWidth,
                                 mesh.textureHeight);
+    // Set texture image layout to shader read only
+    Command::Transit(commandBuffer_,
+                     mesh.textureImage.get(),
+                     vk::ImageLayout::eTransferDstOptimal,
+                     vk::ImageLayout::eShaderReadOnlyOptimal,
+                     vk::AccessFlagBits::eTransferWrite,
+                     vk::AccessFlagBits::eShaderRead,
+                     vk::PipelineStageFlagBits::eTransfer,
+                     vk::PipelineStageFlagBits::eFragmentShader);
 
-    command_.Submit();
-    Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    command_.commandBuffers_.clear();
+    commandBuffer_.end();
+    command_.Submit(&commandBuffer_, 1);
 
-    command_.AllocateCommandBuffer();
-    command_.TransitImageLayout(mesh.textureImage.get(),
-                                vk::ImageLayout::eTransferDstOptimal,
-                                vk::ImageLayout::eShaderReadOnlyOptimal,
-                                vk::AccessFlagBits::eTransferWrite,
-                                vk::AccessFlagBits::eShaderRead,
-                                vk::PipelineStageFlagBits::eTransfer,
-                                vk::PipelineStageFlagBits::eFragmentShader);
-    mesh.textureImage->SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
+    Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, commandBuffer_);
     mesh.DestroyStagingBuffer();
-
-    command_.Submit();
-    Device::GetHandle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    command_.commandBuffers_.clear();
 
     CreateUniformBuffer();
 }

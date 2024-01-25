@@ -38,6 +38,8 @@ void Engine::InitSwapchainImages()
 
 void Engine::Render(std::unique_ptr<Scene>& scene)
 {
+    auto& commandBuffer = swapchain_.frames_[frameIndex_].command.commandBuffers_.back();
+
     if (Device::GetHandle().device.waitForFences(1, &swapchain_.frames_[frameIndex_].inFlight, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
         spdlog::error("failed to wait for fences");
     }
@@ -61,8 +63,8 @@ void Engine::Render(std::unique_ptr<Scene>& scene)
 
     scene->Update(frameIndex_, viewport_.frames);
 
-    swapchain_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment, imDrawData_);
-    viewport_.RecordDrawCommand(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment);
+    swapchain_.Draw(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment, imDrawData_);
+    viewport_.Draw(frameIndex_, scene->meshes, scene->uboDataDynamic.alignment);
     viewport_.frames[frameIndex_].command.Submit();
 
     viewport_.frames[frameIndex_].command.TransitImageLayout(&viewport_.frames[frameIndex_].viewportImage,

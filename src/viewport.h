@@ -36,7 +36,7 @@ public:
     bool outDated{};
 
     Viewport();
-    void RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
+    void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
     void RecreateViewportImages();
     ~Viewport();
 };

@@ -18,6 +18,7 @@ struct UboDataDynamic
 class Scene
 {
     Command command_;
+    vk::CommandBuffer commandBuffer_;
     size_t meshCount_[3]{};
     std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
 

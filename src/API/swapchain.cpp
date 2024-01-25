@@ -206,7 +206,7 @@ void Swapchain::PrepareFrames()
     }
 }
 
-void Swapchain::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
+void Swapchain::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
 {
     auto& frame = frames_[frameIndex];
     auto& commandBuffer = frame.command.commandBuffers_.back();

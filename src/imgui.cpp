@@ -85,8 +85,7 @@ void MyImGui::Draw(std::unique_ptr<Scene>& scene, Viewport& viewport, size_t fra
         itemSelected_ = -1;
     }
 
-    DrawObjectListWindow(scene);
-    DrawObjectAttribWindow(scene);
+    DrawObjectWindow(scene);
     DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
 
@@ -203,8 +202,10 @@ void MyImGui::DrawViewport(std::unique_ptr<Scene>& scene, Viewport& viewport, si
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
     if (ImGui::BeginDragDropTarget()) {
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
-        auto data = (std::array<std::string, 3>*)payload->Data;
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+        std::array<std::string, 3>* data = nullptr;
+        if (payload)
+            data = (std::array<std::string, 3>*)payload->Data;
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
             if (data->at(2) == std::string("obj")) {
                 scene->AddMesh(MODEL, data->at(0));
             }
@@ -259,8 +260,9 @@ void MyImGui::DrawImGuizmo(std::unique_ptr<Scene>& scene, ImVec2& viewportPanelP
     *modelMat = glm::make_mat4(objectMatrix);
 }
 
-void MyImGui::DrawObjectListWindow(std::unique_ptr<Scene>& scene)
+void MyImGui::DrawObjectWindow(std::unique_ptr<Scene>& scene)
 {
+    // List
     ImGui::Begin("Object List");
     if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene->meshes.size(); i++) {
@@ -277,12 +279,7 @@ void MyImGui::DrawObjectListWindow(std::unique_ptr<Scene>& scene)
         }
         ImGui::EndListBox();
     }
-    ImGui::End();
-}
-
-void MyImGui::DrawObjectAttribWindow(std::unique_ptr<Scene>& scene)
-{
-    ImGui::Begin("Object Attribute");
+    // Attributes
     if (itemSelected_ > -1) {
 
         auto* modelMat = (glm::mat4*)((uint64_t)scene->uboDataDynamic.model + (itemSelected_ * scene->uboDataDynamic.alignment));

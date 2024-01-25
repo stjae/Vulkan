@@ -44,7 +44,7 @@ const bool debug = true;
 #include "API/handle.h"
 
 std::string& GetFrameRate();
-std::vector<char> ReadFile(const std::string& filename);
+std::vector<char> ReadCode(const std::string& filename);
 std::string LaunchNfd();
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);

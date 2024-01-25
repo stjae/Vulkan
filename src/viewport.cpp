@@ -20,7 +20,7 @@ Viewport::Viewport()
         frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.CreateSampler();
-        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
+        //        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
         frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
@@ -155,7 +155,6 @@ void Viewport::RecreateViewportImages()
     for (auto& frame : frames) {
         frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
-        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
         frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
@@ -174,7 +173,7 @@ void Viewport::RecreateViewportImages()
     CreateFrameBuffer();
 }
 
-void Viewport::RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize)
+void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize)
 {
     auto& frame = frames[frameIndex];
     auto& commandBuffer = frame.command.commandBuffers_.back();

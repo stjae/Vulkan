@@ -14,7 +14,7 @@ public:
     void CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent);
     void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags);
     void CreateSampler();
-    void SetInfo(vk::ImageLayout imageLayout);
+    void SetInfo(vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined);
     void DestroyImage();
     void DestroyImageView();
     ~Image();

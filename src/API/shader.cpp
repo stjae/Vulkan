@@ -2,7 +2,7 @@
 
 vk::ShaderModule Shader::CreateModule(std::string filepath)
 {
-    std::vector<char> sourceCode = ReadFile(filepath);
+    std::vector<char> sourceCode = ReadCode(filepath);
 
     vk::ShaderModuleCreateInfo createInfo;
     createInfo.setCodeSize(sourceCode.size());

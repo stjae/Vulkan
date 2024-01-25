@@ -36,7 +36,7 @@ public:
     ~Swapchain();
 
     void CreateRenderPass();
-    void RecordDrawCommand(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
+    void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
 
     static const SwapchainBundle& Get() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
