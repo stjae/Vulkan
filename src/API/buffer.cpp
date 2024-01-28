@@ -5,32 +5,32 @@ Buffer::Buffer(const BufferInput& bufferInput)
     vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
                                     vk::SharingMode::eExclusive);
 
-    handle_.buffer = Device::GetHandle().device.createBuffer(bufferInfo);
+    bufferBundle_.buffer = Device::GetBundle().device.createBuffer(bufferInfo);
     bufferSize_ = bufferInput.size;
 
-    AllocateMemory(handle_.buffer, bufferInput.properties);
+    AllocateMemory(bufferBundle_.buffer, bufferInput.properties);
 }
 
 void Buffer::MapMemory(vk::DeviceSize range)
 {
-    void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetMemoryHandle(), 0, range);
+    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemoryHandle(), 0, range);
     Memory::SetAddress(bufferMemoryAddress);
-    handle_.bufferMemory = Memory::GetMemoryHandle();
+    bufferBundle_.bufferMemory = Memory::GetMemoryHandle();
 
-    handle_.bufferInfo.buffer = handle_.buffer;
-    handle_.bufferInfo.offset = 0;
-    handle_.bufferInfo.range = range;
+    bufferBundle_.bufferInfo.buffer = bufferBundle_.buffer;
+    bufferBundle_.bufferInfo.offset = 0;
+    bufferBundle_.bufferInfo.range = range;
 }
 
 void Buffer::Destroy()
 {
-    Device::GetHandle().device.waitIdle();
-    if (handle_.buffer != VK_NULL_HANDLE) {
-        Device::GetHandle().device.destroyBuffer(handle_.buffer);
-        handle_.buffer = VK_NULL_HANDLE;
+    Device::GetBundle().device.waitIdle();
+    if (bufferBundle_.buffer != VK_NULL_HANDLE) {
+        Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
+        bufferBundle_.buffer = VK_NULL_HANDLE;
     }
     if (Memory::GetMemoryHandle() != VK_NULL_HANDLE) {
-        Device::GetHandle().device.freeMemory(Memory::GetMemoryHandle());
+        Device::GetBundle().device.freeMemory(Memory::GetMemoryHandle());
         Memory::SetMemoryHandle(VK_NULL_HANDLE);
     }
     Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
@@ -38,7 +38,7 @@ void Buffer::Destroy()
 
 size_t Buffer::GetDynamicBufferOffset(size_t size)
 {
-    size_t minOffset = Device::limits.minUniformBufferOffsetAlignment;
+    size_t minOffset = Device::physicalDeviceLimits.minUniformBufferOffsetAlignment;
     size_t dynamicBufferOffset = 0;
 
     if (minOffset > 0) {

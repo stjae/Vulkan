@@ -10,7 +10,7 @@ public:
     vk::ShaderModule vertexShaderModule;
     vk::ShaderModule fragmentShaderModule;
 
-    vk::ShaderModule CreateModule(std::string filepath);
+    vk::ShaderModule CreateModule(const std::string& filepath);
 
     ~Shader();
 };

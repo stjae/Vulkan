@@ -1,7 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "API/commands.h"
+#include "API/command.h"
 #include "API/descriptor.h"
 #include "API/device.h"
 #include "API/instance.h"
@@ -17,21 +17,22 @@
 class Engine
 {
     size_t frameIndex_ = 0;
-
     Device device_;
     Swapchain swapchain_;
     Viewport viewport_;
     MyImGui imgui_;
     ImDrawData* imDrawData_{};
-
     std::unique_ptr<Scene> scene_;
+
+    bool IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage);
+    void RecreateSwapchain();
 
 public:
     void InitSwapchainImages();
-    void Render(std::unique_ptr<Scene>& scene);
-    void RecreateSwapchain();
-    void SetupGui();
-    void DrawGui(std::unique_ptr<Scene>& scene);
+    void SetUp();
+    void UpdateScene();
+    void DrawUI();
+    void Render();
     ~Engine();
 };
 

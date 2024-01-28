@@ -5,12 +5,13 @@
 
 struct Logger
 {
+    friend class Instance;
+
     explicit Logger(const vk::Instance& vkInstance) : vkInstance_(vkInstance) {}
     void CreateDebugMessenger();
     static void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
     void Destroy();
 
-private:
     const vk::Instance& vkInstance_;
     vk::DispatchLoaderDynamic dldi_;
     vk::DebugUtilsMessengerEXT debugMessenger_;

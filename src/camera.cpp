@@ -9,8 +9,31 @@ Camera::Camera()
     uniformBuffer_->MapMemory(input.size);
 }
 
+void Camera::SetCameraControl()
+{
+    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+        isControllable_ = !isControllable_;
+        ImGuiIO& io = ImGui::GetIO();
+
+        if (isControllable_) {
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        } else {
+            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        }
+
+        isInitial_ = true;
+    }
+}
+
 void Camera::Update()
 {
+    SetCameraControl();
+
+    if (!isControllable_)
+        return;
+
     static double delta, currentTime, lastTime = 0.0;
     currentTime = ImGui::GetTime();
 
@@ -26,8 +49,8 @@ void Camera::Update()
 
     int width, height;
     glfwGetWindowSize(*Window::GetWindow(), &width, &height);
-    mouseX /= width;
-    mouseY /= height;
+    mouseX /= (float)width;
+    mouseY /= (float)height;
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 
@@ -79,5 +102,5 @@ void Camera::UpdateBuffer()
 
 const vk::DescriptorBufferInfo& Camera::GetBufferInfo()
 {
-    return uniformBuffer_->GetHandle().bufferInfo;
+    return uniformBuffer_->GetBundle().bufferInfo;
 }

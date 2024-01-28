@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "API/image.h"
-#include "API/commands.h"
+#include "API/command.h"
 #include "API/swapchain.h"
 
 struct ViewportFrame
@@ -13,7 +13,8 @@ struct ViewportFrame
     Image viewportImage;
     Image depthImage;
 
-    Command command;
+    vk::CommandPool commandPool;
+    vk::CommandBuffer commandBuffer;
     Descriptor descriptor;
 };
 

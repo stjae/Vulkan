@@ -5,18 +5,13 @@
 
 class Window
 {
-    const int width_;
-    const int height_;
+    inline static GLFWwindow* window;
 
 public:
-    Window(const int width, const int height, const char* wName);
+    Window(int width, int height, const char* wName);
     ~Window();
 
-    static GLFWwindow** GetWindow()
-    {
-        static GLFWwindow* window;
-        return &window;
-    }
+    static GLFWwindow** GetWindow() { return &window; }
 };
 
 #endif

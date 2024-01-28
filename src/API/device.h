@@ -4,23 +4,33 @@
 #include "instance.h"
 #include "queue.h"
 
+struct DeviceBundle
+{
+    vk::Device device;
+    vk::PhysicalDevice physicalDevice;
+    vk::Queue graphicsQueue;
+    vk::Queue presentQueue;
+    std::optional<uint32_t> graphicsFamilyIndex;
+    std::optional<uint32_t> presentFamilyIndex;
+};
+
 class Device
 {
     Instance instance_;
-    Queue queue_;
     std::vector<const char*> deviceExtensions_;
+    inline static DeviceBundle deviceBundle_;
 
-    inline static DeviceHandle handle_;
+    void FindQueueFamilies(const VkSurfaceKHR& surface);
+    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
 
 public:
-    inline static vk::PhysicalDeviceLimits limits;
+    inline static vk::PhysicalDeviceLimits physicalDeviceLimits;
 
     Device();
     void PickPhysicalDevice();
     bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
     ~Device();
 
-    static const DeviceHandle& GetHandle() { return handle_; }
+    static const DeviceBundle& GetBundle() { return deviceBundle_; }
 };
-
 #endif

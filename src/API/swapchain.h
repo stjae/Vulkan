@@ -2,7 +2,7 @@
 #define SWAPCHAIN_H
 
 #include "../common.h"
-#include "swapchainData.h"
+#include "swapchainBundle.h"
 #include "device.h"
 #include "instance.h"
 #include "memory.h"
@@ -20,7 +20,6 @@ class Swapchain
     vk::RenderPass renderPass_;
     std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
-    vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
 
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
@@ -32,15 +31,17 @@ public:
     void CreateSwapchain();
     void CreateFrameBuffer();
     void PrepareFrames();
-    void DestroySwapchain();
+    void Destroy();
     ~Swapchain();
 
     void CreateRenderPass();
-    void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData);
+    void Draw(size_t frameIndex, ImDrawData* imDrawData);
+    void Submit(size_t frameIndex);
+    void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
 
     static const SwapchainBundle& Get() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
-    std::vector<SwapchainFrame> frames_;
+    std::vector<SwapchainFrame> frames;
 };
 
 #endif

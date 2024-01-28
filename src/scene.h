@@ -6,7 +6,7 @@
 #include "camera.h"
 #include "mesh.h"
 #include "API/swapchain.h"
-#include "API/commands.h"
+#include "API/command.h"
 #include "viewport.h"
 
 struct UboDataDynamic
@@ -17,10 +17,10 @@ struct UboDataDynamic
 
 class Scene
 {
-    Command command_;
+    vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
-    size_t meshCount_[3]{};
     std::unique_ptr<Buffer> matrixUniformBufferDynamic_;
+    size_t meshCount_[3]{};
 
     void CreateUniformBuffer();
     void UpdateBuffer();
@@ -31,14 +31,15 @@ public:
     std::vector<std::array<std::string, 3>> resources;
     Camera camera;
     UboDataDynamic uboDataDynamic;
+    size_t meshSelected = -1;
 
     Scene();
     void AddMesh(MeshType type);
     void AddMesh(MeshType type, const std::string& filePath);
-    const char* GetMeshName(size_t index) { return meshes[index].name_.c_str(); }
-    bool IsMeshSelected(size_t index) { return meshes[index].isSelected_; }
+    [[nodiscard]] const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
+    [[nodiscard]] bool IsMeshSelected(size_t index) const { return meshes[index].isSelected_; }
     void PrepareMeshes();
-    void DeleteMesh(long index, MeshType type);
+    void DeleteMesh();
     void Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames);
     ~Scene();
 };

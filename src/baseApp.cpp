@@ -3,18 +3,17 @@
 Application::Application(const int width, const int height, const char* wName)
     : window_(width, height, wName)
 {
-    engine_ = std::make_unique<Engine>();
-    scene_ = std::make_unique<Scene>();
-    engine_->SetupGui();
-    engine_->InitSwapchainImages();
+    engine_.InitSwapchainImages();
+    engine_.SetUp();
 }
 
 void Application::Run()
 {
     while (!glfwWindowShouldClose(*Window::GetWindow())) {
         glfwPollEvents();
-        engine_->DrawGui(scene_);
-        engine_->Render(scene_);
+        engine_.DrawUI();
+        engine_.UpdateScene();
+        engine_.Render();
         GetFramerate();
     }
 }

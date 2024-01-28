@@ -41,7 +41,6 @@ const bool debug = true;
 #include <nfd.h>
 
 #include "config.h"
-#include "API/handle.h"
 
 std::string& GetFrameRate();
 std::vector<char> ReadCode(const std::string& filename);
@@ -51,9 +50,9 @@ void AlignedFree(void* aligned);
 
 // spdlog::info
 template <typename... T>
-void Log(bool debug, fmt::terminal_color color, T... args)
+void Log(bool isDebugMode, fmt::terminal_color color, T... args)
 {
-    if (!debug) {
+    if (!isDebugMode) {
         return;
     }
     spdlog::info(fmt::format(fmt::fg(color), args...));

@@ -88,8 +88,8 @@ void MeshData::CreateTexture()
         textureStagingBuffer->CopyToBuffer(imageData, input);
 
         stbi_image_free(imageData);
-        textureImage = std::make_unique<Image>();
         vk::Extent3D extent(width, height, 1);
+        textureImage = std::make_unique<Image>();
         textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
         textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
         textureImage->SetInfo();
@@ -106,8 +106,8 @@ void MeshData::CreateTexture()
         textureStagingBuffer = std::make_unique<Buffer>(input);
         textureStagingBuffer->CopyToBuffer(&dummyTexture, input);
 
-        textureImage = std::make_unique<Image>();
         vk::Extent3D extent(1, 1, 1);
+        textureImage = std::make_unique<Image>();
         textureImage->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent);
         textureImage->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
     }

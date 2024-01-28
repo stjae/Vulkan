@@ -1,6 +1,6 @@
 #include "shader.h"
 
-vk::ShaderModule Shader::CreateModule(std::string filepath)
+vk::ShaderModule Shader::CreateModule(const std::string& filepath)
 {
     std::vector<char> sourceCode = ReadCode(filepath);
 
@@ -8,11 +8,11 @@ vk::ShaderModule Shader::CreateModule(std::string filepath)
     createInfo.setCodeSize(sourceCode.size());
     createInfo.setPCode(reinterpret_cast<const uint32_t*>(sourceCode.data()));
 
-    return Device::GetHandle().device.createShaderModule(createInfo);
+    return Device::GetBundle().device.createShaderModule(createInfo);
 }
 
 Shader::~Shader()
 {
-    Device::GetHandle().device.destroyShaderModule(vertexShaderModule);
-    Device::GetHandle().device.destroyShaderModule(fragmentShaderModule);
+    Device::GetBundle().device.destroyShaderModule(vertexShaderModule);
+    Device::GetBundle().device.destroyShaderModule(fragmentShaderModule);
 }

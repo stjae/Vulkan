@@ -6,17 +6,23 @@
 #include "descriptor.h"
 #include "../meshData.h"
 
+struct PipelineBundle
+{
+    vk::Pipeline pipeline;
+    vk::PipelineLayout pipelineLayout;
+};
+
 class Pipeline
 {
     Shader shader_;
-    PipelineHandle handle_;
+    PipelineBundle bundle_;
 
 public:
     void CreatePipeline(const vk::RenderPass& renderPass, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     vk::PipelineLayout CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     ~Pipeline();
 
-    const PipelineHandle& GetHandle() { return handle_; }
+    const PipelineBundle& GetBundle() { return bundle_; }
 };
 
 #endif

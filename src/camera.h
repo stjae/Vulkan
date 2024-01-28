@@ -13,7 +13,6 @@ struct CameraMatrix
 
 class Camera
 {
-    //    friend class MyImGui;
     friend class Scene;
 
     bool isControllable_ = false;
@@ -25,22 +24,22 @@ class Camera
     glm::vec3 up_ = { 0.0f, 1.0f, 0.0f };
     glm::vec3 right_ = { 0.0f, 0.0f, 0.0f };
 
-    glm::mat4 invProj_;
+    glm::mat4 invProj_{};
 
     float speed_ = 4.0f;
 
-    CameraMatrix matrix_;
+    CameraMatrix matrix_{};
     std::unique_ptr<Buffer> uniformBuffer_;
 
-    void Update();
     void UpdateBuffer();
     const vk::DescriptorBufferInfo& GetBufferInfo();
 
+    void Update();
+    void SetCameraControl();
+
 public:
     Camera();
-    bool IsControllable() { return isControllable_; }
-    void SetCameraControl() { isControllable_ = !isControllable_; }
-    void InitCamera() { isInitial_ = true; }
+    bool IsControllable() const { return isControllable_; }
     const CameraMatrix& GetMatrix() { return matrix_; }
 };
 

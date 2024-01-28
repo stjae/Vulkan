@@ -1,12 +1,20 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include "handle.h"
 #include "memory.h"
+
+struct ImageBundle
+{
+    vk::Image image;
+    vk::ImageView imageView;
+    vk::Format format;
+    vk::Sampler sampler;
+    vk::DescriptorImageInfo imageInfo;
+};
 
 class Image
 {
-    ImageHandle handle_;
+    ImageBundle imageBundle_;
 
 public:
     Memory memory;
@@ -19,7 +27,7 @@ public:
     void DestroyImageView();
     ~Image();
 
-    const ImageHandle& GetHandle() const { return handle_; }
+    const ImageBundle& GetBundle() const { return imageBundle_; }
 };
 
 #endif

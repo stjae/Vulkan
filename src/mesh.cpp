@@ -131,7 +131,7 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath)
     }
 
     // Loop over shapes
-    for (auto & shape : shapes) {
+    for (auto& shape : shapes) {
         // Loop over faces(polygon)
         size_t index_offset = 0;
         for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {

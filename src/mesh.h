@@ -23,9 +23,6 @@ class Mesh : public MeshData
     void CreateSquare(const char* texturePath);
     void CreateCube(const char* texturePath);
     void LoadModel(const std::string& modelPath, const char* texturePath);
-
-public:
-    MeshType GetMeshType() { return meshType_; }
 };
 
 #endif

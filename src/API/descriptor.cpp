@@ -14,7 +14,7 @@ vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const DescriptorSe
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo(bindings.layoutCreateFlags, bindings.descriptorSetCount, layoutBindings.data(), layoutBindingFlags.data());
 
-    return Device::GetHandle().device.createDescriptorSetLayout(layoutInfo);
+    return Device::GetBundle().device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Descriptor::CreateDescriptorPool(uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
@@ -33,16 +33,16 @@ void Descriptor::CreateDescriptorPool(uint32_t descriptorCount, const std::vecto
     }
 
     vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, descriptorCount * descriptorSetLayoutCount, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
-    descriptorPool_ = Device::GetHandle().device.createDescriptorPool(poolInfo);
+    descriptorPool_ = Device::GetBundle().device.createDescriptorPool(poolInfo);
 }
 
 void Descriptor::AllocateDescriptorSets(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool_, descriptorSetLayouts.size(), descriptorSetLayouts.data());
-    descriptorSets_ = Device::GetHandle().device.allocateDescriptorSets(allocateInfo);
+    descriptorSets_ = Device::GetBundle().device.allocateDescriptorSets(allocateInfo);
 }
 
 Descriptor::~Descriptor()
 {
-    Device::GetHandle().device.destroyDescriptorPool(descriptorPool_);
+    Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
 }

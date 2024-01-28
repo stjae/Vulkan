@@ -11,8 +11,8 @@ Viewport::Viewport()
 
     for (auto& frame : frames) {
 
-        frame.command.CreateCommandPool();
-        frame.command.AllocateCommandBuffer();
+        Command::CreateCommandPool(frame.commandPool);
+        Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
 
         frame.descriptor.CreateDescriptorPool(1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
         frame.descriptor.AllocateDescriptorSets(descriptorSetLayouts_);
@@ -20,7 +20,6 @@ Viewport::Viewport()
         frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.CreateSampler();
-        //        frame.viewportImage.SetInfo(vk::ImageLayout::eUndefined);
 
         frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
@@ -34,7 +33,7 @@ void Viewport::CreateDescriptorSetLayout()
     DescriptorSetLayoutData layout0;
     layout0.descriptorSetCount = 1;
 
-    // descriptor set layout #0
+    // descriptor set layout #0 : Camera Matrix
     layout0.indices.push_back(0);
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
     layout0.descriptorCounts.push_back(1);
@@ -46,7 +45,7 @@ void Viewport::CreateDescriptorSetLayout()
     DescriptorSetLayoutData layout1;
     layout1.descriptorSetCount = 1;
 
-    // descriptor set layout #1
+    // descriptor set layout #1 : Model Matrix
     layout1.indices.push_back(0);
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
@@ -58,10 +57,10 @@ void Viewport::CreateDescriptorSetLayout()
     DescriptorSetLayoutData layout2;
     layout2.descriptorSetCount = 1;
 
-    // descriptor set layout #2
+    // descriptor set layout #2 : Texture
     layout2.indices.push_back(0);
     layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    layout2.descriptorCounts.push_back(Device::limits.maxDescriptorSetSamplers);
+    layout2.descriptorCounts.push_back((int)Device::physicalDeviceLimits.maxDescriptorSetSamplers);
     layout2.bindingStages.emplace_back(vk::ShaderStageFlagBits::eFragment);
     layout2.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
     layout2.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
@@ -114,16 +113,16 @@ void Viewport::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass_ = Device::GetHandle().device.createRenderPass(renderPassInfo);
+    renderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
 }
 
 void Viewport::CreateFrameBuffer()
 {
-    for (int i = 0; i < frames.size(); ++i) {
+    for (auto& frame : frames) {
 
         std::vector<vk::ImageView> attachments = {
-            frames[i].viewportImage.GetHandle().imageView,
-            frames[i].depthImage.GetHandle().imageView,
+            frame.viewportImage.GetBundle().imageView,
+            frame.depthImage.GetBundle().imageView,
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
@@ -134,14 +133,14 @@ void Viewport::CreateFrameBuffer()
         framebufferInfo.height = extent.height;
         framebufferInfo.layers = 1;
 
-        frames[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
+        frame.framebuffer = Device::GetBundle().device.createFramebuffer(framebufferInfo);
     }
 }
 
 void Viewport::RecreateViewportImages()
 {
     for (auto& frame : frames) {
-        Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
+        Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
 
         frame.viewportImage.DestroyImage();
         frame.viewportImage.DestroyImageView();
@@ -159,15 +158,17 @@ void Viewport::RecreateViewportImages()
         frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
 
-        frame.command.TransitImageLayout(&frame.viewportImage,
-                                         vk::ImageLayout::eUndefined,
-                                         vk::ImageLayout::eShaderReadOnlyOptimal,
-                                         {},
-                                         vk::AccessFlagBits::eShaderRead,
-                                         vk::PipelineStageFlagBits::eTopOfPipe,
-                                         vk::PipelineStageFlagBits::eFragmentShader);
-
-        frame.command.Submit();
+        Command::BeginCommand(frame.commandBuffer);
+        Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                       frame.viewportImage,
+                                       {},
+                                       vk::ImageLayout::eShaderReadOnlyOptimal,
+                                       {},
+                                       vk::AccessFlagBits::eShaderRead,
+                                       vk::PipelineStageFlagBits::eTopOfPipe,
+                                       vk::PipelineStageFlagBits::eFragmentShader);
+        frame.commandBuffer.end();
+        Command::Submit(&frame.commandBuffer, 1);
     }
 
     CreateFrameBuffer();
@@ -176,10 +177,8 @@ void Viewport::RecreateViewportImages()
 void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize)
 {
     auto& frame = frames[frameIndex];
-    auto& commandBuffer = frame.command.commandBuffers_.back();
 
-    vk::CommandBufferBeginInfo beginInfo;
-    commandBuffer.begin(beginInfo);
+    Command::BeginCommand(frame.commandBuffer);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = renderPass_;
@@ -195,7 +194,7 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
     vk::ClearValue clearValues[] = { clearValue, depthClear };
     renderPassInfo.pClearValues = &clearValues[0];
 
-    commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+    frame.commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
@@ -209,36 +208,48 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
     scissor.offset = vk::Offset2D(0, 0);
     scissor.extent = Swapchain::Get().swapchainImageExtent;
 
-    commandBuffer.setViewport(0, viewport);
-    commandBuffer.setScissor(0, scissor);
+    frame.commandBuffer.setViewport(0, viewport);
+    frame.commandBuffer.setScissor(0, scissor);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 0, 1, &frames[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 2, 1, &frames[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 0, 1, &frames[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 2, 1, &frames[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
 
     for (int i = 0; i < meshes.size(); i++) {
 
-        vk::Buffer vertexBuffers[] = { meshes[i].vertexBuffer->GetHandle().buffer };
+        vk::Buffer vertexBuffers[] = { meshes[i].vertexBuffer->GetBundle().buffer };
         vk::DeviceSize offsets[] = { 0 };
 
-        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-        commandBuffer.bindIndexBuffer(meshes[i].indexBuffer->GetHandle().buffer, 0, vk::IndexType::eUint32);
+        frame.commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+        frame.commandBuffer.bindIndexBuffer(meshes[i].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * dynamicOffsetSize;
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipelineLayout, 1, 1, &frames[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_.GetHandle().pipeline);
+        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 1, 1, &frames[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
+        frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipeline);
 
-        commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i].GetIndexCount()), 1, 0, 0, 0);
+        frame.commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i].GetIndexCount()), 1, 0, 0, 0);
     }
 
-    commandBuffer.endRenderPass();
-    commandBuffer.end();
+    frame.commandBuffer.endRenderPass();
+
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   frame.viewportImage,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   vk::AccessFlagBits::eColorAttachmentRead,
+                                   vk::AccessFlagBits::eShaderRead,
+                                   vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                   vk::PipelineStageFlagBits::eFragmentShader);
+    frame.commandBuffer.end();
+    Command::Submit(&frame.commandBuffer, 1);
 }
 
 Viewport::~Viewport()
 {
-    Device::GetHandle().device.destroyRenderPass(renderPass_);
+    Device::GetBundle().device.destroyRenderPass(renderPass_);
     for (auto& layout : descriptorSetLayouts_)
-        Device::GetHandle().device.destroyDescriptorSetLayout(layout);
-    for (auto& frame : frames)
-        Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
+        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+    for (auto& frame : frames) {
+        Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
+        Device::GetBundle().device.destroyCommandPool(frame.commandPool);
+    }
 }

@@ -95,12 +95,12 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    handle_.pipelineLayout = CreatePipelineLayout(descriptorSetLayouts);
-    pipelineInfo.layout = handle_.pipelineLayout;
+    bundle_.pipelineLayout = CreatePipelineLayout(descriptorSetLayouts);
+    pipelineInfo.layout = bundle_.pipelineLayout;
 
     pipelineInfo.renderPass = renderPass;
 
-    handle_.pipeline = (Device::GetHandle().device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
+    bundle_.pipeline = (Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
     Log(debug, fmt::terminal_color::bright_green, "created pipeline");
 }
 
@@ -110,11 +110,11 @@ vk::PipelineLayout Pipeline::CreatePipelineLayout(const std::vector<vk::Descript
     pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    return Device::GetHandle().device.createPipelineLayout(pipelineLayoutInfo);
+    return Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
 }
 
 Pipeline::~Pipeline()
 {
-    Device::GetHandle().device.destroyPipeline(handle_.pipeline);
-    Device::GetHandle().device.destroyPipelineLayout(handle_.pipelineLayout);
+    Device::GetBundle().device.destroyPipeline(bundle_.pipeline);
+    Device::GetBundle().device.destroyPipelineLayout(bundle_.pipelineLayout);
 }

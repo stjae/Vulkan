@@ -8,7 +8,7 @@ static vk::Semaphore MakeSemaphore()
 {
     vk::SemaphoreCreateInfo semaphoreInfo;
 
-    return Device::GetHandle().device.createSemaphore(semaphoreInfo);
+    return Device::GetBundle().device.createSemaphore(semaphoreInfo);
 }
 
 static vk::Fence MakeFence()
@@ -16,7 +16,7 @@ static vk::Fence MakeFence()
     vk::FenceCreateInfo fenceInfo;
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-    return Device::GetHandle().device.createFence(fenceInfo);
+    return Device::GetBundle().device.createFence(fenceInfo);
 }
 
 #endif

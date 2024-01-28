@@ -4,9 +4,16 @@
 #include "device.h"
 #include "memory.h"
 
+struct BufferBundle
+{
+    vk::Buffer buffer;
+    vk::DescriptorBufferInfo bufferInfo;
+    vk::DeviceMemory bufferMemory;
+};
+
 class Buffer : public Memory
 {
-    BufferHandle handle_;
+    BufferBundle bufferBundle_;
     size_t bufferSize_;
 
 public:
@@ -16,17 +23,17 @@ public:
     void Destroy();
     ~Buffer();
 
-    const BufferHandle& GetHandle() { return handle_; }
+    const BufferBundle& GetBundle() { return bufferBundle_; }
     static size_t GetDynamicBufferOffset(size_t size);
 
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetHandle().device.mapMemory(Memory::GetMemoryHandle(), 0, bufferInput.size);
+        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemoryHandle(), 0, bufferInput.size);
 
         Memory::SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
-        Device::GetHandle().device.unmapMemory(Memory::GetMemoryHandle());
+        Device::GetBundle().device.unmapMemory(Memory::GetMemoryHandle());
     }
 
     template <typename T>

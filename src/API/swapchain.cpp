@@ -17,10 +17,10 @@ void Swapchain::CreateSwapchain()
 
     uint32_t imageCount = std::min(swapchainBundle_.support.capabilities.maxImageCount, swapchainBundle_.support.capabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetHandle().surface, imageCount, surfaceFormat_.format, surfaceFormat_.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, surfaceFormat_.format, surfaceFormat_.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { Queue::GetGraphicsQueueFamilyIndex(), Queue::GetPresentQueueFamilyIndex() };
-    if (Queue::GetGraphicsQueueFamilyIndex() != Queue::GetPresentQueueFamilyIndex()) {
+    uint32_t indices[] = { Device::GetBundle().graphicsFamilyIndex.value(), Device::GetBundle().presentFamilyIndex.value() };
+    if (Device::GetBundle().graphicsFamilyIndex.value() != Device::GetBundle().presentFamilyIndex.value()) {
         swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
         swapchainCreateInfo.queueFamilyIndexCount = 2;
         swapchainCreateInfo.pQueueFamilyIndices = indices;
@@ -32,13 +32,13 @@ void Swapchain::CreateSwapchain()
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = nullptr;
 
-    swapchainBundle_.swapchain = Device::GetHandle().device.createSwapchainKHR(swapchainCreateInfo);
+    swapchainBundle_.swapchain = Device::GetBundle().device.createSwapchainKHR(swapchainCreateInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
     // Get swapchain image handle
-    std::vector<vk::Image> images = Device::GetHandle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
-    frames_.resize(images.size());
-    swapchainBundle_.frameCount = frames_.size();
+    std::vector<vk::Image> images = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
+    frames.resize(images.size());
+    swapchainBundle_.frameCount = frames.size();
 
     for (size_t i = 0; i < images.size(); ++i) {
 
@@ -51,16 +51,16 @@ void Swapchain::CreateSwapchain()
         imageViewCreateInfo.subresourceRange = range;
         imageViewCreateInfo.format = surfaceFormat_.format;
 
-        frames_[i].swapchainImage = images[i];
-        frames_[i].swapchainImageView = Device::GetHandle().device.createImageView(imageViewCreateInfo);
+        frames[i].swapchainImage = images[i];
+        frames[i].swapchainImageView = Device::GetBundle().device.createImageView(imageViewCreateInfo);
     }
 }
 
 void Swapchain::QuerySwapchainSupport()
 {
-    swapchainBundle_.support.capabilities = Device::GetHandle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetHandle().surface);
-    swapchainBundle_.support.formats = Device::GetHandle().physicalDevice.getSurfaceFormatsKHR(Instance::GetHandle().surface);
-    swapchainBundle_.support.presentModes = Device::GetHandle().physicalDevice.getSurfacePresentModesKHR(Instance::GetHandle().surface);
+    swapchainBundle_.support.capabilities = Device::GetBundle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetBundle().surface);
+    swapchainBundle_.support.formats = Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(Instance::GetBundle().surface);
+    swapchainBundle_.support.presentModes = Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(Instance::GetBundle().surface);
 
     Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
@@ -170,15 +170,15 @@ void Swapchain::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass_ = Device::GetHandle().device.createRenderPass(renderPassInfo);
+    renderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
 }
 
 void Swapchain::CreateFrameBuffer()
 {
-    for (int i = 0; i < frames_.size(); ++i) {
+    for (int i = 0; i < frames.size(); ++i) {
 
         std::vector<vk::ImageView> attachments = {
-            frames_[i].swapchainImageView,
+            frames[i].swapchainImageView,
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
@@ -189,48 +189,37 @@ void Swapchain::CreateFrameBuffer()
         framebufferInfo.height = swapchainBundle_.swapchainImageExtent.height;
         framebufferInfo.layers = 1;
 
-        frames_[i].framebuffer = Device::GetHandle().device.createFramebuffer(framebufferInfo);
+        frames[i].framebuffer = Device::GetBundle().device.createFramebuffer(framebufferInfo);
         Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
 
 void Swapchain::PrepareFrames()
 {
-    for (auto& frame : frames_) {
+    for (auto& frame : frames) {
         frame.inFlight = MakeFence();
         frame.imageAvailable = MakeSemaphore();
         frame.renderFinished = MakeSemaphore();
 
-        frame.command.CreateCommandPool();
-        frame.command.AllocateCommandBuffer();
+        Command::CreateCommandPool(frame.commandPool);
+        Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
+        Command::AllocateCommandBuffer(frame.commandPool, frame.renderPassCommandBuffer);
     }
 }
 
-void Swapchain::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize, ImDrawData* imDrawData)
+void Swapchain::Draw(size_t frameIndex, ImDrawData* imDrawData)
 {
-    auto& frame = frames_[frameIndex];
-    auto& commandBuffer = frame.command.commandBuffers_.back();
+    auto& frame = frames[frameIndex];
 
-    vk::CommandBufferBeginInfo beginInfo;
-    commandBuffer.begin(beginInfo);
-    {
-        vk::ImageMemoryBarrier barrier;
+    Command::BeginCommand(frame.renderPassCommandBuffer);
+    Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
+                                   frame.swapchainImage,
+                                   vk::ImageLayout::ePresentSrcKHR,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
+                                   {}, vk::AccessFlagBits::eColorAttachmentWrite,
+                                   vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-        barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-        barrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        barrier.srcQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
-        barrier.dstQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
-        barrier.image = frame.swapchainImage;
-        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.subresourceRange.levelCount = 1;
-
-        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                      vk::DependencyFlagBits::eByRegion, 0, nullptr, 0,
-                                      nullptr, 1, &barrier);
-    }
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = renderPass_;
     renderPassInfo.framebuffer = frame.framebuffer;
@@ -245,7 +234,7 @@ void Swapchain::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_
     vk::ClearValue clearValues[] = { clearValue, depthClear };
     renderPassInfo.pClearValues = &clearValues[0];
 
-    commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+    frame.renderPassCommandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
@@ -258,52 +247,78 @@ void Swapchain::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
     scissor.extent = swapchainBundle_.swapchainImageExtent;
+    frame.renderPassCommandBuffer.setViewport(0, viewport);
+    frame.renderPassCommandBuffer.setScissor(0, scissor);
 
-    commandBuffer.setViewport(0, viewport);
-    commandBuffer.setScissor(0, scissor);
+    ImGui_ImplVulkan_RenderDrawData(imDrawData, frame.renderPassCommandBuffer);
 
-    ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
+    frame.renderPassCommandBuffer.endRenderPass();
 
-    commandBuffer.endRenderPass();
-    {
-        vk::ImageMemoryBarrier barrier;
-
-        barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-        barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-        barrier.srcQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
-        barrier.dstQueueFamilyIndex = Queue::GetGraphicsQueueFamilyIndex();
-        barrier.image = frames_[frameIndex].swapchainImage;
-        barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.subresourceRange.levelCount = 1;
-
-        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                      vk::PipelineStageFlagBits::eBottomOfPipe,
-                                      vk::DependencyFlagBits::eByRegion, 0, nullptr, 0,
-                                      nullptr, 1, &barrier);
-    }
-    commandBuffer.end();
+    Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
+                                   frame.swapchainImage,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
+                                   vk::ImageLayout::ePresentSrcKHR,
+                                   vk::AccessFlagBits::eColorAttachmentWrite, {},
+                                   vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                   vk::PipelineStageFlagBits::eBottomOfPipe);
+    frame.renderPassCommandBuffer.end();
 }
 
-void Swapchain::DestroySwapchain()
+void Swapchain::Submit(size_t frameIndex)
 {
-    for (auto& frame : frames_) {
-        Device::GetHandle().device.destroyImageView(frame.swapchainImageView);
-        Device::GetHandle().device.destroyFramebuffer(frame.framebuffer);
-        Device::GetHandle().device.destroyFence(frame.inFlight);
-        Device::GetHandle().device.destroySemaphore(frame.imageAvailable);
-        Device::GetHandle().device.destroySemaphore(frame.renderFinished);
+    auto& frame = frames[frameIndex];
+
+    vk::SubmitInfo submitInfo;
+    vk::Semaphore waitSemaphores[] = { frame.imageAvailable };
+    vk::PipelineStageFlags waitStage[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStage;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &frame.renderPassCommandBuffer;
+    vk::Semaphore signalSemaphores[] = { frame.renderFinished };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    Device::GetBundle().graphicsQueue.submit(submitInfo, frame.inFlight);
+}
+
+void Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage)
+{
+    auto& frame = frames[frameIndex];
+
+    vk::Semaphore signalSemaphores[] = { frame.renderFinished };
+    vk::PresentInfoKHR presentInfo;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    vk::SwapchainKHR swapchains[] = { Swapchain::Get().swapchain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+    presentInfo.pImageIndices = &waitFrameImage.value;
+
+    Device::GetBundle().presentQueue.presentKHR(presentInfo);
+}
+
+void Swapchain::Destroy()
+{
+    for (auto& frame : frames) {
+        Device::GetBundle().device.destroyImageView(frame.swapchainImageView);
+        Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
+        Device::GetBundle().device.destroyFence(frame.inFlight);
+        Device::GetBundle().device.destroySemaphore(frame.imageAvailable);
+        Device::GetBundle().device.destroySemaphore(frame.renderFinished);
     }
 
-    Device::GetHandle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
+    Device::GetBundle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
 }
 
 Swapchain::~Swapchain()
 {
-    DestroySwapchain();
+    Destroy();
     for (auto& layout : descriptorSetLayouts_) {
-        Device::GetHandle().device.destroyDescriptorSetLayout(layout);
+        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
     }
-    Device::GetHandle().device.destroyRenderPass(renderPass_);
+    for (auto& frame : frames)
+        Device::GetBundle().device.destroyCommandPool(frame.commandPool);
+    Device::GetBundle().device.destroyRenderPass(renderPass_);
 }
