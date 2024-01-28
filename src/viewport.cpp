@@ -14,8 +14,8 @@ Viewport::Viewport()
         Command::CreateCommandPool(frame.commandPool);
         Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
 
-        frame.descriptor.CreateDescriptorPool(1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
-        frame.descriptor.AllocateDescriptorSets(descriptorSetLayouts_);
+        Descriptor::CreateDescriptorPool(frame.descriptorPool, 1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
+        Descriptor::AllocateDescriptorSets(frame.descriptorPool, frame.descriptorSets, descriptorSetLayouts_);
 
         frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
@@ -211,8 +211,8 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
     frame.commandBuffer.setViewport(0, viewport);
     frame.commandBuffer.setScissor(0, scissor);
 
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 0, 1, &frames[frameIndex].descriptor.descriptorSets_[0], 0, nullptr);
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 2, 1, &frames[frameIndex].descriptor.descriptorSets_[2], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 0, 1, &frames[frameIndex].descriptorSets[0], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 2, 1, &frames[frameIndex].descriptorSets[2], 0, nullptr);
 
     for (int i = 0; i < meshes.size(); i++) {
 
@@ -223,7 +223,7 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
         frame.commandBuffer.bindIndexBuffer(meshes[i].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * dynamicOffsetSize;
-        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 1, 1, &frames[frameIndex].descriptor.descriptorSets_[1], 1, &dynamicOffset);
+        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 1, 1, &frames[frameIndex].descriptorSets[1], 1, &dynamicOffset);
         frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipeline);
 
         frame.commandBuffer.drawIndexed(static_cast<uint32_t>(meshes[i].GetIndexCount()), 1, 0, 0, 0);
@@ -251,5 +251,6 @@ Viewport::~Viewport()
     for (auto& frame : frames) {
         Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
         Device::GetBundle().device.destroyCommandPool(frame.commandPool);
+        Device::GetBundle().device.destroyDescriptorPool(frame.descriptorPool);
     }
 }

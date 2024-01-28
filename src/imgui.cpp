@@ -10,7 +10,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     layout.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
     descriptorSetLayoutData_.push_back(layout);
 
-    descriptor_.CreateDescriptorPool(4, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+    Descriptor::CreateDescriptorPool(descriptorPool_, 4, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -26,7 +26,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     init_info.Device = Device::GetBundle().device;
     init_info.QueueFamily = Device::GetBundle().graphicsFamilyIndex.value();
     init_info.Queue = Device::GetBundle().graphicsQueue;
-    init_info.DescriptorPool = descriptor_.descriptorPool_;
+    init_info.DescriptorPool = descriptorPool_;
     init_info.Subpass = 0;
     init_info.MinImageCount = Swapchain::capabilities.minImageCount;
     init_info.ImageCount = Swapchain::GetBundle().frameCount;
@@ -350,4 +350,5 @@ MyImGui::~MyImGui()
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
 }

@@ -18,13 +18,10 @@ struct DescriptorSetLayoutData
 class Descriptor
 {
 public:
-    vk::DescriptorPool descriptorPool_;
-    std::vector<vk::DescriptorSet> descriptorSets_;
-
     static vk::DescriptorSetLayout CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings);
-    void CreateDescriptorPool(uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
-    void AllocateDescriptorSets(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
-    ~Descriptor();
+    static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
+    static void AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
+    //    ~Descriptor();
 };
 
 #endif

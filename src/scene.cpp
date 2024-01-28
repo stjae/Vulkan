@@ -196,7 +196,7 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
     camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
     camera.UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptor.descriptorSets_[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera.GetBufferInfo(), nullptr, nullptr);
     Device::GetBundle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
 
     if (!meshes.empty()) {
@@ -213,13 +213,13 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
         }
 
         vk::WriteDescriptorSet modelMatrixWrite(
-            viewportFrames[frameIndex].descriptor.descriptorSets_[1], 0, 0, 1,
+            viewportFrames[frameIndex].descriptorSets[1], 0, 0, 1,
             vk::DescriptorType::eUniformBufferDynamic, nullptr,
             &matrixUniformBufferDynamic_->GetBundle().bufferInfo, nullptr, nullptr);
         Device::GetBundle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
 
         vk::WriteDescriptorSet descriptorWrites;
-        descriptorWrites.dstSet = viewportFrames[frameIndex].descriptor.descriptorSets_[2];
+        descriptorWrites.dstSet = viewportFrames[frameIndex].descriptorSets[2];
         descriptorWrites.dstBinding = 0;
         descriptorWrites.dstArrayElement = 0;
         descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;

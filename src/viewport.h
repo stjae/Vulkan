@@ -15,7 +15,9 @@ struct ViewportFrame
 
     vk::CommandPool commandPool;
     vk::CommandBuffer commandBuffer;
-    Descriptor descriptor;
+
+    vk::DescriptorPool descriptorPool;
+    std::vector<vk::DescriptorSet> descriptorSets;
 };
 
 class Viewport

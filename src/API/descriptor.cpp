@@ -17,7 +17,7 @@ vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const DescriptorSe
     return Device::GetBundle().device.createDescriptorSetLayout(layoutInfo);
 }
 
-void Descriptor::CreateDescriptorPool(uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
+void Descriptor::CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
@@ -33,16 +33,16 @@ void Descriptor::CreateDescriptorPool(uint32_t descriptorCount, const std::vecto
     }
 
     vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, descriptorCount * descriptorSetLayoutCount, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
-    descriptorPool_ = Device::GetBundle().device.createDescriptorPool(poolInfo);
+    descriptorPool = Device::GetBundle().device.createDescriptorPool(poolInfo);
 }
 
-void Descriptor::AllocateDescriptorSets(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
+void Descriptor::AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
-    vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool_, descriptorSetLayouts.size(), descriptorSetLayouts.data());
-    descriptorSets_ = Device::GetBundle().device.allocateDescriptorSets(allocateInfo);
+    vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, descriptorSetLayouts.size(), descriptorSetLayouts.data());
+    descriptorSets = Device::GetBundle().device.allocateDescriptorSets(allocateInfo);
 }
 
-Descriptor::~Descriptor()
-{
-    Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
-}
+// Descriptor::~Descriptor()
+//{
+//     Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
+// }
