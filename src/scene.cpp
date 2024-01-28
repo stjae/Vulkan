@@ -193,7 +193,7 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
     camera.Update();
 
     camera.matrix_.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
-    camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(Swapchain::Get().swapchainImageExtent.height), 0.1f, 100.0f);
+    camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
     camera.UpdateBuffer();
 
     vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptor.descriptorSets_[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera.GetBufferInfo(), nullptr, nullptr);

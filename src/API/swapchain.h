@@ -2,15 +2,42 @@
 #define SWAPCHAIN_H
 
 #include "../common.h"
-#include "swapchainBundle.h"
 #include "device.h"
 #include "instance.h"
+#include "command.h"
 #include "memory.h"
 #include "pipeline.h"
 #include "sync.h"
 
+struct SwapchainFrame
+{
+    vk::Framebuffer framebuffer;
+
+    vk::Image swapchainImage;
+    vk::ImageView swapchainImageView;
+
+    vk::CommandPool commandPool;
+    vk::CommandBuffer commandBuffer;
+    vk::CommandBuffer renderPassCommandBuffer;
+    Descriptor descriptor;
+
+    vk::Fence inFlight;
+    vk::Semaphore imageAvailable;
+    vk::Semaphore renderFinished;
+};
+
+struct SwapchainBundle
+{
+    vk::Extent2D swapchainImageExtent;
+    vk::SwapchainKHR swapchain;
+    size_t frameCount{};
+};
+
 class Swapchain
 {
+    std::vector<vk::SurfaceFormatKHR> supportedFormats_;
+    std::vector<vk::PresentModeKHR> supportedPresentModes_;
+
     vk::SurfaceFormatKHR surfaceFormat_;
     vk::PresentModeKHR presentMode_;
 
@@ -39,8 +66,10 @@ public:
     void Submit(size_t frameIndex);
     void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
 
-    static const SwapchainBundle& Get() { return swapchainBundle_; }
+    static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
+
+    inline static vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<SwapchainFrame> frames;
 };
 

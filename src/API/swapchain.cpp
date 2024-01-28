@@ -15,7 +15,7 @@ void Swapchain::CreateSwapchain()
     ChoosePresentMode();
     ChooseExtent();
 
-    uint32_t imageCount = std::min(swapchainBundle_.support.capabilities.maxImageCount, swapchainBundle_.support.capabilities.minImageCount + 1);
+    uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
     vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, surfaceFormat_.format, surfaceFormat_.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
@@ -35,7 +35,7 @@ void Swapchain::CreateSwapchain()
     swapchainBundle_.swapchain = Device::GetBundle().device.createSwapchainKHR(swapchainCreateInfo);
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
-    // Get swapchain image handle
+    // GetBundle swapchain image handle
     std::vector<vk::Image> images = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
     frames.resize(images.size());
     swapchainBundle_.frameCount = frames.size();
@@ -58,16 +58,16 @@ void Swapchain::CreateSwapchain()
 
 void Swapchain::QuerySwapchainSupport()
 {
-    swapchainBundle_.support.capabilities = Device::GetBundle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetBundle().surface);
-    swapchainBundle_.support.formats = Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(Instance::GetBundle().surface);
-    swapchainBundle_.support.presentModes = Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(Instance::GetBundle().surface);
+    capabilities = Device::GetBundle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetBundle().surface);
+    supportedFormats_ = Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(Instance::GetBundle().surface);
+    supportedPresentModes_ = Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(Instance::GetBundle().surface);
 
     Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
 
-    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", swapchainBundle_.support.capabilities.currentExtent.width);
-    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", swapchainBundle_.support.capabilities.currentExtent.height);
+    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", capabilities.currentExtent.width);
+    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", capabilities.currentExtent.height);
 
-    for (auto& mode : swapchainBundle_.support.presentModes) {
+    for (auto& mode : supportedPresentModes_) {
         Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
@@ -76,7 +76,7 @@ void Swapchain::ChooseSurfaceFormat()
 {
     Log(debug, fmt::terminal_color::black, "setting swapchain details..");
 
-    for (auto& format : swapchainBundle_.support.formats) {
+    for (auto& format : supportedFormats_) {
         if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
@@ -86,17 +86,17 @@ void Swapchain::ChooseSurfaceFormat()
         }
     }
 
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(swapchainBundle_.support.formats[0].format));
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(swapchainBundle_.support.formats[0].colorSpace));
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
+    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
 
-    surfaceFormat_ = swapchainBundle_.support.formats[0];
+    surfaceFormat_ = supportedFormats_[0].format;
 }
 
 void Swapchain::ChoosePresentMode()
 {
     vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
-    for (auto& presentMode : swapchainBundle_.support.presentModes) {
+    for (auto& presentMode : supportedPresentModes_) {
         if (presentMode == vk::PresentModeKHR::eMailbox) {
             mode = vk::PresentModeKHR::eMailbox;
         }
@@ -109,8 +109,6 @@ void Swapchain::ChoosePresentMode()
 
 void Swapchain::ChooseExtent()
 {
-    auto& capabilities = swapchainBundle_.support.capabilities;
-
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
 
@@ -291,7 +289,7 @@ void Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& 
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-    vk::SwapchainKHR swapchains[] = { Swapchain::Get().swapchain };
+    vk::SwapchainKHR swapchains[] = { Swapchain::GetBundle().swapchain };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &waitFrameImage.value;

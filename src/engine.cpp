@@ -48,7 +48,7 @@ void Engine::Render()
 {
     Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
 
-    auto waitFrameImage = Device::GetBundle().device.acquireNextImageKHR(Swapchain::Get().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
+    auto waitFrameImage = Device::GetBundle().device.acquireNextImageKHR(Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
 
     if (IsSwapchainOutOfDate(waitFrameImage))
         return;
@@ -69,7 +69,7 @@ void Engine::Render()
         }
     */
 
-    frameIndex_ = (frameIndex_ + 1) % Swapchain::Get().frameCount;
+    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameCount;
 }
 
 bool Engine::IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage)

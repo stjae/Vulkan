@@ -28,8 +28,8 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     init_info.Queue = Device::GetBundle().graphicsQueue;
     init_info.DescriptorPool = descriptor_.descriptorPool_;
     init_info.Subpass = 0;
-    init_info.MinImageCount = Swapchain::Get().support.capabilities.minImageCount;
-    init_info.ImageCount = Swapchain::Get().frameCount;
+    init_info.MinImageCount = Swapchain::capabilities.minImageCount;
+    init_info.ImageCount = Swapchain::GetBundle().frameCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
 
@@ -53,7 +53,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    viewportDescriptorSets_.resize(Swapchain::Get().frameCount);
+    viewportDescriptorSets_.resize(Swapchain::GetBundle().frameCount);
     for (int i = 0; i < viewportDescriptorSets_.size(); i++)
         viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
                                                                  viewport.frames[i].viewportImage.GetBundle().imageView,
@@ -203,7 +203,7 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
     viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
 
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
-        viewport.extent = Swapchain::Get().swapchainImageExtent;
+        viewport.extent = Swapchain::GetBundle().swapchainImageExtent;
 
     viewport.RecreateViewportImages();
     RecreateViewportDescriptorSets(viewport);

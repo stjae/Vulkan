@@ -41,7 +41,6 @@ add_executable(${PROJECT_NAME}
         src/API/device.h src/API/device.cpp
         src/API/queue.h src/API/queue.cpp
         src/API/swapchain.h src/API/swapchain.cpp
-        src/API/swapchainBundle.h
         src/API/shader.h src/API/shader.cpp
         src/API/descriptor.h src/API/descriptor.cpp
         src/API/pipeline.h src/API/pipeline.cpp

@@ -2,8 +2,8 @@
 
 Viewport::Viewport()
 {
-    frames.resize(Swapchain::Get().frameCount);
-    extent = vk::Extent2D((uint32_t)Swapchain::Get().swapchainImageExtent.width, (uint32_t)Swapchain::Get().swapchainImageExtent.height);
+    frames.resize(Swapchain::GetBundle().frameCount);
+    extent = vk::Extent2D((uint32_t)Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)Swapchain::GetBundle().swapchainImageExtent.height);
 
     CreateDescriptorSetLayout();
     CreateRenderPass();
@@ -198,15 +198,15 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
-    viewport.y = static_cast<float>(Swapchain::Get().swapchainImageExtent.height);
-    viewport.width = static_cast<float>(Swapchain::Get().swapchainImageExtent.width);
-    viewport.height = -1.0f * static_cast<float>(Swapchain::Get().swapchainImageExtent.height);
+    viewport.y = static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height);
+    viewport.width = static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width);
+    viewport.height = -1.0f * static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
-    scissor.extent = Swapchain::Get().swapchainImageExtent;
+    scissor.extent = Swapchain::GetBundle().swapchainImageExtent;
 
     frame.commandBuffer.setViewport(0, viewport);
     frame.commandBuffer.setScissor(0, scissor);
