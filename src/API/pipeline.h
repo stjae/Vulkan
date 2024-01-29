@@ -4,7 +4,7 @@
 #include "../common.h"
 #include "shader.h"
 #include "descriptor.h"
-#include "../meshData.h"
+#include "../scene/meshData.h"
 
 struct PipelineBundle
 {

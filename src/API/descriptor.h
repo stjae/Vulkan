@@ -2,7 +2,7 @@
 #define DESCRIPTOR_H
 
 #include "../common.h"
-#include "device.h"
+#include "device/device.h"
 
 struct DescriptorSetLayoutData
 {
@@ -21,7 +21,6 @@ public:
     static vk::DescriptorSetLayout CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings);
     static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
     static void AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
-    //    ~Descriptor();
 };
 
 #endif

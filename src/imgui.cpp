@@ -29,7 +29,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     init_info.DescriptorPool = descriptorPool_;
     init_info.Subpass = 0;
     init_info.MinImageCount = Swapchain::capabilities.minImageCount;
-    init_info.ImageCount = Swapchain::GetBundle().frameCount;
+    init_info.ImageCount = Swapchain::GetFrameImageCount();
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
 
@@ -53,7 +53,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    viewportDescriptorSets_.resize(Swapchain::GetBundle().frameCount);
+    viewportDescriptorSets_.resize(Swapchain::GetFrameImageCount());
     for (int i = 0; i < viewportDescriptorSets_.size(); i++)
         viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
                                                                  viewport.frames[i].viewportImage.GetBundle().imageView,
@@ -325,7 +325,7 @@ void MyImGui::ShowInformationOverlay(const Scene& scene)
     const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBackground;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
     ImGui::Text("Camera Control: %s [press C]", scene.camera.IsControllable() ? "on" : "off");

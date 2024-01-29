@@ -1,7 +1,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "device.h"
+#include "device/device.h"
 #include "memory.h"
 
 struct BufferBundle

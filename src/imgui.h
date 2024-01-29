@@ -2,8 +2,8 @@
 #define IMGUI_H
 
 #include "common.h"
-#include "camera.h"
-#include "scene.h"
+#include "scene/camera.h"
+#include "scene/scene.h"
 #include "viewport.h"
 #include "../imgui/ImGuizmo.h"
 

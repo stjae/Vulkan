@@ -69,7 +69,7 @@ void Engine::Render()
         }
     */
 
-    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameCount;
+    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetFrameImageCount();
 }
 
 bool Engine::IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage)

@@ -2,8 +2,8 @@
 #define SWAPCHAIN_H
 
 #include "../common.h"
-#include "device.h"
-#include "instance.h"
+#include "device/device.h"
+#include "device/instance.h"
 #include "command.h"
 #include "memory.h"
 #include "pipeline.h"
@@ -19,7 +19,6 @@ struct SwapchainFrame
     vk::CommandPool commandPool;
     vk::CommandBuffer commandBuffer;
     vk::CommandBuffer renderPassCommandBuffer;
-    Descriptor descriptor;
 
     vk::Fence inFlight;
     vk::Semaphore imageAvailable;
@@ -30,7 +29,6 @@ struct SwapchainBundle
 {
     vk::Extent2D swapchainImageExtent;
     vk::SwapchainKHR swapchain;
-    size_t frameCount{};
 };
 
 class Swapchain
@@ -42,6 +40,7 @@ class Swapchain
     vk::PresentModeKHR presentMode_;
 
     inline static SwapchainBundle swapchainBundle_;
+    inline static uint32_t frameImageCount_;
 
     Pipeline pipeline_;
     vk::RenderPass renderPass_;
@@ -52,6 +51,7 @@ class Swapchain
     void ChooseSurfaceFormat();
     void ChoosePresentMode();
     void ChooseExtent();
+    void WriteSwapchainCreateInfo();
 
 public:
     Swapchain();
@@ -66,6 +66,7 @@ public:
     void Submit(size_t frameIndex);
     void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
 
+    static uint32_t GetFrameImageCount() { return frameImageCount_; }
     static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
 

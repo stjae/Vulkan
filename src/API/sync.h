@@ -2,7 +2,7 @@
 #define SYNC_H
 
 #include "../common.h"
-#include "device.h"
+#include "device/device.h"
 
 static vk::Semaphore MakeSemaphore()
 {

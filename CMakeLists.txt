@@ -28,18 +28,18 @@ add_executable(${PROJECT_NAME}
         src/baseApp.h src/baseApp.cpp
         src/engine.h src/engine.cpp
 
-        src/scene.h src/scene.cpp
-        src/meshData.h src/meshData.cpp
-        src/mesh.h src/mesh.cpp
-        src/camera.h src/camera.cpp
+        src/scene/scene.h src/scene/scene.cpp
+        src/scene/meshData.h src/scene/meshData.cpp
+        src/scene/mesh.h src/scene/mesh.cpp
+        src/scene/camera.h src/scene/camera.cpp
         src/imgui.h src/imgui.cpp
 
         # API
         src/API/window.h src/API/window.cpp
-        src/API/instance.h src/API/instance.cpp
-        src/API/logger.h src/API/logger.cpp
-        src/API/device.h src/API/device.cpp
-        src/API/queue.h src/API/queue.cpp
+        src/API/device/instance.h src/API/device/instance.cpp
+        src/API/device/logger.h src/API/device/logger.cpp
+        src/API/device/device.h src/API/device/device.cpp
+        src/API/device/queue.h src/API/device/queue.cpp
         src/API/swapchain.h src/API/swapchain.cpp
         src/API/shader.h src/API/shader.cpp
         src/API/descriptor.h src/API/descriptor.cpp

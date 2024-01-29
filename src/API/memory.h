@@ -2,7 +2,7 @@
 #define MEMORY_H
 
 #include "../common.h"
-#include "device.h"
+#include "device/device.h"
 
 class Memory
 {

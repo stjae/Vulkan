@@ -3,8 +3,8 @@
 
 #include "engine.h"
 #include "common.h"
-#include "scene.h"
-#include "camera.h"
+#include "scene/scene.h"
+#include "scene/camera.h"
 
 class Application
 {

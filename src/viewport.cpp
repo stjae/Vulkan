@@ -2,7 +2,7 @@
 
 Viewport::Viewport()
 {
-    frames.resize(Swapchain::GetBundle().frameCount);
+    frames.resize(Swapchain::GetFrameImageCount());
     extent = vk::Extent2D((uint32_t)Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)Swapchain::GetBundle().swapchainImageExtent.height);
 
     CreateDescriptorSetLayout();

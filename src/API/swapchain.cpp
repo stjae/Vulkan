@@ -36,14 +36,14 @@ void Swapchain::CreateSwapchain()
     Log(debug, fmt::terminal_color::bright_green, "swapchain created");
 
     // GetBundle swapchain image handle
-    std::vector<vk::Image> images = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
-    frames.resize(images.size());
-    swapchainBundle_.frameCount = frames.size();
+    std::vector<vk::Image> swapchainImages = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
+    frameImageCount_ = swapchainImages.size();
+    frames.resize(frameImageCount_);
 
-    for (size_t i = 0; i < images.size(); ++i) {
+    for (size_t i = 0; i < swapchainImages.size(); ++i) {
 
         vk::ImageViewCreateInfo imageViewCreateInfo;
-        imageViewCreateInfo.image = images[i];
+        imageViewCreateInfo.image = swapchainImages[i];
         imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
         imageViewCreateInfo.components = vk::ComponentSwizzle::eIdentity;
 
@@ -51,7 +51,7 @@ void Swapchain::CreateSwapchain()
         imageViewCreateInfo.subresourceRange = range;
         imageViewCreateInfo.format = surfaceFormat_.format;
 
-        frames[i].swapchainImage = images[i];
+        frames[i].swapchainImage = swapchainImages[i];
         frames[i].swapchainImageView = Device::GetBundle().device.createImageView(imageViewCreateInfo);
     }
 }
@@ -306,7 +306,6 @@ void Swapchain::Destroy()
         Device::GetBundle().device.destroySemaphore(frame.imageAvailable);
         Device::GetBundle().device.destroySemaphore(frame.renderFinished);
     }
-
     Device::GetBundle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
 }
 
