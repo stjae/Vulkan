@@ -29,7 +29,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     init_info.DescriptorPool = descriptorPool_;
     init_info.Subpass = 0;
     init_info.MinImageCount = Swapchain::capabilities.minImageCount;
-    init_info.ImageCount = Swapchain::GetFrameImageCount();
+    init_info.ImageCount = Swapchain::GetBundle().frameImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
 
@@ -53,7 +53,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    viewportDescriptorSets_.resize(Swapchain::GetFrameImageCount());
+    viewportDescriptorSets_.resize(Swapchain::GetBundle().frameImageCount);
     for (int i = 0; i < viewportDescriptorSets_.size(); i++)
         viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
                                                                  viewport.frames[i].viewportImage.GetBundle().imageView,
@@ -140,7 +140,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 {
     auto& frame = viewport.frames[frameIndex];
 
-    Command::BeginCommand(frame.commandBuffer);
+    Command::Begin(frame.commandBuffer);
     Command::SetImageMemoryBarrier(frame.commandBuffer, frame.viewportImage,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -182,17 +182,6 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     ImGui::End();
     ImGui::PopStyleVar();
-
-    Command::BeginCommand(frame.commandBuffer);
-    Command::SetImageMemoryBarrier(frame.commandBuffer, frame.viewportImage,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::AccessFlagBits::eColorAttachmentRead,
-                                   vk::PipelineStageFlagBits::eFragmentShader,
-                                   vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    frame.commandBuffer.end();
-    Command::Submit(&frame.commandBuffer, 1);
 }
 
 void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize)

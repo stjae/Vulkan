@@ -29,11 +29,11 @@ public:
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemoryHandle(), 0, bufferInput.size);
+        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::Get(), 0, bufferInput.size);
 
         Memory::SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
-        Device::GetBundle().device.unmapMemory(Memory::GetMemoryHandle());
+        Device::GetBundle().device.unmapMemory(Memory::Get());
     }
 
     template <typename T>

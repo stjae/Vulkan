@@ -59,6 +59,8 @@ void Engine::Render()
     viewport_.Draw(frameIndex_, scene_->meshes, scene_->uboDataDynamic.alignment);
     swapchain_.Submit(frameIndex_);
     swapchain_.Present(frameIndex_, waitFrameImage);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        swapchain_.PickColor(frameIndex_);
 
     /*
         if (Queue::GetBundle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
@@ -69,7 +71,7 @@ void Engine::Render()
         }
     */
 
-    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetFrameImageCount();
+    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameImageCount;
 }
 
 bool Engine::IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage)

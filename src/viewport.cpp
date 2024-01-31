@@ -1,8 +1,8 @@
-#include "viewport.h"
+﻿#include "viewport.h"
 
 Viewport::Viewport()
 {
-    frames.resize(Swapchain::GetFrameImageCount());
+    frames.resize(Swapchain::GetBundle().frameImageCount);
     extent = vk::Extent2D((uint32_t)Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)Swapchain::GetBundle().swapchainImageExtent.height);
 
     CreateDescriptorSetLayout();
@@ -17,11 +17,11 @@ Viewport::Viewport()
         Descriptor::CreateDescriptorPool(frame.descriptorPool, 1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
         Descriptor::AllocateDescriptorSets(frame.descriptorPool, frame.descriptorSets, descriptorSetLayouts_);
 
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
         frame.viewportImage.CreateSampler();
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
     }
 
@@ -152,13 +152,13 @@ void Viewport::RecreateViewportImages()
     }
 
     for (auto& frame : frames) {
-        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 });
+        frame.viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
         frame.viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
 
-        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 });
+        frame.depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
         frame.depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
 
-        Command::BeginCommand(frame.commandBuffer);
+        Command::Begin(frame.commandBuffer);
         Command::SetImageMemoryBarrier(frame.commandBuffer,
                                        frame.viewportImage,
                                        {},
@@ -178,7 +178,15 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
 {
     auto& frame = frames[frameIndex];
 
-    Command::BeginCommand(frame.commandBuffer);
+    Command::Begin(frame.commandBuffer);
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   frame.viewportImage,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   vk::ImageLayout::eColorAttachmentOptimal,
+                                   vk::AccessFlagBits::eShaderRead,
+                                   vk::AccessFlagBits::eColorAttachmentRead,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = renderPass_;

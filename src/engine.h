@@ -30,8 +30,8 @@ class Engine
 public:
     void InitSwapchainImages();
     void SetUp();
-    void UpdateScene();
     void DrawUI();
+    void UpdateScene();
     void Render();
     ~Engine();
 };

@@ -11,11 +11,11 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
 
     // vertex input
     vk::VertexInputBindingDescription bindingDesc = MeshData::GetBindingDesc();
-    std::array<vk::VertexInputAttributeDescription, 4> attributeDescs = MeshData::GetAttributeDescs();
+    auto attributeDescs = MeshData::GetAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
-    vertexInputInfo.vertexAttributeDescriptionCount = 4;
+    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescs.size();
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescs.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
 

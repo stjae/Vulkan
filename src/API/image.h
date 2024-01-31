@@ -19,7 +19,7 @@ class Image
 public:
     Memory memory;
 
-    void CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent);
+    void CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent, vk::ImageTiling imageTiling);
     void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags);
     void CreateSampler();
     void SetInfo(vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined);

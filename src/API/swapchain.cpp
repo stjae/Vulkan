@@ -6,6 +6,8 @@ Swapchain::Swapchain()
     CreateRenderPass();
     CreateFrameBuffer();
     PrepareFrames();
+
+    colorPicked_.CreateImage(vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible, { 1, 1, 1 }, vk::ImageTiling::eLinear);
 }
 
 void Swapchain::CreateSwapchain()
@@ -17,7 +19,7 @@ void Swapchain::CreateSwapchain()
 
     uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, surfaceFormat_.format, surfaceFormat_.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, swapchainBundle_.surfaceFormat.format, swapchainBundle_.surfaceFormat.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
     uint32_t indices[] = { Device::GetBundle().graphicsFamilyIndex.value(), Device::GetBundle().presentFamilyIndex.value() };
     if (Device::GetBundle().graphicsFamilyIndex.value() != Device::GetBundle().presentFamilyIndex.value()) {
@@ -28,7 +30,7 @@ void Swapchain::CreateSwapchain()
         swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
     }
 
-    swapchainCreateInfo.presentMode = presentMode_;
+    swapchainCreateInfo.presentMode = swapchainBundle_.presentMode;
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = nullptr;
 
@@ -37,8 +39,8 @@ void Swapchain::CreateSwapchain()
 
     // GetBundle swapchain image handle
     std::vector<vk::Image> swapchainImages = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
-    frameImageCount_ = swapchainImages.size();
-    frames.resize(frameImageCount_);
+    swapchainBundle_.frameImageCount = swapchainImages.size();
+    frames.resize(swapchainBundle_.frameImageCount);
 
     for (size_t i = 0; i < swapchainImages.size(); ++i) {
 
@@ -49,7 +51,7 @@ void Swapchain::CreateSwapchain()
 
         vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
         imageViewCreateInfo.subresourceRange = range;
-        imageViewCreateInfo.format = surfaceFormat_.format;
+        imageViewCreateInfo.format = swapchainBundle_.surfaceFormat.format;
 
         frames[i].swapchainImage = swapchainImages[i];
         frames[i].swapchainImageView = Device::GetBundle().device.createImageView(imageViewCreateInfo);
@@ -81,7 +83,7 @@ void Swapchain::ChooseSurfaceFormat()
             Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
 
-            surfaceFormat_ = format;
+            swapchainBundle_.surfaceFormat = format;
             return;
         }
     }
@@ -89,7 +91,7 @@ void Swapchain::ChooseSurfaceFormat()
     Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
     Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
 
-    surfaceFormat_ = supportedFormats_[0].format;
+    swapchainBundle_.surfaceFormat = supportedFormats_[0].format;
 }
 
 void Swapchain::ChoosePresentMode()
@@ -104,7 +106,7 @@ void Swapchain::ChoosePresentMode()
 
     Log(debug, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
 
-    presentMode_ = mode;
+    swapchainBundle_.presentMode = mode;
 }
 
 void Swapchain::ChooseExtent()
@@ -205,11 +207,119 @@ void Swapchain::PrepareFrames()
     }
 }
 
+void Swapchain::PickColor(size_t frameIndex)
+{
+    auto& frame = frames[frameIndex];
+
+    Command::Begin(frame.commandBuffer);
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   frame.swapchainImage,
+                                   vk::ImageLayout::ePresentSrcKHR,
+                                   vk::ImageLayout::eTransferSrcOptimal,
+                                   vk::AccessFlagBits::eMemoryRead,
+                                   vk::AccessFlagBits::eTransferRead,
+                                   vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   colorPicked_.GetBundle().image,
+                                   vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal,
+                                   {},
+                                   vk::AccessFlagBits::eTransferWrite,
+                                   vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    frame.commandBuffer.end();
+    Command::Submit(&frame.commandBuffer, 1);
+
+    vk::ImageCopy region;
+    region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.srcSubresource.layerCount = 1;
+    region.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.dstSubresource.layerCount = 1;
+    float scaleX, scaleY;
+    double mouseX, mouseY;
+    glfwGetCursorPos(*Window::GetWindow(), &mouseX, &mouseY);
+    glfwGetWindowContentScale(*Window::GetWindow(), &scaleX, &scaleY);
+    mouseX *= scaleX;
+    mouseY *= scaleY;
+    region.srcOffset.x = std::max(0, (int)mouseX);
+    region.srcOffset.y = std::max(0, (int)mouseY);
+    //    std::cout << (int)mouseX << ' ' << (int)mouseY << '\n';
+    region.extent.width = 1;
+    region.extent.height = 1;
+    region.extent.depth = 1;
+
+    Command::Begin(frame.commandBuffer);
+    frame.commandBuffer.copyImage(frame.swapchainImage, vk::ImageLayout::eTransferSrcOptimal, colorPicked_.GetBundle().image, vk::ImageLayout::eTransferDstOptimal, region);
+
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   frame.swapchainImage,
+                                   vk::ImageLayout::eTransferSrcOptimal,
+                                   vk::ImageLayout::ePresentSrcKHR,
+                                   vk::AccessFlagBits::eTransferRead,
+                                   vk::AccessFlagBits::eMemoryRead,
+                                   vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    Command::SetImageMemoryBarrier(frame.commandBuffer,
+                                   colorPicked_.GetBundle().image,
+                                   vk::ImageLayout::eTransferDstOptimal,
+                                   vk::ImageLayout::eGeneral,
+                                   vk::AccessFlagBits::eTransferRead,
+                                   vk::AccessFlagBits::eMemoryRead,
+                                   vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    frame.commandBuffer.end();
+    Command::Submit(&frame.commandBuffer, 1);
+
+    vk::ImageSubresource subResource{ vk::ImageAspectFlagBits::eColor, 0, 0 };
+    vk::SubresourceLayout subResourceLayout;
+    Device::GetBundle().device.getImageSubresourceLayout(colorPicked_.GetBundle().image, &subResource, &subResourceLayout);
+
+    const uint8_t* data;
+    Device::GetBundle().device.mapMemory(colorPicked_.memory.Get(), 0, vk::WholeSize, {}, (void**)&data);
+    //    data += subResourceLayout.offset;
+    std::cout << (int)data[0] << ' ' << (int)data[1] << ' ' << (int)data[2] << '\n';
+
+    //    std::ofstream file("screenShot.ppm", std::ios::out | std::ios::binary);
+
+    // ppm header
+    //    file << "P6\n"
+    //         << Swapchain::GetBundle().swapchainImageExtent.width << "\n"
+    //         << Swapchain::GetBundle().swapchainImageExtent.height << "\n"
+    //         << 255 << "\n";
+    //
+    //    // If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+    //    bool colorSwizzle = false;
+    //    // Check if source is BGR
+    //    // Note: Not complete, only contains most common and basic BGR surface formats for demonstration purposes
+    //    std::vector<vk::Format> formatsBGR = { vk::Format::eB8G8R8A8Srgb, vk::Format::eB8G8R8A8Unorm, vk::Format::eB8G8R8A8Snorm };
+    //    colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), Swapchain::GetBundle().surfaceFormat.format) != formatsBGR.end());
+    //
+    //    // ppm binary pixel data
+    //    for (uint32_t y = 0; y < Swapchain::GetBundle().swapchainImageExtent.height; y++) {
+    //        unsigned int* row = (unsigned int*)data;
+    //        for (uint32_t x = 0; x < Swapchain::GetBundle().swapchainImageExtent.width; x++) {
+    //            if (colorSwizzle) {
+    //                file.write((char*)row + 2, 1);
+    //                file.write((char*)row + 1, 1);
+    //                file.write((char*)row, 1);
+    //            } else {
+    //                file.write((char*)row, 3);
+    //            }
+    //            row++;
+    //        }
+    //        data += subResourceLayout.rowPitch;
+    //    }
+    //    file.close();
+
+    Device::GetBundle().device.unmapMemory(colorPicked_.memory.Get());
+}
+
 void Swapchain::Draw(size_t frameIndex, ImDrawData* imDrawData)
 {
     auto& frame = frames[frameIndex];
 
-    Command::BeginCommand(frame.renderPassCommandBuffer);
+    Command::Begin(frame.renderPassCommandBuffer);
     Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
                                    frame.swapchainImage,
                                    vk::ImageLayout::ePresentSrcKHR,

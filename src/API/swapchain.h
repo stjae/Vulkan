@@ -27,6 +27,9 @@ struct SwapchainFrame
 
 struct SwapchainBundle
 {
+    uint32_t frameImageCount;
+    vk::SurfaceFormatKHR surfaceFormat;
+    vk::PresentModeKHR presentMode;
     vk::Extent2D swapchainImageExtent;
     vk::SwapchainKHR swapchain;
 };
@@ -36,11 +39,7 @@ class Swapchain
     std::vector<vk::SurfaceFormatKHR> supportedFormats_;
     std::vector<vk::PresentModeKHR> supportedPresentModes_;
 
-    vk::SurfaceFormatKHR surfaceFormat_;
-    vk::PresentModeKHR presentMode_;
-
     inline static SwapchainBundle swapchainBundle_;
-    inline static uint32_t frameImageCount_;
 
     Pipeline pipeline_;
     vk::RenderPass renderPass_;
@@ -51,7 +50,6 @@ class Swapchain
     void ChooseSurfaceFormat();
     void ChoosePresentMode();
     void ChooseExtent();
-    void WriteSwapchainCreateInfo();
 
 public:
     Swapchain();
@@ -62,16 +60,17 @@ public:
     ~Swapchain();
 
     void CreateRenderPass();
+    void PickColor(size_t frameIndex);
     void Draw(size_t frameIndex, ImDrawData* imDrawData);
     void Submit(size_t frameIndex);
     void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
 
-    static uint32_t GetFrameImageCount() { return frameImageCount_; }
     static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
 
     inline static vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<SwapchainFrame> frames;
+    Image colorPicked_;
 };
 
 #endif
