@@ -148,20 +148,30 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
                                    vk::AccessFlagBits::eShaderRead,
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eFragmentShader);
+    Command::SetImageMemoryBarrier(frame.commandBuffer, frame.colorID,
+                                   vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   {},
+                                   vk::AccessFlagBits::eShaderRead,
+                                   vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eFragmentShader);
     frame.commandBuffer.end();
     Command::Submit(&frame.commandBuffer, 1);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
 
-    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    float viewportPanelRatio = viewportPanelSize.x / viewportPanelSize.y;
+    viewport.panelPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin();
+    viewport.panelSize = ImGui::GetContentRegionAvail();
+    // Debug: drawRect
+    //    ImGui::GetForegroundDrawList()->AddRect(viewport.panelPos, viewport.panelPos + viewport.panelSize, IM_COL32(255, 0, 0, 255));
+    float viewportPanelRatio = viewport.panelSize.x / viewport.panelSize.y;
 
     if (viewport.panelRatio != viewportPanelRatio || viewport.outDated)
-        SetViewportUpToDate(viewport, viewportPanelSize);
+        SetViewportUpToDate(viewport, viewport.panelSize);
 
     // Accept Drag Drop
-    ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+    ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     if (ImGui::BeginDragDropTarget()) {
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
         std::array<std::string, 3>* data = nullptr;
@@ -176,8 +186,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     }
 
     if (scene.meshSelected != -1) {
-        ImVec2 viewportPanelPos = ImGui::GetWindowPos();
-        DrawImGuizmo(scene, viewportPanelPos);
+        DrawImGuizmo(scene, viewport.panelPos);
     }
 
     ImGui::End();
@@ -194,7 +203,8 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
         viewport.extent = Swapchain::GetBundle().swapchainImageExtent;
 
-    viewport.RecreateViewportImages();
+    viewport.DestroyViewportImages();
+    viewport.CreateViewportImages();
     RecreateViewportDescriptorSets(viewport);
 
     viewport.outDated = false;

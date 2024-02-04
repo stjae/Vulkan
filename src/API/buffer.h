@@ -4,6 +4,13 @@
 #include "device/device.h"
 #include "memory.h"
 
+struct BufferInput
+{
+    size_t size;
+    vk::BufferUsageFlags usage;
+    vk::MemoryPropertyFlags properties;
+};
+
 struct BufferBundle
 {
     vk::Buffer buffer;

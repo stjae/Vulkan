@@ -12,6 +12,7 @@ struct ViewportFrame
 
     Image viewportImage;
     Image depthImage;
+    Image colorID;
 
     vk::CommandPool commandPool;
     vk::CommandBuffer commandBuffer;
@@ -35,12 +36,17 @@ class Viewport
 public:
     std::vector<ViewportFrame> frames;
     vk::Extent2D extent;
+    ImVec2 panelPos{};
+    ImVec2 panelSize{};
     float panelRatio{};
     bool outDated{};
+    Image colorPicked_;
 
     Viewport();
+    void CreateViewportImages();
+    void DestroyViewportImages();
+    int32_t PickColor(size_t pickColor);
     void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
-    void RecreateViewportImages();
     ~Viewport();
 };
 

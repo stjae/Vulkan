@@ -58,19 +58,4 @@ void Log(bool isDebugMode, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
-struct Vertex
-{
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 texCoord;
-    int texID;
-};
-
-struct BufferInput
-{
-    size_t size;
-    vk::BufferUsageFlags usage;
-    vk::MemoryPropertyFlags properties;
-};
-
 #endif

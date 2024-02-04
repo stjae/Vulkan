@@ -77,10 +77,11 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
                                                 vk::ColorComponentFlagBits::eB |
                                                 vk::ColorComponentFlagBits::eA);
     colorBlendAttachmentState.blendEnable = VK_FALSE;
+    std::array<vk::PipelineColorBlendAttachmentState, 2> colorBlendAttachmentStates{ colorBlendAttachmentState, colorBlendAttachmentState };
     vk::PipelineColorBlendStateCreateInfo colorBlendStateInfo;
     colorBlendStateInfo.logicOpEnable = VK_FALSE;
-    colorBlendStateInfo.attachmentCount = 1;
-    colorBlendStateInfo.pAttachments = &colorBlendAttachmentState;
+    colorBlendStateInfo.attachmentCount = 2;
+    colorBlendStateInfo.pAttachments = colorBlendAttachmentStates.data();
     std::array<float, 4> blendConstants{ 0.0f, 0.0f, 0.0f, 0.0f };
     colorBlendStateInfo.blendConstants = blendConstants;
     pipelineInfo.pColorBlendState = &colorBlendStateInfo;

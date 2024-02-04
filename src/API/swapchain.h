@@ -60,7 +60,6 @@ public:
     ~Swapchain();
 
     void CreateRenderPass();
-    void PickColor(size_t frameIndex);
     void Draw(size_t frameIndex, ImDrawData* imDrawData);
     void Submit(size_t frameIndex);
     void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
@@ -70,7 +69,6 @@ public:
 
     inline static vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<SwapchainFrame> frames;
-    Image colorPicked_;
 };
 
 #endif
