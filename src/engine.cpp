@@ -56,7 +56,7 @@ void Engine::Render()
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
     swapchain_.Draw(frameIndex_, imDrawData_);
-    viewport_.Draw(frameIndex_, scene_->meshes, scene_->uboDataDynamic.alignment);
+    viewport_.Draw(frameIndex_, scene_->meshes, scene_->GetMeshUniformDynamicOffset());
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
         scene_->meshSelected = viewport_.PickColor(frameIndex_);
     swapchain_.Submit(frameIndex_);

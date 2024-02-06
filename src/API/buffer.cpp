@@ -6,6 +6,7 @@ Buffer::Buffer(const BufferInput& bufferInput)
                                     vk::SharingMode::eExclusive);
 
     bufferBundle_.buffer = Device::GetBundle().device.createBuffer(bufferInfo);
+    bufferBundle_.bufferUsage = bufferInput.usage;
     bufferSize_ = bufferInput.size;
 
     AllocateMemory(bufferBundle_.buffer, bufferInput.properties);
@@ -33,20 +34,17 @@ void Buffer::Destroy()
         Device::GetBundle().device.freeMemory(Memory::Get());
         Memory::Set(VK_NULL_HANDLE);
     }
-    Log(debug, fmt::v9::terminal_color::bright_yellow, "buffer destroyed");
+    Log(debug, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
 }
 
 size_t Buffer::GetDynamicBufferOffset(size_t size)
 {
+    // offset should be multiple of minOffset
     size_t minOffset = Device::physicalDeviceLimits.minUniformBufferOffsetAlignment;
-    size_t dynamicBufferOffset = 0;
+    size_t dynamicBufferOffset = 2;
 
-    if (minOffset > 0) {
-        int i = 1;
-        while (minOffset * i <= size) {
-            dynamicBufferOffset = minOffset * i;
-            i++;
-        }
+    while (dynamicBufferOffset < size || dynamicBufferOffset < minOffset) {
+        dynamicBufferOffset *= 2;
     }
 
     return dynamicBufferOffset;

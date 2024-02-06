@@ -1,4 +1,4 @@
-#define PROJECT_DIR_OSX "/Users/stjae/dev/Vulkan/"
+#define PROJECT_DIR_OSX "/Users/stjae/Dev/Vulkan/"
 #define PROJECT_DIR_WINDOWS "/"
 
 #if defined(__APPLE__)

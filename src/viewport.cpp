@@ -20,7 +20,7 @@ Viewport::Viewport()
 
     CreateViewportImages();
 
-    colorPicked_.CreateImage(vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible, { 1, 1, 1 }, vk::ImageTiling::eLinear);
+    colorPicked_.CreateImage(vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
 }
 
 void Viewport::CreateViewportImages()
@@ -103,7 +103,7 @@ void Viewport::CreateDescriptorSetLayout()
     layout1.indices.push_back(0);
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
     layout1.descriptorCounts.push_back(1);
-    layout1.bindingStages.emplace_back(vk::ShaderStageFlagBits::eVertex);
+    layout1.bindingStages.emplace_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     layout1.bindingFlags.emplace_back();
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout1));
     descriptorSetLayoutData_.push_back(layout1);

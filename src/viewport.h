@@ -45,7 +45,7 @@ public:
     Viewport();
     void CreateViewportImages();
     void DestroyViewportImages();
-    int32_t PickColor(size_t pickColor);
+    int32_t PickColor(size_t frameIndex);
     void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
     ~Viewport();
 };

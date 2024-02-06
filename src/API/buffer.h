@@ -16,6 +16,7 @@ struct BufferBundle
     vk::Buffer buffer;
     vk::DescriptorBufferInfo bufferInfo;
     vk::DeviceMemory bufferMemory;
+    vk::BufferUsageFlags bufferUsage;
 };
 
 class Buffer : public Memory

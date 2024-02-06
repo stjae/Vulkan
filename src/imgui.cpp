@@ -46,7 +46,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     path.append(FONT_ICON_FILE_NAME_FAS);
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
-    // Scale DPI
+    // DPI Scale
     if (imguiViewport->DpiScale > 0.0f) {
         ImFontConfig fontConfig;
         fontConfig.SizePixels = 13.0f * imguiViewport->DpiScale;
@@ -72,8 +72,9 @@ void MyImGui::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered())
         scene.meshSelected = -1;
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.meshSelected != -1)
-        scene.DeleteMesh();
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.meshSelected != -1) {
+        scene.DeleteMesh(scene.meshSelected);
+    }
 
     DrawDockSpace(scene);
     DrawViewport(scene, viewport, frameIndex);
@@ -174,12 +175,15 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     if (ImGui::BeginDragDropTarget()) {
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
-        std::array<std::string, 3>* data = nullptr;
+        Resource* data = nullptr;
         if (payload)
-            data = (std::array<std::string, 3>*)payload->Data;
+            data = (Resource*)payload->Data;
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
-            if (data->at(2) == std::string("obj")) {
-                scene.AddMesh(MODEL, data->at(0));
+            if (data->fileFormat == std::string("obj")) {
+                scene.AddMesh(MODEL, data->filePath);
+            } else if (data->fileFormat == std::string("jpg") || data->fileFormat == std::string("png")) {
+                auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (viewport.PickColor(frameIndex) * scene.GetMeshUniformDynamicOffset()));
+                (*meshUniformData).textureID = (*((Texture*)data->resource)).index;
             }
         }
         ImGui::EndDragDropTarget();
@@ -232,15 +236,15 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto* modelMat = (glm::mat4*)((uint64_t)scene.uboDataDynamic.model + (scene.meshSelected * scene.uboDataDynamic.alignment));
+    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
 
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMatrix), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
-    *modelMat = glm::make_mat4(objectMatrix);
+    (*modelUniformData).modelMatrix = glm::make_mat4(objectMatrix);
 }
 
 void MyImGui::DrawObjectWindow(Scene& scene)
@@ -254,8 +258,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("delete")) {
-                    scene.DeleteMesh();
-                    scene.meshSelected = -1;
+                    scene.DeleteMesh(scene.meshSelected);
                 }
                 ImGui::EndPopup();
             }
@@ -265,14 +268,14 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     // Attributes
     if (scene.meshSelected != -1) {
 
-        auto* modelMat = (glm::mat4*)((uint64_t)scene.uboDataDynamic.model + (scene.meshSelected * scene.uboDataDynamic.alignment));
+        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
 
         float translation[3];
         float rotation[3];
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(*modelMat), translation,
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMatrix), translation,
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Translation", "Rotation" };
@@ -282,7 +285,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        *modelMat = glm::make_mat4(objectMatrix);
+        (*modelUniformData).modelMatrix = glm::make_mat4(objectMatrix);
     }
     ImGui::End();
 }
@@ -294,27 +297,35 @@ void MyImGui::DrawResourceWindow(Scene& scene)
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
         std::string path = LaunchNfd();
         if (!path.empty()) {
-            std::string name = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
-            std::string type = path.substr(path.rfind('.') + 1, path.size());
-            scene.resources.push_back({ path, name, type });
+            Resource res;
+            res.filePath = path;
+            res.fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1).c_str();
+            res.fileFormat = path.substr(path.rfind('.') + 1, path.size()).c_str();
+
+            scene.resources.push_back(res);
+
+            if (res.fileFormat == std::string("jpg") || res.fileFormat == std::string("png")) {
+                scene.AddTexture(path);
+                scene.resources.back().resource = &scene.textures.back();
+            }
         }
     }
     ImGui::EndChild();
 
     // Send Drag Drop
     for (auto& resource : scene.resources) {
-        if (resource.at(2) == std::string("obj"))
+        if (resource.fileFormat == std::string("obj"))
             ImGui::Button(ICON_FA_CUBE, { 100, 100 });
         else
             ImGui::Button(ICON_FA_IMAGE, { 100, 100 });
 
         if (ImGui::BeginDragDropSource()) {
-            ImGui::Text("%s", resource.at(1).c_str());
+            ImGui::Text("%s", resource.filePath.c_str());
             ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&resource, sizeof(resource));
             ImGui::EndDragDropSource();
         }
 
-        ImGui::TextWrapped("%s", resource.at(1).c_str());
+        ImGui::TextWrapped("%s", resource.fileName.c_str());
     }
     ImGui::End();
 }
