@@ -3,12 +3,6 @@
 
 #include "meshData.h"
 
-enum MeshType {
-    SQUARE,
-    CUBE,
-    MODEL
-};
-
 class Mesh : public MeshData
 {
     friend class Scene;
@@ -17,7 +11,7 @@ class Mesh : public MeshData
     std::string name_;
     glm::vec3 position_;
     glm::vec3 rotation_;
-    MeshType meshType_{};
+    TypeEnum::Mesh meshType_{};
 
     void CreateBuffers();
     void CreateSquare(const char* texturePath);

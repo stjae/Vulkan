@@ -19,22 +19,22 @@ Scene::Scene()
         PrepareMeshes();
 }
 
-void Scene::AddMesh(MeshType type)
+void Scene::AddMesh(TypeEnum::Mesh type)
 {
     switch (type) {
-    case SQUARE:
+    case TypeEnum::Mesh::SQUARE:
         meshes.emplace_back();
         meshes.back().CreateSquare(nullptr);
         meshes.back().CreateBuffers();
-        meshes.back().meshType_ = SQUARE;
-        meshes.back().name_.append(std::to_string(++meshCount_[SQUARE]));
+        meshes.back().meshType_ = TypeEnum::Mesh::SQUARE;
+        meshes.back().name_.append(std::to_string(++meshCount_[TypeEnum::Mesh::SQUARE]));
         break;
-    case CUBE:
+    case TypeEnum::Mesh::CUBE:
         meshes.emplace_back();
         meshes.back().CreateCube(nullptr);
         meshes.back().CreateBuffers();
-        meshes.back().meshType_ = CUBE;
-        meshes.back().name_.append(std::to_string(++meshCount_[CUBE]));
+        meshes.back().meshType_ = TypeEnum::Mesh::CUBE;
+        meshes.back().name_.append(std::to_string(++meshCount_[TypeEnum::Mesh::CUBE]));
         break;
     default:
         break;
@@ -43,7 +43,7 @@ void Scene::AddMesh(MeshType type)
     UpdateMesh();
 }
 
-void Scene::AddMesh(MeshType type, const std::string& filePath)
+void Scene::AddMesh(TypeEnum::Mesh type, const std::string& filePath)
 {
     if (filePath.empty())
         return;
@@ -71,28 +71,28 @@ void Scene::AddTexture(const std::string& filePath)
         return;
     }
 
-    textures.emplace_back();
-    textures.back().width = width;
-    textures.back().height = height;
-    textures.back().size = static_cast<size_t>(imageSize);
-    textures.back().index = textures.size() - 1;
+    textures.emplace_back(std::make_shared<Texture>());
+    textures.back()->width = width;
+    textures.back()->height = height;
+    textures.back()->size = static_cast<size_t>(imageSize);
+    textures.back()->index = textures.size() - 1;
 
     BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    textures.back().stagingBuffer = std::make_unique<Buffer>(input);
-    textures.back().stagingBuffer->CopyToBuffer(imageData, input);
+    textures.back()->stagingBuffer = std::make_unique<Buffer>(input);
+    textures.back()->stagingBuffer->CopyToBuffer(imageData, input);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
-    textures.back().image = std::make_unique<Image>();
-    textures.back().image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    textures.back().image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    textures.back().image->CreateSampler();
-    textures.back().image->SetInfo();
+    textures.back()->image = std::make_unique<Image>();
+    textures.back()->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    textures.back()->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    textures.back()->image->CreateSampler();
+    textures.back()->image->SetInfo();
 
     Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures.back().image,
+                                   *textures.back()->image,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    {},
@@ -101,12 +101,12 @@ void Scene::AddTexture(const std::string& filePath)
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
-                               textures.back().stagingBuffer->GetBundle().buffer,
-                               textures.back().image->GetBundle().image, textures.back().width,
-                               textures.back().height);
+                               textures.back()->stagingBuffer->GetBundle().buffer,
+                               textures.back()->image->GetBundle().image, textures.back()->width,
+                               textures.back()->height);
     // Set texture image layout to shader read only
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures.back().image,
+                                   *textures.back()->image,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    vk::AccessFlagBits::eTransferWrite,
@@ -116,7 +116,7 @@ void Scene::AddTexture(const std::string& filePath)
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
 
-    textures.back().stagingBuffer->Destroy();
+    textures.back()->stagingBuffer->Destroy();
 }
 
 void Scene::PrepareMeshes()
@@ -244,34 +244,36 @@ void Scene::CreateUniformBuffer()
 void Scene::RearrangeUniformBuffer(size_t index) const
 {
     // move the meshUniformData forward as the mesh index refers to has been deleted
-    for (size_t i = index; i < meshes.size(); i++)
-        *(MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_)) = *(MeshUniformData*)((uint64_t)meshUniformData + (i + 1 * modelUniformBufferDynamicOffset_));
+    for (size_t i = index; i < meshes.size(); i++) {
+        *(MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_)) = *(MeshUniformData*)((uint64_t)meshUniformData + ((i + 1) * modelUniformBufferDynamicOffset_));
+        (*(MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_))).meshID--;
+    }
 }
 
 void Scene::CreateDummyTexture()
 {
-    textures.emplace_back();
+    textures.emplace_back(std::make_shared<Texture>());
 
     uint8_t dummyTexture[4] = { 0, 0, 0, 255 };
-    textures.back().width = 1;
-    textures.back().height = 1;
-    textures.back().size = sizeof(dummyTexture);
+    textures.back()->width = 1;
+    textures.back()->height = 1;
+    textures.back()->size = sizeof(dummyTexture);
 
     BufferInput input = { 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    textures.back().stagingBuffer = std::make_unique<Buffer>(input);
-    textures.back().stagingBuffer->CopyToBuffer(&dummyTexture, input);
+    textures.back()->stagingBuffer = std::make_unique<Buffer>(input);
+    textures.back()->stagingBuffer->CopyToBuffer(&dummyTexture, input);
 
     vk::Extent3D extent(1, 1, 1);
-    textures.back().image = std::make_unique<Image>();
-    textures.back().image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    textures.back().image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    textures.back().image->CreateSampler();
-    textures.back().image->SetInfo();
+    textures.back()->image = std::make_unique<Image>();
+    textures.back()->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    textures.back()->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    textures.back()->image->CreateSampler();
+    textures.back()->image->SetInfo();
 
     Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures.back().image,
+                                   *textures.back()->image,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    {},
@@ -280,12 +282,12 @@ void Scene::CreateDummyTexture()
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
-                               textures.back().stagingBuffer->GetBundle().buffer,
-                               textures.back().image->GetBundle().image, textures.back().width,
-                               textures.back().height);
+                               textures.back()->stagingBuffer->GetBundle().buffer,
+                               textures.back()->image->GetBundle().image, textures.back()->width,
+                               textures.back()->height);
     // Set texture image layout to shader read only
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures.back().image,
+                                   *textures.back()->image,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    vk::AccessFlagBits::eTransferWrite,
@@ -295,7 +297,7 @@ void Scene::CreateDummyTexture()
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
 
-    textures.back().stagingBuffer->Destroy();
+    textures.back()->stagingBuffer->Destroy();
 }
 
 void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames)
@@ -326,7 +328,7 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
         descriptorWrites.descriptorCount = textures.size();
         std::vector<vk::DescriptorImageInfo> infos;
         for (auto& texture : textures) {
-            infos.push_back(texture.image->GetBundle().imageInfo);
+            infos.push_back(texture->image->GetBundle().imageInfo);
         }
         descriptorWrites.pImageInfo = infos.data();
         Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);

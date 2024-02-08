@@ -31,8 +31,9 @@ struct Resource
     std::string fileName;
     std::string fileFormat;
     std::string filePath;
+    TypeEnum::Resource resourceType;
 
-    void* resource;
+    std::shared_ptr<void> resource;
 };
 
 class Scene
@@ -43,7 +44,6 @@ class Scene
     size_t modelUniformBufferDynamicOffset_;
     size_t modelUniformBufferDynamicSize_;
     size_t meshCount_[3]{};
-    int32_t meshID_ = -1;
 
     void CreateUniformBuffer();
     void RearrangeUniformBuffer(size_t index) const;
@@ -53,15 +53,15 @@ class Scene
 
 public:
     std::vector<Mesh> meshes;
-    std::vector<Texture> textures;
+    std::vector<std::shared_ptr<Texture>> textures;
     std::vector<Resource> resources;
     Camera camera;
     MeshUniformData* meshUniformData;
     int32_t meshSelected = -1;
 
     Scene();
-    void AddMesh(MeshType type);
-    void AddMesh(MeshType type, const std::string& filePath);
+    void AddMesh(TypeEnum::Mesh type);
+    void AddMesh(TypeEnum::Mesh type, const std::string& filePath);
     void AddTexture(const std::string& filePath);
     size_t GetMeshUniformDynamicOffset() { return modelUniformBufferDynamicOffset_; }
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }

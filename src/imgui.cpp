@@ -121,14 +121,14 @@ void MyImGui::DrawDockSpace(Scene& scene)
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Open")) {
                 std::string filePath = LaunchNfd();
-                scene.AddMesh(MODEL, filePath);
+                scene.AddMesh(TypeEnum::Mesh::MODEL, filePath);
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
-                scene.AddMesh(SQUARE);
+                scene.AddMesh(TypeEnum::Mesh::SQUARE);
             }
             if (ImGui::MenuItem("Cube")) {
-                scene.AddMesh(CUBE);
+                scene.AddMesh(TypeEnum::Mesh::CUBE);
             }
             ImGui::EndMenu();
         }
@@ -174,18 +174,27 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     // Accept Drag Drop
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     if (ImGui::BeginDragDropTarget()) {
+
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
-        Resource* data = nullptr;
-        if (payload)
-            data = (Resource*)payload->Data;
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
-            if (data->fileFormat == std::string("obj")) {
-                scene.AddMesh(MODEL, data->filePath);
-            } else if (data->fileFormat == std::string("jpg") || data->fileFormat == std::string("png")) {
-                auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (viewport.PickColor(frameIndex) * scene.GetMeshUniformDynamicOffset()));
-                (*meshUniformData).textureID = (*((Texture*)data->resource)).index;
+        auto* data = (Resource*)payload->Data;
+
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+
+            int32_t pickColor = viewport.PickColor(frameIndex);
+
+            switch (data->resourceType) {
+            case TypeEnum::Resource::MESH:
+                scene.AddMesh(TypeEnum::Mesh::MODEL, data->filePath);
+                break;
+            case TypeEnum::Resource::IMAGE:
+                if (pickColor != -1) {
+                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetMeshUniformDynamicOffset()));
+                    (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
+                }
+                break;
             }
         }
+
         ImGui::EndDragDropTarget();
     }
 
@@ -294,6 +303,7 @@ void MyImGui::DrawResourceWindow(Scene& scene)
 {
     ImGui::Begin("Resources");
     ImGui::BeginChild("##", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize, ImGuiWindowFlags_ChildWindow);
+    // Add Resource
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
         std::string path = LaunchNfd();
         if (!path.empty()) {
@@ -301,12 +311,17 @@ void MyImGui::DrawResourceWindow(Scene& scene)
             res.filePath = path;
             res.fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1).c_str();
             res.fileFormat = path.substr(path.rfind('.') + 1, path.size()).c_str();
+            if (res.fileFormat == std::string("obj")) {
+                res.resourceType = TypeEnum::Resource::MESH;
+            } else if (res.fileFormat == std::string("jpg") || res.fileFormat == std::string("png")) {
+                res.resourceType = TypeEnum::Resource::IMAGE;
+            }
 
             scene.resources.push_back(res);
 
-            if (res.fileFormat == std::string("jpg") || res.fileFormat == std::string("png")) {
+            if (res.resourceType == TypeEnum::Resource::IMAGE) {
                 scene.AddTexture(path);
-                scene.resources.back().resource = &scene.textures.back();
+                scene.resources.back().resource = scene.textures.back();
             }
         }
     }
@@ -314,6 +329,7 @@ void MyImGui::DrawResourceWindow(Scene& scene)
 
     // Send Drag Drop
     for (auto& resource : scene.resources) {
+        ImGui::PushID(resource.filePath.c_str());
         if (resource.fileFormat == std::string("obj"))
             ImGui::Button(ICON_FA_CUBE, { 100, 100 });
         else
@@ -326,6 +342,7 @@ void MyImGui::DrawResourceWindow(Scene& scene)
         }
 
         ImGui::TextWrapped("%s", resource.fileName.c_str());
+        ImGui::PopID();
     }
     ImGui::End();
 }

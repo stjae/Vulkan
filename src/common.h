@@ -58,4 +58,16 @@ void Log(bool isDebugMode, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
+namespace TypeEnum {
+enum Mesh {
+    SQUARE,
+    CUBE,
+    MODEL
+};
+enum Resource {
+    MESH,
+    IMAGE
+};
+} // namespace TypeEnum
+
 #endif
