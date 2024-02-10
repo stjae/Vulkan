@@ -16,10 +16,10 @@ void Camera::SetCameraControl()
         ImGuiIO& io = ImGui::GetIO();
 
         if (isControllable_) {
-            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
-            glfwSetInputMode(*Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
@@ -48,7 +48,7 @@ void Camera::Update()
     mouseY = io.MousePos.y;
 
     int width, height;
-    glfwGetWindowSize(*Window::GetWindow(), &width, &height);
+    glfwGetWindowSize(Window::GetWindow(), &width, &height);
     mouseX /= (float)width;
     mouseY /= (float)height;
     mouseX -= 0.5f;

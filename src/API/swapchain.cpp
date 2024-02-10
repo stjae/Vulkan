@@ -77,7 +77,7 @@ void Swapchain::ChooseSurfaceFormat()
     Log(debug, fmt::terminal_color::black, "setting swapchain details..");
 
     for (auto& format : supportedFormats_) {
-        if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+        if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
 
@@ -120,7 +120,7 @@ void Swapchain::ChooseExtent()
     } else {
         // extent is not set
         int width, height;
-        glfwGetFramebufferSize(*Window::GetWindow(), &width, &height);
+        glfwGetFramebufferSize(Window::GetWindow(), &width, &height);
 
         vk::Extent2D extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
@@ -143,7 +143,7 @@ void Swapchain::ChooseExtent()
 void Swapchain::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Unorm;
+    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Srgb;
     colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;

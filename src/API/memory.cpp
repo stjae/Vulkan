@@ -47,6 +47,6 @@ void Memory::Free()
 {
     if (memory_ != VK_NULL_HANDLE) {
         Device::GetBundle().device.freeMemory(memory_);
-        memory_ = VK_NULL_HANDLE;
+        memory_ = nullptr;
     }
 }

@@ -20,10 +20,13 @@ struct Texture
 {
     std::unique_ptr<Buffer> stagingBuffer;
     std::unique_ptr<Image> image;
+    vk::DescriptorSet descriptorSet; // thumbnail for resource window
 
     int width{}, height{};
     size_t size{};
     int32_t index;
+
+    ~Texture() { ImGui_ImplVulkan_RemoveTexture(descriptorSet); }
 };
 
 struct Resource
@@ -63,13 +66,12 @@ public:
     void AddMesh(TypeEnum::Mesh type);
     void AddMesh(TypeEnum::Mesh type, const std::string& filePath);
     void AddTexture(const std::string& filePath);
-    size_t GetMeshUniformDynamicOffset() { return modelUniformBufferDynamicOffset_; }
+    size_t GetMeshUniformDynamicOffset() const { return modelUniformBufferDynamicOffset_; }
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
     bool IsMeshSelected(size_t index) const { return meshes[index].isSelected_; }
     void PrepareMeshes();
     void DeleteMesh(size_t index);
     void Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames);
-    void UpdateTextureID(size_t meshIndex, int32_t textureID);
     ~Scene();
 };
 

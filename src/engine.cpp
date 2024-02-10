@@ -27,7 +27,7 @@ void Engine::InitSwapchainImages()
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &frame.commandBuffer;
 
-        Device::GetBundle().graphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
+        Device::GetBundle().graphicsQueue.submit(1, &submitInfo, {});
 
         Device::GetBundle().device.waitIdle();
     }
@@ -93,7 +93,7 @@ void Engine::RecreateSwapchain()
     int width = 0;
     int height = 0;
     while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(*Window::GetWindow(), &width, &height);
+        glfwGetFramebufferSize(Window::GetWindow(), &width, &height);
         glfwWaitEvents();
     }
 

@@ -85,36 +85,36 @@ void Viewport::DestroyViewportImages()
 void Viewport::CreateDescriptorSetLayout()
 {
     DescriptorSetLayoutData layout0;
-    layout0.descriptorSetCount = 1;
+    layout0.layoutCount = 1;
 
     // descriptor set layout #0 : Camera Matrix
     layout0.indices.push_back(0);
     layout0.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    layout0.descriptorCounts.push_back(1);
+    layout0.descriptorSetCount.push_back(1);
     layout0.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     layout0.bindingFlags.emplace_back();
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout0));
     descriptorSetLayoutData_.push_back(layout0);
 
     DescriptorSetLayoutData layout1;
-    layout1.descriptorSetCount = 1;
+    layout1.layoutCount = 1;
 
     // descriptor set layout #1 : Model Matrix
     layout1.indices.push_back(0);
     layout1.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
-    layout1.descriptorCounts.push_back(1);
+    layout1.descriptorSetCount.push_back(1);
     layout1.bindingStages.emplace_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     layout1.bindingFlags.emplace_back();
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(layout1));
     descriptorSetLayoutData_.push_back(layout1);
 
     DescriptorSetLayoutData layout2;
-    layout2.descriptorSetCount = 1;
+    layout2.layoutCount = 1;
 
     // descriptor set layout #2 : Texture
     layout2.indices.push_back(0);
     layout2.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    layout2.descriptorCounts.push_back((int)Device::physicalDeviceLimits.maxDescriptorSetSamplers);
+    layout2.descriptorSetCount.push_back((int)Device::physicalDeviceLimits.maxDescriptorSetSamplers);
     layout2.bindingStages.emplace_back(vk::ShaderStageFlagBits::eFragment);
     layout2.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
     layout2.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
@@ -239,8 +239,8 @@ int32_t Viewport::PickColor(size_t frameIndex)
     region.dstSubresource.layerCount = 1;
     float scaleX, scaleY;
     double mouseX, mouseY;
-    glfwGetCursorPos(*Window::GetWindow(), &mouseX, &mouseY);
-    glfwGetWindowContentScale(*Window::GetWindow(), &scaleX, &scaleY);
+    glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
+    glfwGetWindowContentScale(Window::GetWindow(), &scaleX, &scaleY);
     int32_t offsetX = 0, offsetY = 0;
     if (mouseX > panelPos.x)
         offsetX = (int32_t)((mouseX - panelPos.x) * scaleX);
@@ -317,7 +317,7 @@ void Viewport::Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue colorClearValue;
     vk::ClearValue idClearValue;
-    colorClearValue.color = { std::array<float, 4>{ 1.0f, 1.0f, 1.0f, 1.0f } };
+    colorClearValue.color = { std::array<float, 4>{ 0.25f, 0.25f, 0.25f, 1.0f } };
     idClearValue.color = { std::array<int32_t, 4>{ -1, -1, -1, -1 } };
     vk::ClearValue depthClearValue;
     depthClearValue.depthStencil.depth = 1.0f;

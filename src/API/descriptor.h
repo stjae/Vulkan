@@ -6,10 +6,10 @@
 
 struct DescriptorSetLayoutData
 {
-    int descriptorSetCount = 0;
+    int layoutCount = 0;
     std::vector<int> indices;
     std::vector<vk::DescriptorType> descriptorTypes;
-    std::vector<int> descriptorCounts;
+    std::vector<int> descriptorSetCount;
     std::vector<vk::ShaderStageFlags> bindingStages;
     std::vector<vk::DescriptorBindingFlags> bindingFlags;
     vk::DescriptorSetLayoutCreateFlags layoutCreateFlags;

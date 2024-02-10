@@ -59,7 +59,7 @@ void Mesh::CreateCube(const char* texturePath)
                                     1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, // left
 
                                     -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
-                                    -1.0f, -1.0f, 1.0f, // right_
+                                    -1.0f, -1.0f, 1.0f, // right
                                     -1.0f, -1.0f, -1.0f };
 
     std::vector<float> normal = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -80,17 +80,17 @@ void Mesh::CreateCube(const char* texturePath)
                                   1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
                                   1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
 
-    std::vector<float> texcoord = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+    std::vector<float> texcoord = { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-                                    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-                                    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-                                    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-                                    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 
-                                    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
+                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
 
     vertices.reserve(CUBE_VERTEX_COUNT);
 

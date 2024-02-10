@@ -72,22 +72,23 @@ void Scene::AddTexture(const std::string& filePath)
     }
 
     textures.emplace_back(std::make_shared<Texture>());
-    textures.back()->width = width;
-    textures.back()->height = height;
-    textures.back()->size = static_cast<size_t>(imageSize);
-    textures.back()->index = textures.size() - 1;
+    auto& texture = textures.back();
+    texture->width = width;
+    texture->height = height;
+    texture->size = static_cast<size_t>(imageSize);
+    texture->index = textures.size() - 1;
 
     BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    textures.back()->stagingBuffer = std::make_unique<Buffer>(input);
-    textures.back()->stagingBuffer->CopyToBuffer(imageData, input);
+    texture->stagingBuffer = std::make_unique<Buffer>(input);
+    texture->stagingBuffer->CopyToBuffer(imageData, input);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
-    textures.back()->image = std::make_unique<Image>();
-    textures.back()->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    textures.back()->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    textures.back()->image->CreateSampler();
-    textures.back()->image->SetInfo();
+    texture->image = std::make_unique<Image>();
+    texture->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    texture->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    texture->image->CreateSampler();
+    texture->image->SetInfo();
 
     Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
@@ -333,12 +334,6 @@ void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewpo
         descriptorWrites.pImageInfo = infos.data();
         Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);
     }
-}
-
-void Scene::UpdateTextureID(size_t meshIndex, int32_t textureID)
-{
-    auto* data = (MeshUniformData*)((uint64_t)meshUniformData + (meshIndex * modelUniformBufferDynamicOffset_));
-    data->textureID = textureID;
 }
 
 void Scene::UpdateBuffer()

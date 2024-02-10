@@ -4,22 +4,20 @@
 void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
     DescriptorSetLayoutData layout;
-    layout.descriptorSetCount = 1;
+    layout.layoutCount = 1;
     layout.indices.push_back(0);
-    layout.descriptorCounts.push_back(1);
+    layout.descriptorSetCount.push_back(1);
     layout.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
     descriptorSetLayoutData_.push_back(layout);
 
-    Descriptor::CreateDescriptorPool(descriptorPool_, 4, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+    Descriptor::CreateDescriptorPool(descriptorPool_, 100, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(*Window::GetWindow(), true);
+    ImGui_ImplGlfw_InitForVulkan(Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = Instance::GetBundle().instance;
     init_info.PhysicalDevice = Device::GetBundle().physicalDevice;
@@ -309,8 +307,8 @@ void MyImGui::DrawResourceWindow(Scene& scene)
         if (!path.empty()) {
             Resource res;
             res.filePath = path;
-            res.fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1).c_str();
-            res.fileFormat = path.substr(path.rfind('.') + 1, path.size()).c_str();
+            res.fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
+            res.fileFormat = path.substr(path.rfind('.') + 1, path.size());
             if (res.fileFormat == std::string("obj")) {
                 res.resourceType = TypeEnum::Resource::MESH;
             } else if (res.fileFormat == std::string("jpg") || res.fileFormat == std::string("png")) {
@@ -322,6 +320,8 @@ void MyImGui::DrawResourceWindow(Scene& scene)
             if (res.resourceType == TypeEnum::Resource::IMAGE) {
                 scene.AddTexture(path);
                 scene.resources.back().resource = scene.textures.back();
+                auto texture = std::static_pointer_cast<Texture>(scene.resources.back().resource);
+                texture->descriptorSet = ImGui_ImplVulkan_AddTexture(texture->image->GetBundle().sampler, texture->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
         }
     }
@@ -332,8 +332,10 @@ void MyImGui::DrawResourceWindow(Scene& scene)
         ImGui::PushID(resource.filePath.c_str());
         if (resource.fileFormat == std::string("obj"))
             ImGui::Button(ICON_FA_CUBE, { 100, 100 });
-        else
-            ImGui::Button(ICON_FA_IMAGE, { 100, 100 });
+        else {
+            // ImGui::Button(ICON_FA_IMAGE, { 100, 100 });
+            ImGui::ImageButton(std::static_pointer_cast<Texture>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
+        }
 
         if (ImGui::BeginDragDropSource()) {
             ImGui::Text("%s", resource.filePath.c_str());

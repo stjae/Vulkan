@@ -50,13 +50,13 @@ void Image::SetInfo(vk::ImageLayout imageLayout)
 void Image::DestroyImage()
 {
     Device::GetBundle().device.destroyImage(imageBundle_.image);
-    imageBundle_.image = VK_NULL_HANDLE;
+    imageBundle_.image = nullptr;
 }
 
 void Image::DestroyImageView()
 {
     Device::GetBundle().device.destroyImageView(imageBundle_.imageView);
-    imageBundle_.imageView = VK_NULL_HANDLE;
+    imageBundle_.imageView = nullptr;
 }
 
 Image::~Image()

@@ -28,11 +28,11 @@ void Buffer::Destroy()
     Device::GetBundle().device.waitIdle();
     if (bufferBundle_.buffer != VK_NULL_HANDLE) {
         Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
-        bufferBundle_.buffer = VK_NULL_HANDLE;
+        bufferBundle_.buffer = nullptr;
     }
     if (Memory::Get() != VK_NULL_HANDLE) {
         Device::GetBundle().device.freeMemory(Memory::Get());
-        Memory::Set(VK_NULL_HANDLE);
+        Memory::Set(nullptr);
     }
     Log(debug, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
 }

@@ -4,15 +4,15 @@ vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const DescriptorSe
 {
     std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
     std::vector<vk::DescriptorSetLayoutBindingFlagsCreateInfo> layoutBindingFlags;
-    layoutBindings.reserve(bindings.descriptorSetCount);
+    layoutBindings.reserve(bindings.layoutCount);
 
-    for (int i = 0; i < bindings.descriptorSetCount; ++i) {
+    for (int i = 0; i < bindings.layoutCount; ++i) {
 
-        layoutBindings.emplace_back(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorCounts[i], bindings.bindingStages[i]);
+        layoutBindings.emplace_back(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorSetCount[i], bindings.bindingStages[i]);
         layoutBindingFlags.emplace_back(bindings.bindingFlags[i]);
     }
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo(bindings.layoutCreateFlags, bindings.descriptorSetCount, layoutBindings.data(), layoutBindingFlags.data());
+    vk::DescriptorSetLayoutCreateInfo layoutInfo(bindings.layoutCreateFlags, bindings.layoutCount, layoutBindings.data(), layoutBindingFlags.data());
 
     return Device::GetBundle().device.createDescriptorSetLayout(layoutInfo);
 }
@@ -22,10 +22,9 @@ void Descriptor::CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32
     std::vector<vk::DescriptorPoolSize> poolSizes;
 
     for (auto& layout : descriptorSetLayoutData) {
-        for (int i = 0; i < layout.descriptorSetCount; i++) {
-
-            for (int j = 0; j < layout.descriptorCounts[i]; j++) {
-
+        for (int i = 0; i < layout.layoutCount; i++) {
+            for (int j = 0; j < layout.descriptorSetCount[i]; j++) {
+                // per descriptor set
                 vk::DescriptorPoolSize poolSize(layout.descriptorTypes[i], descriptorCount);
                 poolSizes.push_back(poolSize);
             }
@@ -41,8 +40,3 @@ void Descriptor::AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std:
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, descriptorSetLayouts.size(), descriptorSetLayouts.data());
     descriptorSets = Device::GetBundle().device.allocateDescriptorSets(allocateInfo);
 }
-
-// Descriptor::~Descriptor()
-//{
-//     Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
-// }
