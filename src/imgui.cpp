@@ -3,12 +3,12 @@
 
 void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
-    DescriptorSetLayoutData layout;
-    layout.layoutCount = 1;
-    layout.indices.push_back(0);
-    layout.descriptorSetCount.push_back(1);
-    layout.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    descriptorSetLayoutData_.push_back(layout);
+    DescriptorSetLayoutData binding;
+    binding.bindingCount = 1;
+    binding.indices.push_back(0);
+    binding.descriptorSetCount.push_back(1);
+    binding.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
+    descriptorSetLayoutData_.push_back(binding);
 
     Descriptor::CreateDescriptorPool(descriptorPool_, 100, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
@@ -128,6 +128,9 @@ void MyImGui::DrawDockSpace(Scene& scene)
             if (ImGui::MenuItem("Cube")) {
                 scene.AddMesh(TypeEnum::Mesh::CUBE);
             }
+            if (ImGui::MenuItem("Sphere")) {
+                scene.AddMesh(TypeEnum::Mesh::SPHERE);
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -162,7 +165,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     viewport.panelPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin();
     viewport.panelSize = ImGui::GetContentRegionAvail();
-    // Debug: drawRect
+    // debug: drawRect
     //    ImGui::GetForegroundDrawList()->AddRect(viewport.panelPos, viewport.panelPos + viewport.panelSize, IM_COL32(255, 0, 0, 255));
     float viewportPanelRatio = viewport.panelSize.x / viewport.panelSize.y;
 
@@ -171,12 +174,15 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     // Accept Drag Drop
     ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
+    viewport.isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
 
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
-        auto* data = (Resource*)payload->Data;
+        Resource* data = nullptr;
+        if (payload)
+            data = (Resource*)payload->Data;
 
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
 
             int32_t pickColor = viewport.PickColor(frameIndex);
 
@@ -188,6 +194,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
                 if (pickColor != -1) {
                     auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetMeshUniformDynamicOffset()));
                     (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
+                    (*meshUniformData).useTexture = true;
                 }
                 break;
             }
@@ -223,8 +230,6 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
 
 void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
-    auto& io = ImGui::GetIO();
-
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
     if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
@@ -236,7 +241,7 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::BeginFrame();
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, io.DisplaySize.x, io.DisplaySize.y);
+    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
     float translation[3];
     float rotation[3];
@@ -245,13 +250,13 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 
     auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
 
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMatrix), translation,
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
-    (*modelUniformData).modelMatrix = glm::make_mat4(objectMatrix);
+    (*modelUniformData).modelMat = glm::make_mat4(objectMatrix);
 }
 
 void MyImGui::DrawObjectWindow(Scene& scene)
@@ -273,7 +278,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
         ImGui::EndListBox();
     }
     // Attributes
-    if (scene.meshSelected != -1) {
+    if (scene.meshSelected > -1) {
 
         auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
 
@@ -282,17 +287,19 @@ void MyImGui::DrawObjectWindow(Scene& scene)
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMatrix), translation,
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::Text("%s", scene.GetMeshName(scene.meshSelected));
+        ImGui::SeparatorText(scene.GetMeshName(scene.meshSelected));
         ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append("##rotation_").c_str(), rotation, -180.0f, 180.0f);
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        (*modelUniformData).modelMatrix = glm::make_mat4(objectMatrix);
+        (*modelUniformData).modelMat = glm::make_mat4(objectMatrix);
+
+        ImGui::Checkbox("Use Texture", &(*modelUniformData).useTexture);
     }
     ImGui::End();
 }
@@ -333,7 +340,6 @@ void MyImGui::DrawResourceWindow(Scene& scene)
         if (resource.fileFormat == std::string("obj"))
             ImGui::Button(ICON_FA_CUBE, { 100, 100 });
         else {
-            // ImGui::Button(ICON_FA_IMAGE, { 100, 100 });
             ImGui::ImageButton(std::static_pointer_cast<Texture>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
         }
 
@@ -354,7 +360,7 @@ void MyImGui::ShowInformationOverlay(const Scene& scene)
     const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
     ImGui::Text("Camera Control: %s [press C]", scene.camera.IsControllable() ? "on" : "off");

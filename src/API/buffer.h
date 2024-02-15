@@ -37,17 +37,17 @@ public:
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::Get(), 0, bufferInput.size);
+        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, bufferInput.size);
 
         Memory::SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
-        Device::GetBundle().device.unmapMemory(Memory::Get());
+        Device::GetBundle().device.unmapMemory(Memory::GetMemory());
     }
 
     template <typename T>
     void UpdateBuffer(T resource, size_t size)
     {
-        void* bufferMemoryAddress = Memory::GetAddress();
+        void* bufferMemoryAddress = Memory::GetMemoryAddress();
 
         memcpy(bufferMemoryAddress, resource, size);
     }

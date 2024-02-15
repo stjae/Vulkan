@@ -6,7 +6,7 @@
 
 struct DescriptorSetLayoutData
 {
-    int layoutCount = 0;
+    int bindingCount = 0;
     std::vector<int> indices;
     std::vector<vk::DescriptorType> descriptorTypes;
     std::vector<int> descriptorSetCount;

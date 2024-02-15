@@ -1,28 +1,20 @@
 #version 450
-
-layout(set = 0, binding = 0) uniform CameraMatrix {
-    mat4 view;
-    mat4 proj;
-} cameraMat;
-
-layout(set = 1, binding = 0) uniform ModelMatrix {
-    mat4 model;
-    int id;
-    int texId;
-} modelMat;
+#include "common.glsl"
 
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in vec3 vertNormal;
-layout(location = 2) in vec2 inTexCoord;
+layout(location = 2) in vec3 vertColor;
+layout(location = 3) in vec2 inTexcoord;
 
 layout(location = 0) out vec4 worldModel;
 layout(location = 1) out vec3 worldNormal;
-layout(location = 2) out vec2 outTexCoord;
+layout(location = 2) out vec3 outColor;
+layout(location = 3) out vec2 outTexcoord;
 
 void main() {
-    worldModel = modelMat.model * vec4(vertPos, 1.0);
-    gl_Position = cameraMat.proj * cameraMat.view * worldModel;
-
+    worldModel = mesh.model * vec4(vertPos, 1.0);
+    gl_Position = camera.proj * camera.view * worldModel;
     worldNormal = vertNormal;
-    outTexCoord = inTexCoord;
+    outColor = vertColor;
+    outTexcoord = inTexcoord;
 }

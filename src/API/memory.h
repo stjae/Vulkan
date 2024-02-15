@@ -19,8 +19,8 @@ public:
     void AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
     void Free();
 
-    const vk::DeviceMemory& Get() { return memory_; }
-    void* GetAddress() { return address_; }
+    const vk::DeviceMemory& GetMemory() { return memory_; }
+    void* GetMemoryAddress() { return address_; }
 };
 
 #endif

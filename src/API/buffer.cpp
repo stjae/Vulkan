@@ -14,9 +14,9 @@ Buffer::Buffer(const BufferInput& bufferInput)
 
 void Buffer::MapMemory(vk::DeviceSize range)
 {
-    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::Get(), 0, range);
+    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, range);
     Memory::SetAddress(bufferMemoryAddress);
-    bufferBundle_.bufferMemory = Memory::Get();
+    bufferBundle_.bufferMemory = Memory::GetMemory();
 
     bufferBundle_.bufferInfo.buffer = bufferBundle_.buffer;
     bufferBundle_.bufferInfo.offset = 0;
@@ -30,8 +30,8 @@ void Buffer::Destroy()
         Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
         bufferBundle_.buffer = nullptr;
     }
-    if (Memory::Get() != VK_NULL_HANDLE) {
-        Device::GetBundle().device.freeMemory(Memory::Get());
+    if (Memory::GetMemory() != VK_NULL_HANDLE) {
+        Device::GetBundle().device.freeMemory(Memory::GetMemory());
         Memory::Set(nullptr);
     }
     Log(debug, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));

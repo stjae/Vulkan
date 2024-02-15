@@ -5,15 +5,16 @@
 #include "scene.h"
 #include "camera.h"
 #include "mesh.h"
+#include "light.h"
 #include "../API/swapchain.h"
 #include "../API/command.h"
-#include "../viewport.h"
 
 struct MeshUniformData
 {
-    glm::mat4 modelMatrix;
+    glm::mat4 modelMat;
     int32_t meshID;
     int32_t textureID;
+    bool useTexture;
 };
 
 struct Texture
@@ -41,24 +42,26 @@ struct Resource
 
 class Scene
 {
+    friend class Engine;
+
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
-    std::unique_ptr<Buffer> modelUniformBufferDynamic_;
-    size_t modelUniformBufferDynamicOffset_;
-    size_t modelUniformBufferDynamicSize_;
-    size_t meshCount_[3]{};
+    std::unique_ptr<Buffer> meshUniformBufferDynamic_;
+    size_t meshUniformBufferDynamicOffset_;
+    size_t meshUniformBufferDynamicSize_;
 
-    void CreateUniformBuffer();
-    void RearrangeUniformBuffer(size_t index) const;
+    void CreateMeshUniformBuffer();
+    void RearrangeMeshUniformBuffer(size_t index) const;
     void CreateDummyTexture();
-    void UpdateBuffer();
-    void UpdateMesh();
+    void UpdateMeshUniformBuffer();
+    void PrepareMesh(Mesh& mesh);
 
 public:
     std::vector<Mesh> meshes;
     std::vector<std::shared_ptr<Texture>> textures;
     std::vector<Resource> resources;
     Camera camera;
+    Light light;
     MeshUniformData* meshUniformData;
     int32_t meshSelected = -1;
 
@@ -66,12 +69,11 @@ public:
     void AddMesh(TypeEnum::Mesh type);
     void AddMesh(TypeEnum::Mesh type, const std::string& filePath);
     void AddTexture(const std::string& filePath);
-    size_t GetMeshUniformDynamicOffset() const { return modelUniformBufferDynamicOffset_; }
+    size_t GetMeshUniformDynamicOffset() const { return meshUniformBufferDynamicOffset_; }
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
     bool IsMeshSelected(size_t index) const { return meshes[index].isSelected_; }
-    void PrepareMeshes();
     void DeleteMesh(size_t index);
-    void Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames);
+    void Update();
     ~Scene();
 };
 

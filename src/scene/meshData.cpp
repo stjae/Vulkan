@@ -10,9 +10,9 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
 {
-    std::array<vk::VertexInputAttributeDescription, 3> attributes;
+    std::array<vk::VertexInputAttributeDescription, 4> attributes;
     uint32_t offset = 0;
 
     // Pos
@@ -29,12 +29,19 @@ std::array<vk::VertexInputAttributeDescription, 3> MeshData::GetAttributeDescs()
     attributes[1].offset = offset;
     offset += sizeof(Vertex::normal);
 
-    // Texcoord
+    // Normal
     attributes[2].binding = 0;
     attributes[2].location = 2;
-    attributes[2].format = vk::Format::eR32G32Sfloat;
+    attributes[2].format = vk::Format::eR32G32B32Sfloat;
     attributes[2].offset = offset;
-    offset += sizeof(Vertex::texCoord);
+    offset += sizeof(Vertex::color);
+
+    // Texcoord
+    attributes[3].binding = 0;
+    attributes[3].location = 3;
+    attributes[3].format = vk::Format::eR32G32Sfloat;
+    attributes[3].offset = offset;
+    offset += sizeof(Vertex::texcoord);
 
     return attributes;
 }

@@ -5,6 +5,7 @@
 #include "API/image.h"
 #include "API/command.h"
 #include "API/swapchain.h"
+#include "scene/scene.h"
 
 struct ViewportFrame
 {
@@ -46,8 +47,9 @@ public:
     void CreateViewportImages();
     void DestroyViewportImages();
     int32_t PickColor(size_t frameIndex);
-    void Draw(size_t frameIndex, const std::vector<Mesh>& meshes, uint32_t dynamicOffsetSize);
+    void Draw(size_t frameIndex, Scene& scene);
     ~Viewport();
+    bool isMouseHovered;
 };
 
 #endif

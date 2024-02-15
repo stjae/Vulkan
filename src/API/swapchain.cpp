@@ -281,7 +281,7 @@ void Swapchain::Submit(size_t frameIndex)
     Device::GetBundle().graphicsQueue.submit(submitInfo, frame.inFlight);
 }
 
-void Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage)
+vk::PresentInfoKHR Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage)
 {
     auto& frame = frames[frameIndex];
 
@@ -295,6 +295,8 @@ void Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& 
     presentInfo.pImageIndices = &waitFrameImage.value;
 
     Device::GetBundle().presentQueue.presentKHR(presentInfo);
+
+    return presentInfo;
 }
 
 void Swapchain::Destroy()

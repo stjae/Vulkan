@@ -94,13 +94,3 @@ void Camera::Update()
     prevMouseX = mouseX;
     prevMouseY = mouseY;
 }
-
-void Camera::UpdateBuffer()
-{
-    uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix));
-}
-
-const vk::DescriptorBufferInfo& Camera::GetBufferInfo()
-{
-    return uniformBuffer_->GetBundle().bufferInfo;
-}

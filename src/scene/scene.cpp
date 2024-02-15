@@ -7,16 +7,14 @@ Scene::Scene()
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    modelUniformBufferDynamicOffset_ = Buffer::GetDynamicBufferOffset(sizeof(MeshUniformData));
-
+    meshUniformBufferDynamicOffset_ = Buffer::GetDynamicBufferOffset(sizeof(MeshUniformData));
     CreateDummyTexture();
 
-    for (auto& mesh : meshes) {
-        mesh.CreateBuffers();
-    }
-
-    if (!meshes.empty())
-        PrepareMeshes();
+    meshes.emplace_back();
+    meshes.back().CreateSphere(0.05f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
+    meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
+    meshes.back().CreateBuffers();
+    PrepareMesh(meshes.back());
 }
 
 void Scene::AddMesh(TypeEnum::Mesh type)
@@ -24,23 +22,27 @@ void Scene::AddMesh(TypeEnum::Mesh type)
     switch (type) {
     case TypeEnum::Mesh::SQUARE:
         meshes.emplace_back();
-        meshes.back().CreateSquare(nullptr);
+        meshes.back().CreateSquare();
         meshes.back().CreateBuffers();
         meshes.back().meshType_ = TypeEnum::Mesh::SQUARE;
-        meshes.back().name_.append(std::to_string(++meshCount_[TypeEnum::Mesh::SQUARE]));
         break;
     case TypeEnum::Mesh::CUBE:
         meshes.emplace_back();
-        meshes.back().CreateCube(nullptr);
+        meshes.back().CreateCube();
         meshes.back().CreateBuffers();
         meshes.back().meshType_ = TypeEnum::Mesh::CUBE;
-        meshes.back().name_.append(std::to_string(++meshCount_[TypeEnum::Mesh::CUBE]));
+        break;
+    case TypeEnum::Mesh::SPHERE:
+        meshes.emplace_back();
+        meshes.back().CreateSphere();
+        meshes.back().CreateBuffers();
+        meshes.back().meshType_ = TypeEnum::Mesh::CUBE;
         break;
     default:
         break;
     }
 
-    UpdateMesh();
+    PrepareMesh(meshes.back());
 }
 
 void Scene::AddMesh(TypeEnum::Mesh type, const std::string& filePath)
@@ -49,12 +51,11 @@ void Scene::AddMesh(TypeEnum::Mesh type, const std::string& filePath)
         return;
 
     meshes.emplace_back();
-    meshes.back().LoadModel(filePath, nullptr);
+    meshes.back().LoadModel(filePath);
     meshes.back().CreateBuffers();
     meshes.back().meshType_ = type;
-    meshes.back().name_.append(std::to_string(++meshCount_[type]));
 
-    UpdateMesh();
+    PrepareMesh(meshes.back());
 }
 
 void Scene::AddTexture(const std::string& filePath)
@@ -120,65 +121,8 @@ void Scene::AddTexture(const std::string& filePath)
     textures.back()->stagingBuffer->Destroy();
 }
 
-void Scene::PrepareMeshes()
+void Scene::PrepareMesh(Mesh& mesh)
 {
-    for (auto& mesh : meshes) {
-        //        command_.AllocateCommandBuffer();
-        //        command_.CopyBufferToBuffer(mesh.vertexStagingBuffer->GetBundle().buffer,
-        //                                    mesh.vertexBuffer->GetBundle().buffer,
-        //                                    sizeof(Vertex) * mesh.vertices.size());
-        //        command_.AllocateCommandBuffer();
-        //        command_.CopyBufferToBuffer(mesh.indexStagingBuffer->GetBundle().buffer,
-        //                                    mesh.indexBuffer->GetBundle().buffer,
-        //                                    sizeof(uint32_t) * mesh.indices.size());
-        //        command_.AllocateCommandBuffer();
-        //        command_.TransitImageLayout(mesh.textureImage.get(),
-        //                                    vk::ImageLayout::eUndefined,
-        //                                    vk::ImageLayout::eTransferDstOptimal,
-        //                                    {},
-        //                                    vk::AccessFlagBits::eTransferWrite,
-        //                                    vk::PipelineStageFlagBits::eTopOfPipe,
-        //                                    vk::PipelineStageFlagBits::eTransfer);
-    }
-
-    //    command_.Submit();
-    //    Device::GetBundle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    //    command_.commandBuffers_.clear();
-
-    for (auto& mesh : meshes) {
-        //        command_.AllocateCommandBuffer();
-        //        command_.CopyBufferToBuffer(mesh.textureStagingBuffer->GetBundle().buffer,
-        //                                    mesh.textureImage->GetBundle().image, mesh.textureWidth,
-        //                                    mesh.textureHeight);
-    }
-
-    //    command_.Submit();
-    //    Device::GetBundle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    //    command_.commandBuffers_.clear();
-
-    for (auto& mesh : meshes) {
-        //        command_.AllocateCommandBuffer();
-        //        command_.TransitImageLayout(mesh.textureImage.get(),
-        //                                    vk::ImageLayout::eTransferDstOptimal,
-        //                                    vk::ImageLayout::eShaderReadOnlyOptimal,
-        //                                    vk::AccessFlagBits::eTransferWrite,
-        //                                    vk::AccessFlagBits::eShaderRead,
-        //                                    vk::PipelineStageFlagBits::eTransfer,
-        //                                    vk::PipelineStageFlagBits::eFragmentShader);
-        //        mesh.DestroyStagingBuffer();
-    }
-
-    //    command_.Submit();
-    //    Device::GetBundle().device.freeCommandBuffers(command_.commandPool_, command_.commandBuffers_);
-    //    command_.commandBuffers_.clear();
-
-    CreateUniformBuffer();
-}
-
-void Scene::UpdateMesh()
-{
-    auto& mesh = meshes.back();
-
     Command::Begin(commandBuffer_);
     // Copy vertices from staging buffer
     Command::CopyBufferToBuffer(commandBuffer_,
@@ -196,58 +140,62 @@ void Scene::UpdateMesh()
     mesh.vertexStagingBuffer->Destroy();
     mesh.indexStagingBuffer->Destroy();
 
-    CreateUniformBuffer();
+    CreateMeshUniformBuffer();
 }
 
-void Scene::CreateUniformBuffer()
+void Scene::CreateMeshUniformBuffer()
 {
-    size_t requiredBufferSize = meshes.size() * modelUniformBufferDynamicOffset_;
-    Log(debug, fmt::terminal_color::blue, "model uniform buffer size - old: {} | new: {}", modelUniformBufferDynamicSize_, requiredBufferSize);
+    if (meshes.empty())
+        return;
+
+    size_t requiredBufferSize = meshes.size() * meshUniformBufferDynamicOffset_;
+    Log(debug, fmt::terminal_color::blue, "model uniform buffer size - old: {} | new: {}", meshUniformBufferDynamicSize_, requiredBufferSize);
 
     // if the modelUniformBuffer already exists
-    if (modelUniformBufferDynamicSize_ < requiredBufferSize) {
-        void* newAlignedMemory = AlignedAlloc(modelUniformBufferDynamicOffset_, requiredBufferSize);
+    if (meshUniformBufferDynamicSize_ < requiredBufferSize) {
+        void* newAlignedMemory = AlignedAlloc(meshUniformBufferDynamicOffset_, requiredBufferSize);
         if (!newAlignedMemory)
             spdlog::error("failed to allocate dynamic uniform buffer memory");
 
-        if (modelUniformBufferDynamic_ != nullptr) {
+        if (meshUniformBufferDynamic_ != nullptr) {
             for (int i = 0; i < meshes.size() - 1; i++) {
-                auto* oldData = (MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_));
-                auto* newData = (MeshUniformData*)((uint64_t)newAlignedMemory + (i * modelUniformBufferDynamicOffset_));
+                auto* oldData = (MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_));
+                auto* newData = (MeshUniformData*)((uint64_t)newAlignedMemory + (i * meshUniformBufferDynamicOffset_));
 
                 *newData = *oldData;
             }
             AlignedFree(meshUniformData);
-            modelUniformBufferDynamic_.reset();
+            meshUniformBufferDynamic_.reset();
         }
 
         meshUniformData = (MeshUniformData*)newAlignedMemory;
     }
 
     size_t newMeshIndex = meshes.size() - 1;
-    auto* newMeshData = (MeshUniformData*)((uint64_t)meshUniformData + (newMeshIndex * modelUniformBufferDynamicOffset_));
+    auto* newMeshData = (MeshUniformData*)((uint64_t)meshUniformData + (newMeshIndex * meshUniformBufferDynamicOffset_));
 
-    (*newMeshData).modelMatrix = glm::mat4(1.0f);
+    (*newMeshData).modelMat = glm::translate(glm::mat4(1.0f), meshes.back().position_);
     (*newMeshData).meshID = (int32_t)newMeshIndex;
     (*newMeshData).textureID = 0;
+    (*newMeshData).useTexture = false;
 
-    if (modelUniformBufferDynamicSize_ < requiredBufferSize) {
-        BufferInput input = { meshes.size() * modelUniformBufferDynamicOffset_,
+    if (meshUniformBufferDynamicSize_ < requiredBufferSize) {
+        BufferInput input = { meshes.size() * meshUniformBufferDynamicOffset_,
                               vk::BufferUsageFlagBits::eUniformBuffer,
                               vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        modelUniformBufferDynamic_ = std::make_unique<Buffer>(input);
-        modelUniformBufferDynamic_->MapMemory(modelUniformBufferDynamicOffset_);
+        meshUniformBufferDynamic_ = std::make_unique<Buffer>(input);
+        meshUniformBufferDynamic_->MapMemory(meshUniformBufferDynamicOffset_);
 
-        modelUniformBufferDynamicSize_ = requiredBufferSize;
+        meshUniformBufferDynamicSize_ = requiredBufferSize;
     }
 }
 
-void Scene::RearrangeUniformBuffer(size_t index) const
+void Scene::RearrangeMeshUniformBuffer(size_t index) const
 {
     // move the meshUniformData forward as the mesh index refers to has been deleted
     for (size_t i = index; i < meshes.size(); i++) {
-        *(MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_)) = *(MeshUniformData*)((uint64_t)meshUniformData + ((i + 1) * modelUniformBufferDynamicOffset_));
-        (*(MeshUniformData*)((uint64_t)meshUniformData + (i * modelUniformBufferDynamicOffset_))).meshID--;
+        *(MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_)) = *(MeshUniformData*)((uint64_t)meshUniformData + ((i + 1) * meshUniformBufferDynamicOffset_));
+        (*(MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_))).meshID--;
     }
 }
 
@@ -301,52 +249,30 @@ void Scene::CreateDummyTexture()
     textures.back()->stagingBuffer->Destroy();
 }
 
-void Scene::Update(uint32_t frameIndex, const std::vector<ViewportFrame>& viewportFrames)
+void Scene::Update()
 {
     camera.Update();
-
     camera.matrix_.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
     camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
     camera.UpdateBuffer();
 
-    vk::WriteDescriptorSet cameraMatrixWrite(viewportFrames[frameIndex].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &camera.GetBufferInfo(), nullptr, nullptr);
-    Device::GetBundle().device.updateDescriptorSets(cameraMatrixWrite, nullptr);
+    light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshUniformData)).modelMat;
+    light.UpdateBuffer();
 
-    if (!meshes.empty()) {
-        UpdateBuffer();
-
-        vk::WriteDescriptorSet modelMatrixWrite(
-            viewportFrames[frameIndex].descriptorSets[1], 0, 0, 1,
-            vk::DescriptorType::eUniformBufferDynamic, nullptr,
-            &modelUniformBufferDynamic_->GetBundle().bufferInfo, nullptr, nullptr);
-        Device::GetBundle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
-
-        vk::WriteDescriptorSet descriptorWrites;
-        descriptorWrites.dstSet = viewportFrames[frameIndex].descriptorSets[2];
-        descriptorWrites.dstBinding = 0;
-        descriptorWrites.dstArrayElement = 0;
-        descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrites.descriptorCount = textures.size();
-        std::vector<vk::DescriptorImageInfo> infos;
-        for (auto& texture : textures) {
-            infos.push_back(texture->image->GetBundle().imageInfo);
-        }
-        descriptorWrites.pImageInfo = infos.data();
-        Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);
-    }
+    if (!meshes.empty())
+        UpdateMeshUniformBuffer();
 }
 
-void Scene::UpdateBuffer()
+void Scene::UpdateMeshUniformBuffer()
 {
-    modelUniformBufferDynamic_->UpdateBuffer(meshUniformData, modelUniformBufferDynamic_->GetSize());
+    meshUniformBufferDynamic_->UpdateBuffer(meshUniformData, meshUniformBufferDynamic_->GetSize());
 }
 
 void Scene::DeleteMesh(size_t index)
 {
     meshSelected = -1;
-    meshCount_[meshes[index].meshType_]--;
     meshes.erase(meshes.begin() + index);
-    RearrangeUniformBuffer(index);
+    RearrangeMeshUniformBuffer(index);
 }
 
 Scene::~Scene()

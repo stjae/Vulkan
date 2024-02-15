@@ -2,35 +2,30 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-void Mesh::CreateSquare(const char* texturePath)
+void Mesh::CreateSquare(glm::vec3 color, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
 
-    std::vector<float> position = { -1.0f, 1.0f, 0.0f,
-                                    1.0f, 1.0f, 0.0f,
-                                    1.0f, -1.0f, 0.0f,
-                                    -1.0f, -1.0f, 0.0f };
+    std::vector<glm::vec3> position = { { -1.0f, 1.0f, 0.0f },
+                                        { -1.0f, -1.0f, 0.0f },
+                                        { 1.0f, -1.0f, 0.0f },
+                                        { 1.0f, 1.0f, 0.0f } };
 
-    std::vector<float> normal = { 1.0f, 0.0f, 0.0f,
-                                  0.0f, 1.0f, 0.0f,
-                                  0.0f, 0.0f, 1.0f,
-                                  1.0f, 1.0f, 1.0f };
+    std::vector<glm::vec3> normal = { { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f } };
 
-    std::vector<float> texcoord = { 0.0f, 0.0f,
-                                    1.0f, 0.0f,
-                                    1.0f, 1.0f,
-                                    0.0f, 1.0f };
+    std::vector<glm::vec2> texcoord = { { 0.0f, 0.0f },
+                                        { 0.0f, 1.0f },
+                                        { 1.0f, 1.0f },
+                                        { 1.0f, 0.0f } };
 
     vertices.reserve(SQUARE_VERTEX_COUNT);
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
-        Vertex v{};
-
-        v.pos = glm::vec3(position[i * 3 + 0], position[i * 3 + 1], position[i * 3 + 2]);
-        v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
-        v.texCoord = glm::vec2(texcoord[i * 2], texcoord[i * 2 + 1]);
-
+        Vertex v{ position[i], normal[i], color, texcoord[i] };
         vertices.push_back(v);
     }
 
@@ -39,69 +34,77 @@ void Mesh::CreateSquare(const char* texturePath)
     name_ = "square";
 }
 
-void Mesh::CreateCube(const char* texturePath)
+void Mesh::CreateCube(glm::vec3 color, const char* texturePath)
 {
     const int CUBE_VERTEX_COUNT = 24;
 
-    std::vector<float> position = { -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-                                    1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // front
+    std::vector<glm::vec3> position = { { -1.0f, 1.0f, 1.0f },
+                                        { -1.0f, -1.0f, 1.0f }, // front
+                                        { 1.0f, -1.0f, 1.0f },
+                                        { 1.0f, 1.0f, 1.0f },
 
-                                    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-                                    1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // back
+                                        { -1.0f, 1.0f, -1.0f },
+                                        { -1.0f, -1.0f, -1.0f }, // back
+                                        { 1.0f, -1.0f, -1.0f },
+                                        { 1.0f, 1.0f, -1.0f },
 
-                                    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-                                    1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, // ceiling
+                                        { -1.0f, 1.0f, -1.0f },
+                                        { -1.0f, 1.0f, 1.0f }, // top
+                                        { 1.0f, 1.0f, 1.0f },
+                                        { 1.0f, 1.0f, -1.0f },
 
-                                    -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
-                                    1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, // bottom
+                                        { -1.0f, -1.0f, 1.0f },
+                                        { -1.0f, -1.0f, -1.0f }, // bottom
+                                        { 1.0f, -1.0f, -1.0f },
+                                        { 1.0f, -1.0f, 1.0f },
 
-                                    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
-                                    1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, // left
+                                        { 1.0f, 1.0f, 1.0f },
+                                        { 1.0f, -1.0f, 1.0f }, // right
+                                        { 1.0f, -1.0f, -1.0f },
+                                        { 1.0f, 1.0f, -1.0f },
 
-                                    -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
-                                    -1.0f, -1.0f, 1.0f, // right
-                                    -1.0f, -1.0f, -1.0f };
+                                        { -1.0f, 1.0f, -1.0f },
+                                        { -1.0f, -1.0f, -1.0f }, // left
+                                        { -1.0f, -1.0f, 1.0f },
+                                        { -1.0f, 1.0f, 1.0f } };
 
-    std::vector<float> normal = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                                  0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    std::vector<glm::vec3> normal = { { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f },
+                                      { 0.0f, 0.0f, 1.0f }, // front
 
-                                  0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
-                                  0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+                                      { 0.0f, 0.0f, -1.0f },
+                                      { 0.0f, 0.0f, -1.0f },
+                                      { 0.0f, 0.0f, -1.0f },
+                                      { 0.0f, 0.0f, -1.0f }, // back
 
-                                  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                                  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                      { 0.0f, 1.0f, 0.0f },
+                                      { 0.0f, 1.0f, 0.0f },
+                                      { 0.0f, 1.0f, 0.0f },
+                                      { 0.0f, 1.0f, 0.0f }, // top
 
-                                  0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-                                  0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+                                      { 0.0f, -1.0f, 0.0f },
+                                      { 0.0f, -1.0f, 0.0f },
+                                      { 0.0f, -1.0f, 0.0f },
+                                      { 0.0f, -1.0f, 0.0f }, // bottom
 
-                                  -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-                                  -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                      { 1.0f, 0.0f, 0.0f },
+                                      { 1.0f, 0.0f, 0.0f },
+                                      { 1.0f, 0.0f, 0.0f },
+                                      { 1.0f, 0.0f, 0.0f }, // right
 
-                                  1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-                                  1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+                                      { -1.0f, 0.0f, 0.0f },
+                                      { -1.0f, 0.0f, 0.0f },
+                                      { -1.0f, 0.0f, 0.0f }, // left
+                                      { -1.0f, 0.0f, 0.0f } };
 
-    std::vector<float> texcoord = { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-
-                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-
-                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-
-                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-
-                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-
-                                    0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
+    std::vector<glm::vec2> texcoord = { { 0.0f, 0.0f }, { 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f } };
 
     vertices.reserve(CUBE_VERTEX_COUNT);
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        Vertex v{};
-
-        v.pos = glm::vec3(position[i * 3 + 0], position[i * 3 + 1], position[i * 3 + 2]);
-        v.normal = glm::vec3(normal[i * 3 + 0], normal[i * 3 + 1], normal[i * 3 + 2]);
-        v.texCoord = glm::vec2(texcoord[i * 2 + 0], texcoord[i * 2 + 1]);
-
+        Vertex v{ position[i], normal[i], color, texcoord[i % 4] };
         vertices.push_back(v);
     }
 
@@ -111,12 +114,73 @@ void Mesh::CreateCube(const char* texturePath)
     name_ = "cube";
 }
 
-void Mesh::LoadModel(const std::string& modelPath, const char* texturePath)
+void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
+{
+    int division = 12;
+    float degree = 360.0f / division;
+
+    glm::vec3 startPos{ 0.0f, -1.0f, 0.0f };
+    glm::vec3 center{ 0.0f, 0.0f, 0.0f };
+    glm::vec2 texcoord{ 0.0f };
+
+    startPos *= scale;
+    center *= scale;
+
+    vertices.push_back({ startPos, glm::normalize(glm::vec3(startPos) - center), color, texcoord });
+    glm::mat4 rotateZ;
+    glm::vec3 basePosZ;
+    int i;
+    for (i = 1; i < division / 2; i++) {
+        rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
+        basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
+        for (int j = 0; j <= division; j++) {
+            glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::vec4 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
+            vertices.push_back({ rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, texcoord });
+        }
+    }
+    rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
+    basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
+    vertices.push_back({ basePosZ, glm::normalize(glm::vec3(basePosZ) - center), color, texcoord });
+
+    for (int i = 0; i < division; i++) {
+        indices.push_back(0);
+        indices.push_back(i + 1);
+        indices.push_back(i + 2);
+    }
+
+    for (int j = 0; j < division / 2 - 2; j++) {
+        for (int i = division * j + 1; i < division * (j + 1) + 1; i++) {
+            indices.push_back(i + j);
+            indices.push_back(i + j + 2 + division);
+            indices.push_back(i + j + 1);
+
+            indices.push_back(i + j + 2 + division);
+            indices.push_back(i + j);
+            indices.push_back(i + j + 1 + division);
+        }
+    }
+
+    for (int i = vertices.size() - 1; i >= vertices.size() - division; i--) {
+        indices.push_back(vertices.size() - 1);
+        indices.push_back(i - 1);
+        indices.push_back(i - 2);
+    }
+
+    if (name)
+        name_ = name;
+    else
+        name_ = "sphere";
+}
+
+void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm::vec3 color)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
+
+    bool hasNormal = false;
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str())) {
         throw std::runtime_error(warn + err);
@@ -149,15 +213,37 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath)
                     vertex.normal = glm::vec3(nx, ny, nz);
                 }
 
-                // Check if `texcoord_index` is zero or positive. negative = no texCoord data
+                vertex.color = color;
+
+                // Check if `texcoord_index` is zero or positive. negative = no texcoord data
                 if (idx.texcoord_index >= 0) {
+                    hasNormal = true;
                     tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
                     tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
-                    vertex.texCoord = glm::vec2(tx, ty);
+                    vertex.texcoord = glm::vec2(tx, ty);
                 }
 
                 vertices.push_back(vertex);
             }
+
+            if (!hasNormal) {
+                glm::vec3 vertex2 = vertices[vertices.size() - 1].pos;
+                glm::vec3 vertex1 = vertices[vertices.size() - 2].pos;
+                glm::vec3 vertex0 = vertices[vertices.size() - 3].pos;
+
+                glm::vec3 x1 = vertex1 - vertex0;
+                glm::vec3 x2 = vertex2 - vertex0;
+                vertices[vertices.size() - 3].normal = glm::normalize(glm::cross(x1, x2));
+
+                glm::vec3 y1 = vertex2 - vertex1;
+                glm::vec3 y2 = vertex0 - vertex1;
+                vertices[vertices.size() - 2].normal = glm::normalize(glm::cross(y1, y2));
+
+                glm::vec3 z1 = vertex0 - vertex2;
+                glm::vec3 z2 = vertex1 - vertex2;
+                vertices[vertices.size() - 1].normal = glm::normalize(glm::cross(z1, z2));
+            }
+
             index_offset += fv;
         }
     }

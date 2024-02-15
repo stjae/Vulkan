@@ -31,7 +31,7 @@ public:
     void InitSwapchainImages();
     void SetUp();
     void DrawUI();
-    void UpdateScene();
+    void Update();
     void Render();
     ~Engine();
 };

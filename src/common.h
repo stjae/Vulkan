@@ -62,6 +62,7 @@ namespace TypeEnum {
 enum Mesh {
     SQUARE,
     CUBE,
+    SPHERE,
     MODEL
 };
 enum Resource {

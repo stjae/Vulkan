@@ -3,7 +3,7 @@
 
 int main()
 {
-    std::unique_ptr<Application> app = std::make_unique<Application>(1024, 720, "Vulkan");
+    std::unique_ptr<Application> app = std::make_unique<Application>(1920, 1080, "Vulkan");
 
     app->Run();
 

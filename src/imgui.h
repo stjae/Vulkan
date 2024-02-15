@@ -4,6 +4,7 @@
 #include "common.h"
 #include "scene/camera.h"
 #include "scene/scene.h"
+#include "scene/light.h"
 #include "viewport.h"
 #include "../imgui/ImGuizmo.h"
 

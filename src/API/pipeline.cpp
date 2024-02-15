@@ -49,7 +49,7 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
     rasterizerInfo.polygonMode = vk::PolygonMode::eFill;
     rasterizerInfo.lineWidth = 1.0f;
     rasterizerInfo.cullMode = vk::CullModeFlagBits::eBack;
-    rasterizerInfo.frontFace = vk::FrontFace::eClockwise;
+    rasterizerInfo.frontFace = vk::FrontFace::eCounterClockwise;
     rasterizerInfo.depthBiasEnable = VK_FALSE;
     pipelineInfo.pRasterizationState = &rasterizerInfo;
 
@@ -77,7 +77,18 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
                                                 vk::ColorComponentFlagBits::eB |
                                                 vk::ColorComponentFlagBits::eA);
     colorBlendAttachmentState.blendEnable = VK_FALSE;
-    std::array<vk::PipelineColorBlendAttachmentState, 2> colorBlendAttachmentStates{ colorBlendAttachmentState, colorBlendAttachmentState };
+    // colorBlendAttachmentState.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    // colorBlendAttachmentState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    // colorBlendAttachmentState.colorBlendOp = vk::BlendOp::eAdd;
+    // colorBlendAttachmentState.srcAlphaBlendFactor = vk::BlendFactor::eSrcAlpha;
+    // colorBlendAttachmentState.dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    // colorBlendAttachmentState.alphaBlendOp = vk::BlendOp::eAdd;
+
+    vk::PipelineColorBlendAttachmentState idBlendAttachmentState;
+    idBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR;
+    idBlendAttachmentState.blendEnable = VK_FALSE;
+
+    std::array<vk::PipelineColorBlendAttachmentState, 2> colorBlendAttachmentStates{ colorBlendAttachmentState, idBlendAttachmentState };
     vk::PipelineColorBlendStateCreateInfo colorBlendStateInfo;
     colorBlendStateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateInfo.attachmentCount = 2;

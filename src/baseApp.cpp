@@ -12,7 +12,7 @@ void Application::Run()
     while (!glfwWindowShouldClose(Window::GetWindow())) {
         glfwPollEvents();
         engine_.DrawUI();
-        engine_.UpdateScene();
+        engine_.Update();
         engine_.Render();
     }
 }

@@ -31,16 +31,15 @@ class Camera
     CameraMatrix matrix_{};
     std::unique_ptr<Buffer> uniformBuffer_;
 
-    void UpdateBuffer();
-    const vk::DescriptorBufferInfo& GetBufferInfo();
-
-    void Update();
     void SetCameraControl();
+    void Update();
+    void UpdateBuffer() { uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix)); }
 
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
     const CameraMatrix& GetMatrix() { return matrix_; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().bufferInfo; }
 };
 
 #endif

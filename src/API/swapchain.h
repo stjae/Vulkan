@@ -62,7 +62,7 @@ public:
     void CreateRenderPass();
     void Draw(size_t frameIndex, ImDrawData* imDrawData);
     void Submit(size_t frameIndex);
-    void Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
+    vk::PresentInfoKHR Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
 
     static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }

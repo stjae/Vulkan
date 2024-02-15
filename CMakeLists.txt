@@ -51,6 +51,8 @@ add_executable(${PROJECT_NAME}
         src/API/image.h src/API/image.cpp
         src/viewport.h
         src/viewport.cpp
+        src/scene/light.cpp
+        src/scene/light.h
 )
 
 include(Dependency.cmake)

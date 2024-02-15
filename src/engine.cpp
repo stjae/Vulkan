@@ -39,9 +39,36 @@ void Engine::SetUp()
     imgui_.Setup(swapchain_.GetRenderPass(), viewport_);
 }
 
-void Engine::UpdateScene()
+void Engine::Update()
 {
-    scene_->Update(frameIndex_, viewport_.frames);
+    scene_->Update();
+
+    vk::WriteDescriptorSet cameraWrite(viewport_.frames[frameIndex_].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet lightWrite(viewport_.frames[frameIndex_].descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo(), nullptr, nullptr);
+    std::array<vk::WriteDescriptorSet, 2> globalWrite{ cameraWrite, lightWrite };
+    Device::GetBundle().device.updateDescriptorSets(globalWrite, nullptr);
+
+    if (scene_->meshes.empty())
+        return;
+
+    vk::WriteDescriptorSet modelMatrixWrite(
+        viewport_.frames[frameIndex_].descriptorSets[1], 0, 0, 1,
+        vk::DescriptorType::eUniformBufferDynamic, nullptr,
+        &scene_->meshUniformBufferDynamic_->GetBundle().bufferInfo, nullptr, nullptr);
+    Device::GetBundle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
+
+    vk::WriteDescriptorSet descriptorWrites;
+    descriptorWrites.dstSet = viewport_.frames[frameIndex_].descriptorSets[2];
+    descriptorWrites.dstBinding = 0;
+    descriptorWrites.dstArrayElement = 0;
+    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    descriptorWrites.descriptorCount = scene_->textures.size();
+    std::vector<vk::DescriptorImageInfo> infos;
+    for (auto& texture : scene_->textures) {
+        infos.push_back(texture->image->GetBundle().imageInfo);
+    }
+    descriptorWrites.pImageInfo = infos.data();
+    Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);
 }
 
 void Engine::Render()
@@ -56,20 +83,18 @@ void Engine::Render()
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
     swapchain_.Draw(frameIndex_, imDrawData_);
-    viewport_.Draw(frameIndex_, scene_->meshes, scene_->GetMeshUniformDynamicOffset());
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
+    viewport_.Draw(frameIndex_, *scene_);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered)
         scene_->meshSelected = viewport_.PickColor(frameIndex_);
     swapchain_.Submit(frameIndex_);
-    swapchain_.Present(frameIndex_, waitFrameImage);
+    auto presentInfo = swapchain_.Present(frameIndex_, waitFrameImage);
 
-    /*
-        if (Queue::GetBundle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
-            RecreateSwapchain();
-            InitSwapchainImages();
-
-            return;
-        }
-    */
+    // if (Device::GetBundle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
+    //     RecreateSwapchain();
+    //     InitSwapchainImages();
+    //
+    //     return;
+    // }
 
     frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameImageCount;
 }
