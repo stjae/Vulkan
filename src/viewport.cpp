@@ -5,17 +5,14 @@ Viewport::Viewport()
     frames.resize(Swapchain::GetBundle().frameImageCount);
     extent = vk::Extent2D((uint32_t)Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)Swapchain::GetBundle().swapchainImageExtent.height);
 
-    CreateDescriptorSetLayout();
     CreateRenderPass();
-    pipeline_.CreatePipeline(renderPass_, descriptorSetLayouts_);
+    pipelineState_.meshRender.CreateMeshRenderDescriptorSetLayout();
+    pipelineState_.meshRender.CreateMeshRenderPipeline(viewportRenderPass_, "shaders/base.vert.spv", "shaders/base.frag.spv");
 
     for (auto& frame : frames) {
 
         Command::CreateCommandPool(frame.commandPool);
         Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
-
-        Descriptor::CreateDescriptorPool(frame.descriptorPool, 1, descriptorSetLayoutData_, descriptorSetLayouts_.size(), descriptorPoolCreateFlags_);
-        Descriptor::AllocateDescriptorSets(frame.descriptorPool, frame.descriptorSets, descriptorSetLayouts_);
     }
 
     CreateViewportImages();
@@ -82,47 +79,6 @@ void Viewport::DestroyViewportImages()
     }
 }
 
-void Viewport::CreateDescriptorSetLayout()
-{
-    DescriptorSetLayoutData globalBinding;
-    globalBinding.bindingCount = 2;
-    globalBinding.indices.push_back(0);
-    globalBinding.indices.push_back(1);
-    globalBinding.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    globalBinding.descriptorTypes.push_back(vk::DescriptorType::eUniformBuffer);
-    globalBinding.descriptorSetCount.push_back(1);
-    globalBinding.descriptorSetCount.push_back(1);
-    globalBinding.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    globalBinding.bindingStages.push_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    globalBinding.bindingFlags.emplace_back();
-    globalBinding.bindingFlags.emplace_back();
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(globalBinding));
-    descriptorSetLayoutData_.push_back(globalBinding);
-
-    DescriptorSetLayoutData perModelBinding;
-    perModelBinding.bindingCount = 1;
-    perModelBinding.indices.push_back(0);
-    perModelBinding.descriptorTypes.push_back(vk::DescriptorType::eUniformBufferDynamic);
-    perModelBinding.descriptorSetCount.push_back(1);
-    perModelBinding.bindingStages.emplace_back(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    perModelBinding.bindingFlags.emplace_back();
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(perModelBinding));
-    descriptorSetLayoutData_.push_back(perModelBinding);
-
-    DescriptorSetLayoutData textureBinding;
-    textureBinding.bindingCount = 1;
-    textureBinding.indices.push_back(0);
-    textureBinding.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    textureBinding.descriptorSetCount.push_back((int)Device::physicalDeviceLimits.maxDescriptorSetSamplers);
-    textureBinding.bindingStages.emplace_back(vk::ShaderStageFlagBits::eFragment);
-    textureBinding.bindingFlags.push_back(vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
-    textureBinding.layoutCreateFlags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(textureBinding));
-    descriptorSetLayoutData_.push_back(textureBinding);
-
-    descriptorPoolCreateFlags_ = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
-}
-
 void Viewport::CreateRenderPass()
 {
     vk::AttachmentDescription colorAttachmentDesc;
@@ -182,7 +138,7 @@ void Viewport::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
+    viewportRenderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
 }
 
 void Viewport::CreateFrameBuffer()
@@ -196,7 +152,7 @@ void Viewport::CreateFrameBuffer()
         };
 
         vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.renderPass = renderPass_;
+        framebufferInfo.renderPass = viewportRenderPass_;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = extent.width;
@@ -309,7 +265,7 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
                                    vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = renderPass_;
+    renderPassInfo.renderPass = viewportRenderPass_;
     renderPassInfo.framebuffer = frame.framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = extent;
@@ -341,8 +297,8 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     frame.commandBuffer.setViewport(0, viewport);
     frame.commandBuffer.setScissor(0, scissor);
 
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 0, 1, &frames[frameIndex].descriptorSets[0], 0, nullptr);
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 2, 1, &frames[frameIndex].descriptorSets[2], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.meshRender.descriptorSets[0], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 2, 1, &pipelineState_.meshRender.descriptorSets[2], 0, nullptr);
 
     for (int i = 0; i < scene.meshes.size(); i++) {
 
@@ -351,8 +307,8 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
         frame.commandBuffer.bindIndexBuffer(scene.meshes[i].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
 
         uint32_t dynamicOffset = i * scene.GetMeshUniformDynamicOffset();
-        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipelineLayout, 1, 1, &frames[frameIndex].descriptorSets[1], 1, &dynamicOffset);
-        frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline_.GetBundle().pipeline);
+        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 1, &dynamicOffset);
+        frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipeline);
 
         frame.commandBuffer.drawIndexed(scene.meshes[i].GetIndexCount(), 1, 0, 0, 0);
     }
@@ -381,12 +337,9 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
 
 Viewport::~Viewport()
 {
-    Device::GetBundle().device.destroyRenderPass(renderPass_);
-    for (auto& layout : descriptorSetLayouts_)
-        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+    Device::GetBundle().device.destroyRenderPass(viewportRenderPass_);
     for (auto& frame : frames) {
         Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
         Device::GetBundle().device.destroyCommandPool(frame.commandPool);
-        Device::GetBundle().device.destroyDescriptorPool(frame.descriptorPool);
     }
 }

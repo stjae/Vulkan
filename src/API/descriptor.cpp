@@ -1,37 +1,31 @@
 #include "descriptor.h"
 
-vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings)
+vk::DescriptorSetLayout Descriptor::CreateDescriptorSetLayout(const std::vector<DescriptorBinding>& descriptorBindings, vk::DescriptorSetLayoutCreateFlags layoutCreateFlags)
 {
     std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
-    std::vector<vk::DescriptorSetLayoutBindingFlagsCreateInfo> layoutBindingFlags;
-    layoutBindings.reserve(bindings.bindingCount);
+    std::vector<vk::DescriptorSetLayoutBindingFlagsCreateInfo> layoutBindingFlagsCreateInfos;
 
-    for (int i = 0; i < bindings.bindingCount; ++i) {
-
-        layoutBindings.emplace_back(bindings.indices[i], bindings.descriptorTypes[i], bindings.descriptorSetCount[i], bindings.bindingStages[i]);
-        layoutBindingFlags.emplace_back(bindings.bindingCount, &bindings.bindingFlags[i]);
+    for (int i = 0; i < descriptorBindings.size(); i++) {
+        layoutBindings.emplace_back(i, descriptorBindings[i].descriptorType, descriptorBindings[i].descriptorCount, descriptorBindings[i].stageFlags);
+        if (descriptorBindings[i].bindingFlags)
+            layoutBindingFlagsCreateInfos.emplace_back(descriptorBindings.size(), &descriptorBindings[i].bindingFlags);
     }
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo(bindings.layoutCreateFlags, bindings.bindingCount, layoutBindings.data(), layoutBindingFlags.data());
-
-    return Device::GetBundle().device.createDescriptorSetLayout(layoutInfo);
+    vk::DescriptorSetLayoutCreateInfo layoutCreateInfo(layoutCreateFlags, descriptorBindings.size(), layoutBindings.data(), layoutBindingFlagsCreateInfos.data());
+    return Device::GetBundle().device.createDescriptorSetLayout(layoutCreateInfo);
 }
 
-void Descriptor::CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
+void Descriptor::SetDescriptorPoolSize(std::vector<vk::DescriptorPoolSize>& poolSizes, const std::vector<DescriptorBinding>& descriptorBindings, uint32_t& maxSets)
 {
-    std::vector<vk::DescriptorPoolSize> poolSizes;
-
-    for (auto& layout : descriptorSetLayoutData) {
-        for (int i = 0; i < layout.bindingCount; i++) {
-            for (int j = 0; j < layout.descriptorSetCount[i]; j++) {
-                // per descriptor set
-                vk::DescriptorPoolSize poolSize(layout.descriptorTypes[i], descriptorCount);
-                poolSizes.push_back(poolSize);
-            }
-        }
+    for (const auto& binding : descriptorBindings) {
+        poolSizes.emplace_back(binding.descriptorType, binding.descriptorCount);
+        maxSets += binding.descriptorCount;
     }
+}
 
-    vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, descriptorCount * descriptorSetLayoutCount, static_cast<uint32_t>(poolSizes.size()), poolSizes.data());
+void Descriptor::CreateDescriptorPool(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
+{
+    vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, maxSets, uint32_t(poolSizes.size()), poolSizes.data());
     descriptorPool = Device::GetBundle().device.createDescriptorPool(poolInfo);
 }
 

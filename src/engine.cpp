@@ -43,8 +43,8 @@ void Engine::Update()
 {
     scene_->Update();
 
-    vk::WriteDescriptorSet cameraWrite(viewport_.frames[frameIndex_].descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
-    vk::WriteDescriptorSet lightWrite(viewport_.frames[frameIndex_].descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet cameraWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet lightWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo(), nullptr, nullptr);
     std::array<vk::WriteDescriptorSet, 2> globalWrite{ cameraWrite, lightWrite };
     Device::GetBundle().device.updateDescriptorSets(globalWrite, nullptr);
 
@@ -52,13 +52,13 @@ void Engine::Update()
         return;
 
     vk::WriteDescriptorSet modelMatrixWrite(
-        viewport_.frames[frameIndex_].descriptorSets[1], 0, 0, 1,
+        viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, 1,
         vk::DescriptorType::eUniformBufferDynamic, nullptr,
         &scene_->meshUniformBufferDynamic_->GetBundle().bufferInfo, nullptr, nullptr);
     Device::GetBundle().device.updateDescriptorSets(modelMatrixWrite, nullptr);
 
     vk::WriteDescriptorSet descriptorWrites;
-    descriptorWrites.dstSet = viewport_.frames[frameIndex_].descriptorSets[2];
+    descriptorWrites.dstSet = viewport_.GetPipelineState().meshRender.descriptorSets[2];
     descriptorWrites.dstBinding = 0;
     descriptorWrites.dstArrayElement = 0;
     descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;

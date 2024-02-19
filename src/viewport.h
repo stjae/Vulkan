@@ -17,39 +17,40 @@ struct ViewportFrame
 
     vk::CommandPool commandPool;
     vk::CommandBuffer commandBuffer;
+};
 
-    vk::DescriptorPool descriptorPool;
-    std::vector<vk::DescriptorSet> descriptorSets;
+struct PipelineState
+{
+    Pipeline meshRender;
 };
 
 class Viewport
 {
-    Pipeline pipeline_;
-    vk::RenderPass renderPass_;
-    std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
-    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
-    vk::DescriptorPoolCreateFlags descriptorPoolCreateFlags_;
+    PipelineState pipelineState_;
+    vk::RenderPass viewportRenderPass_;
 
-    void CreateDescriptorSetLayout();
     void CreateRenderPass();
     void CreateFrameBuffer();
 
 public:
     std::vector<ViewportFrame> frames;
+
     vk::Extent2D extent;
     ImVec2 panelPos{};
     ImVec2 panelSize{};
     float panelRatio{};
     bool outDated{};
+
     Image colorPicked_;
+    bool isMouseHovered;
 
     Viewport();
     void CreateViewportImages();
     void DestroyViewportImages();
     int32_t PickColor(size_t frameIndex);
     void Draw(size_t frameIndex, Scene& scene);
+    const PipelineState& GetPipelineState() { return pipelineState_; };
     ~Viewport();
-    bool isMouseHovered;
 };
 
 #endif

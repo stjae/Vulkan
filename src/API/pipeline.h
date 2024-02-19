@@ -16,10 +16,15 @@ class Pipeline
 {
     Shader shader_;
     PipelineBundle bundle_;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
 
 public:
-    void CreatePipeline(const vk::RenderPass& renderPass, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
-    vk::PipelineLayout CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
+    vk::DescriptorPool descriptorPool;
+    std::vector<vk::DescriptorSet> descriptorSets;
+
+    void CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath);
+    void CreateMeshRenderDescriptorSetLayout();
+    void CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     ~Pipeline();
 
     const PipelineBundle& GetBundle() { return bundle_; }

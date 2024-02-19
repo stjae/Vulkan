@@ -43,7 +43,7 @@ class Swapchain
 
     Pipeline pipeline_;
     vk::RenderPass renderPass_;
-    std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
+    std::vector<DescriptorBinding> descriptorSetLayoutData_;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
 
     void QuerySwapchainSupport();

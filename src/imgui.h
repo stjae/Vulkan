@@ -11,8 +11,9 @@
 class MyImGui
 {
     vk::DescriptorPool descriptorPool_;
-    std::vector<DescriptorSetLayoutData> descriptorSetLayoutData_;
-    std::vector<vk::DescriptorSet> viewportDescriptorSets_;
+    std::vector<DescriptorBinding> descriptorBindings_;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
+    std::vector<vk::DescriptorSet> descriptorSets_;
 
     void DrawDockSpace(Scene& scene);
     void DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex);

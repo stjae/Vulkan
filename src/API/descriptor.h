@@ -4,22 +4,24 @@
 #include "../common.h"
 #include "device/device.h"
 
-struct DescriptorSetLayoutData
+struct DescriptorBinding
 {
-    int bindingCount = 0;
-    std::vector<int> indices;
-    std::vector<vk::DescriptorType> descriptorTypes;
-    std::vector<int> descriptorSetCount;
-    std::vector<vk::ShaderStageFlags> bindingStages;
-    std::vector<vk::DescriptorBindingFlags> bindingFlags;
-    vk::DescriptorSetLayoutCreateFlags layoutCreateFlags;
+    DescriptorBinding(uint32_t index, vk::DescriptorType type, uint32_t count, vk::ShaderStageFlags sFlags = {}, vk::DescriptorBindingFlags bFlags = {})
+        : bindingIndex(index), descriptorType(type), descriptorCount(count), stageFlags(sFlags), bindingFlags(bFlags) {}
+
+    uint32_t bindingIndex;
+    vk::DescriptorType descriptorType;
+    uint32_t descriptorCount;
+    vk::ShaderStageFlags stageFlags;
+    vk::DescriptorBindingFlags bindingFlags;
 };
 
 class Descriptor
 {
 public:
-    static vk::DescriptorSetLayout CreateDescriptorSetLayout(const DescriptorSetLayoutData& bindings);
-    static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, uint32_t descriptorCount, const std::vector<DescriptorSetLayoutData>& descriptorSetLayoutData, uint32_t descriptorSetLayoutCount, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags);
+    static vk::DescriptorSetLayout CreateDescriptorSetLayout(const std::vector<DescriptorBinding>& descriptorBindings, vk::DescriptorSetLayoutCreateFlags layoutCreateFlags = {});
+    static void SetDescriptorPoolSize(std::vector<vk::DescriptorPoolSize>& poolSizes, const std::vector<DescriptorBinding>& descriptorBindings, uint32_t& maxSets);
+    static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags = {});
     static void AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
 };
 

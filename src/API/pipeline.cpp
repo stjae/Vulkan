@@ -1,10 +1,7 @@
 #include "pipeline.h"
 
-void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
+void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath)
 {
-    std::string vertexShaderFilepath = "shaders/shader.vert.spv";
-    std::string fragmentShaderFilepath = "shaders/shader.frag.spv";
-
     vk::GraphicsPipelineCreateInfo pipelineInfo;
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
@@ -77,12 +74,6 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
                                                 vk::ColorComponentFlagBits::eB |
                                                 vk::ColorComponentFlagBits::eA);
     colorBlendAttachmentState.blendEnable = VK_FALSE;
-    // colorBlendAttachmentState.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-    // colorBlendAttachmentState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    // colorBlendAttachmentState.colorBlendOp = vk::BlendOp::eAdd;
-    // colorBlendAttachmentState.srcAlphaBlendFactor = vk::BlendFactor::eSrcAlpha;
-    // colorBlendAttachmentState.dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    // colorBlendAttachmentState.alphaBlendOp = vk::BlendOp::eAdd;
 
     vk::PipelineColorBlendAttachmentState idBlendAttachmentState;
     idBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR;
@@ -107,7 +98,7 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    bundle_.pipelineLayout = CreatePipelineLayout(descriptorSetLayouts);
+    CreatePipelineLayout(descriptorSetLayouts_);
     pipelineInfo.layout = bundle_.pipelineLayout;
 
     pipelineInfo.renderPass = renderPass;
@@ -116,17 +107,45 @@ void Pipeline::CreatePipeline(const vk::RenderPass& renderPass, const std::vecto
     Log(debug, fmt::terminal_color::bright_green, "created pipeline");
 }
 
-vk::PipelineLayout Pipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
+void Pipeline::CreateMeshRenderDescriptorSetLayout()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    uint32_t maxSets;
+
+    std::vector<DescriptorBinding> uniformBufferBindings;
+    uniformBufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    uniformBufferBindings.emplace_back(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferBindings, maxSets);
+
+    std::vector<DescriptorBinding> uniformBufferDynamicBindings;
+    uniformBufferDynamicBindings.emplace_back(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferDynamicBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferDynamicBindings, maxSets);
+
+    std::vector<DescriptorBinding> combinedImageSamplerBindings;
+    combinedImageSamplerBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, (int)Device::physicalDeviceLimits.maxDescriptorSetSamplers, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(combinedImageSamplerBindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
+    Descriptor::SetDescriptorPoolSize(poolSizes, combinedImageSamplerBindings, maxSets);
+
+    Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+    Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
+}
+
+void Pipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    return Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
+    bundle_.pipelineLayout = Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
 }
 
 Pipeline::~Pipeline()
 {
+    for (auto& layout : descriptorSetLayouts_)
+        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+    Device::GetBundle().device.destroyDescriptorPool(descriptorPool);
     Device::GetBundle().device.destroyPipeline(bundle_.pipeline);
     Device::GetBundle().device.destroyPipelineLayout(bundle_.pipelineLayout);
 }

@@ -3,14 +3,15 @@
 
 void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
-    DescriptorSetLayoutData binding;
-    binding.bindingCount = 1;
-    binding.indices.push_back(0);
-    binding.descriptorSetCount.push_back(1);
-    binding.descriptorTypes.push_back(vk::DescriptorType::eCombinedImageSampler);
-    descriptorSetLayoutData_.push_back(binding);
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    uint32_t maxSets;
 
-    Descriptor::CreateDescriptorPool(descriptorPool_, 100, descriptorSetLayoutData_, 1, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+    std::vector<DescriptorBinding> imGuiBindings;
+    imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 100);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(imGuiBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, imGuiBindings, maxSets);
+
+    Descriptor::CreateDescriptorPool(descriptorPool_, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -51,11 +52,11 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    viewportDescriptorSets_.resize(Swapchain::GetBundle().frameImageCount);
-    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
-        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
-                                                                 viewport.frames[i].viewportImage.GetBundle().imageView,
-                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSets_.resize(Swapchain::GetBundle().frameImageCount);
+    for (int i = 0; i < descriptorSets_.size(); i++)
+        descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
+                                                         viewport.frames[i].viewportImage.GetBundle().imageView,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void MyImGui::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
@@ -173,7 +174,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         SetViewportUpToDate(viewport, viewport.panelSize);
 
     // Accept Drag Drop
-    ImGui::Image(viewportDescriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
+    ImGui::Image(descriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     viewport.isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
 
@@ -369,19 +370,21 @@ void MyImGui::ShowInformationOverlay(const Scene& scene)
 
 void MyImGui::RecreateViewportDescriptorSets(const Viewport& viewport)
 {
-    for (auto& descriptorSet : viewportDescriptorSets_)
+    for (auto& descriptorSet : descriptorSets_)
         ImGui_ImplVulkan_RemoveTexture(descriptorSet);
 
-    for (int i = 0; i < viewportDescriptorSets_.size(); i++)
-        viewportDescriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
-                                                                 viewport.frames[i].viewportImage.GetBundle().imageView,
-                                                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    for (int i = 0; i < descriptorSets_.size(); i++)
+        descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
+                                                         viewport.frames[i].viewportImage.GetBundle().imageView,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 MyImGui::~MyImGui()
 {
-    for (auto& descriptorSet : viewportDescriptorSets_)
-        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+    for (auto& layout : descriptorSetLayouts_)
+        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+    for (auto& set : descriptorSets_)
+        ImGui_ImplVulkan_RemoveTexture(set);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
