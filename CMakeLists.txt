@@ -25,32 +25,31 @@ add_executable(${PROJECT_NAME}
         src/config.h
         src/main.cpp
         src/common.h src/common.cpp
-        src/baseApp.h src/baseApp.cpp
-        src/engine.h src/engine.cpp
+        src/engine/baseApp.h src/engine/baseApp.cpp
+        src/engine/engine.h src/engine/engine.cpp
 
         src/scene/scene.h src/scene/scene.cpp
         src/scene/meshData.h src/scene/meshData.cpp
         src/scene/mesh.h src/scene/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
-        src/imgui.h src/imgui.cpp
+        src/engine/imgui.h src/engine/imgui.cpp
 
-        # API
-        src/API/window.h src/API/window.cpp
-        src/API/device/instance.h src/API/device/instance.cpp
-        src/API/device/logger.h src/API/device/logger.cpp
-        src/API/device/device.h src/API/device/device.cpp
-        src/API/device/queue.h src/API/device/queue.cpp
-        src/API/swapchain.h src/API/swapchain.cpp
-        src/API/shader.h src/API/shader.cpp
-        src/API/descriptor.h src/API/descriptor.cpp
-        src/API/pipeline.h src/API/pipeline.cpp
-        src/API/command.h src/API/command.cpp
-        src/API/sync.h
-        src/API/buffer.h src/API/buffer.cpp
-        src/API/memory.h src/API/memory.cpp
-        src/API/image.h src/API/image.cpp
-        src/viewport.h
-        src/viewport.cpp
+        # vulkan
+        src/window.h src/window.cpp
+        src/vulkan/instance.h src/vulkan/instance.cpp
+        src/vulkan/logger.h src/vulkan/logger.cpp
+        src/vulkan/device.h src/vulkan/device.cpp
+        src/vulkan/swapchain.h src/vulkan/swapchain.cpp
+        src/vulkan/shader.h src/vulkan/shader.cpp
+        src/vulkan/descriptor.h src/vulkan/descriptor.cpp
+        src/vulkan/pipeline.h src/vulkan/pipeline.cpp
+        src/vulkan/command.h src/vulkan/command.cpp
+        src/vulkan/sync.h
+        src/vulkan/buffer.h src/vulkan/buffer.cpp
+        src/vulkan/memory.h src/vulkan/memory.cpp
+        src/vulkan/image.h src/vulkan/image.cpp
+        src/engine/viewport.h
+        src/engine/viewport.cpp
         src/scene/light.cpp
         src/scene/light.h
 )

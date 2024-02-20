@@ -2,7 +2,7 @@
 #define LIGHT_H
 
 #include "../common.h"
-#include "../API/buffer.h"
+#include "../vulkan/buffer.h"
 
 struct LightUniformData
 {

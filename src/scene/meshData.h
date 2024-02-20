@@ -1,7 +1,7 @@
 #ifndef MESHDATA_H
 #define MESHDATA_H
 
-#include "../API/buffer.h"
+#include "../vulkan/buffer.h"
 
 struct Vertex
 {

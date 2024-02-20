@@ -1,7 +1,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "device/device.h"
+#include <cstring>
+#include "device.h"
 #include "memory.h"
 
 struct BufferInput
@@ -10,7 +11,6 @@ struct BufferInput
     vk::BufferUsageFlags usage;
     vk::MemoryPropertyFlags properties;
 };
-
 struct BufferBundle
 {
     vk::Buffer buffer;
@@ -37,17 +37,17 @@ public:
     template <typename T>
     void CopyToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, bufferInput.size);
+        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(GetMemory(), 0, bufferInput.size);
 
-        Memory::SetAddress(bufferMemoryAddress);
+        SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
-        Device::GetBundle().device.unmapMemory(Memory::GetMemory());
+        Device::GetBundle().device.unmapMemory(GetMemory());
     }
 
     template <typename T>
     void UpdateBuffer(T resource, size_t size)
     {
-        void* bufferMemoryAddress = Memory::GetMemoryAddress();
+        void* bufferMemoryAddress = GetMemoryAddress();
 
         memcpy(bufferMemoryAddress, resource, size);
     }

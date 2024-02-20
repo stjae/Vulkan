@@ -6,8 +6,8 @@
 #include "camera.h"
 #include "mesh.h"
 #include "light.h"
-#include "../API/swapchain.h"
-#include "../API/command.h"
+#include "../vulkan/swapchain.h"
+#include "../vulkan/command.h"
 
 struct MeshUniformData
 {

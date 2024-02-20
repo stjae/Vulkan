@@ -1,7 +1,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "device/device.h"
+#include "device.h"
 #include "pipeline.h"
 #include "image.h"
 #include "../scene/mesh.h"

@@ -2,8 +2,8 @@
 #define SWAPCHAIN_H
 
 #include "../common.h"
-#include "device/device.h"
-#include "device/instance.h"
+#include "device.h"
+#include "instance.h"
 #include "command.h"
 #include "memory.h"
 #include "pipeline.h"

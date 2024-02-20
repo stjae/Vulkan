@@ -2,8 +2,8 @@
 #define CAMERA_H
 
 #include "../common.h"
-#include "../API/window.h"
-#include "../API/buffer.h"
+#include "../window.h"
+#include "../vulkan/buffer.h"
 
 struct CameraMatrix
 {

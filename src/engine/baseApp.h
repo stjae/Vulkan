@@ -2,9 +2,9 @@
 #define BASEAPP_H
 
 #include "engine.h"
-#include "common.h"
-#include "scene/scene.h"
-#include "scene/camera.h"
+#include "../common.h"
+#include "../scene/scene.h"
+#include "../scene/camera.h"
 
 class Application
 {

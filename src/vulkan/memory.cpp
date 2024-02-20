@@ -17,7 +17,6 @@ uint32_t Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::Memory
 
     throw std::runtime_error("failed to find suitable memory type");
 }
-
 void Memory::AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties)
 {
     vk::MemoryRequirements memoryRequirements = Device::GetBundle().device.getBufferMemoryRequirements(vkBuffer);
@@ -29,7 +28,6 @@ void Memory::AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags 
     memory_ = Device::GetBundle().device.allocateMemory(allocateInfo);
     Device::GetBundle().device.bindBufferMemory(vkBuffer, memory_, 0);
 }
-
 void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
 {
     vk::MemoryRequirements memoryRequirements;
@@ -42,7 +40,6 @@ void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags pr
     memory_ = Device::GetBundle().device.allocateMemory(allocateInfo);
     Device::GetBundle().device.bindImageMemory(vkImage, memory_, 0);
 }
-
 void Memory::Free()
 {
     if (memory_ != VK_NULL_HANDLE) {

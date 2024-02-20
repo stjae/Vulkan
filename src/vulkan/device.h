@@ -2,7 +2,6 @@
 #define DEVICE_H
 
 #include "instance.h"
-#include "queue.h"
 
 struct DeviceBundle
 {

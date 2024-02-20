@@ -1,11 +1,11 @@
 #ifndef VIEWPORT_H
 #define VIEWPORT_H
 
-#include "common.h"
-#include "API/image.h"
-#include "API/command.h"
-#include "API/swapchain.h"
-#include "scene/scene.h"
+#include "../common.h"
+#include "../vulkan/image.h"
+#include "../vulkan/command.h"
+#include "../vulkan/swapchain.h"
+#include "../scene/scene.h"
 
 struct ViewportFrame
 {

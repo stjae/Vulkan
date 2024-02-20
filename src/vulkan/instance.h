@@ -1,7 +1,7 @@
 #ifndef INSTANCE_H
 #define INSTANCE_H
 
-#include "../../common.h"
+#include "../common.h"
 #include "logger.h"
 #include "../window.h"
 

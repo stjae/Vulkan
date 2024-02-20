@@ -2,7 +2,7 @@
 #define DESCRIPTOR_H
 
 #include "../common.h"
-#include "device/device.h"
+#include "device.h"
 
 struct DescriptorBinding
 {

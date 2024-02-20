@@ -1,7 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "../common.h"
+#include "common.h"
 
 class Window
 {

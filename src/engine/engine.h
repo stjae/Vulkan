@@ -1,16 +1,16 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "API/command.h"
-#include "API/descriptor.h"
-#include "API/device/device.h"
-#include "API/device/instance.h"
-#include "API/device/logger.h"
-#include "API/pipeline.h"
-#include "API/swapchain.h"
-#include "API/window.h"
-#include "scene/scene.h"
-#include "scene/camera.h"
+#include "../vulkan/command.h"
+#include "../vulkan/descriptor.h"
+#include "../vulkan/device.h"
+#include "../vulkan/instance.h"
+#include "../vulkan/logger.h"
+#include "../vulkan/pipeline.h"
+#include "../vulkan/swapchain.h"
+#include "../window.h"
+#include "../scene/scene.h"
+#include "../scene/camera.h"
 #include "imgui.h"
 #include "viewport.h"
 
