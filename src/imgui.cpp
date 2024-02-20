@@ -7,7 +7,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     uint32_t maxSets;
 
     std::vector<DescriptorBinding> imGuiBindings;
-    imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 100);
+    imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 1000);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(imGuiBindings));
     Descriptor::SetDescriptorPoolSize(poolSizes, imGuiBindings, maxSets);
 
@@ -69,10 +69,10 @@ void MyImGui::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     ImGui::NewFrame();
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered())
-        scene.meshSelected = -1;
+        scene.selectedMeshIndex = -1;
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.meshSelected != -1) {
-        scene.DeleteMesh(scene.meshSelected);
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.selectedMeshIndex != -1) {
+        scene.DeleteMesh(scene.selectedMeshIndex);
     }
 
     DrawDockSpace(scene);
@@ -204,7 +204,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         ImGui::EndDragDropTarget();
     }
 
-    if (scene.meshSelected != -1) {
+    if (scene.selectedMeshIndex != -1) {
         DrawImGuizmo(scene, viewport.panelPos);
     }
 
@@ -249,7 +249,7 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
+    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetMeshUniformDynamicOffset()));
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
                                           rotation, scale);
@@ -266,12 +266,12 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     ImGui::Begin("Object List");
     if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene.meshes.size(); i++) {
-            if (ImGui::Selectable(scene.GetMeshName(i), scene.IsMeshSelected(i))) {
-                scene.meshSelected = i;
+            if (ImGui::Selectable(scene.GetMeshName(i), i == scene.selectedMeshIndex)) {
+                scene.selectedMeshIndex = i;
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("delete")) {
-                    scene.DeleteMesh(scene.meshSelected);
+                    scene.DeleteMesh(scene.selectedMeshIndex);
                 }
                 ImGui::EndPopup();
             }
@@ -279,9 +279,9 @@ void MyImGui::DrawObjectWindow(Scene& scene)
         ImGui::EndListBox();
     }
     // Attributes
-    if (scene.meshSelected > -1) {
+    if (scene.selectedMeshIndex > -1) {
 
-        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.meshSelected * scene.GetMeshUniformDynamicOffset()));
+        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetMeshUniformDynamicOffset()));
 
         float translation[3];
         float rotation[3];
@@ -292,7 +292,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::SeparatorText(scene.GetMeshName(scene.meshSelected));
+        ImGui::SeparatorText(scene.GetMeshName(scene.selectedMeshIndex));
         ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
         ImGui::SliderFloat3(labels[1].append("##rotation_").c_str(), rotation, -180.0f, 180.0f);
 

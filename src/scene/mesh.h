@@ -7,7 +7,6 @@ class Mesh : public MeshData
 {
     friend class Scene;
 
-    bool isSelected_;
     std::string name_;
     glm::vec3 position_;
     glm::vec3 rotation_;

@@ -63,7 +63,7 @@ public:
     Camera camera;
     Light light;
     MeshUniformData* meshUniformData;
-    int32_t meshSelected = -1;
+    int32_t selectedMeshIndex = -1;
 
     Scene();
     void AddMesh(TypeEnum::Mesh type);
@@ -71,7 +71,6 @@ public:
     void AddTexture(const std::string& filePath);
     size_t GetMeshUniformDynamicOffset() const { return meshUniformBufferDynamicOffset_; }
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
-    bool IsMeshSelected(size_t index) const { return meshes[index].isSelected_; }
     void DeleteMesh(size_t index);
     void Update();
     ~Scene();

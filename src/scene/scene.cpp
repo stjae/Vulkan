@@ -270,7 +270,7 @@ void Scene::UpdateMeshUniformBuffer()
 
 void Scene::DeleteMesh(size_t index)
 {
-    meshSelected = -1;
+    selectedMeshIndex = -1;
     meshes.erase(meshes.begin() + index);
     RearrangeMeshUniformBuffer(index);
 }

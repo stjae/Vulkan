@@ -85,7 +85,7 @@ void Engine::Render()
     swapchain_.Draw(frameIndex_, imDrawData_);
     viewport_.Draw(frameIndex_, *scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered)
-        scene_->meshSelected = viewport_.PickColor(frameIndex_);
+        scene_->selectedMeshIndex = viewport_.PickColor(frameIndex_);
     swapchain_.Submit(frameIndex_);
     auto presentInfo = swapchain_.Present(frameIndex_, waitFrameImage);
 
