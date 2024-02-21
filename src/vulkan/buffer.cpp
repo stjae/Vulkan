@@ -37,7 +37,7 @@ void Buffer::Destroy()
     Log(debug, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
 }
 
-size_t Buffer::GetDynamicBufferOffset(size_t size)
+size_t Buffer::GetDynamicBufferRange(size_t size)
 {
     // offset should be multiple of minOffset
     size_t minOffset = Device::physicalDeviceLimits.minUniformBufferOffsetAlignment;

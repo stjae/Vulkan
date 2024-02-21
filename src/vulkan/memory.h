@@ -15,7 +15,7 @@ protected:
 
 public:
     uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
-    void AllocateMemory(const vk::Buffer& vkBuffer, vk::MemoryPropertyFlags properties);
+    void AllocateMemory(const vk::Buffer& buffer, vk::MemoryPropertyFlags properties);
     void AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
     void Free();
 

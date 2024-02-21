@@ -4,7 +4,7 @@ void Command::CreateCommandPool(vk::CommandPool& commandPool)
 {
     vk::CommandPoolCreateInfo poolInfo;
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    poolInfo.queueFamilyIndex = Device::GetBundle().graphicsFamilyIndex.value();
+    poolInfo.queueFamilyIndex = Device::GetBundle().graphicsComputeFamilyIndex.value();
 
     commandPool = Device::GetBundle().device.createCommandPool(poolInfo);
 }
@@ -22,7 +22,7 @@ void Command::AllocateCommandBuffer(const vk::CommandPool& commandPool, vk::Comm
 void Command::Begin(vk::CommandBuffer& commandBuffer, vk::CommandBufferUsageFlags flag)
 {
     vk::CommandBufferBeginInfo beginInfo(flag, {});
-    commandBuffer.begin(beginInfo);
+    commandBuffer.begin(&beginInfo);
 }
 void Command::CopyBufferToBuffer(vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {

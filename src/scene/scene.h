@@ -46,9 +46,10 @@ class Scene
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
-    std::unique_ptr<Buffer> meshUniformBufferDynamic_;
-    size_t meshUniformBufferDynamicOffset_;
-    size_t meshUniformBufferDynamicSize_;
+
+    std::unique_ptr<Buffer> meshDynamicUniformBuffer_;
+    size_t meshDynamicUniformBufferRange_;
+    size_t meshDynamicUniformBufferSize_;
 
     void CreateMeshUniformBuffer();
     void RearrangeMeshUniformBuffer(size_t index) const;
@@ -69,8 +70,8 @@ public:
     void AddMesh(TypeEnum::Mesh type);
     void AddMesh(TypeEnum::Mesh type, const std::string& filePath);
     void AddTexture(const std::string& filePath);
-    size_t GetMeshUniformDynamicOffset() const { return meshUniformBufferDynamicOffset_; }
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
+    size_t GetDynamicMeshUniformRange() const { return meshDynamicUniformBufferRange_; }
     void DeleteMesh(size_t index);
     void Update();
     ~Scene();

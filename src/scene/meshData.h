@@ -24,9 +24,11 @@ public:
     void CreateIndexBuffer();
 
     size_t GetIndexCount() const { return indices.size(); }
+    size_t GetVertexCount() const { return vertices.size(); }
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;
+    std::unique_ptr<Buffer> vertexStorageBuffer;
 
     std::unique_ptr<Buffer> indexStagingBuffer;
     std::unique_ptr<Buffer> indexBuffer;

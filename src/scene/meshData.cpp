@@ -50,17 +50,21 @@ void MeshData::CreateVertexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(Vertex) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    vertexStagingBuffer->CopyToBuffer(vertices.data(), stagingBufferInput);
+    vertexStagingBuffer->CopyResourceToBuffer(vertices.data(), stagingBufferInput);
 
-    BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
+    BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
+
+    // store x2 of vertex count for drawing normal
+    BufferInput vertexStorageBufferInput = { stagingBufferInput.size * 2, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
+    vertexStorageBuffer = std::make_unique<Buffer>(vertexStorageBufferInput);
 }
 
 void MeshData::CreateIndexBuffer()
 {
     BufferInput stagingBufferInput = { sizeof(uint32_t) * indices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     indexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    indexStagingBuffer->CopyToBuffer(indices.data(), stagingBufferInput);
+    indexStagingBuffer->CopyResourceToBuffer(indices.data(), stagingBufferInput);
 
     BufferInput indexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     indexBuffer = std::make_unique<Buffer>(indexBufferInput);

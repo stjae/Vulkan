@@ -6,7 +6,7 @@ Camera::Camera()
                           vk::MemoryPropertyFlagBits::eHostVisible |
                               vk::MemoryPropertyFlagBits::eHostCoherent };
     uniformBuffer_ = std::make_unique<Buffer>(input);
-    uniformBuffer_->MapMemory(input.size);
+    uniformBuffer_->MapMemory(sizeof(CameraMatrix));
 }
 
 void Camera::SetCameraControl()

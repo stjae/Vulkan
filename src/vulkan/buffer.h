@@ -32,10 +32,10 @@ public:
     ~Buffer();
 
     const BufferBundle& GetBundle() { return bufferBundle_; }
-    static size_t GetDynamicBufferOffset(size_t size);
+    static size_t GetDynamicBufferRange(size_t size);
 
     template <typename T>
-    void CopyToBuffer(T resource, const BufferInput& bufferInput)
+    void CopyResourceToBuffer(T resource, const BufferInput& bufferInput)
     {
         void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(GetMemory(), 0, bufferInput.size);
 

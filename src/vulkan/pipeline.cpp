@@ -1,8 +1,8 @@
 #include "pipeline.h"
 
-void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath)
+void Pipeline::CreateGraphicsPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath, vk::PrimitiveTopology topology)
 {
-    vk::GraphicsPipelineCreateInfo pipelineInfo;
+    vk::GraphicsPipelineCreateInfo pipelineInfo{};
 
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfos;
 
@@ -18,7 +18,7 @@ void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const 
 
     // input assembly
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-    inputAssemblyInfo.topology = vk::PrimitiveTopology::eTriangleList;
+    inputAssemblyInfo.topology = topology;
     pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
 
     // vertex shader
@@ -58,6 +58,7 @@ void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const 
     fragmentShaderInfo.module = shader_.fragmentShaderModule;
     fragmentShaderInfo.pName = "main";
     shaderStageInfos.push_back(fragmentShaderInfo);
+
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStageInfos.size());
     pipelineInfo.pStages = shaderStageInfos.data();
 
@@ -104,7 +105,7 @@ void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const 
     pipelineInfo.renderPass = renderPass;
 
     bundle_.pipeline = (Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
-    Log(debug, fmt::terminal_color::bright_green, "created pipeline");
+    Log(debug, fmt::terminal_color::bright_green, "created graphics pipeline");
 }
 
 void Pipeline::CreateMeshRenderDescriptorSetLayout()
@@ -139,6 +140,59 @@ void Pipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& 
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
     bundle_.pipelineLayout = Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
+}
+
+void Pipeline::CreateNormalRenderDescriptorSetLayout()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    uint32_t maxSets;
+
+    std::vector<DescriptorBinding> uniformBufferBindings;
+    uniformBufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferBindings, maxSets);
+
+    std::vector<DescriptorBinding> uniformBufferDynamicBindings;
+    uniformBufferDynamicBindings.emplace_back(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferDynamicBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferDynamicBindings, maxSets);
+
+    Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets);
+    Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
+}
+
+void Pipeline::CreateComputePipeline(const char* computeShaderFilepath)
+{
+    vk::ComputePipelineCreateInfo computePipelineInfo{};
+
+    shader_.computeShaderModule = shader_.CreateModule(computeShaderFilepath);
+    Log(debug, fmt::terminal_color::bright_green, "created compute shader module");
+    vk::PipelineShaderStageCreateInfo stageInfo;
+    stageInfo.stage = vk::ShaderStageFlagBits::eCompute;
+    stageInfo.module = shader_.computeShaderModule;
+    stageInfo.pName = "main";
+
+    CreatePipelineLayout(descriptorSetLayouts_);
+    computePipelineInfo.layout = bundle_.pipelineLayout;
+    computePipelineInfo.stage = stageInfo;
+
+    bundle_.pipeline = (Device::GetBundle().device.createComputePipeline(nullptr, computePipelineInfo)).value;
+    Log(debug, fmt::terminal_color::bright_green, "created compute pipeline");
+}
+
+void Pipeline::CreateComputeDescriptorSetLayout()
+{
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    uint32_t maxSets;
+
+    std::vector<DescriptorBinding> bindings;
+    bindings.emplace_back(0, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute);
+    bindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, bindings, maxSets);
+
+    Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets);
+    Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
 }
 
 Pipeline::~Pipeline()

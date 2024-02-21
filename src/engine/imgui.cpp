@@ -23,7 +23,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
     init_info.Instance = Instance::GetBundle().instance;
     init_info.PhysicalDevice = Device::GetBundle().physicalDevice;
     init_info.Device = Device::GetBundle().device;
-    init_info.QueueFamily = Device::GetBundle().graphicsFamilyIndex.value();
+    init_info.QueueFamily = Device::GetBundle().graphicsComputeFamilyIndex.value();
     init_info.Queue = Device::GetBundle().graphicsQueue;
     init_info.DescriptorPool = descriptorPool_;
     init_info.Subpass = 0;
@@ -193,7 +193,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
                 break;
             case TypeEnum::Resource::IMAGE:
                 if (pickColor != -1) {
-                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetMeshUniformDynamicOffset()));
+                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetDynamicMeshUniformRange()));
                     (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
                     (*meshUniformData).useTexture = true;
                 }
@@ -249,7 +249,7 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetMeshUniformDynamicOffset()));
+    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetDynamicMeshUniformRange()));
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
                                           rotation, scale);
@@ -281,7 +281,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     // Attributes
     if (scene.selectedMeshIndex > -1) {
 
-        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetMeshUniformDynamicOffset()));
+        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetDynamicMeshUniformRange()));
 
         float translation[3];
         float rotation[3];

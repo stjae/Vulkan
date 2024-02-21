@@ -22,6 +22,8 @@ struct ViewportFrame
 struct PipelineState
 {
     Pipeline meshRender;
+    Pipeline normalRender;
+    Pipeline compute;
 };
 
 class Viewport

@@ -8,8 +8,9 @@ struct DeviceBundle
     vk::Device device;
     vk::PhysicalDevice physicalDevice;
     vk::Queue graphicsQueue;
+    vk::Queue computeQueue;
     vk::Queue presentQueue;
-    std::optional<uint32_t> graphicsFamilyIndex;
+    std::optional<uint32_t> graphicsComputeFamilyIndex;
     std::optional<uint32_t> presentFamilyIndex;
 };
 

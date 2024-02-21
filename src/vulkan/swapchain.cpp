@@ -20,8 +20,8 @@ void Swapchain::CreateSwapchain()
 
     vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, swapchainBundle_.surfaceFormat.format, swapchainBundle_.surfaceFormat.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { Device::GetBundle().graphicsFamilyIndex.value(), Device::GetBundle().presentFamilyIndex.value() };
-    if (Device::GetBundle().graphicsFamilyIndex.value() != Device::GetBundle().presentFamilyIndex.value()) {
+    uint32_t indices[] = { Device::GetBundle().graphicsComputeFamilyIndex.value(), Device::GetBundle().presentFamilyIndex.value() };
+    if (Device::GetBundle().graphicsComputeFamilyIndex.value() != Device::GetBundle().presentFamilyIndex.value()) {
         swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
         swapchainCreateInfo.queueFamilyIndexCount = 2;
         swapchainCreateInfo.pQueueFamilyIndices = indices;
@@ -113,7 +113,7 @@ void Swapchain::ChooseExtent()
     // extent is set
     if (capabilities.currentExtent.width != UINT32_MAX) {
 
-        Log(debug, fmt::terminal_color::white, "no change in extent size");
+        Log(debug, fmt::terminal_color::white, "no change in extent range");
 
         swapchainBundle_.swapchainImageExtent = capabilities.currentExtent;
         return;

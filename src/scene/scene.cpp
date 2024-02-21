@@ -7,12 +7,17 @@ Scene::Scene()
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    meshUniformBufferDynamicOffset_ = Buffer::GetDynamicBufferOffset(sizeof(MeshUniformData));
+    meshDynamicUniformBufferRange_ = Buffer::GetDynamicBufferRange(sizeof(MeshUniformData));
     CreateDummyTexture();
 
     meshes.emplace_back();
     meshes.back().CreateSphere(0.05f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
     meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
+    meshes.back().CreateBuffers();
+    PrepareMesh(meshes.back());
+
+    meshes.emplace_back();
+    meshes.back().CreateSphere();
     meshes.back().CreateBuffers();
     PrepareMesh(meshes.back());
 }
@@ -81,7 +86,7 @@ void Scene::AddTexture(const std::string& filePath)
 
     BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     texture->stagingBuffer = std::make_unique<Buffer>(input);
-    texture->stagingBuffer->CopyToBuffer(imageData, input);
+    texture->stagingBuffer->CopyResourceToBuffer(imageData, input);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
@@ -129,6 +134,7 @@ void Scene::PrepareMesh(Mesh& mesh)
                                 mesh.vertexStagingBuffer->GetBundle().buffer,
                                 mesh.vertexBuffer->GetBundle().buffer,
                                 sizeof(Vertex) * mesh.vertices.size());
+
     // Copy indices from staging buffer
     Command::CopyBufferToBuffer(commandBuffer_,
                                 mesh.indexStagingBuffer->GetBundle().buffer,
@@ -148,45 +154,45 @@ void Scene::CreateMeshUniformBuffer()
     if (meshes.empty())
         return;
 
-    size_t requiredBufferSize = meshes.size() * meshUniformBufferDynamicOffset_;
-    Log(debug, fmt::terminal_color::blue, "model uniform buffer size - old: {} | new: {}", meshUniformBufferDynamicSize_, requiredBufferSize);
+    size_t requiredBufferSize = meshes.size() * meshDynamicUniformBufferRange_;
+    Log(debug, fmt::terminal_color::blue, "model uniform buffer size - old: {} | new: {}", meshDynamicUniformBufferSize_, requiredBufferSize);
 
     // if the modelUniformBuffer already exists
-    if (meshUniformBufferDynamicSize_ < requiredBufferSize) {
-        void* newAlignedMemory = AlignedAlloc(meshUniformBufferDynamicOffset_, requiredBufferSize);
+    if (meshDynamicUniformBufferSize_ < requiredBufferSize) {
+        void* newAlignedMemory = AlignedAlloc(meshDynamicUniformBufferRange_, requiredBufferSize);
         if (!newAlignedMemory)
             spdlog::error("failed to allocate dynamic uniform buffer memory");
 
-        if (meshUniformBufferDynamic_ != nullptr) {
+        if (meshDynamicUniformBuffer_ != nullptr) {
             for (int i = 0; i < meshes.size() - 1; i++) {
-                auto* oldData = (MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_));
-                auto* newData = (MeshUniformData*)((uint64_t)newAlignedMemory + (i * meshUniformBufferDynamicOffset_));
+                auto* oldData = (MeshUniformData*)((uint64_t)meshUniformData + (i * meshDynamicUniformBufferRange_));
+                auto* newData = (MeshUniformData*)((uint64_t)newAlignedMemory + (i * meshDynamicUniformBufferRange_));
 
                 *newData = *oldData;
             }
             AlignedFree(meshUniformData);
-            meshUniformBufferDynamic_.reset();
+            meshDynamicUniformBuffer_.reset();
         }
 
         meshUniformData = (MeshUniformData*)newAlignedMemory;
     }
 
     size_t newMeshIndex = meshes.size() - 1;
-    auto* newMeshData = (MeshUniformData*)((uint64_t)meshUniformData + (newMeshIndex * meshUniformBufferDynamicOffset_));
+    auto* newMeshData = (MeshUniformData*)((uint64_t)meshUniformData + (newMeshIndex * meshDynamicUniformBufferRange_));
 
     (*newMeshData).modelMat = glm::translate(glm::mat4(1.0f), meshes.back().position_);
     (*newMeshData).meshID = (int32_t)newMeshIndex;
     (*newMeshData).textureID = 0;
     (*newMeshData).useTexture = false;
 
-    if (meshUniformBufferDynamicSize_ < requiredBufferSize) {
-        BufferInput input = { meshes.size() * meshUniformBufferDynamicOffset_,
+    if (meshDynamicUniformBufferSize_ < requiredBufferSize) {
+        BufferInput input = { meshes.size() * meshDynamicUniformBufferRange_,
                               vk::BufferUsageFlagBits::eUniformBuffer,
                               vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        meshUniformBufferDynamic_ = std::make_unique<Buffer>(input);
-        meshUniformBufferDynamic_->MapMemory(meshUniformBufferDynamicOffset_);
+        meshDynamicUniformBuffer_ = std::make_unique<Buffer>(input);
+        meshDynamicUniformBuffer_->MapMemory(meshDynamicUniformBufferRange_);
 
-        meshUniformBufferDynamicSize_ = requiredBufferSize;
+        meshDynamicUniformBufferSize_ = requiredBufferSize;
     }
 }
 
@@ -194,8 +200,8 @@ void Scene::RearrangeMeshUniformBuffer(size_t index) const
 {
     // move the meshUniformData forward as the mesh index refers to has been deleted
     for (size_t i = index; i < meshes.size(); i++) {
-        *(MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_)) = *(MeshUniformData*)((uint64_t)meshUniformData + ((i + 1) * meshUniformBufferDynamicOffset_));
-        (*(MeshUniformData*)((uint64_t)meshUniformData + (i * meshUniformBufferDynamicOffset_))).meshID--;
+        *(MeshUniformData*)((uint64_t)meshUniformData + (i * meshDynamicUniformBufferRange_)) = *(MeshUniformData*)((uint64_t)meshUniformData + ((i + 1) * meshDynamicUniformBufferRange_));
+        (*(MeshUniformData*)((uint64_t)meshUniformData + (i * meshDynamicUniformBufferRange_))).meshID--;
     }
 }
 
@@ -203,14 +209,14 @@ void Scene::CreateDummyTexture()
 {
     textures.emplace_back(std::make_shared<Texture>());
 
-    uint8_t dummyTexture[4] = { 0, 0, 0, 255 };
+    std::array<uint8_t, 4> dummyTexture = { 0, 0, 0, 255 };
     textures.back()->width = 1;
     textures.back()->height = 1;
     textures.back()->size = sizeof(dummyTexture);
 
-    BufferInput input = { 4, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    BufferInput input = { sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     textures.back()->stagingBuffer = std::make_unique<Buffer>(input);
-    textures.back()->stagingBuffer->CopyToBuffer(&dummyTexture, input);
+    textures.back()->stagingBuffer->CopyResourceToBuffer(&dummyTexture, input);
 
     vk::Extent3D extent(1, 1, 1);
     textures.back()->image = std::make_unique<Image>();
@@ -265,7 +271,7 @@ void Scene::Update()
 
 void Scene::UpdateMeshUniformBuffer()
 {
-    meshUniformBufferDynamic_->UpdateBuffer(meshUniformData, meshUniformBufferDynamic_->GetSize());
+    meshDynamicUniformBuffer_->UpdateBuffer(meshUniformData, meshDynamicUniformBuffer_->GetSize());
 }
 
 void Scene::DeleteMesh(size_t index)
