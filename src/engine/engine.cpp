@@ -25,55 +25,32 @@ void Engine::Update()
 {
     scene_->Update();
 
-    vk::WriteDescriptorSet cameraWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
-    vk::WriteDescriptorSet cameraWriteNormal(viewport_.GetPipelineState().normalRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
-    vk::WriteDescriptorSet lightWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo(), nullptr, nullptr);
-    std::array<vk::WriteDescriptorSet, 3> globalWrite{ cameraWrite, lightWrite, cameraWriteNormal };
+    vk::WriteDescriptorSet cameraWriteMeshRender(viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo(), nullptr, nullptr);
+    vk::WriteDescriptorSet lightWriteMeshRender(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo(), nullptr, nullptr);
+    std::array<vk::WriteDescriptorSet, 2> globalWrite{ cameraWriteMeshRender, lightWriteMeshRender };
     Device::GetBundle().device.updateDescriptorSets(globalWrite, nullptr);
 
     if (scene_->meshes.empty())
         return;
 
-    vk::WriteDescriptorSet modelMatrixWrite(
+    vk::WriteDescriptorSet modelMatrixWriteMeshRender(
         viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, 1,
         vk::DescriptorType::eUniformBufferDynamic, nullptr,
         &scene_->meshDynamicUniformBuffer_->GetBundle().bufferInfo, nullptr, nullptr);
-    vk::WriteDescriptorSet modelMatrixWriteNormal(
-        viewport_.GetPipelineState().normalRender.descriptorSets[1], 0, 0, 1,
-        vk::DescriptorType::eUniformBufferDynamic, nullptr,
-        &scene_->meshDynamicUniformBuffer_->GetBundle().bufferInfo, nullptr, nullptr);
+    Device::GetBundle().device.updateDescriptorSets(modelMatrixWriteMeshRender, nullptr);
 
-    std::array<vk::WriteDescriptorSet, 2> dynamicWrite{ modelMatrixWrite, modelMatrixWriteNormal };
-    Device::GetBundle().device.updateDescriptorSets(dynamicWrite, nullptr);
-
-    for (auto& mesh : scene_->meshes) {
-
-        vk::DescriptorBufferInfo storageBufferInInfo(mesh.vertexBuffer->GetBundle().buffer, 0, mesh.vertexBuffer->GetSize());
-        vk::DescriptorBufferInfo storageBufferOutInfo(mesh.vertexStorageBuffer->GetBundle().buffer, 0, mesh.vertexStorageBuffer->GetSize());
-
-        std::array<vk::WriteDescriptorSet, 2> computeDescriptorWrites;
-        computeDescriptorWrites[0] = { viewport_.GetPipelineState().compute.descriptorSets[0], 0, 0, 1,
-                                       vk::DescriptorType::eStorageBuffer, nullptr,
-                                       &storageBufferInInfo, nullptr, nullptr };
-        computeDescriptorWrites[1] = { viewport_.GetPipelineState().compute.descriptorSets[0], 1, 0, 1,
-                                       vk::DescriptorType::eStorageBuffer, nullptr,
-                                       &storageBufferOutInfo, nullptr, nullptr };
-
-        Device::GetBundle().device.updateDescriptorSets(computeDescriptorWrites.size(), computeDescriptorWrites.data(), 0, nullptr);
-    }
-
-    vk::WriteDescriptorSet descriptorWrites;
-    descriptorWrites.dstSet = viewport_.GetPipelineState().meshRender.descriptorSets[2];
-    descriptorWrites.dstBinding = 0;
-    descriptorWrites.dstArrayElement = 0;
-    descriptorWrites.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    descriptorWrites.descriptorCount = scene_->textures.size();
+    vk::WriteDescriptorSet combinedImageSamplerWrite{};
+    combinedImageSamplerWrite.dstSet = viewport_.GetPipelineState().meshRender.descriptorSets[2];
+    combinedImageSamplerWrite.dstBinding = 0;
+    combinedImageSamplerWrite.dstArrayElement = 0;
+    combinedImageSamplerWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    combinedImageSamplerWrite.descriptorCount = scene_->textures.size();
     std::vector<vk::DescriptorImageInfo> infos;
     for (auto& texture : scene_->textures) {
         infos.push_back(texture->image->GetBundle().imageInfo);
     }
-    descriptorWrites.pImageInfo = infos.data();
-    Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);
+    combinedImageSamplerWrite.pImageInfo = infos.data();
+    Device::GetBundle().device.updateDescriptorSets(combinedImageSamplerWrite, nullptr);
 }
 
 void Engine::Render()

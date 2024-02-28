@@ -133,13 +133,14 @@ void Scene::PrepareMesh(Mesh& mesh)
     Command::CopyBufferToBuffer(commandBuffer_,
                                 mesh.vertexStagingBuffer->GetBundle().buffer,
                                 mesh.vertexBuffer->GetBundle().buffer,
-                                sizeof(Vertex) * mesh.vertices.size());
+                                mesh.vertexStagingBuffer->GetSize());
 
     // Copy indices from staging buffer
     Command::CopyBufferToBuffer(commandBuffer_,
                                 mesh.indexStagingBuffer->GetBundle().buffer,
                                 mesh.indexBuffer->GetBundle().buffer,
-                                sizeof(uint32_t) * mesh.indices.size());
+                                mesh.indexStagingBuffer->GetSize());
+
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
 

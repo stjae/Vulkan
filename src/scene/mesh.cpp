@@ -186,6 +186,11 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
         throw std::runtime_error(warn + err);
     }
 
+    uint32_t count;
+    for (auto& shape : shapes) {
+        count += shape.mesh.num_face_vertices.size();
+    }
+
     // Loop over shapes
     for (auto& shape : shapes) {
         // Loop over faces(polygon)

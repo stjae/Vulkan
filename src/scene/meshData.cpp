@@ -54,10 +54,6 @@ void MeshData::CreateVertexBuffer()
 
     BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
-
-    // store x2 of vertex count for drawing normal
-    BufferInput vertexStorageBufferInput = { stagingBufferInput.size * 2, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
-    vertexStorageBuffer = std::make_unique<Buffer>(vertexStorageBufferInput);
 }
 
 void MeshData::CreateIndexBuffer()

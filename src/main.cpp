@@ -3,9 +3,9 @@
 
 int main()
 {
-    std::unique_ptr<Application> app = std::make_unique<Application>(1920, 1080, "Vulkan");
+    Application app(1920, 1080, "vulkan");
 
-    app->Run();
+    app.Run();
 
     return 0;
 }

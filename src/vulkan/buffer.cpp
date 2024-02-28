@@ -9,6 +9,9 @@ Buffer::Buffer(const BufferInput& bufferInput)
     bufferBundle_.bufferUsage = bufferInput.usage;
     bufferSize_ = bufferInput.size;
 
+    bufferBundle_.bufferInfo.buffer = bufferBundle_.buffer;
+    bufferBundle_.bufferInfo.range = bufferInput.size;
+
     AllocateMemory(bufferBundle_.buffer, bufferInput.properties);
 }
 

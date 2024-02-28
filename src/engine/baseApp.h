@@ -8,14 +8,13 @@
 
 class Application
 {
+    Window window_;
+    Engine engine_;
+
 public:
     Application(int width, int height, const char* wName);
 
     void Run();
-
-private:
-    Window window_;
-    Engine engine_;
 };
 
 #endif

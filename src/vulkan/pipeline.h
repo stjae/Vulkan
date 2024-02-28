@@ -24,10 +24,6 @@ public:
 
     void CreateGraphicsPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath, vk::PrimitiveTopology topology);
     void CreateMeshRenderDescriptorSetLayout();
-    void CreateNormalRenderDescriptorSetLayout();
-    void CreateComputePipeline(const char* computeShaderFilepath);
-    void CreateComputeDescriptorSetLayout();
-    void CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
     ~Pipeline();
 
     const PipelineBundle& GetBundle() { return bundle_; }

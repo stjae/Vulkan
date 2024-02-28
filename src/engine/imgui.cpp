@@ -266,6 +266,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     ImGui::Begin("Object List");
     if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene.meshes.size(); i++) {
+            ImGui::PushID(i);
             if (ImGui::Selectable(scene.GetMeshName(i), i == scene.selectedMeshIndex)) {
                 scene.selectedMeshIndex = i;
             }
@@ -275,6 +276,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
                 }
                 ImGui::EndPopup();
             }
+            ImGui::PopID();
         }
         ImGui::EndListBox();
     }

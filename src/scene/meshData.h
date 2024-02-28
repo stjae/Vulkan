@@ -28,7 +28,6 @@ public:
 
     std::unique_ptr<Buffer> vertexStagingBuffer;
     std::unique_ptr<Buffer> vertexBuffer;
-    std::unique_ptr<Buffer> vertexStorageBuffer;
 
     std::unique_ptr<Buffer> indexStagingBuffer;
     std::unique_ptr<Buffer> indexBuffer;

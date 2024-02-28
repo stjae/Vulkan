@@ -99,7 +99,10 @@ void Pipeline::CreateGraphicsPipeline(const vk::RenderPass& renderPass, const ch
     pipelineInfo.pDepthStencilState = &depthStencilInfo;
 
     // pipeline layout
-    CreatePipelineLayout(descriptorSetLayouts_);
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts_.size();
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts_.data();
+    bundle_.pipelineLayout = Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
     pipelineInfo.layout = bundle_.pipelineLayout;
 
     pipelineInfo.renderPass = renderPass;
@@ -130,68 +133,6 @@ void Pipeline::CreateMeshRenderDescriptorSetLayout()
     Descriptor::SetDescriptorPoolSize(poolSizes, combinedImageSamplerBindings, maxSets);
 
     Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
-    Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
-}
-
-void Pipeline::CreatePipelineLayout(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
-{
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-
-    bundle_.pipelineLayout = Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfo);
-}
-
-void Pipeline::CreateNormalRenderDescriptorSetLayout()
-{
-    std::vector<vk::DescriptorPoolSize> poolSizes;
-    uint32_t maxSets;
-
-    std::vector<DescriptorBinding> uniformBufferBindings;
-    uniformBufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferBindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferBindings, maxSets);
-
-    std::vector<DescriptorBinding> uniformBufferDynamicBindings;
-    uniformBufferDynamicBindings.emplace_back(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferDynamicBindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferDynamicBindings, maxSets);
-
-    Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets);
-    Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
-}
-
-void Pipeline::CreateComputePipeline(const char* computeShaderFilepath)
-{
-    vk::ComputePipelineCreateInfo computePipelineInfo{};
-
-    shader_.computeShaderModule = shader_.CreateModule(computeShaderFilepath);
-    Log(debug, fmt::terminal_color::bright_green, "created compute shader module");
-    vk::PipelineShaderStageCreateInfo stageInfo;
-    stageInfo.stage = vk::ShaderStageFlagBits::eCompute;
-    stageInfo.module = shader_.computeShaderModule;
-    stageInfo.pName = "main";
-
-    CreatePipelineLayout(descriptorSetLayouts_);
-    computePipelineInfo.layout = bundle_.pipelineLayout;
-    computePipelineInfo.stage = stageInfo;
-
-    bundle_.pipeline = (Device::GetBundle().device.createComputePipeline(nullptr, computePipelineInfo)).value;
-    Log(debug, fmt::terminal_color::bright_green, "created compute pipeline");
-}
-
-void Pipeline::CreateComputeDescriptorSetLayout()
-{
-    std::vector<vk::DescriptorPoolSize> poolSizes;
-    uint32_t maxSets;
-
-    std::vector<DescriptorBinding> bindings;
-    bindings.emplace_back(0, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute);
-    bindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eCompute);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, bindings, maxSets);
-
-    Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets);
     Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts_);
 }
 

@@ -61,9 +61,9 @@ bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
 #endif
     deviceExtensions_.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     deviceExtensions_.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    deviceExtensions_.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 
-    std::set<std::string> ExtensionSets(deviceExtensions_.begin(), deviceExtensions_.end());
+    std::set<std::string>
+        ExtensionSets(deviceExtensions_.begin(), deviceExtensions_.end());
 
     for (vk::ExtensionProperties& extension : vkPhysicalDevice.enumerateDeviceExtensionProperties()) {
         ExtensionSets.erase(extension.extensionName);

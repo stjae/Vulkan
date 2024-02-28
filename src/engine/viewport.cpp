@@ -9,12 +9,6 @@ Viewport::Viewport()
     pipelineState_.meshRender.CreateMeshRenderDescriptorSetLayout();
     pipelineState_.meshRender.CreateGraphicsPipeline(viewportRenderPass_, "shaders/base.vert.spv", "shaders/base.frag.spv", vk::PrimitiveTopology::eTriangleList);
 
-    pipelineState_.normalRender.CreateNormalRenderDescriptorSetLayout();
-    pipelineState_.normalRender.CreateGraphicsPipeline(viewportRenderPass_, "shaders/normal.vert.spv", "shaders/normal.frag.spv", vk::PrimitiveTopology::eLineList);
-
-    pipelineState_.compute.CreateComputeDescriptorSetLayout();
-    pipelineState_.compute.CreateComputePipeline("shaders/normal.comp.spv");
-
     for (auto& frame : frames) {
 
         Command::CreateCommandPool(frame.commandPool);
@@ -242,7 +236,6 @@ int32_t Viewport::PickColor(size_t frameIndex)
     const int8_t* data;
     Device::GetBundle().device.mapMemory(colorPicked_.memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data);
     int32_t meshID = data[0];
-    std::cout << meshID << '\n';
     Device::GetBundle().device.unmapMemory(colorPicked_.memory.GetMemory());
 
     return meshID;
@@ -286,10 +279,6 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     vk::ClearValue clearValues[] = { colorClearValue, idClearValue, depthClearValue };
     renderPassInfo.pClearValues = clearValues;
 
-    // frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelineState_.compute.GetBundle().pipeline);
-    // frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineState_.compute.GetBundle().pipelineLayout, 0, 1, &pipelineState_.compute.descriptorSets[0], 0, nullptr);
-    // frame.commandBuffer.dispatch(32, 1, 1);
-
     frame.commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
     vk::Viewport viewport;
@@ -324,22 +313,6 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
 
         frame.commandBuffer.drawIndexed(scene.meshes[i].GetIndexCount(), 1, 0, 0, 0);
     }
-
-    // frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.normalRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.normalRender.descriptorSets[0], 0, nullptr);
-    //
-    // for (int i = 0; i < scene.meshes.size(); i++) {
-    //
-    //     vk::DeviceSize vertexOffsets[]{ 0 };
-    //
-    //     frame.commandBuffer.bindVertexBuffers(0, 1, &scene.meshes[i].vertexStorageBuffer->GetBundle().buffer, vertexOffsets);
-    //
-    //     uint32_t dynamicOffset = i * scene.GetDynamicMeshUniformRange();
-    //
-    //     frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.normalRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.normalRender.descriptorSets[1], 1, &dynamicOffset);
-    //     frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.normalRender.GetBundle().pipeline);
-    //
-    //     frame.commandBuffer.draw(scene.meshes[i].GetVertexCount(), 1, 0, 0);
-    // }
 
     frame.commandBuffer.endRenderPass();
 
