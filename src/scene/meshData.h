@@ -9,6 +9,7 @@ struct Vertex
     glm::vec3 normal;
     glm::vec3 color;
     glm::vec2 texcoord;
+    glm::vec3 tangent;
 };
 
 class MeshData
@@ -19,7 +20,7 @@ protected:
 
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
-    static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescs();
+    static std::array<vk::VertexInputAttributeDescription, 5> GetAttributeDescs();
     void CreateVertexBuffer();
     void CreateIndexBuffer();
 

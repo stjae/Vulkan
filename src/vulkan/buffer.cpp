@@ -44,11 +44,13 @@ size_t Buffer::GetDynamicBufferRange(size_t size)
 {
     // offset should be multiple of minOffset
     size_t minOffset = Device::physicalDeviceLimits.minUniformBufferOffsetAlignment;
-    size_t dynamicBufferOffset = 2;
 
-    while (dynamicBufferOffset < size || dynamicBufferOffset < minOffset) {
+    if (size <= minOffset)
+        return minOffset;
+
+    size_t dynamicBufferOffset = minOffset;
+    while (size >= dynamicBufferOffset)
         dynamicBufferOffset *= 2;
-    }
 
     return dynamicBufferOffset;
 }

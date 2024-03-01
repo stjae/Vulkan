@@ -119,7 +119,7 @@ void MyImGui::DrawDockSpace(Scene& scene)
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Open")) {
-                std::string filePath = LaunchNfd();
+                std::string filePath = LaunchNfd({ "model", "obj" });
                 scene.AddMesh(TypeEnum::Mesh::MODEL, filePath);
             }
             ImGui::Separator();
@@ -191,7 +191,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
             case TypeEnum::Resource::MESH:
                 scene.AddMesh(TypeEnum::Mesh::MODEL, data->filePath);
                 break;
-            case TypeEnum::Resource::IMAGE:
+            case TypeEnum::Resource::TEXTURE:
                 if (pickColor != -1) {
                     auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetDynamicMeshUniformRange()));
                     (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
@@ -251,13 +251,16 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 
     auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetDynamicMeshUniformRange()));
 
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->model), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
-    (*modelUniformData).modelMat = glm::make_mat4(objectMatrix);
+    (*modelUniformData).model = glm::make_mat4(objectMatrix);
+    (*modelUniformData).invTranspose = glm::make_mat4(objectMatrix);
+    (*modelUniformData).invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    (*modelUniformData).invTranspose = glm::transpose(glm::inverse((*modelUniformData).invTranspose));
 }
 
 void MyImGui::DrawObjectWindow(Scene& scene)
@@ -290,19 +293,25 @@ void MyImGui::DrawObjectWindow(Scene& scene)
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->modelMat), translation,
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->model), translation,
                                               rotation, scale);
 
-        std::vector<std::string> labels = { "Translation", "Rotation" };
-        ImGui::SeparatorText(scene.GetMeshName(scene.selectedMeshIndex));
+        std::vector<std::string> labels = { "Move", "Rotate" };
+        ImGui::SeparatorText("Translation");
         ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
-        ImGui::SliderFloat3(labels[1].append("##rotation_").c_str(), rotation, -180.0f, 180.0f);
+        ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        (*modelUniformData).modelMat = glm::make_mat4(objectMatrix);
+        (*modelUniformData).model = glm::make_mat4(objectMatrix);
+        (*modelUniformData).invTranspose = glm::make_mat4(objectMatrix);
+        (*modelUniformData).invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        (*modelUniformData).invTranspose = glm::transpose(glm::inverse((*modelUniformData).invTranspose));
 
-        ImGui::Checkbox("Use Texture", &(*modelUniformData).useTexture);
+        ImGui::SeparatorText("Textures");
+        bool useTexture = (*modelUniformData).useTexture;
+        ImGui::Checkbox("Use Texture", &useTexture);
+        (*modelUniformData).useTexture = useTexture ? 1 : 0;
     }
     ImGui::End();
 }
@@ -310,32 +319,18 @@ void MyImGui::DrawObjectWindow(Scene& scene)
 void MyImGui::DrawResourceWindow(Scene& scene)
 {
     ImGui::Begin("Resources");
-    ImGui::BeginChild("##", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize, ImGuiWindowFlags_ChildWindow);
     // Add Resource
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
-        std::string path = LaunchNfd();
+        std::string path = LaunchNfd({ "Image", "jpg,png" });
         if (!path.empty()) {
-            Resource res;
-            res.filePath = path;
-            res.fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
-            res.fileFormat = path.substr(path.rfind('.') + 1, path.size());
-            if (res.fileFormat == std::string("obj")) {
-                res.resourceType = TypeEnum::Resource::MESH;
-            } else if (res.fileFormat == std::string("jpg") || res.fileFormat == std::string("png")) {
-                res.resourceType = TypeEnum::Resource::IMAGE;
-            }
-
+            Resource res(path);
+            res.resourceType = TypeEnum::Resource::TEXTURE;
             scene.resources.push_back(res);
-
-            if (res.resourceType == TypeEnum::Resource::IMAGE) {
-                scene.AddTexture(path);
-                scene.resources.back().resource = scene.textures.back();
-                auto texture = std::static_pointer_cast<Texture>(scene.resources.back().resource);
-                texture->descriptorSet = ImGui_ImplVulkan_AddTexture(texture->image->GetBundle().sampler, texture->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            }
+            scene.AddTexture(path);
+            scene.resources.back().resource = scene.textures.back();
+            scene.textures.back()->descriptorSet = ImGui_ImplVulkan_AddTexture(scene.textures.back()->image->GetBundle().sampler, scene.textures.back()->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
     }
-    ImGui::EndChild();
 
     // Send Drag Drop
     for (auto& resource : scene.resources) {
@@ -347,7 +342,7 @@ void MyImGui::DrawResourceWindow(Scene& scene)
         }
 
         if (ImGui::BeginDragDropSource()) {
-            ImGui::Text("%s", resource.filePath.c_str());
+            ImGui::Image(std::static_pointer_cast<Texture>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
             ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&resource, sizeof(resource));
             ImGui::EndDragDropSource();
         }

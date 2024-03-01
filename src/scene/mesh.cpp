@@ -2,7 +2,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-void Mesh::CreateSquare(glm::vec3 color, const char* texturePath)
+void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
 
@@ -25,7 +25,7 @@ void Mesh::CreateSquare(glm::vec3 color, const char* texturePath)
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
-        Vertex v{ position[i], normal[i], color, texcoord[i] };
+        Vertex v{ position[i] * scale, normal[i], color, texcoord[i], glm::vec3(0.0f, 1.0f, 0.0f) };
         vertices.push_back(v);
     }
 
@@ -34,7 +34,7 @@ void Mesh::CreateSquare(glm::vec3 color, const char* texturePath)
     name_ = "square";
 }
 
-void Mesh::CreateCube(glm::vec3 color, const char* texturePath)
+void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 {
     const int CUBE_VERTEX_COUNT = 24;
 
@@ -104,7 +104,7 @@ void Mesh::CreateCube(glm::vec3 color, const char* texturePath)
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        Vertex v{ position[i], normal[i], color, texcoord[i % 4] };
+        Vertex v{ position[i] * scale, normal[i], color, texcoord[i % 4] };
         vertices.push_back(v);
     }
 
@@ -186,11 +186,6 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
         throw std::runtime_error(warn + err);
     }
 
-    uint32_t count;
-    for (auto& shape : shapes) {
-        count += shape.mesh.num_face_vertices.size();
-    }
-
     // Loop over shapes
     for (auto& shape : shapes) {
         // Loop over faces(polygon)
@@ -225,6 +220,7 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
                     hasNormal = true;
                     tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
                     tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+
                     vertex.texcoord = glm::vec2(tx, ty);
                 }
 

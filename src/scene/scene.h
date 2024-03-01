@@ -8,13 +8,15 @@
 #include "light.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
+#include "../../imgui/imgui_impl_vulkan.h"
 
 struct MeshUniformData
 {
-    glm::mat4 modelMat;
+    glm::mat4 model;
+    glm::mat4 invTranspose;
     int32_t meshID;
     int32_t textureID;
-    bool useTexture;
+    int useTexture;
 };
 
 struct Texture
@@ -36,8 +38,15 @@ struct Resource
     std::string fileFormat;
     std::string filePath;
     TypeEnum::Resource resourceType;
-
+    // pointer to resource
     std::shared_ptr<void> resource;
+
+    Resource(std::string& path)
+    {
+        this->filePath = path;
+        this->fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
+        this->fileFormat = path.substr(path.rfind('.') + 1, path.size());
+    }
 };
 
 class Scene
@@ -54,7 +63,6 @@ class Scene
     void CreateMeshUniformBuffer();
     void RearrangeMeshUniformBuffer(size_t index) const;
     void CreateDummyTexture();
-    void UpdateMeshUniformBuffer();
     void PrepareMesh(Mesh& mesh);
 
 public:

@@ -6,7 +6,14 @@
 #include "../scene/scene.h"
 #include "../scene/light.h"
 #include "viewport.h"
+#include "../../imgui/imgui.h"
+#include "../../imgui/imgui_impl_glfw.h"
+#include "../../imgui/imgui_impl_vulkan.h"
+#if defined(_WIN32)
+#include "../imgui/imgui_impl_win32.h"
+#endif
 #include "../../imgui/ImGuizmo.h"
+#include "../../imgui/imgui_internal.h"
 
 class MyImGui
 {

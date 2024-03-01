@@ -11,15 +11,33 @@ Scene::Scene()
     CreateDummyTexture();
 
     meshes.emplace_back();
-    meshes.back().CreateSphere(0.05f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
+    meshes.back().CreateSphere(0.1f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
     meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
     meshes.back().CreateBuffers();
     PrepareMesh(meshes.back());
 
-    meshes.emplace_back();
-    meshes.back().CreateSphere();
-    meshes.back().CreateBuffers();
-    PrepareMesh(meshes.back());
+    for (int i = 0; i < 20; i++) {
+        for (int j = 0; j < 20; j++) {
+            meshes.emplace_back();
+            meshes.back().CreateCube(0.3f);
+            meshes.back().position_.z = -i;
+            meshes.back().position_.x += j;
+            meshes.back().CreateBuffers();
+            PrepareMesh(meshes.back());
+        }
+    }
+
+    // for (int i = 1; i < 51; i++) {
+    //     for (int j = 0; j < 50; j++) {
+    //
+    //         meshes.emplace_back();
+    //         meshes.back().CreateCube(0.3f);
+    //         meshes.back().position_.z = -i;
+    //         meshes.back().position_.x += j;
+    //         meshes.back().CreateBuffers();
+    //         PrepareMesh(meshes.back());
+    //     }
+    // }
 }
 
 void Scene::AddMesh(TypeEnum::Mesh type)
@@ -158,12 +176,12 @@ void Scene::CreateMeshUniformBuffer()
     size_t requiredBufferSize = meshes.size() * meshDynamicUniformBufferRange_;
     Log(debug, fmt::terminal_color::blue, "model uniform buffer size - old: {} | new: {}", meshDynamicUniformBufferSize_, requiredBufferSize);
 
-    // if the modelUniformBuffer already exists
     if (meshDynamicUniformBufferSize_ < requiredBufferSize) {
         void* newAlignedMemory = AlignedAlloc(meshDynamicUniformBufferRange_, requiredBufferSize);
         if (!newAlignedMemory)
             spdlog::error("failed to allocate dynamic uniform buffer memory");
 
+        // if the modelUniformBuffer data exists
         if (meshDynamicUniformBuffer_ != nullptr) {
             for (int i = 0; i < meshes.size() - 1; i++) {
                 auto* oldData = (MeshUniformData*)((uint64_t)meshUniformData + (i * meshDynamicUniformBufferRange_));
@@ -181,10 +199,11 @@ void Scene::CreateMeshUniformBuffer()
     size_t newMeshIndex = meshes.size() - 1;
     auto* newMeshData = (MeshUniformData*)((uint64_t)meshUniformData + (newMeshIndex * meshDynamicUniformBufferRange_));
 
-    (*newMeshData).modelMat = glm::translate(glm::mat4(1.0f), meshes.back().position_);
+    (*newMeshData).model = glm::translate(glm::mat4(1.0f), meshes.back().position_);
+    (*newMeshData).invTranspose = glm::mat4(1.0f);
     (*newMeshData).meshID = (int32_t)newMeshIndex;
     (*newMeshData).textureID = 0;
-    (*newMeshData).useTexture = false;
+    (*newMeshData).useTexture = 0;
 
     if (meshDynamicUniformBufferSize_ < requiredBufferSize) {
         BufferInput input = { meshes.size() * meshDynamicUniformBufferRange_,
@@ -259,20 +278,17 @@ void Scene::CreateDummyTexture()
 void Scene::Update()
 {
     camera.Update();
-    camera.matrix_.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
-    camera.matrix_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
+    camera.cameraUniformData.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
+    camera.cameraUniformData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
+    camera.cameraUniformData.pos = camera.pos_;
     camera.UpdateBuffer();
 
-    light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshUniformData)).modelMat;
+    light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshUniformData)).model;
     light.UpdateBuffer();
 
-    if (!meshes.empty())
-        UpdateMeshUniformBuffer();
-}
-
-void Scene::UpdateMeshUniformBuffer()
-{
-    meshDynamicUniformBuffer_->UpdateBuffer(meshUniformData, meshDynamicUniformBuffer_->GetSize());
+    if (!meshes.empty()) {
+        meshDynamicUniformBuffer_->UpdateBuffer(meshUniformData, meshDynamicUniformBuffer_->GetSize());
+    }
 }
 
 void Scene::DeleteMesh(size_t index)

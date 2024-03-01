@@ -8,6 +8,8 @@
 #include "memory.h"
 #include "pipeline.h"
 #include "sync.h"
+#include "../../imgui/imgui.h"
+#include "../../imgui/imgui_impl_vulkan.h"
 
 struct SwapchainFrame
 {

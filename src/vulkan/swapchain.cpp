@@ -1,5 +1,4 @@
 #include "swapchain.h"
-#include "command.h"
 
 Swapchain::Swapchain()
 {

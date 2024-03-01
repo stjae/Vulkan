@@ -4,11 +4,13 @@
 #include "../common.h"
 #include "../window.h"
 #include "../vulkan/buffer.h"
+#include "../../imgui/imgui.h"
 
-struct CameraMatrix
+struct CameraUniformData
 {
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec3 pos;
 };
 
 class Camera
@@ -28,17 +30,17 @@ class Camera
 
     float speed_ = 4.0f;
 
-    CameraMatrix matrix_{};
+    CameraUniformData cameraUniformData{};
     std::unique_ptr<Buffer> uniformBuffer_;
 
     void SetCameraControl();
     void Update();
-    void UpdateBuffer() { uniformBuffer_->UpdateBuffer(&matrix_, sizeof(CameraMatrix)); }
+    void UpdateBuffer() { uniformBuffer_->UpdateBuffer(&cameraUniformData, sizeof(CameraUniformData)); }
 
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
-    const CameraMatrix& GetMatrix() { return matrix_; }
+    const CameraUniformData& GetMatrix() { return cameraUniformData; }
     const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().bufferInfo; }
 };
 

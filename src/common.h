@@ -15,13 +15,6 @@ const bool debug = true;
 #include <MoltenVK/vk_mvk_moltenvk.h>
 #endif
 
-#include "../imgui/imgui.h"
-#include "../imgui/imgui_impl_glfw.h"
-#include "../imgui/imgui_impl_vulkan.h"
-#if defined(_WIN32)
-#include "../imgui/imgui_impl_win32.h"
-#endif
-
 // std library
 #include <cstdlib>
 #include <fstream>
@@ -44,7 +37,7 @@ const bool debug = true;
 
 std::string& GetFrameRate();
 std::vector<char> ReadCode(const std::string& filename);
-std::string LaunchNfd();
+std::string LaunchNfd(nfdfilteritem_t filterItem);
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);
 
@@ -67,7 +60,7 @@ enum Mesh {
 };
 enum Resource {
     MESH,
-    IMAGE
+    TEXTURE,
 };
 } // namespace TypeEnum
 

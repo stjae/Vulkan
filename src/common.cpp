@@ -48,14 +48,13 @@ std::vector<char> ReadCode(const std::string& filename)
     return buffer;
 }
 
-std::string LaunchNfd()
+std::string LaunchNfd(nfdfilteritem_t filterItem)
 {
     NFD_Init();
     std::string filePath;
 
     nfdchar_t* outPath;
-    nfdfilteritem_t filterItem[2] = { { "Image", "jpg,png" }, { "Model", "obj,stl" } };
-    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 2, nullptr);
+    nfdresult_t result = NFD_OpenDialog(&outPath, &filterItem, 1, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts(outPath);

@@ -10,9 +10,9 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 5> MeshData::GetAttributeDescs()
 {
-    std::array<vk::VertexInputAttributeDescription, 4> attributes;
+    std::array<vk::VertexInputAttributeDescription, 5> attributes;
     uint32_t offset = 0;
 
     // Pos
@@ -43,6 +43,13 @@ std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
     attributes[3].offset = offset;
     offset += sizeof(Vertex::texcoord);
 
+    // Tangent
+    attributes[4].binding = 0;
+    attributes[4].location = 4;
+    attributes[4].format = vk::Format::eR32G32B32Sfloat;
+    attributes[4].offset = offset;
+    offset += sizeof(Vertex::tangent);
+
     return attributes;
 }
 
@@ -52,7 +59,7 @@ void MeshData::CreateVertexBuffer()
     vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
     vertexStagingBuffer->CopyResourceToBuffer(vertices.data(), stagingBufferInput);
 
-    BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
+    BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
     vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
 }
 
