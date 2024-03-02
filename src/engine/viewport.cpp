@@ -198,9 +198,9 @@ int32_t Viewport::PickColor(size_t frameIndex)
     glfwGetWindowContentScale(Window::GetWindow(), &scaleX, &scaleY);
     int32_t offsetX = 0, offsetY = 0;
     if (mouseX > panelPos.x)
-        offsetX = (int32_t)((mouseX - panelPos.x) * scaleX);
+        offsetX = (int32_t)((mouseX - panelPos.x));
     if (mouseY > panelPos.y)
-        offsetY = (int32_t)((mouseY - panelPos.y) * scaleY);
+        offsetY = (int32_t)((mouseY - panelPos.y));
     region.srcOffset.x = offsetX;
     region.srcOffset.y = offsetY;
     region.extent.width = 1;

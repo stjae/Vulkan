@@ -4,10 +4,10 @@
 void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
-    uint32_t maxSets;
+    uint32_t maxSets = 0;
 
     std::vector<DescriptorBinding> imGuiBindings;
-    imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 1000);
+    imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 100);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(imGuiBindings));
     Descriptor::SetDescriptorPoolSize(poolSizes, imGuiBindings, maxSets);
 
@@ -141,6 +141,11 @@ void MyImGui::DrawDockSpace(Scene& scene)
 
 void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 {
+    int width = 0, height = 0;
+    glfwGetWindowSize(Window::GetWindow(), &width, &height);
+    if (width == 0 || height == 0)
+        return;
+
     auto& frame = viewport.frames[frameIndex];
 
     Command::Begin(frame.commandBuffer);
@@ -185,6 +190,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
 
+            // TODO: value is always 0 on Windows OS
             int32_t pickColor = viewport.PickColor(frameIndex);
 
             switch (data->resourceType) {
@@ -216,8 +222,10 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
 {
     viewport.panelRatio = viewportPanelSize.x / viewportPanelSize.y;
 
-    viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
-    viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
+    viewport.extent.width = (uint32_t)(viewportPanelSize.x);
+    viewport.extent.height = (uint32_t)(viewportPanelSize.y);
+    //    viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
+    //    viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
 
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
         viewport.extent = Swapchain::GetBundle().swapchainImageExtent;

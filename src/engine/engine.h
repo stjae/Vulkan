@@ -24,7 +24,7 @@ class Engine
     ImDrawData* imDrawData_{};
     std::unique_ptr<Scene> scene_;
 
-    bool IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage);
+    void UpdateSwapchain();
     void RecreateSwapchain();
 
 public:

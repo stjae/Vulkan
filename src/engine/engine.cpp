@@ -59,8 +59,11 @@ void Engine::Render()
 
     auto waitFrameImage = Device::GetBundle().device.acquireNextImageKHR(Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
 
-    if (IsSwapchainOutOfDate(waitFrameImage))
+    if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR || waitFrameImage.result == vk::Result::eSuboptimalKHR || Window::resized) {
+        Window::resized = false;
+        UpdateSwapchain();
         return;
+    }
 
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
@@ -69,30 +72,19 @@ void Engine::Render()
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered)
         scene_->selectedMeshIndex = viewport_.PickColor(frameIndex_);
     swapchain_.Submit(frameIndex_);
-    auto presentInfo = swapchain_.Present(frameIndex_, waitFrameImage);
-
-    // if (Device::GetBundle().presentQueue.presentKHR(presentInfo) == vk::Result::eErrorOutOfDateKHR) {
-    //     RecreateSwapchain();
-    //     InitSwapchainImages();
-    //
-    //     return;
-    // }
+    swapchain_.Present(frameIndex_, waitFrameImage);
 
     frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameImageCount;
 }
 
-bool Engine::IsSwapchainOutOfDate(const vk::ResultValue<unsigned int>& waitFrameImage)
+void Engine::UpdateSwapchain()
 {
-    if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR || waitFrameImage.result == vk::Result::eSuboptimalKHR) {
-        RecreateSwapchain();
-        InitSwapchainImages();
-        viewport_.outDated = true;
-        viewport_.DestroyViewportImages();
-        viewport_.CreateViewportImages();
-        imgui_.RecreateViewportDescriptorSets(viewport_);
-        return true;
-    } else
-        return false;
+    RecreateSwapchain();
+    InitSwapchainImages();
+    viewport_.outDated = true;
+    viewport_.DestroyViewportImages();
+    viewport_.CreateViewportImages();
+    imgui_.RecreateViewportDescriptorSets(viewport_);
 }
 
 void Engine::RecreateSwapchain()

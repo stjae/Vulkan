@@ -6,6 +6,7 @@ Window::Window(int width, int height, const char* wName)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     window_ = glfwCreateWindow(width, height, wName, nullptr, nullptr);
+    glfwSetFramebufferSizeCallback(window_, FramebufferResizeCallback);
 }
 
 Window::~Window()

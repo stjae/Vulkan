@@ -114,7 +114,7 @@ void Pipeline::CreateGraphicsPipeline(const vk::RenderPass& renderPass, const ch
 void Pipeline::CreateMeshRenderDescriptorSetLayout()
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
-    uint32_t maxSets;
+    uint32_t maxSets = 0;
 
     std::vector<DescriptorBinding> uniformBufferBindings;
     uniformBufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);

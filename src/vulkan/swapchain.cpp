@@ -293,8 +293,7 @@ vk::PresentInfoKHR Swapchain::Present(size_t frameIndex, const vk::ResultValue<u
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &waitFrameImage.value;
-
-    Device::GetBundle().presentQueue.presentKHR(presentInfo);
+    auto result = Device::GetBundle().presentQueue.presentKHR(presentInfo);
 
     return presentInfo;
 }

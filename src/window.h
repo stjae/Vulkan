@@ -8,10 +8,12 @@ class Window
     inline static GLFWwindow* window_;
 
 public:
-    Window(int width, int height, const char* wName);
-    ~Window();
+    inline static bool resized = false;
 
+    Window(int width, int height, const char* wName);
     static GLFWwindow* GetWindow() { return window_; }
+    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height) { resized = true; }
+    ~Window();
 };
 
 #endif

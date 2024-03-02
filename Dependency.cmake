@@ -16,8 +16,8 @@ ExternalProject_Add(
 )
 
 set(DEP_LIST ${DEP_LIST} dep-spdlog)
-if (GENERATOR_IS_MULTI_CONFIG)
-    set(DEP_LIBS ${DEP_LIBS} spdlog$<$<CONFIG:Debug>:d>)
+if (MSVC)
+    set(DEP_LIBS ${DEP_LIBS} spdlogd)
 else ()
     set(DEP_LIBS ${DEP_LIBS} spdlog)
 endif ()
@@ -72,6 +72,7 @@ else ()
 endif ()
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
+add_dependencies(imgui dep-glfw)
 set(DEP_LIBS ${DEP_LIBS} imgui)
 
 # ImGuizmo

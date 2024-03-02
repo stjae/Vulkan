@@ -58,7 +58,7 @@ class Scene
 
     std::unique_ptr<Buffer> meshDynamicUniformBuffer_;
     size_t meshDynamicUniformBufferRange_;
-    size_t meshDynamicUniformBufferSize_;
+    size_t meshDynamicUniformBufferSize_ = 0;
 
     void CreateMeshUniformBuffer();
     void RearrangeMeshUniformBuffer(size_t index) const;
