@@ -224,8 +224,10 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
 
     viewport.extent.width = (uint32_t)(viewportPanelSize.x);
     viewport.extent.height = (uint32_t)(viewportPanelSize.y);
-    //    viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
-    //    viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
+    if (__APPLE__) {
+        viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
+        viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
+    }
 
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
         viewport.extent = Swapchain::GetBundle().swapchainImageExtent;

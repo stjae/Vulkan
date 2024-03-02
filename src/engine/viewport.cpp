@@ -201,6 +201,12 @@ int32_t Viewport::PickColor(size_t frameIndex)
         offsetX = (int32_t)((mouseX - panelPos.x));
     if (mouseY > panelPos.y)
         offsetY = (int32_t)((mouseY - panelPos.y));
+    if (__APPLE__) {
+        if (mouseX > panelPos.x)
+            offsetX = (int32_t)((mouseX - panelPos.x) * scaleX);
+        if (mouseY > panelPos.y)
+            offsetY = (int32_t)((mouseY - panelPos.y) * scaleY);
+    }
     region.srcOffset.x = offsetX;
     region.srcOffset.y = offsetY;
     region.extent.width = 1;
