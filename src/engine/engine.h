@@ -11,7 +11,7 @@
 #include "../window.h"
 #include "../scene/scene.h"
 #include "../scene/camera.h"
-#include "imgui.h"
+#include "ui.h"
 #include "viewport.h"
 
 class Engine
@@ -20,16 +20,15 @@ class Engine
     Device device_;
     Swapchain swapchain_;
     Viewport viewport_;
-    MyImGui imgui_;
-    ImDrawData* imDrawData_{};
+    UI imgui_;
     std::unique_ptr<Scene> scene_;
 
     void UpdateSwapchain();
     void RecreateSwapchain();
 
 public:
+    Engine();
     void InitSwapchainImages();
-    void SetUp();
     void DrawUI();
     void Update();
     void Render();

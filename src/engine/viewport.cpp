@@ -315,7 +315,7 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
         frame.commandBuffer.bindVertexBuffers(0, 1, &scene.meshes[i].vertexBuffer->GetBundle().buffer, vertexOffsets);
         frame.commandBuffer.bindIndexBuffer(scene.meshes[i].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
 
-        uint32_t dynamicOffset = i * scene.GetDynamicMeshUniformRange();
+        uint32_t dynamicOffset = i * scene.meshDynamicUniformBuffer_.bufferRange;
 
         frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 1, &dynamicOffset);
 

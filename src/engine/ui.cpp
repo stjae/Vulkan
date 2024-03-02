@@ -1,7 +1,7 @@
-#include "imgui.h"
+#include "ui.h"
 #include "font/IconsFontAwesome5.h"
 
-void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
+void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
@@ -59,7 +59,7 @@ void MyImGui::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void MyImGui::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
+void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -85,7 +85,7 @@ void MyImGui::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     ImGui::Render();
 }
 
-void MyImGui::DrawDockSpace(Scene& scene)
+void UI::DrawDockSpace(Scene& scene)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -139,7 +139,7 @@ void MyImGui::DrawDockSpace(Scene& scene)
     ImGui::End();
 }
 
-void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
+void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 {
     int width = 0, height = 0;
     glfwGetWindowSize(Window::GetWindow(), &width, &height);
@@ -199,7 +199,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
                 break;
             case TypeEnum::Resource::TEXTURE:
                 if (pickColor != -1) {
-                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (pickColor * scene.GetDynamicMeshUniformRange()));
+                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (pickColor * scene.meshDynamicUniformBuffer_.bufferRange));
                     (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
                     (*meshUniformData).useTexture = true;
                 }
@@ -218,7 +218,7 @@ void MyImGui::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     ImGui::PopStyleVar();
 }
 
-void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize)
+void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize)
 {
     viewport.panelRatio = viewportPanelSize.x / viewportPanelSize.y;
 
@@ -239,7 +239,7 @@ void MyImGui::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPane
     viewport.outDated = false;
 }
 
-void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
+void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
     if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
@@ -259,7 +259,7 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetDynamicMeshUniformRange()));
+    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (scene.selectedMeshIndex * scene.meshDynamicUniformBuffer_.bufferRange));
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->model), translation,
                                           rotation, scale);
@@ -273,7 +273,7 @@ void MyImGui::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     (*modelUniformData).invTranspose = glm::transpose(glm::inverse((*modelUniformData).invTranspose));
 }
 
-void MyImGui::DrawObjectWindow(Scene& scene)
+void UI::DrawObjectWindow(Scene& scene)
 {
     // List
     ImGui::Begin("Object List");
@@ -296,7 +296,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     // Attributes
     if (scene.selectedMeshIndex > -1) {
 
-        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshUniformData + (scene.selectedMeshIndex * scene.GetDynamicMeshUniformRange()));
+        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (scene.selectedMeshIndex * scene.meshDynamicUniformBuffer_.bufferRange));
 
         float translation[3];
         float rotation[3];
@@ -326,7 +326,7 @@ void MyImGui::DrawObjectWindow(Scene& scene)
     ImGui::End();
 }
 
-void MyImGui::DrawResourceWindow(Scene& scene)
+void UI::DrawResourceWindow(Scene& scene)
 {
     ImGui::Begin("Resources");
     // Add Resource
@@ -363,7 +363,7 @@ void MyImGui::DrawResourceWindow(Scene& scene)
     ImGui::End();
 }
 
-void MyImGui::ShowInformationOverlay(const Scene& scene)
+void UI::ShowInformationOverlay(const Scene& scene)
 {
     const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
@@ -375,7 +375,7 @@ void MyImGui::ShowInformationOverlay(const Scene& scene)
     ImGui::End();
 }
 
-void MyImGui::RecreateViewportDescriptorSets(const Viewport& viewport)
+void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
 {
     for (auto& descriptorSet : descriptorSets_)
         ImGui_ImplVulkan_RemoveTexture(descriptorSet);
@@ -386,7 +386,7 @@ void MyImGui::RecreateViewportDescriptorSets(const Viewport& viewport)
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-MyImGui::~MyImGui()
+UI::~UI()
 {
     for (auto& layout : descriptorSetLayouts_)
         Device::GetBundle().device.destroyDescriptorSetLayout(layout);

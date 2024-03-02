@@ -32,7 +32,7 @@ public:
     ~Buffer();
 
     const BufferBundle& GetBundle() { return bufferBundle_; }
-    static size_t GetDynamicBufferRange(size_t size);
+    static size_t GetBufferRange(size_t size, size_t minOffset);
 
     template <typename T>
     void CopyResourceToBuffer(T resource, const BufferInput& bufferInput)

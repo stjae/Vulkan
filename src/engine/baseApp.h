@@ -3,8 +3,6 @@
 
 #include "engine.h"
 #include "../common.h"
-#include "../scene/scene.h"
-#include "../scene/camera.h"
 
 class Application
 {
@@ -12,7 +10,7 @@ class Application
     Engine engine_;
 
 public:
-    Application(int width, int height, const char* wName);
+    Application(int width, int height, const char* wName) : window_(width, height, wName) {}
 
     void Run();
 };

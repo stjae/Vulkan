@@ -32,7 +32,7 @@ add_executable(${PROJECT_NAME}
         src/scene/meshData.h src/scene/meshData.cpp
         src/scene/mesh.h src/scene/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
-        src/engine/imgui.h src/engine/imgui.cpp
+        src/engine/ui.h src/engine/ui.cpp
 
         # vulkan
         src/window.h src/window.cpp

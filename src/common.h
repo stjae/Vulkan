@@ -35,6 +35,9 @@ const bool debug = true;
 
 #include "config.h"
 
+const bool logUniformBuffer = false;
+const bool logBuffer = false;
+
 std::string& GetFrameRate();
 std::vector<char> ReadCode(const std::string& filename);
 std::string LaunchNfd(nfdfilteritem_t filterItem);

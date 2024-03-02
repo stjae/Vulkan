@@ -13,7 +13,7 @@ struct LightUniformData
 class Light
 {
     friend class Scene;
-    friend class MyImGui;
+    friend class UI;
 
     LightUniformData lightUniformData;
     std::unique_ptr<Buffer> uniformBuffer_;

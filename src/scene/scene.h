@@ -10,13 +10,56 @@
 #include "../vulkan/command.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
-struct MeshUniformData
+template <typename T>
+struct BufferArray
 {
-    glm::mat4 model;
-    glm::mat4 invTranspose;
-    int32_t meshID;
-    int32_t textureID;
-    int useTexture;
+    T* data;
+    std::unique_ptr<Buffer> buffer;
+    size_t bufferRange = 0;
+    size_t bufferSize = 0;
+
+    void CreateBuffer(size_t vectorSize, glm::vec3 pos, uint32_t id, vk::BufferUsageFlags bufferUsage)
+    {
+        if (vectorSize < 1)
+            return;
+
+        // create buffer data
+        size_t requiredSize = vectorSize * bufferRange;
+        if (bufferSize < requiredSize) {
+            void* newAlignedMemory = AlignedAlloc(bufferRange, requiredSize);
+            if (!newAlignedMemory)
+                spdlog::error("failed to allocate dynamic uniform buffer memory");
+
+            if (buffer != nullptr) {
+                memcpy(newAlignedMemory, data, bufferSize);
+                AlignedFree(data);
+            }
+
+            data = (T*)newAlignedMemory;
+        }
+
+        size_t newIndex = vectorSize - 1;
+        auto* newData = (T*)((uint64_t)data + (newIndex * bufferRange));
+        *newData = T(pos, id);
+
+        // create buffer
+        if (bufferSize < requiredSize) {
+            buffer.reset();
+            BufferInput input = { vectorSize * bufferRange,
+                                  bufferUsage,
+                                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+            buffer = std::make_unique<Buffer>(input);
+            buffer->MapMemory(bufferRange);
+
+            bufferSize = requiredSize;
+        }
+    }
+    void RearrangeBuffer(size_t index, size_t vectorSize) const
+    {
+        // move the meshUniformData forward as the mesh index refers to has been deleted
+        if (index + 1 < vectorSize)
+            memcpy((T*)((uint64_t)data + index * bufferRange), (T*)((uint64_t)data + (index + 1) * bufferRange), (vectorSize - index + 1) * bufferRange);
+    }
 };
 
 struct Texture
@@ -52,16 +95,14 @@ struct Resource
 class Scene
 {
     friend class Engine;
+    friend class UI;
+    friend class Viewport;
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
 
-    std::unique_ptr<Buffer> meshDynamicUniformBuffer_;
-    size_t meshDynamicUniformBufferRange_;
-    size_t meshDynamicUniformBufferSize_ = 0;
+    BufferArray<MeshUniformData> meshDynamicUniformBuffer_;
 
-    void CreateMeshUniformBuffer();
-    void RearrangeMeshUniformBuffer(size_t index) const;
     void CreateDummyTexture();
     void PrepareMesh(Mesh& mesh);
 
@@ -71,7 +112,6 @@ public:
     std::vector<Resource> resources;
     Camera camera;
     Light light;
-    MeshUniformData* meshUniformData;
     int32_t selectedMeshIndex = -1;
 
     Scene();
@@ -79,7 +119,6 @@ public:
     void AddMesh(TypeEnum::Mesh type, const std::string& filePath);
     void AddTexture(const std::string& filePath);
     const char* GetMeshName(size_t index) const { return meshes[index].name_.c_str(); }
-    size_t GetDynamicMeshUniformRange() const { return meshDynamicUniformBufferRange_; }
     void DeleteMesh(size_t index);
     void Update();
     ~Scene();

@@ -37,14 +37,11 @@ void Buffer::Destroy()
         Device::GetBundle().device.freeMemory(Memory::GetMemory());
         Memory::Set(nullptr);
     }
-    Log(debug, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
+    Log(logBuffer, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
 }
 
-size_t Buffer::GetDynamicBufferRange(size_t size)
+size_t Buffer::GetBufferRange(size_t size, size_t minOffset)
 {
-    // offset should be multiple of minOffset
-    size_t minOffset = Device::physicalDeviceLimits.minUniformBufferOffsetAlignment;
-
     if (size <= minOffset)
         return minOffset;
 

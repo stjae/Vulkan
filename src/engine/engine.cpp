@@ -1,5 +1,12 @@
 #include "engine.h"
 
+Engine::Engine()
+{
+    InitSwapchainImages();
+    scene_ = std::make_unique<Scene>();
+    UI::Setup(swapchain_.GetRenderPass(), viewport_);
+}
+
 void Engine::InitSwapchainImages()
 {
     vk::CommandBufferBeginInfo beginInfo;
@@ -13,12 +20,6 @@ void Engine::InitSwapchainImages()
 
         Device::GetBundle().device.waitIdle();
     }
-}
-
-void Engine::SetUp()
-{
-    scene_ = std::make_unique<Scene>();
-    imgui_.Setup(swapchain_.GetRenderPass(), viewport_);
 }
 
 void Engine::Update()
@@ -36,7 +37,7 @@ void Engine::Update()
     vk::WriteDescriptorSet modelMatrixWriteMeshRender(
         viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, 1,
         vk::DescriptorType::eUniformBufferDynamic, nullptr,
-        &scene_->meshDynamicUniformBuffer_->GetBundle().bufferInfo, nullptr, nullptr);
+        &scene_->meshDynamicUniformBuffer_.buffer->GetBundle().bufferInfo, nullptr, nullptr);
     Device::GetBundle().device.updateDescriptorSets(modelMatrixWriteMeshRender, nullptr);
 
     vk::WriteDescriptorSet combinedImageSamplerWrite{};
@@ -67,7 +68,7 @@ void Engine::Render()
 
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
-    swapchain_.Draw(frameIndex_, imDrawData_);
+    swapchain_.Draw(frameIndex_, UI::imDrawData);
     viewport_.Draw(frameIndex_, *scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered)
         scene_->selectedMeshIndex = viewport_.PickColor(frameIndex_);
@@ -84,7 +85,7 @@ void Engine::UpdateSwapchain()
     viewport_.outDated = true;
     viewport_.DestroyViewportImages();
     viewport_.CreateViewportImages();
-    imgui_.RecreateViewportDescriptorSets(viewport_);
+    UI::RecreateViewportDescriptorSets(viewport_);
 }
 
 void Engine::RecreateSwapchain()
@@ -111,8 +112,8 @@ void Engine::RecreateSwapchain()
 
 void Engine::DrawUI()
 {
-    imgui_.Draw(*scene_, viewport_, frameIndex_);
-    imDrawData_ = ImGui::GetDrawData();
+    UI::Draw(*scene_, viewport_, frameIndex_);
+    UI::imDrawData = ImGui::GetDrawData();
 }
 
 Engine::~Engine()

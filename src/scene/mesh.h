@@ -3,6 +3,16 @@
 
 #include "meshData.h"
 
+struct MeshUniformData
+{
+    MeshUniformData(glm::vec3 pos, uint32_t id) : model(glm::translate(glm::mat4(1.0f), pos)), meshID(id) {}
+    glm::mat4 model;
+    glm::mat4 invTranspose = glm::mat4(1.0f);
+    int32_t meshID = 0;
+    int32_t textureID = 0;
+    int useTexture = 0;
+};
+
 class Mesh : public MeshData
 {
     friend class Scene;
