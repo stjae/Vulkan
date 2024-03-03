@@ -199,9 +199,10 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
                 break;
             case TypeEnum::Resource::TEXTURE:
                 if (pickColor != -1) {
-                    auto* meshUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (pickColor * scene.meshDynamicUniformBuffer_.bufferRange));
-                    (*meshUniformData).textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
-                    (*meshUniformData).useTexture = true;
+                    auto& meshInstanceData = scene.meshInstanceData_[pickColor];
+
+                    meshInstanceData.textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
+                    meshInstanceData.useTexture = true;
                 }
                 break;
             }
@@ -259,18 +260,17 @@ void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (scene.selectedMeshIndex * scene.meshDynamicUniformBuffer_.bufferRange));
-
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->model), translation,
+    auto& meshInstanceData = scene.meshInstanceData_[scene.selectedMeshIndex];
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
                          ImGuizmo::LOCAL, objectMatrix);
-    (*modelUniformData).model = glm::make_mat4(objectMatrix);
-    (*modelUniformData).invTranspose = glm::make_mat4(objectMatrix);
-    (*modelUniformData).invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    (*modelUniformData).invTranspose = glm::transpose(glm::inverse((*modelUniformData).invTranspose));
+    meshInstanceData.model = glm::make_mat4(objectMatrix);
+    meshInstanceData.invTranspose = glm::make_mat4(objectMatrix);
+    meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
 }
 
 void UI::DrawObjectWindow(Scene& scene)
@@ -296,14 +296,14 @@ void UI::DrawObjectWindow(Scene& scene)
     // Attributes
     if (scene.selectedMeshIndex > -1) {
 
-        auto* modelUniformData = (MeshUniformData*)((uint64_t)scene.meshDynamicUniformBuffer_.data + (scene.selectedMeshIndex * scene.meshDynamicUniformBuffer_.bufferRange));
+        auto& meshInstanceData = scene.meshInstanceData_[scene.selectedMeshIndex];
 
         float translation[3];
         float rotation[3];
         float scale[3];
         float objectMatrix[16];
 
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelUniformData->model), translation,
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
                                               rotation, scale);
 
         std::vector<std::string> labels = { "Move", "Rotate" };
@@ -313,15 +313,15 @@ void UI::DrawObjectWindow(Scene& scene)
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
 
-        (*modelUniformData).model = glm::make_mat4(objectMatrix);
-        (*modelUniformData).invTranspose = glm::make_mat4(objectMatrix);
-        (*modelUniformData).invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        (*modelUniformData).invTranspose = glm::transpose(glm::inverse((*modelUniformData).invTranspose));
+        meshInstanceData.model = glm::make_mat4(objectMatrix);
+        meshInstanceData.invTranspose = glm::make_mat4(objectMatrix);
+        meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
 
         ImGui::SeparatorText("Textures");
-        bool useTexture = (*modelUniformData).useTexture;
+        bool useTexture = meshInstanceData.useTexture;
         ImGui::Checkbox("Use Texture", &useTexture);
-        (*modelUniformData).useTexture = useTexture ? 1 : 0;
+        meshInstanceData.useTexture = useTexture ? 1 : 0;
     }
     ImGui::End();
 }

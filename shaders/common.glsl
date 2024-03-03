@@ -1,3 +1,13 @@
+struct MeshInstanceData
+{
+    mat4 model;
+    mat4 invTranspose;
+    int meshID;
+    int textureID;
+    int useTexture;
+    float padding;
+};
+
 layout(set = 0, binding = 0) uniform Camera {
     mat4 view;
     mat4 proj;
@@ -9,13 +19,9 @@ layout(set = 0, binding = 1) uniform Light {
     vec3 pos;
 } light;
 
-layout(set = 1, binding = 0) uniform Mesh {
-    mat4 model;
-    mat4 invTranspose;
-    int id;
-    int textureId;
-    int useTexture;
-} mesh;
+layout(set = 0, binding = 2) buffer MeshInstance {
+    MeshInstanceData data[];
+} meshInstance;
 
 float Lambert(vec3 worldNormal, vec3 worldModel)
 {

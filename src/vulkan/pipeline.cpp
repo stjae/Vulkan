@@ -116,16 +116,12 @@ void Pipeline::CreateMeshRenderDescriptorSetLayout()
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
 
-    std::vector<DescriptorBinding> uniformBufferBindings;
-    uniformBufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    uniformBufferBindings.emplace_back(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferBindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferBindings, maxSets);
-
-    std::vector<DescriptorBinding> uniformBufferDynamicBindings;
-    uniformBufferDynamicBindings.emplace_back(0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(uniformBufferDynamicBindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, uniformBufferDynamicBindings, maxSets);
+    std::vector<DescriptorBinding> bufferBindings;
+    bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    bufferBindings.emplace_back(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bufferBindings));
+    Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);
 
     std::vector<DescriptorBinding> combinedImageSamplerBindings;
     combinedImageSamplerBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, (int)Device::physicalDeviceLimits.maxDescriptorSetSamplers, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);

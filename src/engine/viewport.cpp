@@ -304,23 +304,16 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     frame.commandBuffer.setScissor(0, scissor);
 
     frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.meshRender.descriptorSets[0], 0, nullptr);
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 2, 1, &pipelineState_.meshRender.descriptorSets[2], 0, nullptr);
+    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 0, nullptr);
 
     frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipeline);
 
-    for (int i = 0; i < scene.meshes.size(); i++) {
+    vk::DeviceSize vertexOffsets[]{ 0 };
 
-        vk::DeviceSize vertexOffsets[]{ 0 };
+    frame.commandBuffer.bindVertexBuffers(0, 1, &scene.meshes[0].vertexBuffer->GetBundle().buffer, vertexOffsets);
+    frame.commandBuffer.bindIndexBuffer(scene.meshes[0].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
 
-        frame.commandBuffer.bindVertexBuffers(0, 1, &scene.meshes[i].vertexBuffer->GetBundle().buffer, vertexOffsets);
-        frame.commandBuffer.bindIndexBuffer(scene.meshes[i].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
-
-        uint32_t dynamicOffset = i * scene.meshDynamicUniformBuffer_.bufferRange;
-
-        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 1, &dynamicOffset);
-
-        frame.commandBuffer.drawIndexed(scene.meshes[i].GetIndexCount(), 1, 0, 0, 0);
-    }
+    frame.commandBuffer.drawIndexed(scene.meshes[0].GetIndexCount(), scene.meshInstanceData_.size(), 0, 0, 0);
 
     frame.commandBuffer.endRenderPass();
 

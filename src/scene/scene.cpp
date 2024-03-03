@@ -7,25 +7,35 @@ Scene::Scene()
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    meshDynamicUniformBuffer_.bufferRange = Buffer::GetBufferRange(sizeof(MeshUniformData), Device::physicalDeviceLimits.minUniformBufferOffsetAlignment);
     CreateDummyTexture();
 
+    // meshes.emplace_back();
+    // meshes.back().CreateSphere(0.1f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
+    // meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
+    // meshes.back().CreateBuffers();
+    // PrepareMesh(meshes.back());
+
     meshes.emplace_back();
-    meshes.back().CreateSphere(0.1f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
-    meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
+    meshes.back().CreateCube(0.03f);
     meshes.back().CreateBuffers();
     PrepareMesh(meshes.back());
 
-    for (int i = 0; i < 20; i++) {
-        for (int j = 0; j < 20; j++) {
-            meshes.emplace_back();
-            meshes.back().CreateCube(0.3f);
-            meshes.back().position_.z = -i;
-            meshes.back().position_.x += j;
-            meshes.back().CreateBuffers();
-            PrepareMesh(meshes.back());
+    int32_t id = 0;
+    for (int i = 0; i < 50; i++) {
+        for (int j = 0; j < 50; j++) {
+            for (int k = 0; k < 50; k++) {
+                meshInstanceData_.emplace_back();
+                meshInstanceData_.back().meshID = id++;
+                meshInstanceData_.back().model[3].x = k * 0.1f;
+                meshInstanceData_.back().model[3].y = j * 0.1f;
+                meshInstanceData_.back().model[3].z = i * 0.1f;
+            }
         }
     }
+    std::cout << meshInstanceData_.size() << '\n';
+    BufferInput storageBufferInput = { sizeof(MeshInstanceData) * meshInstanceData_.size(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    meshInstanceDataBuffer_ = std::make_unique<Buffer>(storageBufferInput);
+    meshInstanceDataBuffer_->CopyResourceToBuffer(meshInstanceData_.data(), storageBufferInput);
 }
 
 void Scene::AddMesh(TypeEnum::Mesh type)
@@ -152,8 +162,6 @@ void Scene::PrepareMesh(Mesh& mesh)
 
     mesh.vertexStagingBuffer->Destroy();
     mesh.indexStagingBuffer->Destroy();
-
-    meshDynamicUniformBuffer_.CreateBuffer(meshes.size(), meshes.back().position_, meshes.size() - 1, vk::BufferUsageFlagBits::eUniformBuffer);
 }
 
 void Scene::CreateDummyTexture()
@@ -214,11 +222,11 @@ void Scene::Update()
     camera.cameraUniformData.pos = camera.pos_;
     camera.UpdateBuffer();
 
-    light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshDynamicUniformBuffer_.data)).model;
-    light.UpdateBuffer();
+    // light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshDynamicUniformBuffer_.data)).model;
+    // light.UpdateBuffer();
 
     if (!meshes.empty()) {
-        meshDynamicUniformBuffer_.buffer->UpdateBuffer(meshDynamicUniformBuffer_.data, meshDynamicUniformBuffer_.bufferSize);
+        meshInstanceDataBuffer_->UpdateBuffer(meshInstanceData_.data(), meshInstanceDataBuffer_->GetSize());
     }
 }
 
@@ -226,12 +234,10 @@ void Scene::DeleteMesh(size_t index)
 {
     selectedMeshIndex = -1;
     meshes.erase(meshes.begin() + index);
-    meshDynamicUniformBuffer_.RearrangeBuffer(index, meshes.size());
 }
 
 Scene::~Scene()
 {
-    AlignedFree(meshDynamicUniformBuffer_.data);
     Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
     Device::GetBundle().device.destroyCommandPool(commandPool_);
 }
