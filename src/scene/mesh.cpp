@@ -289,13 +289,13 @@ void Mesh::CreateBuffers()
     Command::CopyBufferToBuffer(commandBuffer_,
                                 vertexStagingBuffer->GetBundle().buffer,
                                 vertexBuffer->GetBundle().buffer,
-                                vertexStagingBuffer->GetSize());
+                                vertexStagingBuffer->GetBufferInput().size);
 
     // Copy indices from staging buffer
     Command::CopyBufferToBuffer(commandBuffer_,
                                 indexStagingBuffer->GetBundle().buffer,
                                 indexBuffer->GetBundle().buffer,
-                                indexStagingBuffer->GetSize());
+                                indexStagingBuffer->GetBufferInput().size);
 
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);

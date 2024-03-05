@@ -35,13 +35,13 @@ class Camera
 
     void SetCameraControl();
     void Update();
-    void UpdateBuffer() { uniformBuffer_->UpdateBuffer(&cameraUniformData, sizeof(CameraUniformData)); }
+    void UpdateBuffer() { uniformBuffer_->Copy(&cameraUniformData); }
 
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
     const CameraUniformData& GetMatrix() { return cameraUniformData; }
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().bufferInfo; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().descriptorBufferInfo; }
 };
 
 #endif

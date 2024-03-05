@@ -55,20 +55,22 @@ std::array<vk::VertexInputAttributeDescription, 5> MeshData::GetAttributeDescs()
 
 void MeshData::CreateVertexBuffer()
 {
-    BufferInput stagingBufferInput = { sizeof(Vertex) * vertices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    vertexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    vertexStagingBuffer->CopyResourceToBuffer(vertices.data(), stagingBufferInput);
+    BufferInput bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vertexStagingBuffer = std::make_unique<Buffer>(bufferInput);
+    vertexStagingBuffer->Copy(vertices.data());
 
-    BufferInput vertexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
-    vertexBuffer = std::make_unique<Buffer>(vertexBufferInput);
+    bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+    bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
+    vertexBuffer = std::make_unique<Buffer>(bufferInput);
 }
 
 void MeshData::CreateIndexBuffer()
 {
-    BufferInput stagingBufferInput = { sizeof(uint32_t) * indices.size(), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    indexStagingBuffer = std::make_unique<Buffer>(stagingBufferInput);
-    indexStagingBuffer->CopyResourceToBuffer(indices.data(), stagingBufferInput);
+    BufferInput bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    indexStagingBuffer = std::make_unique<Buffer>(bufferInput);
+    indexStagingBuffer->Copy(indices.data());
 
-    BufferInput indexBufferInput = { stagingBufferInput.size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal };
-    indexBuffer = std::make_unique<Buffer>(indexBufferInput);
+    bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+    bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
+    indexBuffer = std::make_unique<Buffer>(bufferInput);
 }

@@ -1,29 +1,25 @@
 #include "buffer.h"
 
-Buffer::Buffer(const BufferInput& bufferInput)
+Buffer::Buffer(BufferInput bufferInput) : bufferInput_(bufferInput)
 {
     vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
                                     vk::SharingMode::eExclusive);
 
     bufferBundle_.buffer = Device::GetBundle().device.createBuffer(bufferInfo);
-    bufferBundle_.bufferUsage = bufferInput.usage;
-    bufferSize_ = bufferInput.size;
-
-    bufferBundle_.bufferInfo.buffer = bufferBundle_.buffer;
-    bufferBundle_.bufferInfo.range = bufferInput.size;
+    bufferBundle_.descriptorBufferInfo.buffer = bufferBundle_.buffer;
+    bufferBundle_.descriptorBufferInfo.offset = 0;
+    bufferBundle_.descriptorBufferInfo.range = bufferInput.range;
 
     AllocateMemory(bufferBundle_.buffer, bufferInput.properties);
+    if (bufferInput.properties & vk::MemoryPropertyFlagBits::eHostVisible)
+        MapMemory();
 }
 
-void Buffer::MapMemory(vk::DeviceSize range)
+void Buffer::MapMemory()
 {
-    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, range);
+    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, bufferInput_.size);
     Memory::SetAddress(bufferMemoryAddress);
     bufferBundle_.bufferMemory = Memory::GetMemory();
-
-    bufferBundle_.bufferInfo.buffer = bufferBundle_.buffer;
-    bufferBundle_.bufferInfo.offset = 0;
-    bufferBundle_.bufferInfo.range = range;
 }
 
 void Buffer::Destroy()
@@ -37,19 +33,7 @@ void Buffer::Destroy()
         Device::GetBundle().device.freeMemory(Memory::GetMemory());
         Memory::Set(nullptr);
     }
-    Log(logBuffer, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferBundle_.bufferUsage));
-}
-
-size_t Buffer::GetBufferRange(size_t size, size_t minOffset)
-{
-    if (size <= minOffset)
-        return minOffset;
-
-    size_t dynamicBufferOffset = minOffset;
-    while (size >= dynamicBufferOffset)
-        dynamicBufferOffset *= 2;
-
-    return dynamicBufferOffset;
+    Log(logBuffer, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferInput_.usage));
 }
 
 Buffer::~Buffer() { Destroy(); }

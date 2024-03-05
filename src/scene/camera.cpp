@@ -2,11 +2,8 @@
 
 Camera::Camera()
 {
-    BufferInput input = { sizeof(CameraUniformData), vk::BufferUsageFlagBits::eUniformBuffer,
-                          vk::MemoryPropertyFlagBits::eHostVisible |
-                              vk::MemoryPropertyFlagBits::eHostCoherent };
-    uniformBuffer_ = std::make_unique<Buffer>(input);
-    uniformBuffer_->MapMemory(sizeof(CameraUniformData));
+    BufferInput bufferInput = { sizeof(CameraUniformData), sizeof(CameraUniformData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    uniformBuffer_ = std::make_unique<Buffer>(bufferInput);
 }
 
 void Camera::SetCameraControl()

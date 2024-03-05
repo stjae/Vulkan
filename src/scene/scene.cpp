@@ -67,9 +67,9 @@ void Scene::AddTexture(const std::string& filePath)
     texture->size = static_cast<size_t>(imageSize);
     texture->index = textures.size() - 1;
 
-    BufferInput input = { imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    texture->stagingBuffer = std::make_unique<Buffer>(input);
-    texture->stagingBuffer->CopyResourceToBuffer(imageData, input);
+    BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    texture->stagingBuffer = std::make_unique<Buffer>(bufferInput);
+    texture->stagingBuffer->Copy(imageData);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
@@ -118,9 +118,9 @@ void Scene::CreateDummyTexture()
     textures.back()->height = 1;
     textures.back()->size = sizeof(dummyTexture);
 
-    BufferInput input = { sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    textures.back()->stagingBuffer = std::make_unique<Buffer>(input);
-    textures.back()->stagingBuffer->CopyResourceToBuffer(&dummyTexture, input);
+    BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    textures.back()->stagingBuffer = std::make_unique<Buffer>(bufferInput);
+    textures.back()->stagingBuffer->Copy(&dummyTexture);
 
     vk::Extent3D extent(1, 1, 1);
     textures.back()->image = std::make_unique<Image>();
@@ -171,14 +171,14 @@ void Scene::Update()
     if (!lights.empty()) {
         for (auto& light : lights)
             light.maxLights = lights.size();
-        bufferInput = { sizeof(LightData) * lights.size(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        bufferInput = { sizeof(LightData) * lights.size(), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         lightDataBuffer_.reset();
         lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
-        lightDataBuffer_->CopyResourceToBuffer(lights.data(), bufferInput);
+        lightDataBuffer_->Copy(lights.data());
     }
 
     if (!meshes.empty() && GetInstanceCount() > 0) {
-        bufferInput = { sizeof(InstanceData) * GetInstanceCount(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        bufferInput = { sizeof(InstanceData) * GetInstanceCount(), sizeof(InstanceData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         meshInstanceDataBuffer_.reset();
         meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
 
@@ -187,7 +187,7 @@ void Scene::Update()
         for (auto& mesh : meshes) {
             instances.insert(instances.end(), mesh.instanceData_.begin(), mesh.instanceData_.end());
         }
-        meshInstanceDataBuffer_->CopyResourceToBuffer(instances.data(), bufferInput);
+        meshInstanceDataBuffer_->Copy(instances.data());
     }
 }
 
