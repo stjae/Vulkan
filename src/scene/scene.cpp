@@ -4,7 +4,7 @@
 
 #define PRIMITIVE_TYPE_COUNT 3
 
-Scene::Scene() : meshID(0), selectedMeshID(-1)
+Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID(-1)
 {
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
@@ -19,15 +19,7 @@ Scene::Scene() : meshID(0), selectedMeshID(-1)
     meshes.emplace_back(MESHTYPE::SPHERE);
     meshes.back().CreateBuffers();
 
-    // int count = 0;
-    // for (int i = 0; i < 100; i++) {
-    //     for (int j = 0; j < 100; j++) {
-    //         meshes[1].instanceData_.emplace_back(1, meshes[1].instanceID);
-    //         meshes[1].instanceID++;
-    //         count++;
-    //     }
-    // }
-    // std::cout << count << '\n';
+    lights.emplace_back();
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -175,31 +167,37 @@ void Scene::Update()
     camera.cameraUniformData.pos = camera.pos_;
     camera.UpdateBuffer();
 
-    // light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshDynamicUniformBuffer_.data)).model;
-    // light.UpdateBuffer();
-
-    if (meshes.empty() || GetInstanceCount() < 1)
-        return;
-
-    BufferInput bufferInput = { sizeof(InstanceData) * GetInstanceCount(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    instanceDataBuffer_.reset();
-    instanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
-
-    std::vector<InstanceData> instances;
-    instances.reserve(GetInstanceCount());
-    for (auto& mesh : meshes) {
-        instances.insert(instances.end(), mesh.instanceData_.begin(), mesh.instanceData_.end());
+    BufferInput bufferInput;
+    if (!lights.empty()) {
+        for (auto& light : lights)
+            light.maxLights = lights.size();
+        bufferInput = { sizeof(LightData) * lights.size(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        lightDataBuffer_.reset();
+        lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+        lightDataBuffer_->CopyResourceToBuffer(lights.data(), bufferInput);
     }
-    instanceDataBuffer_->CopyResourceToBuffer(instances.data(), bufferInput);
+
+    if (!meshes.empty() && GetInstanceCount() > 0) {
+        bufferInput = { sizeof(InstanceData) * GetInstanceCount(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        meshInstanceDataBuffer_.reset();
+        meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+
+        std::vector<InstanceData> instances;
+        instances.reserve(GetInstanceCount());
+        for (auto& mesh : meshes) {
+            instances.insert(instances.end(), mesh.instanceData_.begin(), mesh.instanceData_.end());
+        }
+        meshInstanceDataBuffer_->CopyResourceToBuffer(instances.data(), bufferInput);
+    }
 }
 
 void Scene::DeleteMesh()
 {
-    if (selectedMeshID < 0 || selectedInstanceID < 0)
+    if (selectedMeshID < 0 || selectedMeshInstanceID < 0)
         return;
-    meshes[selectedMeshID].instanceData_.erase(meshes[selectedMeshID].instanceData_.begin() + selectedInstanceID);
+    meshes[selectedMeshID].instanceData_.erase(meshes[selectedMeshID].instanceData_.begin() + selectedMeshInstanceID);
     selectedMeshID = -1;
-    selectedInstanceID = -1;
+    selectedMeshInstanceID = -1;
 }
 
 size_t Scene::GetInstanceCount()

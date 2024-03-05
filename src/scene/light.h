@@ -2,27 +2,22 @@
 #define LIGHT_H
 
 #include "../common.h"
-#include "../vulkan/buffer.h"
 
-struct LightUniformData
-{
-    glm::mat4 modelMat;
-    glm::vec3 pos;
-};
-
-class Light
+struct LightData
 {
     friend class Scene;
-    friend class UI;
 
-    LightUniformData lightUniformData;
-    std::unique_ptr<Buffer> uniformBuffer_;
+    glm::mat4 model;
+    glm::vec3 pos;
 
-    void UpdateBuffer() { uniformBuffer_->UpdateBuffer(&lightUniformData, sizeof(LightUniformData)); }
+    LightData() : model(glm::mat4(1.0f)), pos(glm::vec3(0.0f)), maxLights(0), color(1.0f), padding(0.0f) {}
+
+private:
+    int32_t maxLights;
 
 public:
-    Light();
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().bufferInfo; }
+    glm::vec3 color;
+    float padding;
 };
 
 #endif

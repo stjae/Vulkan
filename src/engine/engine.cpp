@@ -26,10 +26,14 @@ void Engine::Update()
 {
     scene_->Update();
 
-    vk::WriteDescriptorSet cameraWriteMeshRender(viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo());
-    vk::WriteDescriptorSet lightWriteMeshRender(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->light.GetBufferInfo());
-    std::array<vk::WriteDescriptorSet, 2> envWrite{ cameraWriteMeshRender, lightWriteMeshRender };
-    Device::GetBundle().device.updateDescriptorSets(envWrite, nullptr);
+    vk::WriteDescriptorSet cameraWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo());
+    Device::GetBundle().device.updateDescriptorSets(cameraWrite, nullptr);
+
+    if (!scene_->lights.empty()) {
+        vk::DescriptorBufferInfo lightBufferInfo(scene_->lightDataBuffer_->GetBundle().buffer, 0, sizeof(LightData));
+        vk::WriteDescriptorSet lightWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &lightBufferInfo);
+        Device::GetBundle().device.updateDescriptorSets(lightWrite, nullptr);
+    }
 
     std::vector<vk::DescriptorImageInfo> imageInfos;
     for (auto& texture : scene_->textures) {
@@ -38,12 +42,11 @@ void Engine::Update()
     vk::WriteDescriptorSet combinedImageSamplerWrite(viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, scene_->textures.size(), vk::DescriptorType::eCombinedImageSampler, imageInfos.data());
     Device::GetBundle().device.updateDescriptorSets(combinedImageSamplerWrite, nullptr);
 
-    if (scene_->meshes.empty() || scene_->GetInstanceCount() < 1)
-        return;
-
-    vk::DescriptorBufferInfo info(scene_->instanceDataBuffer_->GetBundle().buffer, 0, sizeof(InstanceData));
-    vk::WriteDescriptorSet meshInstanceWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &info);
-    Device::GetBundle().device.updateDescriptorSets(meshInstanceWrite, nullptr);
+    if (!scene_->meshes.empty() && scene_->GetInstanceCount() > 0) {
+        vk::DescriptorBufferInfo meshInstanceBufferInfo(scene_->meshInstanceDataBuffer_->GetBundle().buffer, 0, sizeof(InstanceData));
+        vk::WriteDescriptorSet meshInstanceWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshInstanceBufferInfo);
+        Device::GetBundle().device.updateDescriptorSets(meshInstanceWrite, nullptr);
+    }
 }
 
 void Engine::Render()
@@ -64,7 +67,7 @@ void Engine::Render()
     viewport_.Draw(frameIndex_, *scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
         scene_->selectedMeshID = viewport_.PickColor(frameIndex_)[0];
-        scene_->selectedInstanceID = viewport_.PickColor(frameIndex_)[1];
+        scene_->selectedMeshInstanceID = viewport_.PickColor(frameIndex_)[1];
     }
     swapchain_.Submit(frameIndex_);
     swapchain_.Present(frameIndex_, waitFrameImage);

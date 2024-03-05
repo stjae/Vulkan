@@ -117,13 +117,17 @@ void Pipeline::CreateMeshRenderDescriptorSetLayout()
     uint32_t maxSets = 0;
 
     std::vector<DescriptorBinding> bufferBindings;
-    bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    bufferBindings.emplace_back(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex);
+    // camera
+    bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+    // lights
+    bufferBindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eFragment);
+    // meshes
+    bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bufferBindings));
     Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);
 
     std::vector<DescriptorBinding> combinedImageSamplerBindings;
+    // textures
     combinedImageSamplerBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, (int)Device::physicalDeviceLimits.maxDescriptorSetSamplers, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(combinedImageSamplerBindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
     Descriptor::SetDescriptorPoolSize(poolSizes, combinedImageSamplerBindings, maxSets);

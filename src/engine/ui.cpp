@@ -70,7 +70,8 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered()) {
         scene.selectedMeshID = -1;
-        scene.selectedInstanceID = -1;
+        scene.selectedMeshInstanceID = -1;
+        scene.selectedLightID = -1;
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
@@ -120,11 +121,10 @@ void UI::DrawDockSpace(Scene& scene)
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
-            // if (ImGui::MenuItem("Open")) {
-            //     std::string filePath = LaunchNfd({ "model", "obj" });
-            //     scene.AddMesh();
-            // }
-            // ImGui::Separator();
+            if (ImGui::MenuItem("Light")) {
+                scene.lights.emplace_back();
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
                 scene.AddMesh(MESHTYPE::SQUARE);
             }
@@ -213,8 +213,12 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         ImGui::EndDragDropTarget();
     }
 
-    if (scene.selectedMeshID != -1) {
-        DrawImGuizmo(scene, viewport.panelPos);
+    if (scene.selectedMeshID > -1) {
+        DrawMeshGuizmo(scene, viewport.panelPos);
+    }
+
+    if (scene.selectedLightID > -1) {
+        DrawLightGuizmo(scene, viewport.panelPos);
     }
 
     ImGui::End();
@@ -242,7 +246,7 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
     viewport.outDated = false;
 }
 
-void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
+void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
     if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
@@ -260,77 +264,151 @@ void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float translation[3];
     float rotation[3];
     float scale[3];
-    float objectMatrix[16];
+    float matrix[16];
 
-    auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedInstanceID];
+    auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
                                           rotation, scale);
-    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
+    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
-                         ImGuizmo::LOCAL, objectMatrix);
-    meshInstanceData.model = glm::make_mat4(objectMatrix);
-    meshInstanceData.invTranspose = glm::make_mat4(objectMatrix);
+                         ImGuizmo::LOCAL, matrix);
+    meshInstanceData.model = glm::make_mat4(matrix);
+    meshInstanceData.invTranspose = glm::make_mat4(matrix);
     meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
+}
+
+void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
+{
+    static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
+        OP = ImGuizmo::OPERATION::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.camera.IsControllable())
+        OP = ImGuizmo::OPERATION::ROTATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.camera.IsControllable())
+        OP = ImGuizmo::OPERATION::SCALE;
+
+    ImGuizmo::BeginFrame();
+    ImGuizmo::AllowAxisFlip(false);
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+
+    float translation[3];
+    float rotation[3];
+    float scale[3];
+    float matrix[16];
+
+    auto& lightData = scene.lights[scene.selectedLightID];
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(lightData.model), translation,
+                                          rotation, scale);
+    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+    ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
+                         glm::value_ptr(scene.camera.GetMatrix().proj), OP,
+                         ImGuizmo::LOCAL, matrix);
+    lightData.model = glm::make_mat4(matrix);
 }
 
 void UI::DrawObjectWindow(Scene& scene)
 {
     // Mesh List
-    ImGui::Begin("Mesh List");
-    if (ImGui::BeginListBox("##MeshList", ImVec2(-FLT_MIN, 0.0f))) {
-        for (int i = 0; i < scene.meshes.size(); i++) {
-            std::string name(scene.meshes[i].GetName());
-            for (int j = 0; j < scene.meshes[i].instanceData_.size(); j++) {
-                ImGui::PushID(i * j + j);
-                if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID && j == scene.selectedInstanceID)) {
-                    scene.selectedMeshID = i;
-                    scene.selectedInstanceID = j;
-                }
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("delete")) {
+    ImGui::Begin("List");
+    ImGui::BeginTabBar("MeshTab");
+    if (ImGui::BeginTabItem("Meshes")) {
+        if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
+            for (int i = 0; i < scene.meshes.size(); i++) {
+                std::string name(scene.meshes[i].GetName());
+                for (int j = 0; j < scene.meshes[i].instanceData_.size(); j++) {
+                    ImGui::PushID(i * j + j);
+                    if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID && j == scene.selectedMeshInstanceID)) {
                         scene.selectedMeshID = i;
-                        scene.selectedInstanceID = j;
-                        scene.DeleteMesh();
+                        scene.selectedMeshInstanceID = j;
+                        scene.selectedLightID = -1;
                     }
-                    ImGui::EndPopup();
+                    if (ImGui::BeginPopupContextItem()) {
+                        if (ImGui::MenuItem("delete")) {
+                            scene.selectedMeshID = i;
+                            scene.selectedMeshInstanceID = j;
+                            scene.DeleteMesh();
+                        }
+                        ImGui::EndPopup();
+                    }
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndListBox();
+        }
+        // Attributes
+        if (scene.selectedMeshID > -1) {
+
+            auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
+
+            float translation[3];
+            float rotation[3];
+            float scale[3];
+            float matrix[16];
+
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
+                                                  rotation, scale);
+
+            std::vector<std::string> labels = { "Move", "Rotate" };
+            ImGui::SeparatorText("Translation");
+            ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
+            ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
+
+            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+
+            meshInstanceData.model = glm::make_mat4(matrix);
+            meshInstanceData.invTranspose = glm::make_mat4(matrix);
+            meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
+
+            ImGui::SeparatorText("Textures");
+            bool useTexture = meshInstanceData.useTexture;
+            ImGui::Checkbox("Use Texture", &useTexture);
+            meshInstanceData.useTexture = useTexture ? 1 : 0;
+        }
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Lights")) {
+        if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
+            for (int i = 0; i < scene.lights.size(); i++) {
+                std::string name("light");
+                ImGui::PushID(i);
+                if (ImGui::Selectable(name.c_str(), i == scene.selectedLightID)) {
+                    scene.selectedLightID = i;
+                    scene.selectedMeshID = -1;
                 }
                 ImGui::PopID();
             }
+            ImGui::EndListBox();
+            // Attributes
+            if (scene.selectedLightID > -1) {
+
+                auto& lightData = scene.lights[scene.selectedLightID];
+
+                float translation[3];
+                float rotation[3];
+                float scale[3];
+                float matrix[16];
+
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(lightData.model), translation,
+                                                      rotation, scale);
+
+                std::vector<std::string> labels = { "Move", "Rotate", "Color" };
+                ImGui::SeparatorText("Translation");
+                ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
+                ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
+                ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f);
+
+                ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+
+                lightData.model = glm::make_mat4(matrix);
+            }
         }
-        ImGui::EndListBox();
+        ImGui::EndTabItem();
     }
-    // Attributes
-    if (scene.selectedMeshID > -1) {
-
-        auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedInstanceID];
-
-        float translation[3];
-        float rotation[3];
-        float scale[3];
-        float objectMatrix[16];
-
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
-                                              rotation, scale);
-
-        std::vector<std::string> labels = { "Move", "Rotate" };
-        ImGui::SeparatorText("Translation");
-        ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
-        ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
-
-        ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
-
-        meshInstanceData.model = glm::make_mat4(objectMatrix);
-        meshInstanceData.invTranspose = glm::make_mat4(objectMatrix);
-        meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
-
-        ImGui::SeparatorText("Textures");
-        bool useTexture = meshInstanceData.useTexture;
-        ImGui::Checkbox("Use Texture", &useTexture);
-        meshInstanceData.useTexture = useTexture ? 1 : 0;
-    }
+    ImGui::EndTabBar();
     ImGui::End();
 }
 

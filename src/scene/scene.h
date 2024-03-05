@@ -43,19 +43,20 @@ class Scene
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
 
-    std::unique_ptr<Buffer> instanceDataBuffer_;
+    std::unique_ptr<Buffer> meshInstanceDataBuffer_;
+    std::unique_ptr<Buffer> lightDataBuffer_;
 
     void CreateDummyTexture();
 
 public:
     std::vector<Mesh> meshes;
+    std::vector<LightData> lights;
     std::vector<std::shared_ptr<Texture>> textures;
     std::vector<Resource> resources;
     Camera camera;
-    Light light;
-    int32_t meshID;
     int32_t selectedMeshID;
-    int32_t selectedInstanceID;
+    int32_t selectedMeshInstanceID;
+    int32_t selectedLightID;
 
     Scene();
     void AddResource(std::string& filePath);

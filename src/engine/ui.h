@@ -25,7 +25,8 @@ class UI
     static void DrawDockSpace(Scene& scene);
     static void DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex);
     static void SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize);
-    static void DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
+    static void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
+    static void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     static void DrawObjectWindow(Scene& scene);
     static void DrawResourceWindow(Scene& scene);
     static void ShowInformationOverlay(const Scene& scene);

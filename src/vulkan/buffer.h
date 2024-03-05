@@ -42,13 +42,14 @@ public:
         SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);
         Device::GetBundle().device.unmapMemory(GetMemory());
+
+        // TODO: update bufferInfo
     }
 
     template <typename T>
     void UpdateBuffer(T resource, size_t size)
     {
         void* bufferMemoryAddress = GetMemoryAddress();
-
         memcpy(bufferMemoryAddress, resource, size);
     }
 };
