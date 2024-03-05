@@ -77,7 +77,7 @@ void Pipeline::CreateGraphicsPipeline(const vk::RenderPass& renderPass, const ch
     colorBlendAttachmentState.blendEnable = VK_FALSE;
 
     vk::PipelineColorBlendAttachmentState idBlendAttachmentState;
-    idBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR;
+    idBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG;
     idBlendAttachmentState.blendEnable = VK_FALSE;
 
     std::array<vk::PipelineColorBlendAttachmentState, 2> colorBlendAttachmentStates{ colorBlendAttachmentState, idBlendAttachmentState };
@@ -119,7 +119,7 @@ void Pipeline::CreateMeshRenderDescriptorSetLayout()
     std::vector<DescriptorBinding> bufferBindings;
     bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     bufferBindings.emplace_back(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-    bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bufferBindings));
     Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);
 

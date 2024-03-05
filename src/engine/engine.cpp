@@ -31,17 +31,19 @@ void Engine::Update()
     std::array<vk::WriteDescriptorSet, 2> envWrite{ cameraWriteMeshRender, lightWriteMeshRender };
     Device::GetBundle().device.updateDescriptorSets(envWrite, nullptr);
 
-    if (scene_->meshes.empty())
-        return;
-
     std::vector<vk::DescriptorImageInfo> imageInfos;
     for (auto& texture : scene_->textures) {
         imageInfos.push_back(texture->image->GetBundle().imageInfo);
     }
-    vk::WriteDescriptorSet meshInstanceWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &scene_->meshInstanceDataBuffer_->GetBundle().bufferInfo);
     vk::WriteDescriptorSet combinedImageSamplerWrite(viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, scene_->textures.size(), vk::DescriptorType::eCombinedImageSampler, imageInfos.data());
-    std::array<vk::WriteDescriptorSet, 2> resourceWrite{ meshInstanceWrite, combinedImageSamplerWrite };
-    Device::GetBundle().device.updateDescriptorSets(resourceWrite, nullptr);
+    Device::GetBundle().device.updateDescriptorSets(combinedImageSamplerWrite, nullptr);
+
+    if (scene_->meshes.empty() || scene_->GetInstanceCount() < 1)
+        return;
+
+    vk::DescriptorBufferInfo info(scene_->instanceDataBuffer_->GetBundle().buffer, 0, sizeof(InstanceData));
+    vk::WriteDescriptorSet meshInstanceWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &info);
+    Device::GetBundle().device.updateDescriptorSets(meshInstanceWrite, nullptr);
 }
 
 void Engine::Render()
@@ -60,8 +62,10 @@ void Engine::Render()
 
     swapchain_.Draw(frameIndex_, UI::imDrawData);
     viewport_.Draw(frameIndex_, *scene_);
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered)
-        scene_->selectedMeshIndex = viewport_.PickColor(frameIndex_);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
+        scene_->selectedMeshID = viewport_.PickColor(frameIndex_)[0];
+        scene_->selectedInstanceID = viewport_.PickColor(frameIndex_)[1];
+    }
     swapchain_.Submit(frameIndex_);
     swapchain_.Present(frameIndex_, waitFrameImage);
 

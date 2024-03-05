@@ -37,7 +37,7 @@ public:
     template <typename T>
     void CopyResourceToBuffer(T resource, const BufferInput& bufferInput)
     {
-        void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(GetMemory(), 0, bufferInput.size);
+        auto* bufferMemoryAddress = static_cast<char*>(Device::GetBundle().device.mapMemory(GetMemory(), 0, bufferInput.size));
 
         SetAddress(bufferMemoryAddress);
         memcpy(bufferMemoryAddress, resource, bufferInput.size);

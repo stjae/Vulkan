@@ -12,9 +12,10 @@ layout(location = 3) in vec2 inTexcoord;
 layout(location = 4) flat in int useTexture;
 layout(location = 5) flat in int meshID;
 layout(location = 6) flat in int textureID;
+layout(location = 7) flat in int instanceID;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out int outMeshID;
+layout(location = 1) out ivec2 outID;
 
 void main() {
 
@@ -26,5 +27,6 @@ void main() {
 
     dstColor.rgb += Lambert(worldNormal.xyz, worldModel.xyz) * dstColor.rgb;
     outColor = dstColor;
-    outMeshID = meshID;
+    outID.r = meshID;
+    outID.g = instanceID;
 }

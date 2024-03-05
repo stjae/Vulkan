@@ -47,7 +47,7 @@ public:
     Viewport();
     void CreateViewportImages();
     void DestroyViewportImages();
-    int32_t PickColor(size_t frameIndex);
+    const int32_t* PickColor(size_t frameIndex);
     void Draw(size_t frameIndex, Scene& scene);
     const PipelineState& GetPipelineState() { return pipelineState_; };
     ~Viewport();

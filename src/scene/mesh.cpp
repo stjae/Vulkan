@@ -2,6 +2,28 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+Mesh::Mesh(MESHTYPE meshType) : instanceID(0), position_(0.0f), rotation_(0.0f)
+{
+    switch (meshType) {
+    case MESHTYPE::SQUARE:
+        CreateSquare();
+        break;
+    case MESHTYPE::CUBE:
+        CreateCube();
+        break;
+    case MESHTYPE::SPHERE:
+        CreateSphere();
+        break;
+    }
+}
+
+Mesh::Mesh(uint32_t meshID, const std::string& filePath) : instanceID(0), position_(0.0f), rotation_(0.0f)
+{
+    if (!filePath.empty())
+        LoadModel(filePath);
+    this->meshID = meshID;
+}
+
 void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
@@ -23,10 +45,11 @@ void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
 
     vertices.reserve(SQUARE_VERTEX_COUNT);
 
+    glm::vec3 tangent(0.0f, 1.0f, 0.0f);
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
-        Vertex v{ position[i] * scale, normal[i], color, texcoord[i], glm::vec3(0.0f, 1.0f, 0.0f) };
-        vertices.push_back(v);
+        position[i] *= scale;
+        vertices.emplace_back(position[i], normal[i], color, texcoord[i], tangent);
     }
 
     indices = { 0, 1, 2, 2, 3, 0 };
@@ -102,10 +125,11 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
     vertices.reserve(CUBE_VERTEX_COUNT);
 
+    glm::vec3 tangent(0.0f);
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        Vertex v{ position[i] * scale, normal[i], color, texcoord[i % 4] };
-        vertices.push_back(v);
+        position[i] *= scale;
+        vertices.emplace_back(position[i], normal[i], color, texcoord[i % 4], tangent);
     }
 
     indices = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
@@ -117,7 +141,7 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
 {
     int division = 12;
-    float degree = 360.0f / division;
+    float degree = 360.0f / (float)division;
 
     glm::vec3 startPos{ 0.0f, -1.0f, 0.0f };
     glm::vec3 center{ 0.0f, 0.0f, 0.0f };
@@ -126,7 +150,8 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
     startPos *= scale;
     center *= scale;
 
-    vertices.push_back({ startPos, glm::normalize(glm::vec3(startPos) - center), color, texcoord });
+    glm::vec3 tangent(0.0f);
+    vertices.emplace_back(startPos, glm::normalize(glm::vec3(startPos) - center), color, texcoord, tangent);
     glm::mat4 rotateZ;
     glm::vec3 basePosZ;
     int i;
@@ -135,13 +160,13 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
         basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
         for (int j = 0; j <= division; j++) {
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::vec4 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
-            vertices.push_back({ rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, texcoord });
+            glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
+            vertices.emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, texcoord, tangent);
         }
     }
     rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
     basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
-    vertices.push_back({ basePosZ, glm::normalize(glm::vec3(basePosZ) - center), color, texcoord });
+    vertices.emplace_back(basePosZ, glm::normalize(glm::vec3(basePosZ) - center), color, texcoord, tangent);
 
     for (int i = 0; i < division; i++) {
         indices.push_back(0);
@@ -196,7 +221,7 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
             // Loop over vertices in the face.
             for (size_t v = 0; v < fv; v++) {
                 // access to vertex
-                Vertex vertex{};
+                Vertex vertex;
                 tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
                 indices.push_back(index_offset + v);
 
@@ -249,6 +274,8 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
         }
     }
 
+    std::cout << vertices.size() << '\n';
+
     name_ = modelPath.substr(modelPath.rfind('/') + 1, modelPath.rfind('.') - modelPath.rfind('/') - 1);
 }
 
@@ -256,4 +283,23 @@ void Mesh::CreateBuffers()
 {
     CreateIndexBuffer();
     CreateVertexBuffer();
+
+    Command::Begin(commandBuffer_);
+    // Copy vertices from staging buffer
+    Command::CopyBufferToBuffer(commandBuffer_,
+                                vertexStagingBuffer->GetBundle().buffer,
+                                vertexBuffer->GetBundle().buffer,
+                                vertexStagingBuffer->GetSize());
+
+    // Copy indices from staging buffer
+    Command::CopyBufferToBuffer(commandBuffer_,
+                                indexStagingBuffer->GetBundle().buffer,
+                                indexBuffer->GetBundle().buffer,
+                                indexStagingBuffer->GetSize());
+
+    commandBuffer_.end();
+    Command::Submit(&commandBuffer_, 1);
+
+    vertexStagingBuffer->Destroy();
+    indexStagingBuffer->Destroy();
 }

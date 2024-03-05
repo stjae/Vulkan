@@ -2,81 +2,56 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-Scene::Scene()
+#define PRIMITIVE_TYPE_COUNT 3
+
+Scene::Scene() : meshID(0), selectedMeshID(-1)
 {
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+    Command::AllocateCommandBuffer(commandPool_, Mesh::commandBuffer_);
 
     CreateDummyTexture();
 
-    // meshes.emplace_back();
-    // meshes.back().CreateSphere(0.1f, glm::vec3(1.0f, 1.0f, 0.0f), "light");
-    // meshes.back().position_ = glm::vec3(0.0f, 2.0f, 2.0f);
-    // meshes.back().CreateBuffers();
-    // PrepareMesh(meshes.back());
-
-    meshes.emplace_back();
-    meshes.back().CreateCube(0.03f);
+    meshes.emplace_back(MESHTYPE::SQUARE);
     meshes.back().CreateBuffers();
-    PrepareMesh(meshes.back());
+    meshes.emplace_back(MESHTYPE::CUBE);
+    meshes.back().CreateBuffers();
+    meshes.emplace_back(MESHTYPE::SPHERE);
+    meshes.back().CreateBuffers();
 
-    int32_t id = 0;
-    for (int i = 0; i < 50; i++) {
-        for (int j = 0; j < 50; j++) {
-            for (int k = 0; k < 50; k++) {
-                meshInstanceData_.emplace_back();
-                meshInstanceData_.back().meshID = id++;
-                meshInstanceData_.back().model[3].x = k * 0.1f;
-                meshInstanceData_.back().model[3].y = j * 0.1f;
-                meshInstanceData_.back().model[3].z = i * 0.1f;
-            }
-        }
-    }
-    std::cout << meshInstanceData_.size() << '\n';
-    BufferInput storageBufferInput = { sizeof(MeshInstanceData) * meshInstanceData_.size(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    meshInstanceDataBuffer_ = std::make_unique<Buffer>(storageBufferInput);
-    meshInstanceDataBuffer_->CopyResourceToBuffer(meshInstanceData_.data(), storageBufferInput);
+    // int count = 0;
+    // for (int i = 0; i < 100; i++) {
+    //     for (int j = 0; j < 100; j++) {
+    //         meshes[1].instanceData_.emplace_back(1, meshes[1].instanceID);
+    //         meshes[1].instanceID++;
+    //         count++;
+    //     }
+    // }
+    // std::cout << count << '\n';
 }
 
-void Scene::AddMesh(TypeEnum::Mesh type)
+void Scene::AddResource(std::string& filePath)
 {
-    switch (type) {
-    case TypeEnum::Mesh::SQUARE:
-        meshes.emplace_back();
-        meshes.back().CreateSquare();
+    resources.emplace_back(filePath);
+    switch (resources.back().resourceType) {
+    case RESOURCETYPE::MESH:
+        meshes.emplace_back(meshes.size() - 1, resources.back().filePath);
         meshes.back().CreateBuffers();
-        meshes.back().meshType_ = TypeEnum::Mesh::SQUARE;
+        meshes.back().meshID++;
+        resources.back().resource = &meshes.back();
         break;
-    case TypeEnum::Mesh::CUBE:
-        meshes.emplace_back();
-        meshes.back().CreateCube();
-        meshes.back().CreateBuffers();
-        meshes.back().meshType_ = TypeEnum::Mesh::CUBE;
-        break;
-    case TypeEnum::Mesh::SPHERE:
-        meshes.emplace_back();
-        meshes.back().CreateSphere();
-        meshes.back().CreateBuffers();
-        meshes.back().meshType_ = TypeEnum::Mesh::CUBE;
-        break;
-    default:
+    case RESOURCETYPE::TEXTURE:
+        AddTexture(filePath);
+        textures.back()->descriptorSet = ImGui_ImplVulkan_AddTexture(textures.back()->image->GetBundle().sampler, textures.back()->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        resources.back().resource = textures.back().get();
         break;
     }
-
-    PrepareMesh(meshes.back());
 }
 
-void Scene::AddMesh(TypeEnum::Mesh type, const std::string& filePath)
+void Scene::AddMesh(uint32_t id)
 {
-    if (filePath.empty())
-        return;
-
-    meshes.emplace_back();
-    meshes.back().LoadModel(filePath);
-    meshes.back().CreateBuffers();
-    meshes.back().meshType_ = type;
-
-    PrepareMesh(meshes.back());
+    meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID);
+    meshes[id].instanceID++;
 }
 
 void Scene::AddTexture(const std::string& filePath)
@@ -142,28 +117,6 @@ void Scene::AddTexture(const std::string& filePath)
     textures.back()->stagingBuffer->Destroy();
 }
 
-void Scene::PrepareMesh(Mesh& mesh)
-{
-    Command::Begin(commandBuffer_);
-    // Copy vertices from staging buffer
-    Command::CopyBufferToBuffer(commandBuffer_,
-                                mesh.vertexStagingBuffer->GetBundle().buffer,
-                                mesh.vertexBuffer->GetBundle().buffer,
-                                mesh.vertexStagingBuffer->GetSize());
-
-    // Copy indices from staging buffer
-    Command::CopyBufferToBuffer(commandBuffer_,
-                                mesh.indexStagingBuffer->GetBundle().buffer,
-                                mesh.indexBuffer->GetBundle().buffer,
-                                mesh.indexStagingBuffer->GetSize());
-
-    commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
-
-    mesh.vertexStagingBuffer->Destroy();
-    mesh.indexStagingBuffer->Destroy();
-}
-
 void Scene::CreateDummyTexture()
 {
     textures.emplace_back(std::make_shared<Texture>());
@@ -225,19 +178,54 @@ void Scene::Update()
     // light.lightUniformData.modelMat = (*(MeshUniformData*)((uint64_t)meshDynamicUniformBuffer_.data)).model;
     // light.UpdateBuffer();
 
-    if (!meshes.empty()) {
-        meshInstanceDataBuffer_->UpdateBuffer(meshInstanceData_.data(), meshInstanceDataBuffer_->GetSize());
+    if (meshes.empty() || GetInstanceCount() < 1)
+        return;
+
+    BufferInput bufferInput = { sizeof(InstanceData) * GetInstanceCount(), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    instanceDataBuffer_.reset();
+    instanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+
+    std::vector<InstanceData> instances;
+    instances.reserve(GetInstanceCount());
+    for (auto& mesh : meshes) {
+        instances.insert(instances.end(), mesh.instanceData_.begin(), mesh.instanceData_.end());
     }
+    instanceDataBuffer_->CopyResourceToBuffer(instances.data(), bufferInput);
 }
 
-void Scene::DeleteMesh(size_t index)
+void Scene::DeleteMesh()
 {
-    selectedMeshIndex = -1;
-    meshes.erase(meshes.begin() + index);
+    if (selectedMeshID < 0 || selectedInstanceID < 0)
+        return;
+    meshes[selectedMeshID].instanceData_.erase(meshes[selectedMeshID].instanceData_.begin() + selectedInstanceID);
+    selectedMeshID = -1;
+    selectedInstanceID = -1;
+}
+
+size_t Scene::GetInstanceCount()
+{
+    size_t instanceCount = 0;
+    for (auto& mesh : meshes) {
+        instanceCount += mesh.GetInstanceCount();
+    }
+    return instanceCount;
 }
 
 Scene::~Scene()
 {
     Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
     Device::GetBundle().device.destroyCommandPool(commandPool_);
+}
+
+Resource::Resource(std::string& path)
+{
+    this->filePath = path;
+    this->fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
+    this->fileFormat = path.substr(path.rfind('.') + 1, path.size());
+
+    if (fileFormat == "obj") {
+        resourceType = RESOURCETYPE::MESH;
+    } else if (fileFormat == "png" || fileFormat == "jpg") {
+        resourceType = RESOURCETYPE::TEXTURE;
+    }
 }

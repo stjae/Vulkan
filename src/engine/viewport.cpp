@@ -17,7 +17,7 @@ Viewport::Viewport()
 
     CreateViewportImages();
 
-    colorPicked_.CreateImage(vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
+    colorPicked_.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
 }
 
 void Viewport::CreateViewportImages()
@@ -28,8 +28,8 @@ void Viewport::CreateViewportImages()
         if (frame.viewportImage.GetBundle().sampler == VK_NULL_HANDLE)
             frame.viewportImage.CreateSampler();
 
-        frame.colorID.CreateImage(vk::Format::eR32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
-        frame.colorID.CreateImageView(vk::Format::eR32Sint, vk::ImageAspectFlagBits::eColor);
+        frame.colorID.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
+        frame.colorID.CreateImageView(vk::Format::eR32G32Sint, vk::ImageAspectFlagBits::eColor);
         if (frame.colorID.GetBundle().sampler == VK_NULL_HANDLE)
             frame.colorID.CreateSampler();
 
@@ -92,7 +92,7 @@ void Viewport::CreateRenderPass()
     colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription idAttachmentDesc;
-    idAttachmentDesc.format = vk::Format::eR32Sint;
+    idAttachmentDesc.format = vk::Format::eR32G32Sint;
     idAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
     idAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
     idAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
@@ -163,7 +163,7 @@ void Viewport::CreateFrameBuffer()
     }
 }
 
-int32_t Viewport::PickColor(size_t frameIndex)
+const int32_t* Viewport::PickColor(size_t frameIndex)
 {
     auto& frame = frames[frameIndex];
 
@@ -241,11 +241,10 @@ int32_t Viewport::PickColor(size_t frameIndex)
 
     const int32_t* data;
     Device::GetBundle().device.mapMemory(colorPicked_.memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data);
-    int32_t meshID = data[0];
-    std::cout << meshID << '\n';
+    std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
     Device::GetBundle().device.unmapMemory(colorPicked_.memory.GetMemory());
 
-    return meshID;
+    return data;
 }
 
 void Viewport::Draw(size_t frameIndex, Scene& scene)
@@ -303,17 +302,22 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     frame.commandBuffer.setViewport(0, viewport);
     frame.commandBuffer.setScissor(0, scissor);
 
-    frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.meshRender.descriptorSets[0], 0, nullptr);
     frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 0, nullptr);
 
     frame.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipeline);
-
     vk::DeviceSize vertexOffsets[]{ 0 };
 
-    frame.commandBuffer.bindVertexBuffers(0, 1, &scene.meshes[0].vertexBuffer->GetBundle().buffer, vertexOffsets);
-    frame.commandBuffer.bindIndexBuffer(scene.meshes[0].indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+    uint32_t dynamicOffset = 0;
+    for (auto& mesh : scene.meshes) {
+        if (mesh.GetInstanceCount() < 1)
+            continue;
+        frame.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.meshRender.descriptorSets[0], 1, &dynamicOffset);
+        frame.commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
+        frame.commandBuffer.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+        frame.commandBuffer.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
 
-    frame.commandBuffer.drawIndexed(scene.meshes[0].GetIndexCount(), scene.meshInstanceData_.size(), 0, 0, 0);
+        dynamicOffset += mesh.GetInstanceCount() * sizeof(InstanceData);
+    }
 
     frame.commandBuffer.endRenderPass();
 

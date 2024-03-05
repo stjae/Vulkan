@@ -68,11 +68,13 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui::NewFrame();
 
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered())
-        scene.selectedMeshIndex = -1;
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered()) {
+        scene.selectedMeshID = -1;
+        scene.selectedInstanceID = -1;
+    }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.selectedMeshIndex != -1) {
-        scene.DeleteMesh(scene.selectedMeshIndex);
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        scene.DeleteMesh();
     }
 
     DrawDockSpace(scene);
@@ -118,19 +120,19 @@ void UI::DrawDockSpace(Scene& scene)
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
-            if (ImGui::MenuItem("Open")) {
-                std::string filePath = LaunchNfd({ "model", "obj" });
-                scene.AddMesh(TypeEnum::Mesh::MODEL, filePath);
-            }
-            ImGui::Separator();
+            // if (ImGui::MenuItem("Open")) {
+            //     std::string filePath = LaunchNfd({ "model", "obj" });
+            //     scene.AddMesh();
+            // }
+            // ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
-                scene.AddMesh(TypeEnum::Mesh::SQUARE);
+                scene.AddMesh(MESHTYPE::SQUARE);
             }
             if (ImGui::MenuItem("Cube")) {
-                scene.AddMesh(TypeEnum::Mesh::CUBE);
+                scene.AddMesh(MESHTYPE::CUBE);
             }
             if (ImGui::MenuItem("Sphere")) {
-                scene.AddMesh(TypeEnum::Mesh::SPHERE);
+                scene.AddMesh(MESHTYPE::SPHERE);
             }
             ImGui::EndMenu();
         }
@@ -191,18 +193,18 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
 
             // TODO: value is always 0 on Windows OS
-            int32_t pickColor = viewport.PickColor(frameIndex);
+            const int32_t* pickColor = viewport.PickColor(frameIndex);
 
             switch (data->resourceType) {
-            case TypeEnum::Resource::MESH:
-                scene.AddMesh(TypeEnum::Mesh::MODEL, data->filePath);
+            case RESOURCETYPE::MESH:
+                scene.AddMesh(static_cast<Mesh*>(data->resource)->meshID);
                 break;
-            case TypeEnum::Resource::TEXTURE:
-                if (pickColor != -1) {
-                    auto& meshInstanceData = scene.meshInstanceData_[pickColor];
+            case RESOURCETYPE::TEXTURE:
+                if (pickColor[0] != -1) {
+                    auto& instanceData = scene.meshes[pickColor[0]].instanceData_[pickColor[1]];
 
-                    meshInstanceData.textureID = (*(std::static_pointer_cast<Texture>(data->resource))).index;
-                    meshInstanceData.useTexture = true;
+                    instanceData.textureID = static_cast<Texture*>(data->resource)->index;
+                    instanceData.useTexture = true;
                 }
                 break;
             }
@@ -211,7 +213,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         ImGui::EndDragDropTarget();
     }
 
-    if (scene.selectedMeshIndex != -1) {
+    if (scene.selectedMeshID != -1) {
         DrawImGuizmo(scene, viewport.panelPos);
     }
 
@@ -225,10 +227,10 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
 
     viewport.extent.width = (uint32_t)(viewportPanelSize.x);
     viewport.extent.height = (uint32_t)(viewportPanelSize.y);
-    if (__APPLE__) {
-        viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
-        viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
-    }
+#if defined(__APPLE__)
+    viewport.extent.width = (uint32_t)(viewportPanelSize.x * ImGui::GetWindowDpiScale());
+    viewport.extent.height = (uint32_t)(viewportPanelSize.y * ImGui::GetWindowDpiScale());
+#endif
 
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
         viewport.extent = Swapchain::GetBundle().swapchainImageExtent;
@@ -260,7 +262,7 @@ void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float objectMatrix[16];
 
-    auto& meshInstanceData = scene.meshInstanceData_[scene.selectedMeshIndex];
+    auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedInstanceID];
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
                                           rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, objectMatrix);
@@ -275,28 +277,34 @@ void UI::DrawImGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 
 void UI::DrawObjectWindow(Scene& scene)
 {
-    // List
-    ImGui::Begin("Object List");
-    if (ImGui::BeginListBox("##ObjectList", ImVec2(-FLT_MIN, 0.0f))) {
+    // Mesh List
+    ImGui::Begin("Mesh List");
+    if (ImGui::BeginListBox("##MeshList", ImVec2(-FLT_MIN, 0.0f))) {
         for (int i = 0; i < scene.meshes.size(); i++) {
-            ImGui::PushID(i);
-            if (ImGui::Selectable(scene.GetMeshName(i), i == scene.selectedMeshIndex)) {
-                scene.selectedMeshIndex = i;
-            }
-            if (ImGui::BeginPopupContextItem()) {
-                if (ImGui::MenuItem("delete")) {
-                    scene.DeleteMesh(scene.selectedMeshIndex);
+            std::string name(scene.meshes[i].GetName());
+            for (int j = 0; j < scene.meshes[i].instanceData_.size(); j++) {
+                ImGui::PushID(i * j + j);
+                if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID && j == scene.selectedInstanceID)) {
+                    scene.selectedMeshID = i;
+                    scene.selectedInstanceID = j;
                 }
-                ImGui::EndPopup();
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("delete")) {
+                        scene.selectedMeshID = i;
+                        scene.selectedInstanceID = j;
+                        scene.DeleteMesh();
+                    }
+                    ImGui::EndPopup();
+                }
+                ImGui::PopID();
             }
-            ImGui::PopID();
         }
         ImGui::EndListBox();
     }
     // Attributes
-    if (scene.selectedMeshIndex > -1) {
+    if (scene.selectedMeshID > -1) {
 
-        auto& meshInstanceData = scene.meshInstanceData_[scene.selectedMeshIndex];
+        auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedInstanceID];
 
         float translation[3];
         float rotation[3];
@@ -331,28 +339,24 @@ void UI::DrawResourceWindow(Scene& scene)
     ImGui::Begin("Resources");
     // Add Resource
     if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
-        std::string path = LaunchNfd({ "Image", "jpg,png" });
+        std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj" });
         if (!path.empty()) {
-            Resource res(path);
-            res.resourceType = TypeEnum::Resource::TEXTURE;
-            scene.resources.push_back(res);
-            scene.AddTexture(path);
-            scene.resources.back().resource = scene.textures.back();
-            scene.textures.back()->descriptorSet = ImGui_ImplVulkan_AddTexture(scene.textures.back()->image->GetBundle().sampler, scene.textures.back()->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            scene.AddResource(path);
         }
     }
 
     // Send Drag Drop
     for (auto& resource : scene.resources) {
         ImGui::PushID(resource.filePath.c_str());
-        if (resource.fileFormat == std::string("obj"))
+        if (resource.resourceType == RESOURCETYPE::MESH)
             ImGui::Button(ICON_FA_CUBE, { 100, 100 });
         else {
-            ImGui::ImageButton(std::static_pointer_cast<Texture>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
+            ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
         }
 
         if (ImGui::BeginDragDropSource()) {
-            ImGui::Image(std::static_pointer_cast<Texture>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
+            if (resource.resourceType == RESOURCETYPE::TEXTURE)
+                ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
             ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&resource, sizeof(resource));
             ImGui::EndDragDropSource();
         }

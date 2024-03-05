@@ -54,17 +54,15 @@ void Log(bool isDebugMode, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
-namespace TypeEnum {
-enum Mesh {
+enum MESHTYPE {
     SQUARE,
     CUBE,
     SPHERE,
-    MODEL
 };
-enum Resource {
+
+enum RESOURCETYPE {
     MESH,
     TEXTURE,
 };
-} // namespace TypeEnum
 
 #endif
