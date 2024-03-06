@@ -36,10 +36,10 @@ public:
     std::vector<ViewportFrame> frames;
 
     vk::Extent2D extent;
-    ImVec2 panelPos{};
-    ImVec2 panelSize{};
-    float panelRatio{};
-    bool outDated{};
+    ImVec2 panelPos;
+    ImVec2 panelSize;
+    float panelRatio;
+    bool outDated;
 
     Image colorPicked_;
     bool isMouseHovered;

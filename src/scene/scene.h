@@ -12,7 +12,6 @@
 
 struct Texture
 {
-    std::unique_ptr<Buffer> stagingBuffer;
     std::unique_ptr<Image> image;
     vk::DescriptorSet descriptorSet; // thumbnail for resource window
 
@@ -60,9 +59,10 @@ public:
 
     Scene();
     void AddResource(std::string& filePath);
-    void AddMesh(uint32_t id);
+    void AddMesh(uint32_t id, glm::vec3 pos = glm::vec3(0.0f));
     void AddTexture(const std::string& filePath);
     void DeleteMesh();
+    void DeleteLight();
     void Update();
     size_t GetInstanceCount();
     ~Scene();

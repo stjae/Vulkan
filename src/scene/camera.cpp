@@ -59,31 +59,30 @@ void Camera::Update()
     }
 
     glm::mat4 rotateX =
-        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseX - mouseX), up_);
+        glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), up_);
     dir_ = rotateX * dir_;
     glm::normalize(dir_);
     right_ = glm::cross(glm::vec3(dir_.x, dir_.y, dir_.z), up_);
-    glm::mat4 rotateY =
-        glm::rotate(glm::mat4(1.0f), static_cast<float>(prevMouseY - mouseY), right_);
+    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), right_);
     dir_ = rotateY * dir_;
 
     if (ImGui::IsKeyDown(ImGuiKey_W)) {
-        pos_ += glm::vec3(dir_.x, dir_.y, dir_.z) * static_cast<float>(delta) * speed_;
+        pos_ += glm::vec3(dir_.x, dir_.y, dir_.z) * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        pos_ -= glm::vec3(dir_.x, dir_.y, dir_.z) * static_cast<float>(delta) * speed_;
+        pos_ -= glm::vec3(dir_.x, dir_.y, dir_.z) * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_A)) {
-        pos_ -= right_ * static_cast<float>(delta) * speed_;
+        pos_ -= right_ * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_D)) {
-        pos_ += right_ * static_cast<float>(delta) * speed_;
+        pos_ += right_ * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_E)) {
-        pos_ += up_ * static_cast<float>(delta) * speed_;
+        pos_ += up_ * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-        pos_ -= up_ * static_cast<float>(delta) * speed_;
+        pos_ -= up_ * (float)(delta)*speed_;
     }
 
     at_ = pos_ + glm::vec3(dir_.x, dir_.y, dir_.z);

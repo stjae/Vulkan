@@ -140,42 +140,37 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
 void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
 {
-    int division = 12;
+    int division = 128;
     float degree = 360.0f / (float)division;
 
     glm::vec3 startPos{ 0.0f, -1.0f, 0.0f };
     glm::vec3 center{ 0.0f, 0.0f, 0.0f };
-    glm::vec2 texcoord{ 0.0f };
+    glm::vec3 tangent(0.0f);
 
     startPos *= scale;
     center *= scale;
 
-    glm::vec3 tangent(0.0f);
-    vertices.emplace_back(startPos, glm::normalize(glm::vec3(startPos) - center), color, texcoord, tangent);
     glm::mat4 rotateZ;
     glm::vec3 basePosZ;
+    float texU = 0.0f;
+    float texV = 0.0f;
     int i;
-    for (i = 1; i < division / 2; i++) {
+    for (i = 0; i <= division / 2; i++) {
         rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
         basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
+        texV = 1.0f - 1.0f / ((float)division / 2) * (float)i;
+        std::cout << texV << ' ';
         for (int j = 0; j <= division; j++) {
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
-            vertices.emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, texcoord, tangent);
+            texU = 1.0f - 1.0f / ((float)division) * (float)j;
+            std::cout << texU << '\n';
+            vertices.emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, glm::vec2(texU, texV), tangent);
         }
     }
-    rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
-    basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
-    vertices.emplace_back(basePosZ, glm::normalize(glm::vec3(basePosZ) - center), color, texcoord, tangent);
 
-    for (int i = 0; i < division; i++) {
-        indices.push_back(0);
-        indices.push_back(i + 1);
-        indices.push_back(i + 2);
-    }
-
-    for (int j = 0; j < division / 2 - 2; j++) {
-        for (int i = division * j + 1; i < division * (j + 1) + 1; i++) {
+    for (int j = 0; j < division / 2; j++) {
+        for (int i = division * j; i < division * (j + 1); i++) {
             indices.push_back(i + j);
             indices.push_back(i + j + 2 + division);
             indices.push_back(i + j + 1);
@@ -184,12 +179,6 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
             indices.push_back(i + j);
             indices.push_back(i + j + 1 + division);
         }
-    }
-
-    for (int i = vertices.size() - 1; i >= vertices.size() - division; i--) {
-        indices.push_back(vertices.size() - 1);
-        indices.push_back(i - 1);
-        indices.push_back(i - 2);
     }
 
     if (name)

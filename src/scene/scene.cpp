@@ -1,14 +1,14 @@
 #include "scene.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
-
-#define PRIMITIVE_TYPE_COUNT 3
 
 Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID(-1)
 {
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
     Command::AllocateCommandBuffer(commandPool_, Mesh::commandBuffer_);
+
+    camera.dir_ = { 0.5, -0.3, -0.7, 0.0 };
+    camera.pos_ = { -3.0, 3.3, 8.0 };
+    camera.at_ = { -2.5, 3.0, 7.3 };
 
     CreateDummyTexture();
 
@@ -19,7 +19,8 @@ Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID
     meshes.emplace_back(MESHTYPE::SPHERE);
     meshes.back().CreateBuffers();
 
-    lights.emplace_back();
+    AddMesh(MESHTYPE::SPHERE);
+    lights.emplace_back(glm::vec3(0.0f, 3.0f, 2.0f));
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -40,9 +41,9 @@ void Scene::AddResource(std::string& filePath)
     }
 }
 
-void Scene::AddMesh(uint32_t id)
+void Scene::AddMesh(uint32_t id, glm::vec3 pos)
 {
-    meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID);
+    meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID, std::move(pos));
     meshes[id].instanceID++;
 }
 
@@ -68,8 +69,8 @@ void Scene::AddTexture(const std::string& filePath)
     texture->index = textures.size() - 1;
 
     BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    texture->stagingBuffer = std::make_unique<Buffer>(bufferInput);
-    texture->stagingBuffer->Copy(imageData);
+    Buffer stagingBuffer(bufferInput);
+    stagingBuffer.Copy(imageData);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
@@ -91,7 +92,7 @@ void Scene::AddTexture(const std::string& filePath)
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
-                               textures.back()->stagingBuffer->GetBundle().buffer,
+                               stagingBuffer.GetBundle().buffer,
                                textures.back()->image->GetBundle().image, textures.back()->width,
                                textures.back()->height);
     // Set texture image layout to shader read only
@@ -105,8 +106,6 @@ void Scene::AddTexture(const std::string& filePath)
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
-
-    textures.back()->stagingBuffer->Destroy();
 }
 
 void Scene::CreateDummyTexture()
@@ -119,8 +118,8 @@ void Scene::CreateDummyTexture()
     textures.back()->size = sizeof(dummyTexture);
 
     BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    textures.back()->stagingBuffer = std::make_unique<Buffer>(bufferInput);
-    textures.back()->stagingBuffer->Copy(&dummyTexture);
+    Buffer stagingBuffer(bufferInput);
+    stagingBuffer.Copy(&dummyTexture);
 
     vk::Extent3D extent(1, 1, 1);
     textures.back()->image = std::make_unique<Image>();
@@ -141,7 +140,7 @@ void Scene::CreateDummyTexture()
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
-                               textures.back()->stagingBuffer->GetBundle().buffer,
+                               stagingBuffer.GetBundle().buffer,
                                textures.back()->image->GetBundle().image, textures.back()->width,
                                textures.back()->height);
     // Set texture image layout to shader read only
@@ -155,8 +154,6 @@ void Scene::CreateDummyTexture()
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
-
-    textures.back()->stagingBuffer->Destroy();
 }
 
 void Scene::Update()
@@ -198,6 +195,14 @@ void Scene::DeleteMesh()
     meshes[selectedMeshID].instanceData_.erase(meshes[selectedMeshID].instanceData_.begin() + selectedMeshInstanceID);
     selectedMeshID = -1;
     selectedMeshInstanceID = -1;
+}
+
+void Scene::DeleteLight()
+{
+    if (selectedLightID < 0)
+        return;
+    lights.erase(lights.begin() + selectedLightID);
+    selectedLightID = -1;
 }
 
 size_t Scene::GetInstanceCount()

@@ -4,7 +4,7 @@ Engine::Engine()
 {
     InitSwapchainImages();
     scene_ = std::make_unique<Scene>();
-    UI::Setup(swapchain_.GetRenderPass(), viewport_);
+    imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
 }
 
 void Engine::InitSwapchainImages()
@@ -82,7 +82,7 @@ void Engine::UpdateSwapchain()
     viewport_.outDated = true;
     viewport_.DestroyViewportImages();
     viewport_.CreateViewportImages();
-    UI::RecreateViewportDescriptorSets(viewport_);
+    imgui_.RecreateViewportDescriptorSets(viewport_);
 }
 
 void Engine::RecreateSwapchain()
@@ -109,7 +109,7 @@ void Engine::RecreateSwapchain()
 
 void Engine::DrawUI()
 {
-    UI::Draw(*scene_, viewport_, frameIndex_);
+    imgui_.Draw(*scene_, viewport_, frameIndex_);
     UI::imDrawData = ImGui::GetDrawData();
 }
 

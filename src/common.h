@@ -32,6 +32,7 @@ const bool debug = true;
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <nfd.h>
+#include <stb/stb_image.h>
 
 #include "config.h"
 

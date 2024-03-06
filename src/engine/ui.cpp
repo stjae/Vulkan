@@ -1,8 +1,11 @@
 #include "ui.h"
 #include "font/IconsFontAwesome5.h"
 
-void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
+void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
 {
+    Command::CreateCommandPool(commandPool_);
+    Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
 
@@ -57,6 +60,75 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport)
         descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
                                                          viewport.frames[i].viewportImage.GetBundle().imageView,
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    plusIcon_ = GenerateIcon(PROJECT_DIR "image/icon/plus.png");
+    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(plusIcon_->GetBundle().sampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    lightIcon_ = GenerateIcon(PROJECT_DIR "image/icon/light.png");
+    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(lightIcon_->GetBundle().sampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    cubeIcon_ = GenerateIcon(PROJECT_DIR "image/icon/cube.png");
+    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(cubeIcon_->GetBundle().sampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // TODO: for test
+    path = PROJECT_DIR "image/box.png";
+    scene.AddResource(path);
+    path = PROJECT_DIR "image/earth.jpg";
+    scene.AddResource(path);
+}
+
+std::unique_ptr<Image> UI::GenerateIcon(const std::string& filePath)
+{
+    int width, height, channel;
+    vk::DeviceSize imageSize;
+    stbi_uc* imageData;
+
+    imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+    imageSize = width * height * 4;
+
+    if (!imageData) {
+        spdlog::error("failed to load image");
+        return nullptr;
+    }
+
+    BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    Buffer stagingBuffer(bufferInput);
+    stagingBuffer.Copy(imageData);
+
+    stbi_image_free(imageData);
+    vk::Extent3D extent(width, height, 1);
+    std::unique_ptr<Image> image = std::make_unique<Image>();
+    image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    image->CreateSampler();
+    image->SetInfo();
+
+    Command::Begin(commandBuffer_);
+    // Set texture image layout to transfer dst optimal
+    Command::SetImageMemoryBarrier(commandBuffer_,
+                                   *image,
+                                   vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal,
+                                   {},
+                                   vk::AccessFlagBits::eTransferWrite,
+                                   vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    // Copy texture image from staging buffer
+    Command::CopyBufferToImage(commandBuffer_,
+                               stagingBuffer.GetBundle().buffer,
+                               image->GetBundle().image, width,
+                               height);
+    // Set texture image layout to shader read only
+    Command::SetImageMemoryBarrier(commandBuffer_,
+                                   *image,
+                                   vk::ImageLayout::eTransferDstOptimal,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   vk::AccessFlagBits::eTransferWrite,
+                                   vk::AccessFlagBits::eShaderRead,
+                                   vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eFragmentShader);
+    commandBuffer_.end();
+    Command::Submit(&commandBuffer_, 1);
+
+    return std::move(image);
 }
 
 void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
@@ -76,11 +148,12 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
         scene.DeleteMesh();
+        scene.DeleteLight();
     }
 
     DrawDockSpace(scene);
     DrawViewport(scene, viewport, frameIndex);
-    DrawObjectWindow(scene);
+    DrawListWindow(scene);
     DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
 
@@ -174,7 +247,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     viewport.panelPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin();
     viewport.panelSize = ImGui::GetContentRegionAvail();
     // debug: drawRect
-    //    ImGui::GetForegroundDrawList()->AddRect(viewport.panelPos, viewport.panelPos + viewport.panelSize, IM_COL32(255, 0, 0, 255));
+    // ImGui::GetForegroundDrawList()->AddRect(viewport.panelPos, viewport.panelPos + viewport.panelSize, IM_COL32(255, 0, 0, 255));
     float viewportPanelRatio = viewport.panelSize.x / viewport.panelSize.y;
 
     if (viewport.panelRatio != viewportPanelRatio || viewport.outDated)
@@ -211,6 +284,19 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         }
 
         ImGui::EndDragDropTarget();
+    }
+
+    for (auto& light : scene.lights) {
+
+        glm::vec4 pos = scene.camera.GetMatrix().proj * scene.camera.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
+        pos /= pos.w;
+        pos.x = (pos.x + 1.0f) * 0.5f;
+        pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
+        pos.x *= width;
+        pos.y *= height;
+        ImVec2 screenPos(pos.x, pos.y);
+        ImVec2 offset(25, 25);
+        ImGui::GetWindowDrawList()->AddImage(lightIconDescriptorSet_, viewport.panelPos + screenPos - offset, viewport.panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
     if (scene.selectedMeshID > -1) {
@@ -267,8 +353,7 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float matrix[16];
 
     auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
-                                          rotation, scale);
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
@@ -300,16 +385,17 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float matrix[16];
 
     auto& lightData = scene.lights[scene.selectedLightID];
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(lightData.model), translation,
-                                          rotation, scale);
+    glm::mat4 model = glm::translate(lightData.model, lightData.pos);
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
     ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
                          glm::value_ptr(scene.camera.GetMatrix().proj), OP,
                          ImGuizmo::LOCAL, matrix);
-    lightData.model = glm::make_mat4(matrix);
+    model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
+    lightData.model = model;
 }
 
-void UI::DrawObjectWindow(Scene& scene)
+void UI::DrawListWindow(Scene& scene)
 {
     // Mesh List
     ImGui::Begin("List");
@@ -326,7 +412,7 @@ void UI::DrawObjectWindow(Scene& scene)
                         scene.selectedLightID = -1;
                     }
                     if (ImGui::BeginPopupContextItem()) {
-                        if (ImGui::MenuItem("delete")) {
+                        if (ImGui::MenuItem("Delete")) {
                             scene.selectedMeshID = i;
                             scene.selectedMeshInstanceID = j;
                             scene.DeleteMesh();
@@ -348,14 +434,11 @@ void UI::DrawObjectWindow(Scene& scene)
             float scale[3];
             float matrix[16];
 
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation,
-                                                  rotation, scale);
-
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation, rotation, scale);
             std::vector<std::string> labels = { "Move", "Rotate" };
             ImGui::SeparatorText("Translation");
             ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
             ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
-
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
             meshInstanceData.model = glm::make_mat4(matrix);
@@ -370,6 +453,7 @@ void UI::DrawObjectWindow(Scene& scene)
         }
         ImGui::EndTabItem();
     }
+    // Light List
     if (ImGui::BeginTabItem("Lights")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.lights.size(); i++) {
@@ -379,6 +463,13 @@ void UI::DrawObjectWindow(Scene& scene)
                     scene.selectedLightID = i;
                     scene.selectedMeshID = -1;
                 }
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Delete")) {
+                        scene.selectedLightID = i;
+                        scene.DeleteLight();
+                    }
+                    ImGui::EndPopup();
+                }
                 ImGui::PopID();
             }
             ImGui::EndListBox();
@@ -386,24 +477,23 @@ void UI::DrawObjectWindow(Scene& scene)
             if (scene.selectedLightID > -1) {
 
                 auto& lightData = scene.lights[scene.selectedLightID];
+                glm::mat4 model = glm::translate(lightData.model, lightData.pos);
 
                 float translation[3];
                 float rotation[3];
                 float scale[3];
                 float matrix[16];
 
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(lightData.model), translation,
-                                                      rotation, scale);
-
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
                 std::vector<std::string> labels = { "Move", "Rotate", "Color" };
                 ImGui::SeparatorText("Translation");
                 ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
                 ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
                 ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f);
-
                 ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-                lightData.model = glm::make_mat4(matrix);
+                model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
+                lightData.model = model;
             }
         }
         ImGui::EndTabItem();
@@ -414,24 +504,33 @@ void UI::DrawObjectWindow(Scene& scene)
 
 void UI::DrawResourceWindow(Scene& scene)
 {
+    float desiredButtonSize = 100.0f;
+    float padding = desiredButtonSize * 0.4f;
+    auto getButtonSize = [desiredButtonSize, padding]() { return desiredButtonSize - padding * 2.0f; };
+    float buttonSize = getButtonSize();
+
     ImGui::Begin("Resources");
+
+    float panelSize = ImGui::GetContentRegionAvail().x;
+    int columnCount = std::max(1, (int)(panelSize / desiredButtonSize));
     // Add Resource
-    if (ImGui::Button(ICON_FA_PLUS, { 100, 100 })) {
+    ImGui::Columns(columnCount, 0, false);
+    if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSize, buttonSize }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
         std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj" });
         if (!path.empty()) {
             scene.AddResource(path);
         }
     }
+    ImGui::NextColumn();
 
-    // Send Drag Drop
     for (auto& resource : scene.resources) {
-        ImGui::PushID(resource.filePath.c_str());
-        if (resource.resourceType == RESOURCETYPE::MESH)
-            ImGui::Button(ICON_FA_CUBE, { 100, 100 });
-        else {
+        if (resource.resourceType == RESOURCETYPE::MESH) {
+            ImGui::ImageButton(cubeIconDescriptorSet_, { getButtonSize(), getButtonSize() }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+        } else {
             ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
         }
 
+        // Send Drag Drop
         if (ImGui::BeginDragDropSource()) {
             if (resource.resourceType == RESOURCETYPE::TEXTURE)
                 ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
@@ -439,9 +538,10 @@ void UI::DrawResourceWindow(Scene& scene)
             ImGui::EndDragDropSource();
         }
 
-        ImGui::TextWrapped("%s", resource.fileName.c_str());
-        ImGui::PopID();
+        ImGui::Text("%s", resource.fileName.c_str());
+        ImGui::NextColumn();
     }
+    ImGui::Columns(1);
     ImGui::End();
 }
 
@@ -470,6 +570,8 @@ void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
 
 UI::~UI()
 {
+    Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
+    Device::GetBundle().device.destroyCommandPool(commandPool_);
     for (auto& layout : descriptorSetLayouts_)
         Device::GetBundle().device.destroyDescriptorSetLayout(layout);
     for (auto& set : descriptorSets_)

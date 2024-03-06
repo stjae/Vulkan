@@ -277,7 +277,7 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue colorClearValue;
     vk::ClearValue idClearValue;
-    colorClearValue.color = { std::array<float, 4>{ 0.25f, 0.25f, 0.25f, 1.0f } };
+    colorClearValue.color = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
     idClearValue.color = { std::array<int32_t, 4>{ -1, -1, -1, -1 } };
     vk::ClearValue depthClearValue;
     depthClearValue.depthStencil.depth = 1.0f;

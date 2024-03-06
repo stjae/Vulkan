@@ -13,7 +13,7 @@ struct InstanceData
     int useTexture;
     int32_t instanceID;
 
-    explicit InstanceData(int32_t meshID, int32_t instanceID) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(0), instanceID(instanceID) {}
+    InstanceData(int32_t meshID, int32_t instanceID, glm::vec3&& pos = glm::vec3(0.0f)) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(0), instanceID(instanceID) { model = glm::translate(glm::mat4(1.0f), pos); }
 };
 
 class Mesh : public MeshData
