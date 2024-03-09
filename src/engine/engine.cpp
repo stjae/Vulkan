@@ -30,7 +30,7 @@ void Engine::Update()
     Device::GetBundle().device.updateDescriptorSets(cameraWrite, nullptr);
 
     if (!scene_->lights.empty()) {
-        vk::DescriptorBufferInfo lightBufferInfo(scene_->lightDataBuffer_->GetBundle().buffer, 0, sizeof(LightData));
+        vk::DescriptorBufferInfo lightBufferInfo(scene_->lightDataBuffer_->GetBundle().buffer, 0, vk::WholeSize);
         vk::WriteDescriptorSet lightWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &lightBufferInfo);
         Device::GetBundle().device.updateDescriptorSets(lightWrite, nullptr);
     }
@@ -43,7 +43,7 @@ void Engine::Update()
     Device::GetBundle().device.updateDescriptorSets(combinedImageSamplerWrite, nullptr);
 
     if (!scene_->meshes.empty() && scene_->GetInstanceCount() > 0) {
-        vk::DescriptorBufferInfo meshInstanceBufferInfo(scene_->meshInstanceDataBuffer_->GetBundle().buffer, 0, sizeof(InstanceData));
+        vk::DescriptorBufferInfo meshInstanceBufferInfo(scene_->meshInstanceDataBuffer_->GetBundle().buffer, 0, vk::WholeSize);
         vk::WriteDescriptorSet meshInstanceWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshInstanceBufferInfo);
         Device::GetBundle().device.updateDescriptorSets(meshInstanceWrite, nullptr);
     }

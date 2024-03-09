@@ -128,7 +128,7 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
     glm::vec3 tangent(0.0f);
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        position[i] *= scale;
+        position[i] *= 0.02f;
         vertices.emplace_back(position[i], normal[i], color, texcoord[i % 4], tangent);
     }
 

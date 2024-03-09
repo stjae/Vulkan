@@ -193,6 +193,12 @@ void Scene::DeleteMesh()
     if (selectedMeshID < 0 || selectedMeshInstanceID < 0)
         return;
     meshes[selectedMeshID].instanceData_.erase(meshes[selectedMeshID].instanceData_.begin() + selectedMeshInstanceID);
+
+    for (int32_t i = selectedMeshInstanceID; i < meshes[selectedMeshID].instanceData_.size(); i++) {
+        meshes[selectedMeshID].instanceData_[i].instanceID--;
+    }
+    meshes[selectedMeshID].instanceID--;
+
     selectedMeshID = -1;
     selectedMeshInstanceID = -1;
 }
@@ -202,6 +208,7 @@ void Scene::DeleteLight()
     if (selectedLightID < 0)
         return;
     lights.erase(lights.begin() + selectedLightID);
+
     selectedLightID = -1;
 }
 
