@@ -42,12 +42,17 @@ class UI
     void ShowInformationOverlay(const Scene& scene);
 
 public:
+    inline static bool dragDropped;
+    inline static double dragDropMouseX;
+    inline static double dragDropMouseY;
+    inline static std::unique_ptr<Resource> dragDropResource;
     inline static ImDrawData* imDrawData;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
     std::unique_ptr<Image> GenerateIcon(const std::string& filePath);
     void Draw(Scene& scene, Viewport& viewport, size_t frameIndex);
     void RecreateViewportDescriptorSets(const Viewport& viewport);
+    void AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex);
     ~UI();
 };
 

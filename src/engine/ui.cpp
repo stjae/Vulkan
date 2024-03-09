@@ -73,6 +73,8 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     scene.AddResource(path);
     path = PROJECT_DIR "image/earth.jpg";
     scene.AddResource(path);
+
+    dragDropped = false;
 }
 
 std::unique_ptr<Image> UI::GenerateIcon(const std::string& filePath)
@@ -253,7 +255,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     if (viewport.panelRatio != viewportPanelRatio || viewport.outDated)
         SetViewportUpToDate(viewport, viewport.panelSize);
 
-    // Accept Drag Drop
+    // Set Drag Drop Mouse Position
     ImGui::Image(descriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     viewport.isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
@@ -265,22 +267,12 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
 
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
 
-            // TODO: value is always 0 on Windows OS
-            const int32_t* pickColor = viewport.PickColor(frameIndex);
-
-            switch (data->resourceType) {
-            case RESOURCETYPE::MESH:
-                scene.AddMesh(static_cast<Mesh*>(data->resource)->meshID);
-                break;
-            case RESOURCETYPE::TEXTURE:
-                if (pickColor[0] != -1) {
-                    auto& instanceData = scene.meshes[pickColor[0]].instanceData_[pickColor[1]];
-
-                    instanceData.textureID = static_cast<Texture*>(data->resource)->index;
-                    instanceData.useTexture = true;
-                }
-                break;
-            }
+            double mouseX, mouseY;
+            glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
+            dragDropMouseX = mouseX;
+            dragDropMouseY = mouseY;
+            dragDropResource = std::make_unique<Resource>(*data);
+            dragDropped = true;
         }
 
         ImGui::EndDragDropTarget();
@@ -566,6 +558,30 @@ void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
         descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
                                                          viewport.frames[i].viewportImage.GetBundle().imageView,
                                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
+{
+    if (!dragDropped)
+        return;
+
+    const int32_t* pickColor = viewport.PickColor(frameIndex, dragDropMouseX, dragDropMouseY);
+
+    switch (dragDropResource->resourceType) {
+    case RESOURCETYPE::MESH:
+        scene.AddMesh(static_cast<Mesh*>(dragDropResource->resource)->meshID);
+        break;
+    case RESOURCETYPE::TEXTURE:
+        if (pickColor[0] != -1) {
+            auto& instanceData = scene.meshes[pickColor[0]].instanceData_[pickColor[1]];
+
+            instanceData.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
+            instanceData.useTexture = true;
+        }
+        break;
+    }
+
+    dragDropped = false;
 }
 
 UI::~UI()

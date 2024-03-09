@@ -2,7 +2,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-Mesh::Mesh(MESHTYPE meshType) : instanceID(0), position_(0.0f), rotation_(0.0f)
+Mesh::Mesh(MESHTYPE meshType) : meshID(meshType), instanceID(0), position_(0.0f), rotation_(0.0f)
 {
     switch (meshType) {
     case MESHTYPE::SQUARE:
@@ -159,12 +159,10 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
         rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(degree * i), glm::vec3(0.0f, 0.0f, 1.0f));
         basePosZ = glm::vec4(startPos, 1.0f) * rotateZ;
         texV = 1.0f - 1.0f / ((float)division / 2) * (float)i;
-        std::cout << texV << ' ';
         for (int j = 0; j <= division; j++) {
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
             texU = 1.0f - 1.0f / ((float)division) * (float)j;
-            std::cout << texU << '\n';
             vertices.emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, glm::vec2(texU, texV), tangent);
         }
     }

@@ -66,9 +66,13 @@ void Engine::Render()
     swapchain_.Draw(frameIndex_, UI::imDrawData);
     viewport_.Draw(frameIndex_, *scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
-        scene_->selectedMeshID = viewport_.PickColor(frameIndex_)[0];
-        scene_->selectedMeshInstanceID = viewport_.PickColor(frameIndex_)[1];
+        double mouseX = 0;
+        double mouseY = 0;
+        glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
+        scene_->selectedMeshID = viewport_.PickColor(frameIndex_, mouseX, mouseY)[0];
+        scene_->selectedMeshInstanceID = viewport_.PickColor(frameIndex_, mouseX, mouseY)[1];
     }
+    imgui_.AcceptDragDrop(viewport_, *scene_, frameIndex_);
     swapchain_.Submit(frameIndex_);
     swapchain_.Present(frameIndex_, waitFrameImage);
 

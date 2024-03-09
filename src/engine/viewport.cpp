@@ -163,7 +163,7 @@ void Viewport::CreateFrameBuffer()
     }
 }
 
-const int32_t* Viewport::PickColor(size_t frameIndex)
+const int32_t* Viewport::PickColor(size_t frameIndex, double mouseX, double mouseY)
 {
     auto& frame = frames[frameIndex];
 
@@ -193,20 +193,18 @@ const int32_t* Viewport::PickColor(size_t frameIndex)
     region.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     region.dstSubresource.layerCount = 1;
     float scaleX, scaleY;
-    double mouseX, mouseY;
-    glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
     glfwGetWindowContentScale(Window::GetWindow(), &scaleX, &scaleY);
     int32_t offsetX = 0, offsetY = 0;
     if (mouseX > panelPos.x)
         offsetX = (int32_t)((mouseX - panelPos.x));
     if (mouseY > panelPos.y)
         offsetY = (int32_t)((mouseY - panelPos.y));
-    if (__APPLE__) {
-        if (mouseX > panelPos.x)
-            offsetX = (int32_t)((mouseX - panelPos.x) * scaleX);
-        if (mouseY > panelPos.y)
-            offsetY = (int32_t)((mouseY - panelPos.y) * scaleY);
-    }
+#if defined(__APPLE__)
+    if (mouseX > panelPos.x)
+        offsetX = (int32_t)((mouseX - panelPos.x) * scaleX);
+    if (mouseY > panelPos.y)
+        offsetY = (int32_t)((mouseY - panelPos.y) * scaleY);
+#endif
     region.srcOffset.x = offsetX;
     region.srcOffset.y = offsetY;
     region.extent.width = 1;
