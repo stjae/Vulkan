@@ -23,7 +23,7 @@ class UI
     inline static vk::DescriptorPool descriptorPool_;
     inline static std::vector<DescriptorBinding> descriptorBindings_;
     inline static std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
-    inline static std::vector<vk::DescriptorSet> descriptorSets_;
+    inline static vk::DescriptorSet descriptorSet_;
 
     std::unique_ptr<Image> plusIcon_;
     std::unique_ptr<Image> lightIcon_;

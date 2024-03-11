@@ -159,6 +159,9 @@ void Scene::CreateDummyTexture()
 void Scene::Update()
 {
     camera.Update();
+    if (selectedMeshID > -1 && selectedMeshInstanceID > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
+        camera.pos_ = glm::translate(meshes[selectedMeshID].instanceData_[selectedMeshInstanceID].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
     camera.cameraUniformData.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
     camera.cameraUniformData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
     camera.cameraUniformData.pos = camera.pos_;

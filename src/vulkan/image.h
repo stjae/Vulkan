@@ -20,7 +20,9 @@ public:
     Memory memory;
 
     void CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent, vk::ImageTiling imageTiling);
+    void CreateImage(vk::ImageCreateInfo& imageCI, vk::MemoryPropertyFlags memProperty);
     void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags);
+    void CreateImageView(vk::ImageViewCreateInfo& imageViewCI);
     void CreateSampler();
     void SetInfo(vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined);
     void DestroyImage();

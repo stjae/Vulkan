@@ -23,8 +23,6 @@ class Mesh : public MeshData
     friend class UI;
 
     std::string name_;
-    glm::vec3 position_;
-    glm::vec3 rotation_;
 
     int32_t meshID;
     int32_t instanceID;

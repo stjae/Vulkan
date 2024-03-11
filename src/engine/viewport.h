@@ -7,33 +7,48 @@
 #include "../vulkan/swapchain.h"
 #include "../scene/scene.h"
 
-struct ViewportFrame
+struct PipelineState
 {
+    Pipeline meshRender;
+    Pipeline shadowMap;
+};
+
+struct ShadowMapPass
+{
+    int32_t width, height;
+    std::array<vk::Framebuffer, 6> framebuffers;
+    Image depth;
+    vk::RenderPass renderPass;
+};
+
+class Viewport
+{
+    vk::CommandPool commandPool_;
+    vk::CommandBuffer commandBuffer_;
+
+    PipelineState pipelineState_;
+    vk::RenderPass viewportRenderPass_;
+
+    Image colorPicked_;
+
+    // shadowCubeMap
+    uint32_t shadowMapSize_;
+    vk::Format shadowMapImageFormat_;
+    Image shadowCubeMap_;
+    std::array<vk::ImageView, 6> shadowCubeMapFaceImageViews_;
+    ShadowMapPass shadowMapPass_;
+    void PrepareShadowCubeMap();
+    void CreateShadowMapRenderPass();
+
+    void CreateViewportRenderPass();
+    void CreateViewportFrameBuffer();
+
+public:
     vk::Framebuffer framebuffer;
 
     Image viewportImage;
     Image depthImage;
     Image colorID;
-
-    vk::CommandPool commandPool;
-    vk::CommandBuffer commandBuffer;
-};
-
-struct PipelineState
-{
-    Pipeline meshRender;
-};
-
-class Viewport
-{
-    PipelineState pipelineState_;
-    vk::RenderPass viewportRenderPass_;
-
-    void CreateRenderPass();
-    void CreateFrameBuffer();
-
-public:
-    std::vector<ViewportFrame> frames;
 
     vk::Extent2D extent;
     ImVec2 panelPos;
@@ -41,7 +56,6 @@ public:
     float panelRatio;
     bool outDated;
 
-    Image colorPicked_;
     bool isMouseHovered;
 
     Viewport();

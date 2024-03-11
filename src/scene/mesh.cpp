@@ -2,7 +2,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-Mesh::Mesh(MESHTYPE meshType) : meshID(meshType), instanceID(0), position_(0.0f), rotation_(0.0f)
+Mesh::Mesh(MESHTYPE meshType) : meshID(meshType), instanceID(0)
 {
     switch (meshType) {
     case MESHTYPE::SQUARE:
@@ -17,7 +17,7 @@ Mesh::Mesh(MESHTYPE meshType) : meshID(meshType), instanceID(0), position_(0.0f)
     }
 }
 
-Mesh::Mesh(uint32_t meshID, const std::string& filePath) : instanceID(0), position_(0.0f), rotation_(0.0f)
+Mesh::Mesh(uint32_t meshID, const std::string& filePath) : instanceID(0)
 {
     if (!filePath.empty())
         LoadModel(filePath);
@@ -128,7 +128,6 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
     glm::vec3 tangent(0.0f);
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        position[i] *= 0.02f;
         vertices.emplace_back(position[i], normal[i], color, texcoord[i % 4], tangent);
     }
 
@@ -210,7 +209,6 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
                 // access to vertex
                 Vertex vertex;
                 tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-                indices.push_back(index_offset + v);
 
                 tinyobj::real_t vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
                 tinyobj::real_t vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
@@ -237,6 +235,7 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
                 }
 
                 vertices.push_back(vertex);
+                indices.push_back(indices.size());
             }
 
             if (!hasNormal) {

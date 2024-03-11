@@ -142,15 +142,15 @@ void Swapchain::ChooseExtent()
 
 void Swapchain::CreateRenderPass()
 {
-    vk::AttachmentDescription colorAttachmentDesc;
-    colorAttachmentDesc.format = vk::Format::eB8G8R8A8Srgb;
-    colorAttachmentDesc.samples = vk::SampleCountFlagBits::e1;
-    colorAttachmentDesc.loadOp = vk::AttachmentLoadOp::eClear;
-    colorAttachmentDesc.storeOp = vk::AttachmentStoreOp::eStore;
-    colorAttachmentDesc.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    colorAttachmentDesc.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachmentDesc.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    colorAttachmentDesc.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    vk::AttachmentDescription swapchainAttachment;
+    swapchainAttachment.format = vk::Format::eB8G8R8A8Srgb;
+    swapchainAttachment.samples = vk::SampleCountFlagBits::e1;
+    swapchainAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    swapchainAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    swapchainAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    swapchainAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    swapchainAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    swapchainAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentReference colorAttachmentRef;
     colorAttachmentRef.attachment = 0;
@@ -161,10 +161,9 @@ void Swapchain::CreateRenderPass()
     subpassDesc.colorAttachmentCount = 1;
     subpassDesc.pColorAttachments = &colorAttachmentRef;
 
-    std::array<vk::AttachmentDescription, 1> attachments = { colorAttachmentDesc };
     vk::RenderPassCreateInfo renderPassInfo;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &swapchainAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 

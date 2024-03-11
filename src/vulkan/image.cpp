@@ -9,12 +9,24 @@ void Image::CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::Memory
     memory.AllocateMemory(imageBundle_.image, properties);
 }
 
+void Image::CreateImage(vk::ImageCreateInfo& imageCI, vk::MemoryPropertyFlags memProperty)
+{
+    imageBundle_.image = Device::GetBundle().device.createImage(imageCI);
+    imageBundle_.format = imageCI.format;
+    memory.AllocateMemory(imageBundle_.image, memProperty);
+}
+
 void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags)
 {
     vk::ImageSubresourceRange range(aspectFlags, 0, 1, 0, 1);
     vk::ImageViewCreateInfo createInfo({}, imageBundle_.image, vk::ImageViewType::e2D, format, {}, range);
 
     imageBundle_.imageView = Device::GetBundle().device.createImageView(createInfo);
+}
+
+void Image::CreateImageView(vk::ImageViewCreateInfo& imageViewCI)
+{
+    imageBundle_.imageView = Device::GetBundle().device.createImageView(imageViewCI);
 }
 
 void Image::CreateSampler()

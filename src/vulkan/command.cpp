@@ -37,7 +37,7 @@ void Command::CopyBufferToImage(vk::CommandBuffer& commandBuffer, const vk::Buff
     commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
 }
 
-void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, Image& image, vk::ImageLayout srcImageLayout, vk::ImageLayout dstImageLayout, vk::AccessFlags srcAccessFlags, vk::AccessFlags dstAccessFlags, vk::PipelineStageFlags srcPipelineStageFlags, vk::PipelineStageFlags dstPipelineStageFlags)
+void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, Image& image, vk::ImageLayout srcImageLayout, vk::ImageLayout dstImageLayout, vk::AccessFlags srcAccessFlags, vk::AccessFlags dstAccessFlags, vk::PipelineStageFlags srcPipelineStageFlags, vk::PipelineStageFlags dstPipelineStageFlags, vk::ImageSubresourceRange subresourceRange)
 {
     vk::PipelineStageFlags srcStage;
     vk::PipelineStageFlags dstStage;
@@ -51,20 +51,14 @@ void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, Image& ima
 
     barrier.oldLayout = srcImageLayout;
     barrier.newLayout = dstImageLayout;
-    barrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
-    barrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
     barrier.image = image.GetBundle().image;
-    barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange = subresourceRange;
 
     commandBuffer.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
     image.SetInfo(dstImageLayout);
 }
 
-void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, const vk::Image& image, vk::ImageLayout srcImageLayout, vk::ImageLayout dstImageLayout, vk::AccessFlags srcAccessFlags, vk::AccessFlags dstAccessFlags, vk::PipelineStageFlags srcPipelineStageFlags, vk::PipelineStageFlags dstPipelineStageFlags)
+void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, const vk::Image& image, vk::ImageLayout srcImageLayout, vk::ImageLayout dstImageLayout, vk::AccessFlags srcAccessFlags, vk::AccessFlags dstAccessFlags, vk::PipelineStageFlags srcPipelineStageFlags, vk::PipelineStageFlags dstPipelineStageFlags, vk::ImageSubresourceRange subresourceRange)
 {
     vk::PipelineStageFlags srcStage;
     vk::PipelineStageFlags dstStage;
@@ -81,11 +75,7 @@ void Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, const vk::
     barrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
     barrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange = subresourceRange;
 
     commandBuffer.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 }

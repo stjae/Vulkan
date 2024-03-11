@@ -55,11 +55,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    descriptorSets_.resize(Swapchain::GetBundle().frameImageCount);
-    for (int i = 0; i < descriptorSets_.size(); i++)
-        descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
-                                                         viewport.frames[i].viewportImage.GetBundle().imageView,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(viewport.viewportImage.GetBundle().sampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     plusIcon_ = GenerateIcon(PROJECT_DIR "image/icon/plus.png");
     plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(plusIcon_->GetBundle().sampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -223,25 +219,23 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     if (width == 0 || height == 0)
         return;
 
-    auto& frame = viewport.frames[frameIndex];
-
-    Command::Begin(frame.commandBuffer);
-    Command::SetImageMemoryBarrier(frame.commandBuffer, frame.viewportImage,
+    Command::Begin(commandBuffer_);
+    Command::SetImageMemoryBarrier(commandBuffer_, viewport.viewportImage,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    {},
                                    vk::AccessFlagBits::eShaderRead,
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eFragmentShader);
-    Command::SetImageMemoryBarrier(frame.commandBuffer, frame.colorID,
+    Command::SetImageMemoryBarrier(commandBuffer_, viewport.colorID,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    {},
                                    vk::AccessFlagBits::eShaderRead,
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eFragmentShader);
-    frame.commandBuffer.end();
-    Command::Submit(&frame.commandBuffer, 1);
+    commandBuffer_.end();
+    Command::Submit(&commandBuffer_, 1);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
@@ -256,7 +250,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         SetViewportUpToDate(viewport, viewport.panelSize);
 
     // Set Drag Drop Mouse Position
-    ImGui::Image(descriptorSets_[frameIndex], ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
+    ImGui::Image(descriptorSet_, ImVec2{ viewport.panelSize.x, viewport.panelSize.y });
     viewport.isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
 
@@ -551,13 +545,8 @@ void UI::ShowInformationOverlay(const Scene& scene)
 
 void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
 {
-    for (auto& descriptorSet : descriptorSets_)
-        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
-
-    for (int i = 0; i < descriptorSets_.size(); i++)
-        descriptorSets_[i] = ImGui_ImplVulkan_AddTexture(viewport.frames[i].viewportImage.GetBundle().sampler,
-                                                         viewport.frames[i].viewportImage.GetBundle().imageView,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    ImGui_ImplVulkan_RemoveTexture(descriptorSet_);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(viewport.viewportImage.GetBundle().sampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
@@ -586,12 +575,10 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
 
 UI::~UI()
 {
-    Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
     Device::GetBundle().device.destroyCommandPool(commandPool_);
     for (auto& layout : descriptorSetLayouts_)
         Device::GetBundle().device.destroyDescriptorSetLayout(layout);
-    for (auto& set : descriptorSets_)
-        ImGui_ImplVulkan_RemoveTexture(set);
+    ImGui_ImplVulkan_RemoveTexture(descriptorSet_);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

@@ -22,8 +22,10 @@ public:
     vk::DescriptorPool descriptorPool;
     std::vector<vk::DescriptorSet> descriptorSets;
 
-    void CreateGraphicsPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath, vk::PrimitiveTopology topology);
+    void CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath);
     void CreateMeshRenderDescriptorSetLayout();
+    void CreateShadowMapPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath);
+    void CreateShadowMapDescriptorSetLayout();
     ~Pipeline();
 
     const PipelineBundle& GetBundle() { return bundle_; }
