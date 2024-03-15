@@ -10,9 +10,9 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 5> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
 {
-    std::array<vk::VertexInputAttributeDescription, 5> attributes;
+    std::array<vk::VertexInputAttributeDescription, 4> attributes;
     uint32_t offset = 0;
 
     // Pos
@@ -44,11 +44,11 @@ std::array<vk::VertexInputAttributeDescription, 5> MeshData::GetAttributeDescs()
     offset += sizeof(Vertex::texcoord);
 
     // Tangent
-    attributes[4].binding = 0;
-    attributes[4].location = 4;
-    attributes[4].format = vk::Format::eR32G32B32Sfloat;
-    attributes[4].offset = offset;
-    offset += sizeof(Vertex::tangent);
+    // attributes[4].binding = 0;
+    // attributes[4].location = 4;
+    // attributes[4].format = vk::Format::eR32G32B32Sfloat;
+    // attributes[4].offset = offset;
+    // offset += sizeof(Vertex::tangent);
 
     return attributes;
 }

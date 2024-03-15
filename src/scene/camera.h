@@ -6,7 +6,7 @@
 #include "../vulkan/buffer.h"
 #include "../../imgui/imgui.h"
 
-struct CameraUniformData
+struct CameraData
 {
     glm::mat4 view;
     glm::mat4 proj;
@@ -30,7 +30,7 @@ class Camera
 
     float speed_ = 4.0f;
 
-    CameraUniformData cameraUniformData{};
+    CameraData cameraUniformData{};
     std::unique_ptr<Buffer> uniformBuffer_;
 
     void SetCameraControl();
@@ -40,7 +40,7 @@ class Camera
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
-    const CameraUniformData& GetMatrix() { return cameraUniformData; }
+    const CameraData& GetMatrix() { return cameraUniformData; }
     const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().descriptorBufferInfo; }
 };
 

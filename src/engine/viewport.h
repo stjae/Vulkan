@@ -21,6 +21,13 @@ struct ShadowMapPass
     vk::RenderPass renderPass;
 };
 
+struct ShadowMapPassPushConstants
+{
+    glm::mat4 view;
+    glm::vec3 padding;
+    int lightIndex;
+};
+
 class Viewport
 {
     vk::CommandPool commandPool_;
@@ -34,9 +41,10 @@ class Viewport
     // shadowCubeMap
     uint32_t shadowMapSize_;
     vk::Format shadowMapImageFormat_;
-    Image shadowCubeMap_;
+    vk::Format shadowMapDepthFormat_;
     std::array<vk::ImageView, 6> shadowCubeMapFaceImageViews_;
     ShadowMapPass shadowMapPass_;
+    ShadowMapPassPushConstants shadowMapPassPushConstants_;
     void PrepareShadowCubeMap();
     void CreateShadowMapRenderPass();
 
@@ -49,6 +57,7 @@ public:
     Image viewportImage;
     Image depthImage;
     Image colorID;
+    Image shadowCubeMap_;
 
     vk::Extent2D extent;
     ImVec2 panelPos;
@@ -65,6 +74,9 @@ public:
     void Draw(size_t frameIndex, Scene& scene);
     const PipelineState& GetPipelineState() { return pipelineState_; };
     ~Viewport();
+    void GenerateShadowMap(Scene& scene);
+    void UpdateCubeFace(uint32_t faceIndex, Scene& scene);
+    void CreateShadowMapFrameBuffer();
 };
 
 #endif

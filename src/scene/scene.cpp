@@ -10,6 +10,9 @@ Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID
     camera.pos_ = { -3.0, 3.3, 8.0 };
     camera.at_ = { -2.5, 3.0, 7.3 };
 
+    BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    shadowMapCameraBuffer = std::make_unique<Buffer>(bufferInput);
+
     CreateDummyTexture();
 
     meshes.emplace_back(MESHTYPE::SQUARE);
@@ -19,8 +22,9 @@ Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID
     meshes.emplace_back(MESHTYPE::SPHERE);
     meshes.back().CreateBuffers();
 
-    AddMesh(MESHTYPE::SPHERE);
-    lights.emplace_back(glm::vec3(0.0f, 3.0f, 2.0f));
+    AddMeshInstance(MESHTYPE::SQUARE, glm::vec3(0.0f, -4.0f, 0.0f), 10.0f);
+    AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), 0.3f);
+    lights.emplace_back();
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -41,9 +45,9 @@ void Scene::AddResource(std::string& filePath)
     }
 }
 
-void Scene::AddMesh(uint32_t id, glm::vec3 pos)
+void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, float scale)
 {
-    meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID, std::move(pos));
+    meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID, pos, scale);
     meshes[id].instanceID++;
 }
 
@@ -163,9 +167,12 @@ void Scene::Update()
         camera.pos_ = glm::translate(meshes[selectedMeshID].instanceData_[selectedMeshInstanceID].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
     camera.cameraUniformData.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
-    camera.cameraUniformData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 100.0f);
+    camera.cameraUniformData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
     camera.cameraUniformData.pos = camera.pos_;
     camera.UpdateBuffer();
+
+    shadowMapCameraData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.f);
+    shadowMapCameraBuffer->Copy(&shadowMapCameraData);
 
     BufferInput bufferInput;
     if (!lights.empty()) {

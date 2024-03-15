@@ -21,7 +21,7 @@ void Pipeline::CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const 
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCI({}, vk::PrimitiveTopology::eTriangleList);
     vk::PipelineDynamicStateCreateInfo dynamicStateCI({}, dynamicStates.size(), dynamicStates.data());
     vk::PipelineViewportStateCreateInfo viewportStateCI({}, 1, {}, 1, {});
-    vk::PipelineRasterizationStateCreateInfo rasterizeStateCI({}, vk::False, vk::False, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, vk::False);
+    vk::PipelineRasterizationStateCreateInfo rasterizeStateCI({}, vk::False, vk::False, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, vk::False, {}, {}, {}, 1.0f);
     vk::PipelineMultisampleStateCreateInfo multisampleStateCI({}, vk::SampleCountFlagBits::e1, vk::False);
     vk::PipelineColorBlendStateCreateInfo colorBlendStateCI({}, vk::False, {}, attachmentStates.size(), attachmentStates.data());
     vk::PipelineDepthStencilStateCreateInfo depthStencilStateCI({}, vk::True, vk::True, vk::CompareOp::eLess);
@@ -56,6 +56,8 @@ void Pipeline::CreateMeshRenderDescriptorSetLayout()
     bufferBindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eFragment);
     // meshes
     bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    // shadow map
+    bufferBindings.emplace_back(3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(bufferBindings));
     Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);
 
@@ -80,8 +82,8 @@ void Pipeline::CreateShadowMapPipeline(const vk::RenderPass& renderPass, const c
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader_.fragmentShaderModule, "main" };
     std::array<vk::DynamicState, 2> dynamicStates{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     attachment = vk::PipelineColorBlendAttachmentState(vk::False);
-    attachment.colorWriteMask = vk::ColorComponentFlagBits::eR;
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4));
+    attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4) + sizeof(int) + sizeof(glm::vec3));
 
     vk::VertexInputBindingDescription bindingDesc = MeshData::GetBindingDesc();
     auto attributeDescs = MeshData::GetAttributeDescs();
@@ -89,7 +91,7 @@ void Pipeline::CreateShadowMapPipeline(const vk::RenderPass& renderPass, const c
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCI({}, vk::PrimitiveTopology::eTriangleList);
     vk::PipelineDynamicStateCreateInfo dynamicStateCI({}, dynamicStates.size(), dynamicStates.data());
     vk::PipelineViewportStateCreateInfo viewportStateCI({}, 1, {}, 1, {});
-    vk::PipelineRasterizationStateCreateInfo rasterizeStateCI({}, vk::False, vk::False, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise, vk::False);
+    vk::PipelineRasterizationStateCreateInfo rasterizeStateCI({}, vk::False, vk::False, vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eCounterClockwise, vk::False, {}, {}, {}, 1.0f);
     vk::PipelineMultisampleStateCreateInfo multisampleStateCI({}, vk::SampleCountFlagBits::e1, vk::False);
     vk::PipelineColorBlendStateCreateInfo colorBlendStateCI({}, vk::False, {}, 1, &attachment);
     vk::PipelineDepthStencilStateCreateInfo depthStencilStateCI({}, vk::True, vk::True, vk::CompareOp::eLess);

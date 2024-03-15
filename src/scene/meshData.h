@@ -31,7 +31,7 @@ protected:
 
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
-    static std::array<vk::VertexInputAttributeDescription, 5> GetAttributeDescs();
+    static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescs();
     void CreateVertexBuffer();
     void CreateIndexBuffer();
 

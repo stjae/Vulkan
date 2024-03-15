@@ -53,13 +53,15 @@ public:
     std::vector<std::shared_ptr<Texture>> textures;
     std::vector<Resource> resources;
     Camera camera;
+    std::unique_ptr<Buffer> shadowMapCameraBuffer;
+    CameraData shadowMapCameraData;
     int32_t selectedMeshID;
     int32_t selectedMeshInstanceID;
     int32_t selectedLightID;
 
     Scene();
     void AddResource(std::string& filePath);
-    void AddMesh(uint32_t id, glm::vec3 pos = glm::vec3(0.0f));
+    void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), float scale = 1.0f);
     void AddTexture(const std::string& filePath);
     void DeleteMesh();
     void DeleteLight();

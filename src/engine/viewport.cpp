@@ -12,13 +12,16 @@ Viewport::Viewport()
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
     CreateViewportImages();
+    CreateViewportFrameBuffer();
 
     colorPicked_.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
 
     PrepareShadowCubeMap();
     CreateShadowMapRenderPass();
-    // pipelineState_.shadowMap.CreateShadowMapDescriptorSetLayout();
-    // pipelineState_.shadowMap.CreateShadowMapPipeline(shadowMapPass_.renderPass,"");
+    CreateShadowMapFrameBuffer();
+
+    pipelineState_.shadowMap.CreateShadowMapDescriptorSetLayout();
+    pipelineState_.shadowMap.CreateShadowMapPipeline(shadowMapPass_.renderPass, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv");
 }
 
 void Viewport::CreateViewportImages()
@@ -293,8 +296,8 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 0, nullptr);
 
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipeline);
-    vk::DeviceSize vertexOffsets[]{ 0 };
 
+    vk::DeviceSize vertexOffsets[]{ 0 };
     uint32_t dynamicOffset = 0;
     for (auto& mesh : scene.meshes) {
         if (mesh.GetInstanceCount() < 1)
@@ -333,6 +336,7 @@ void Viewport::PrepareShadowCubeMap()
 {
     shadowMapSize_ = 1024;
     shadowMapImageFormat_ = vk::Format::eR32Sfloat;
+    shadowMapDepthFormat_ = vk::Format::eD32Sfloat;
 
     vk::ImageCreateInfo shadowCubeMapImageCI(vk::ImageCreateFlagBits::eCubeCompatible, vk::ImageType::e2D, shadowMapImageFormat_, { shadowMapSize_, shadowMapSize_, 1 }, 1, 6, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive);
     shadowCubeMap_.CreateImage(shadowCubeMapImageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -354,6 +358,7 @@ void Viewport::PrepareShadowCubeMap()
 
     vk::ImageViewCreateInfo viewCI({}, shadowCubeMap_.GetBundle().image, vk::ImageViewType::eCube, shadowMapImageFormat_, { vk::ComponentSwizzle::eR }, { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6 });
     shadowCubeMap_.CreateImageView(viewCI);
+    shadowCubeMap_.SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
 
     viewCI.viewType = vk::ImageViewType::e2D;
     viewCI.subresourceRange.layerCount = 1;
@@ -378,7 +383,7 @@ void Viewport::CreateShadowMapRenderPass()
     shadowMapAttachments[0].finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     // Depth
-    shadowMapAttachments[1].format = vk::Format::eD32Sfloat;
+    shadowMapAttachments[1].format = shadowMapDepthFormat_;
     shadowMapAttachments[1].samples = vk::SampleCountFlagBits::e1;
     shadowMapAttachments[1].loadOp = vk::AttachmentLoadOp::eClear;
     shadowMapAttachments[1].storeOp = vk::AttachmentStoreOp::eStore;
@@ -414,10 +419,117 @@ Viewport::~Viewport()
 {
     Device::GetBundle().device.destroyRenderPass(viewportRenderPass_);
     Device::GetBundle().device.destroyFramebuffer(framebuffer);
+    for (auto& framebuffer : shadowMapPass_.framebuffers) {
+        Device::GetBundle().device.destroyFramebuffer(framebuffer);
+    }
     Device::GetBundle().device.destroyCommandPool(commandPool_);
 
     Device::GetBundle().device.destroyRenderPass(shadowMapPass_.renderPass);
     for (auto& view : shadowCubeMapFaceImageViews_) {
         Device::GetBundle().device.destroyImageView(view);
+    }
+}
+
+void Viewport::GenerateShadowMap(Scene& scene)
+{
+    Command::Begin(commandBuffer_);
+
+    vk::Viewport viewport({}, {}, (float)shadowMapSize_, (float)shadowMapSize_, 0.0f, 1.0f);
+    commandBuffer_.setViewport(0, 1, &viewport);
+
+    vk::Rect2D scissor({ 0, 0 }, { shadowMapSize_, shadowMapSize_ });
+    commandBuffer_.setScissor(0, 1, &scissor);
+
+    for (uint32_t face = 0; face < 6; face++) {
+        UpdateCubeFace(face, scene);
+    }
+
+    commandBuffer_.end();
+    Command::Submit(&commandBuffer_, 1);
+}
+
+void Viewport::UpdateCubeFace(uint32_t faceIndex, Scene& scene)
+{
+    std::array<vk::ClearValue, 2> clearValues;
+    clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+
+    vk::RenderPassBeginInfo renderPassBI(shadowMapPass_.renderPass, shadowMapPass_.framebuffers[faceIndex], { { 0, 0 }, { shadowMapSize_, shadowMapSize_ } }, 2, clearValues.data());
+
+    glm::mat4 viewMatrix = scene.lights[0].model;
+    glm::vec3 lightPos = scene.lights[0].model * glm::vec4(scene.lights[0].pos, 1.0f);
+    switch (faceIndex) {
+    case 0: // POSITIVE_X
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        break;
+    case 1: // NEGATIVE_X
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        break;
+    case 2: // POSITIVE_Y
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        break;
+    case 3: // NEGATIVE_Y
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+        break;
+    case 4: // POSITIVE_Z
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        break;
+    case 5: // NEGATIVE_Z
+        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        break;
+    }
+
+    shadowMapPassPushConstants_.view = viewMatrix;
+    shadowMapPassPushConstants_.lightIndex = 0;
+
+    commandBuffer_.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
+
+    commandBuffer_.pushConstants(
+        pipelineState_.shadowMap.GetBundle().pipelineLayout,
+        vk::ShaderStageFlagBits::eVertex,
+        0,
+        sizeof(ShadowMapPassPushConstants),
+        &shadowMapPassPushConstants_);
+
+    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.shadowMap.GetBundle().pipeline);
+    vk::DeviceSize vertexOffsets[]{ 0 };
+    uint32_t dynamicOffset = 0;
+    for (auto& mesh : scene.meshes) {
+        if (mesh.GetInstanceCount() < 1)
+            continue;
+        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.shadowMap.GetBundle().pipelineLayout, 0, 1, &pipelineState_.shadowMap.descriptorSets[0], 1, &dynamicOffset);
+        commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
+        commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+        commandBuffer_.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
+
+        dynamicOffset += mesh.GetInstanceCount() * sizeof(InstanceData);
+    }
+
+    commandBuffer_.endRenderPass();
+}
+void Viewport::CreateShadowMapFrameBuffer()
+{
+    shadowMapPass_.width = (int32_t)shadowMapSize_;
+    shadowMapPass_.height = (int32_t)shadowMapSize_;
+
+    vk::ImageCreateInfo imageCI({}, vk::ImageType::e2D, shadowMapDepthFormat_, { shadowMapSize_, shadowMapSize_, 1 }, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, {}, {}, vk::ImageLayout::eUndefined);
+    shadowMapPass_.depth.CreateImage(imageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    vk::ImageViewCreateInfo depthStencilViewCI({}, shadowMapPass_.depth.GetBundle().image, vk::ImageViewType::e2D, shadowMapDepthFormat_, {}, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+
+    Command::Begin(commandBuffer_);
+    Command::SetImageMemoryBarrier(commandBuffer_, shadowMapPass_.depth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, {}, vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+    commandBuffer_.end();
+    Command::Submit(&commandBuffer_, 1);
+
+    shadowMapPass_.depth.CreateImageView(depthStencilViewCI);
+
+    std::array<vk::ImageView, 2> attachments;
+    attachments[1] = shadowMapPass_.depth.GetBundle().imageView;
+
+    vk::FramebufferCreateInfo frameBufferCI({}, shadowMapPass_.renderPass, attachments.size(), attachments.data(), shadowMapPass_.width, shadowMapPass_.height, 1);
+
+    for (uint32_t i = 0; i < 6; i++) {
+        attachments[0] = shadowCubeMapFaceImageViews_[i];
+        Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &shadowMapPass_.framebuffers[i]);
     }
 }

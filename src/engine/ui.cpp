@@ -197,13 +197,13 @@ void UI::DrawDockSpace(Scene& scene)
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
-                scene.AddMesh(MESHTYPE::SQUARE);
+                scene.AddMeshInstance(MESHTYPE::SQUARE);
             }
             if (ImGui::MenuItem("Cube")) {
-                scene.AddMesh(MESHTYPE::CUBE);
+                scene.AddMeshInstance(MESHTYPE::CUBE);
             }
             if (ImGui::MenuItem("Sphere")) {
-                scene.AddMesh(MESHTYPE::SPHERE);
+                scene.AddMeshInstance(MESHTYPE::SPHERE);
             }
             ImGui::EndMenu();
         }
@@ -558,7 +558,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
 
     switch (dragDropResource->resourceType) {
     case RESOURCETYPE::MESH:
-        scene.AddMesh(static_cast<Mesh*>(dragDropResource->resource)->meshID);
+        scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->resource)->meshID);
         break;
     case RESOURCETYPE::TEXTURE:
         if (pickColor[0] != -1) {
