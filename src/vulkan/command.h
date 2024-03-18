@@ -2,7 +2,6 @@
 #define COMMAND_H
 
 #include "device.h"
-#include "pipeline.h"
 #include "image.h"
 #include "../scene/mesh.h"
 

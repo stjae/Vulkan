@@ -3,7 +3,8 @@
 Camera::Camera()
 {
     BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    uniformBuffer_ = std::make_unique<Buffer>(bufferInput);
+    cameraBuffer_ = std::make_unique<Buffer>(bufferInput);
+    meshRenderPipeline.cameraDescriptor = cameraBuffer_->GetBundle().descriptorBufferInfo;
 }
 
 void Camera::SetCameraControl()

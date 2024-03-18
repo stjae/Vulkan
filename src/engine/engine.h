@@ -16,6 +16,9 @@
 
 class Engine
 {
+    vk::CommandPool commandPool_;
+    vk::CommandBuffer commandBuffer_;
+
     size_t frameIndex_ = 0;
     Device device_;
     Swapchain swapchain_;
@@ -30,7 +33,6 @@ public:
     Engine();
     void InitSwapchainImages();
     void DrawUI();
-    void Update();
     void Render();
     ~Engine();
 };

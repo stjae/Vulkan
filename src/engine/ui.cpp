@@ -193,7 +193,7 @@ void UI::DrawDockSpace(Scene& scene)
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Light")) {
-                scene.lights.emplace_back();
+                scene.AddLight();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Square")) {
@@ -282,6 +282,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         pos.y *= height;
         ImVec2 screenPos(pos.x, pos.y);
         ImVec2 offset(25, 25);
+        // TODO: fix
         ImGui::GetWindowDrawList()->AddImage(lightIconDescriptorSet_, viewport.panelPos + screenPos - offset, viewport.panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
@@ -313,6 +314,7 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
 
     viewport.DestroyViewportImages();
     viewport.CreateViewportImages();
+    viewport.CreateViewportFrameBuffer();
     RecreateViewportDescriptorSets(viewport);
 
     viewport.outDated = false;

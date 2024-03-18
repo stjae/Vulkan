@@ -4,24 +4,15 @@ Viewport::Viewport()
 {
     extent = vk::Extent2D((uint32_t)Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)Swapchain::GetBundle().swapchainImageExtent.height);
 
-    CreateViewportRenderPass();
-    pipelineState_.meshRender.CreateMeshRenderDescriptorSetLayout();
-    pipelineState_.meshRender.CreateMeshRenderPipeline(viewportRenderPass_, "shaders/base.vert.spv", "shaders/base.frag.spv");
-
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+
+    CreateMeshRenderPass();
 
     CreateViewportImages();
     CreateViewportFrameBuffer();
 
     colorPicked_.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
-
-    PrepareShadowCubeMap();
-    CreateShadowMapRenderPass();
-    CreateShadowMapFrameBuffer();
-
-    pipelineState_.shadowMap.CreateShadowMapDescriptorSetLayout();
-    pipelineState_.shadowMap.CreateShadowMapPipeline(shadowMapPass_.renderPass, "shaders/shadow.vert.spv", "shaders/shadow.frag.spv");
 }
 
 void Viewport::CreateViewportImages()
@@ -58,8 +49,6 @@ void Viewport::CreateViewportImages()
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
     Command::Submit(&commandBuffer_, 1);
-
-    CreateViewportFrameBuffer();
 }
 
 void Viewport::DestroyViewportImages()
@@ -79,68 +68,6 @@ void Viewport::DestroyViewportImages()
     depthImage.memory.Free();
 }
 
-void Viewport::CreateViewportRenderPass()
-{
-    std::array<vk::AttachmentDescription, 3> viewportAttachments;
-
-    viewportAttachments[0].format = vk::Format::eB8G8R8A8Srgb;
-    viewportAttachments[0].samples = vk::SampleCountFlagBits::e1;
-    viewportAttachments[0].loadOp = vk::AttachmentLoadOp::eClear;
-    viewportAttachments[0].storeOp = vk::AttachmentStoreOp::eStore;
-    viewportAttachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    viewportAttachments[0].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    viewportAttachments[0].initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    viewportAttachments[0].finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    // ID
-    viewportAttachments[1].format = vk::Format::eR32G32Sint;
-    viewportAttachments[1].samples = vk::SampleCountFlagBits::e1;
-    viewportAttachments[1].loadOp = vk::AttachmentLoadOp::eClear;
-    viewportAttachments[1].storeOp = vk::AttachmentStoreOp::eStore;
-    viewportAttachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    viewportAttachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    viewportAttachments[1].initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    viewportAttachments[1].finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    // Depth
-    viewportAttachments[2].format = vk::Format::eD32Sfloat;
-    viewportAttachments[2].samples = vk::SampleCountFlagBits::e1;
-    viewportAttachments[2].loadOp = vk::AttachmentLoadOp::eClear;
-    viewportAttachments[2].storeOp = vk::AttachmentStoreOp::eStore;
-    viewportAttachments[2].stencilLoadOp = vk::AttachmentLoadOp::eClear;
-    viewportAttachments[2].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    viewportAttachments[2].initialLayout = vk::ImageLayout::eUndefined;
-    viewportAttachments[2].finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::AttachmentReference colorAttachmentRef;
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference idAttachmentRef;
-    idAttachmentRef.attachment = 1;
-    idAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    std::array<vk::AttachmentReference, 2> colorAttachmentRefs{ colorAttachmentRef, idAttachmentRef };
-
-    vk::AttachmentReference depthAttachmentRef;
-    depthAttachmentRef.attachment = 2;
-    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::SubpassDescription subpassDesc;
-    subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpassDesc.colorAttachmentCount = colorAttachmentRefs.size();
-    subpassDesc.pColorAttachments = colorAttachmentRefs.data();
-    subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
-
-    vk::RenderPassCreateInfo renderPassInfo;
-    renderPassInfo.attachmentCount = (uint32_t)(viewportAttachments.size());
-    renderPassInfo.pAttachments = viewportAttachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassDesc;
-
-    viewportRenderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
-}
-
 void Viewport::CreateViewportFrameBuffer()
 {
     std::vector<vk::ImageView> attachments = {
@@ -150,7 +77,7 @@ void Viewport::CreateViewportFrameBuffer()
     };
 
     vk::FramebufferCreateInfo framebufferInfo;
-    framebufferInfo.renderPass = viewportRenderPass_;
+    framebufferInfo.renderPass = meshRenderPipeline.renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = extent.width;
@@ -261,7 +188,7 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
                                    vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = viewportRenderPass_;
+    renderPassInfo.renderPass = meshRenderPipeline.renderPass;
     renderPassInfo.framebuffer = framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = extent;
@@ -293,16 +220,17 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     commandBuffer_.setViewport(0, viewport);
     commandBuffer_.setScissor(0, scissor);
 
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 1, 1, &pipelineState_.meshRender.descriptorSets[1], 0, nullptr);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 1, 1, &meshRenderPipeline.descriptorSets[1], 0, nullptr);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 2, 1, &meshRenderPipeline.descriptorSets[2], 0, nullptr);
 
-    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipeline);
+    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
     uint32_t dynamicOffset = 0;
     for (auto& mesh : scene.meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.meshRender.GetBundle().pipelineLayout, 0, 1, &pipelineState_.meshRender.descriptorSets[0], 1, &dynamicOffset);
+        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 1, &dynamicOffset);
         commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
         commandBuffer_.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
@@ -332,204 +260,28 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
     Command::Submit(&commandBuffer_, 1);
 }
 
-void Viewport::PrepareShadowCubeMap()
-{
-    shadowMapSize_ = 1024;
-    shadowMapImageFormat_ = vk::Format::eR32Sfloat;
-    shadowMapDepthFormat_ = vk::Format::eD32Sfloat;
-
-    vk::ImageCreateInfo shadowCubeMapImageCI(vk::ImageCreateFlagBits::eCubeCompatible, vk::ImageType::e2D, shadowMapImageFormat_, { shadowMapSize_, shadowMapSize_, 1 }, 1, 6, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive);
-    shadowCubeMap_.CreateImage(shadowCubeMapImageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    Command::Begin(commandBuffer_);
-    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   shadowCubeMap_,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   subresourceRange);
-    commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
-
-    shadowCubeMap_.CreateSampler();
-
-    vk::ImageViewCreateInfo viewCI({}, shadowCubeMap_.GetBundle().image, vk::ImageViewType::eCube, shadowMapImageFormat_, { vk::ComponentSwizzle::eR }, { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6 });
-    shadowCubeMap_.CreateImageView(viewCI);
-    shadowCubeMap_.SetInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
-
-    viewCI.viewType = vk::ImageViewType::e2D;
-    viewCI.subresourceRange.layerCount = 1;
-
-    for (uint32_t i = 0; i < 6; i++) {
-        viewCI.subresourceRange.baseArrayLayer = i;
-        Device::GetBundle().device.createImageView(&viewCI, nullptr, &shadowCubeMapFaceImageViews_[i]);
-    }
-}
-
-void Viewport::CreateShadowMapRenderPass()
-{
-    std::array<vk::AttachmentDescription, 2> shadowMapAttachments;
-
-    shadowMapAttachments[0].format = shadowMapImageFormat_;
-    shadowMapAttachments[0].samples = vk::SampleCountFlagBits::e1;
-    shadowMapAttachments[0].loadOp = vk::AttachmentLoadOp::eClear;
-    shadowMapAttachments[0].storeOp = vk::AttachmentStoreOp::eStore;
-    shadowMapAttachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    shadowMapAttachments[0].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    shadowMapAttachments[0].initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-    shadowMapAttachments[0].finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-    // Depth
-    shadowMapAttachments[1].format = shadowMapDepthFormat_;
-    shadowMapAttachments[1].samples = vk::SampleCountFlagBits::e1;
-    shadowMapAttachments[1].loadOp = vk::AttachmentLoadOp::eClear;
-    shadowMapAttachments[1].storeOp = vk::AttachmentStoreOp::eStore;
-    shadowMapAttachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    shadowMapAttachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    shadowMapAttachments[1].initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    shadowMapAttachments[1].finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::AttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::SubpassDescription subpassDesc{};
-    subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpassDesc.colorAttachmentCount = 1;
-    subpassDesc.pColorAttachments = &colorAttachmentRef;
-    subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
-
-    vk::RenderPassCreateInfo renderPassCI{};
-    renderPassCI.attachmentCount = shadowMapAttachments.size();
-    renderPassCI.pAttachments = shadowMapAttachments.data();
-    renderPassCI.subpassCount = 1;
-    renderPassCI.pSubpasses = &subpassDesc;
-
-    Device::GetBundle().device.createRenderPass(&renderPassCI, nullptr, &shadowMapPass_.renderPass);
-}
-
 Viewport::~Viewport()
 {
-    Device::GetBundle().device.destroyRenderPass(viewportRenderPass_);
     Device::GetBundle().device.destroyFramebuffer(framebuffer);
-    for (auto& framebuffer : shadowMapPass_.framebuffers) {
-        Device::GetBundle().device.destroyFramebuffer(framebuffer);
-    }
     Device::GetBundle().device.destroyCommandPool(commandPool_);
-
-    Device::GetBundle().device.destroyRenderPass(shadowMapPass_.renderPass);
-    for (auto& view : shadowCubeMapFaceImageViews_) {
-        Device::GetBundle().device.destroyImageView(view);
-    }
-}
-
-void Viewport::GenerateShadowMap(Scene& scene)
-{
-    Command::Begin(commandBuffer_);
-
-    vk::Viewport viewport({}, {}, (float)shadowMapSize_, (float)shadowMapSize_, 0.0f, 1.0f);
-    commandBuffer_.setViewport(0, 1, &viewport);
-
-    vk::Rect2D scissor({ 0, 0 }, { shadowMapSize_, shadowMapSize_ });
-    commandBuffer_.setScissor(0, 1, &scissor);
-
-    for (uint32_t face = 0; face < 6; face++) {
-        UpdateCubeFace(face, scene);
-    }
-
-    commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
-}
-
-void Viewport::UpdateCubeFace(uint32_t faceIndex, Scene& scene)
-{
-    std::array<vk::ClearValue, 2> clearValues;
-    clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-    clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
-
-    vk::RenderPassBeginInfo renderPassBI(shadowMapPass_.renderPass, shadowMapPass_.framebuffers[faceIndex], { { 0, 0 }, { shadowMapSize_, shadowMapSize_ } }, 2, clearValues.data());
-
-    glm::mat4 viewMatrix = scene.lights[0].model;
-    glm::vec3 lightPos = scene.lights[0].model * glm::vec4(scene.lights[0].pos, 1.0f);
-    switch (faceIndex) {
-    case 0: // POSITIVE_X
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-        break;
-    case 1: // NEGATIVE_X
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-        break;
-    case 2: // POSITIVE_Y
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        break;
-    case 3: // NEGATIVE_Y
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-        break;
-    case 4: // POSITIVE_Z
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-        break;
-    case 5: // NEGATIVE_Z
-        viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-        break;
-    }
-
-    shadowMapPassPushConstants_.view = viewMatrix;
-    shadowMapPassPushConstants_.lightIndex = 0;
-
-    commandBuffer_.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
-
-    commandBuffer_.pushConstants(
-        pipelineState_.shadowMap.GetBundle().pipelineLayout,
-        vk::ShaderStageFlagBits::eVertex,
-        0,
-        sizeof(ShadowMapPassPushConstants),
-        &shadowMapPassPushConstants_);
-
-    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineState_.shadowMap.GetBundle().pipeline);
-    vk::DeviceSize vertexOffsets[]{ 0 };
-    uint32_t dynamicOffset = 0;
-    for (auto& mesh : scene.meshes) {
-        if (mesh.GetInstanceCount() < 1)
-            continue;
-        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineState_.shadowMap.GetBundle().pipelineLayout, 0, 1, &pipelineState_.shadowMap.descriptorSets[0], 1, &dynamicOffset);
-        commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
-        commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
-        commandBuffer_.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
-
-        dynamicOffset += mesh.GetInstanceCount() * sizeof(InstanceData);
-    }
-
-    commandBuffer_.endRenderPass();
-}
-void Viewport::CreateShadowMapFrameBuffer()
-{
-    shadowMapPass_.width = (int32_t)shadowMapSize_;
-    shadowMapPass_.height = (int32_t)shadowMapSize_;
-
-    vk::ImageCreateInfo imageCI({}, vk::ImageType::e2D, shadowMapDepthFormat_, { shadowMapSize_, shadowMapSize_, 1 }, 1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, {}, {}, vk::ImageLayout::eUndefined);
-    shadowMapPass_.depth.CreateImage(imageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    vk::ImageViewCreateInfo depthStencilViewCI({}, shadowMapPass_.depth.GetBundle().image, vk::ImageViewType::e2D, shadowMapDepthFormat_, {}, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
-
-    Command::Begin(commandBuffer_);
-    Command::SetImageMemoryBarrier(commandBuffer_, shadowMapPass_.depth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, {}, vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
-    commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
-
-    shadowMapPass_.depth.CreateImageView(depthStencilViewCI);
-
-    std::array<vk::ImageView, 2> attachments;
-    attachments[1] = shadowMapPass_.depth.GetBundle().imageView;
-
-    vk::FramebufferCreateInfo frameBufferCI({}, shadowMapPass_.renderPass, attachments.size(), attachments.data(), shadowMapPass_.width, shadowMapPass_.height, 1);
-
-    for (uint32_t i = 0; i < 6; i++) {
-        attachments[0] = shadowCubeMapFaceImageViews_[i];
-        Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &shadowMapPass_.framebuffers[i]);
-    }
+    Device::GetBundle().device.destroyPipelineLayout(meshRenderPipeline.pipelineLayout);
+    Device::GetBundle().device.destroyPipelineLayout(shadowMapPipeline.pipelineLayout);
+    Device::GetBundle().device.destroyPipeline(meshRenderPipeline.pipeline);
+    Device::GetBundle().device.destroyPipeline(shadowMapPipeline.pipeline);
+    Device::GetBundle().device.destroyRenderPass(meshRenderPipeline.renderPass);
+    Device::GetBundle().device.destroyRenderPass(shadowMapPipeline.renderPass);
+    for (auto& descriptorSetLayout : meshRenderPipeline.descriptorSetLayouts)
+        Device::GetBundle().device.destroyDescriptorSetLayout(descriptorSetLayout);
+    for (auto& descriptorSetLayout : shadowMapPipeline.descriptorSetLayouts)
+        Device::GetBundle().device.destroyDescriptorSetLayout(descriptorSetLayout);
+    Device::GetBundle().device.destroyDescriptorPool(meshRenderPipeline.descriptorPool);
+    Device::GetBundle().device.destroyDescriptorPool(shadowMapPipeline.descriptorPool);
+    if (meshRenderPipeline.shader.vertexShaderModule)
+        Device::GetBundle().device.destroyShaderModule(meshRenderPipeline.shader.vertexShaderModule);
+    if (shadowMapPipeline.shader.vertexShaderModule)
+        Device::GetBundle().device.destroyShaderModule(shadowMapPipeline.shader.vertexShaderModule);
+    if (meshRenderPipeline.shader.fragmentShaderModule)
+        Device::GetBundle().device.destroyShaderModule(meshRenderPipeline.shader.fragmentShaderModule);
+    if (shadowMapPipeline.shader.fragmentShaderModule)
+        Device::GetBundle().device.destroyShaderModule(shadowMapPipeline.shader.fragmentShaderModule);
 }

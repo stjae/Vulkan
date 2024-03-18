@@ -5,8 +5,8 @@
 #include "device.h"
 #include "instance.h"
 #include "command.h"
+#include "descriptor.h"
 #include "memory.h"
-#include "pipeline.h"
 #include "sync.h"
 #include "../../imgui/imgui.h"
 #include "../../imgui/imgui_impl_vulkan.h"
@@ -43,7 +43,6 @@ class Swapchain
 
     inline static SwapchainBundle swapchainBundle_;
 
-    Pipeline pipeline_;
     vk::RenderPass renderPass_;
     std::vector<DescriptorBinding> descriptorSetLayoutData_;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;

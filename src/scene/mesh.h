@@ -13,10 +13,13 @@ struct InstanceData
     int useTexture;
     int32_t instanceID;
 
-    InstanceData(int32_t meshID, int32_t instanceID, glm::vec3& pos, float scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(0), instanceID(instanceID)
+    InstanceData(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(0), instanceID(instanceID)
     {
         model = glm::translate(model, pos);
-        model = glm::scale(model, glm::vec3(scale));
+        model = glm::scale(model, scale);
+        invTranspose = model;
+        invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        invTranspose = glm::transpose(glm::inverse(invTranspose));
     }
 };
 

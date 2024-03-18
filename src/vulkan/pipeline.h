@@ -4,31 +4,44 @@
 #include "../common.h"
 #include "shader.h"
 #include "descriptor.h"
+#include "image.h"
 #include "../scene/meshData.h"
 
-struct PipelineBundle
+inline vk::Format shadowMapImageFormat = vk::Format::eR32Sfloat;
+inline vk::Format shadowMapDepthFormat = vk::Format::eD32Sfloat;
+
+struct MeshRenderPipeline
 {
     vk::Pipeline pipeline;
     vk::PipelineLayout pipelineLayout;
-};
-
-class Pipeline
-{
-    Shader shader_;
-    PipelineBundle bundle_;
-    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
-
-public:
+    vk::RenderPass renderPass;
+    Shader shader;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
     std::vector<vk::DescriptorSet> descriptorSets;
+    vk::DescriptorBufferInfo cameraDescriptor;
+    vk::DescriptorBufferInfo lightDescriptor;
+    vk::DescriptorBufferInfo meshDescriptor;
+    std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
+} inline meshRenderPipeline;
 
-    void CreateMeshRenderPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath);
-    void CreateMeshRenderDescriptorSetLayout();
-    void CreateShadowMapPipeline(const vk::RenderPass& renderPass, const char* vertexShaderFilepath, const char* fragmentShaderFilepath);
-    void CreateShadowMapDescriptorSetLayout();
-    ~Pipeline();
+struct ShadowMapPipeline
+{
+    vk::Pipeline pipeline;
+    vk::PipelineLayout pipelineLayout;
+    vk::RenderPass renderPass;
+    Shader shader;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+    vk::DescriptorPool descriptorPool;
+    std::vector<vk::DescriptorSet> descriptorSets;
+    vk::DescriptorBufferInfo cameraDescriptor;
+    vk::DescriptorBufferInfo lightDescriptor;
+    vk::DescriptorBufferInfo meshDescriptor;
+} inline shadowMapPipeline;
 
-    const PipelineBundle& GetBundle() { return bundle_; }
-};
+void CreatePipeline();
+void CreateDescriptorSetLayouts();
+void CreateMeshRenderPass();
+void CreateShadowMapRenderPass();
 
 #endif

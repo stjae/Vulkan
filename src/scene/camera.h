@@ -4,6 +4,7 @@
 #include "../common.h"
 #include "../window.h"
 #include "../vulkan/buffer.h"
+#include "../vulkan/pipeline.h"
 #include "../../imgui/imgui.h"
 
 struct CameraData
@@ -30,18 +31,17 @@ class Camera
 
     float speed_ = 4.0f;
 
-    CameraData cameraUniformData{};
-    std::unique_ptr<Buffer> uniformBuffer_;
+    CameraData cameraData{};
+    std::unique_ptr<Buffer> cameraBuffer_;
 
     void SetCameraControl();
     void Update();
-    void UpdateBuffer() { uniformBuffer_->Copy(&cameraUniformData); }
 
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
-    const CameraData& GetMatrix() { return cameraUniformData; }
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return uniformBuffer_->GetBundle().descriptorBufferInfo; }
+    const CameraData& GetMatrix() { return cameraData; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return cameraBuffer_->GetBundle().descriptorBufferInfo; }
 };
 
 #endif

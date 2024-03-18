@@ -23,5 +23,5 @@ void main() {
     gl_Position = camera.proj * pushConsts.view * worldPos;
 
     outPos = worldPos;
-    outLightPos = light.data[0].model * vec4(light.data[0].pos, 1.0);
+    outLightPos = light.data[pushConsts.lightIndex].model * vec4(light.data[pushConsts.lightIndex].pos, 1.0);
 }

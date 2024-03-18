@@ -4,6 +4,13 @@ Engine::Engine()
 {
     InitSwapchainImages();
     scene_ = std::make_unique<Scene>();
+
+    Command::CreateCommandPool(commandPool_);
+    Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+
+    CreateDescriptorSetLayouts();
+    CreatePipeline();
+
     imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
 }
 
@@ -22,44 +29,10 @@ void Engine::InitSwapchainImages()
     }
 }
 
-void Engine::Update()
+void Engine::Render()
 {
     scene_->Update();
 
-    std::array<vk::WriteDescriptorSet, 2> cameraDescWrites;
-    cameraDescWrites[0] = { viewport_.GetPipelineState().meshRender.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->camera.GetBufferInfo() };
-    cameraDescWrites[1] = { viewport_.GetPipelineState().shadowMap.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &scene_->shadowMapCameraBuffer->GetBundle().descriptorBufferInfo };
-    Device::GetBundle().device.updateDescriptorSets(cameraDescWrites, nullptr);
-
-    vk::WriteDescriptorSet shadowCubeMapWrite(viewport_.GetPipelineState().meshRender.descriptorSets[0], 3, 0, vk::DescriptorType::eCombinedImageSampler, viewport_.shadowCubeMap_.GetBundle().imageInfo);
-    Device::GetBundle().device.updateDescriptorSets(shadowCubeMapWrite, nullptr);
-
-    if (!scene_->lights.empty()) {
-        std::array<vk::WriteDescriptorSet, 2> lightDescWrites;
-        vk::DescriptorBufferInfo lightBufferInfo(scene_->lightDataBuffer_->GetBundle().buffer, 0, vk::WholeSize);
-        lightDescWrites[0] = { viewport_.GetPipelineState().meshRender.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &lightBufferInfo };
-        lightDescWrites[1] = { viewport_.GetPipelineState().shadowMap.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &lightBufferInfo };
-        Device::GetBundle().device.updateDescriptorSets(lightDescWrites, nullptr);
-    }
-
-    std::vector<vk::DescriptorImageInfo> imageInfos;
-    for (auto& texture : scene_->textures) {
-        imageInfos.push_back(texture->image->GetBundle().imageInfo);
-    }
-    vk::WriteDescriptorSet combinedImageSamplerWrite(viewport_.GetPipelineState().meshRender.descriptorSets[1], 0, 0, scene_->textures.size(), vk::DescriptorType::eCombinedImageSampler, imageInfos.data());
-    Device::GetBundle().device.updateDescriptorSets(combinedImageSamplerWrite, nullptr);
-
-    if (!scene_->meshes.empty() && scene_->GetInstanceCount() > 0) {
-        std::array<vk::WriteDescriptorSet, 2> meshDescWrites;
-        vk::DescriptorBufferInfo meshInstanceBufferInfo(scene_->meshInstanceDataBuffer_->GetBundle().buffer, 0, sizeof(InstanceData));
-        meshDescWrites[0] = { viewport_.GetPipelineState().meshRender.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshInstanceBufferInfo };
-        meshDescWrites[1] = { viewport_.GetPipelineState().shadowMap.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshInstanceBufferInfo };
-        Device::GetBundle().device.updateDescriptorSets(meshDescWrites, nullptr);
-    }
-}
-
-void Engine::Render()
-{
     Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
 
     auto waitFrameImage = Device::GetBundle().device.acquireNextImageKHR(Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
@@ -73,7 +46,6 @@ void Engine::Render()
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
     swapchain_.Draw(frameIndex_, UI::imDrawData);
-    viewport_.GenerateShadowMap(*scene_);
     viewport_.Draw(frameIndex_, *scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
         double mouseX = 0;
@@ -129,5 +101,6 @@ void Engine::DrawUI()
 
 Engine::~Engine()
 {
+    Device::GetBundle().device.destroyCommandPool(commandPool_);
     Device::GetBundle().device.waitIdle();
 }

@@ -6,8 +6,10 @@
 #include "camera.h"
 #include "mesh.h"
 #include "light.h"
+#include "shadowMap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
+#include "../vulkan/pipeline.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
 struct Texture
@@ -59,10 +61,13 @@ public:
     int32_t selectedMeshInstanceID;
     int32_t selectedLightID;
 
+    std::vector<ShadowMap> shadowMaps_;
+
     Scene();
     void AddResource(std::string& filePath);
-    void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), float scale = 1.0f);
+    void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddTexture(const std::string& filePath);
+    void AddLight();
     void DeleteMesh();
     void DeleteLight();
     void Update();

@@ -9,11 +9,8 @@ class Shader
 public:
     vk::ShaderModule vertexShaderModule;
     vk::ShaderModule fragmentShaderModule;
-    vk::ShaderModule computeShaderModule;
 
-    vk::ShaderModule CreateModule(const std::string& filepath);
-
-    ~Shader();
+    static vk::ShaderModule CreateModule(const std::string& filepath);
 };
 
 #endif

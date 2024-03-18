@@ -10,10 +10,23 @@ Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID
     camera.pos_ = { -3.0, 3.3, 8.0 };
     camera.at_ = { -2.5, 3.0, 7.3 };
 
+    CreateDummyTexture();
+    CreateShadowMapRenderPass();
+    shadowMaps_.reserve(100);
+    shadowMaps_.emplace_back();
+    shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+
     BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     shadowMapCameraBuffer = std::make_unique<Buffer>(bufferInput);
-
-    CreateDummyTexture();
+    shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer->GetBundle().descriptorBufferInfo;
+    bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+    meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+    shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+    bufferInput = { sizeof(InstanceData), sizeof(InstanceData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+    meshRenderPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
+    shadowMapPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
 
     meshes.emplace_back(MESHTYPE::SQUARE);
     meshes.back().CreateBuffers();
@@ -22,8 +35,8 @@ Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID
     meshes.emplace_back(MESHTYPE::SPHERE);
     meshes.back().CreateBuffers();
 
-    AddMeshInstance(MESHTYPE::SQUARE, glm::vec3(0.0f, -4.0f, 0.0f), 10.0f);
-    AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), 0.3f);
+    AddMeshInstance(MESHTYPE::CUBE, glm::vec3(0.0f, -4.0f, 0.0f), glm::vec3(10.0f, 0.1f, 10.0f));
+    AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), glm::vec3(0.3f));
     lights.emplace_back();
 }
 
@@ -45,7 +58,7 @@ void Scene::AddResource(std::string& filePath)
     }
 }
 
-void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, float scale)
+void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 {
     meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID, pos, scale);
     meshes[id].instanceID++;
@@ -162,17 +175,15 @@ void Scene::CreateDummyTexture()
 
 void Scene::Update()
 {
+    // TODO: dirty flag
     camera.Update();
     if (selectedMeshID > -1 && selectedMeshInstanceID > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
         camera.pos_ = glm::translate(meshes[selectedMeshID].instanceData_[selectedMeshInstanceID].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
-    camera.cameraUniformData.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
-    camera.cameraUniformData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
-    camera.cameraUniformData.pos = camera.pos_;
-    camera.UpdateBuffer();
-
-    shadowMapCameraData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.f);
-    shadowMapCameraBuffer->Copy(&shadowMapCameraData);
+    camera.cameraData.view = glm::lookAt(camera.pos_, camera.at_, camera.up_);
+    camera.cameraData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
+    camera.cameraData.pos = camera.pos_;
+    camera.cameraBuffer_->Copy(&camera.cameraData);
 
     BufferInput bufferInput;
     if (!lights.empty()) {
@@ -182,6 +193,13 @@ void Scene::Update()
         lightDataBuffer_.reset();
         lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
         lightDataBuffer_->Copy(lights.data());
+        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        std::vector<vk::WriteDescriptorSet> light = {
+            { meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor },
+            { shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowMapPipeline.lightDescriptor }
+        };
+        Device::GetBundle().device.updateDescriptorSets(light, nullptr);
     }
 
     if (!meshes.empty() && GetInstanceCount() > 0) {
@@ -195,7 +213,41 @@ void Scene::Update()
             instances.insert(instances.end(), mesh.instanceData_.begin(), mesh.instanceData_.end());
         }
         meshInstanceDataBuffer_->Copy(instances.data());
+        meshRenderPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
+        shadowMapPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
+        std::vector<vk::WriteDescriptorSet> mesh = {
+            { meshRenderPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshRenderPipeline.meshDescriptor },
+            { shadowMapPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &shadowMapPipeline.meshDescriptor }
+        };
+        Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
     }
+
+    shadowMapCameraData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.f);
+    shadowMapCameraBuffer->Copy(&shadowMapCameraData);
+
+    for (int i = 0; i < lights.size(); i++) {
+        shadowMaps_[i].DrawShadowMap(commandBuffer_, i, lights, meshes);
+    }
+
+    std::vector<vk::DescriptorImageInfo> textureInfos;
+    for (auto& texture : textures) {
+        textureInfos.push_back(texture->image->GetBundle().imageInfo);
+    }
+    std::vector<vk::DescriptorImageInfo> cubeMapInfos;
+    for (auto& cubeMapInfo : meshRenderPipeline.shadowCubeMapDescriptors)
+        cubeMapInfos.push_back(cubeMapInfo);
+    std::vector<vk::WriteDescriptorSet> image = {
+        { meshRenderPipeline.descriptorSets[1], 0, 0, (uint32_t)textureInfos.size(), vk::DescriptorType::eCombinedImageSampler, textureInfos.data() },
+        { meshRenderPipeline.descriptorSets[2], 0, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eCombinedImageSampler, cubeMapInfos.data() }
+    };
+    Device::GetBundle().device.updateDescriptorSets(image, nullptr);
+}
+
+void Scene::AddLight()
+{
+    lights.emplace_back();
+    shadowMaps_.emplace_back();
+    shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
 }
 
 void Scene::DeleteMesh()

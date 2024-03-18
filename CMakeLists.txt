@@ -52,6 +52,8 @@ add_executable(${PROJECT_NAME}
         src/engine/viewport.cpp
         src/scene/light.cpp
         src/scene/light.h
+        src/scene/shadowMap.h
+        src/scene/shadowMap.cpp
 )
 
 include(Dependency.cmake)
