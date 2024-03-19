@@ -15,8 +15,8 @@ void CreatePipeline()
     attachmentStates[1] = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentStates[1].colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG;
 
-    vk::VertexInputBindingDescription bindingDesc = MeshData::GetBindingDesc();
-    auto attributeDescs = MeshData::GetAttributeDescs();
+    vk::VertexInputBindingDescription bindingDesc = MeshBase::GetBindingDesc();
+    auto attributeDescs = MeshBase::GetAttributeDescs();
     vk::PipelineVertexInputStateCreateInfo vertexInputStateCI({}, 1, &bindingDesc, attributeDescs.size(), attributeDescs.data());
     vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCI({}, vk::PrimitiveTopology::eTriangleList);
     vk::PipelineDynamicStateCreateInfo dynamicStateCI({}, dynamicStates.size(), dynamicStates.data());
@@ -70,11 +70,11 @@ void CreateDescriptorSetLayouts()
         uint32_t maxSets = 0;
 
         std::vector<DescriptorBinding> bufferBindings;
-        // camera
+        // camera_
         bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-        // lights
+        // lights_
         bufferBindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eFragment);
-        // meshes
+        // meshes_
         bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
         // shadow map
         bufferBindings.emplace_back(3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
@@ -82,7 +82,7 @@ void CreateDescriptorSetLayouts()
         Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);
 
         std::vector<DescriptorBinding> textureBindings;
-        // textures
+        // textures_
         textureBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, (int)Device::physicalDeviceLimits.maxDescriptorSetSamplers, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind);
         meshRenderPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(textureBindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         Descriptor::SetDescriptorPoolSize(poolSizes, textureBindings, maxSets);
@@ -126,11 +126,11 @@ void CreateDescriptorSetLayouts()
         uint32_t maxSets = 0;
 
         std::vector<DescriptorBinding> bufferBindings;
-        // camera
+        // camera_
         bufferBindings.emplace_back(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-        // lights
+        // lights_
         bufferBindings.emplace_back(1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-        // meshes
+        // meshes_
         bufferBindings.emplace_back(2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex);
         shadowMapPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bufferBindings));
         Descriptor::SetDescriptorPoolSize(poolSizes, bufferBindings, maxSets);

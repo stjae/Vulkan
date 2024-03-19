@@ -119,7 +119,7 @@ set(DEP_LIST ${DEP_LIST} dep-stb)
 ExternalProject_Add(
         dep-tinyobjloader
         GIT_REPOSITORY "https://github.com/tinyobjloader/tinyobjloader.git"
-        GIT_TAG "v1.0.7"
+        GIT_TAG "v2.0-rc1"
         GIT_SHALLOW 1
         UPDATE_COMMAND ""
         PATCH_COMMAND ""

@@ -6,7 +6,7 @@
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/pipeline.h"
-#include "../scene/scene.h"
+#include "../scene/mesh.h"
 
 class Viewport
 {
@@ -34,8 +34,8 @@ public:
     void CreateViewportImages();
     void DestroyViewportImages();
     void CreateViewportFrameBuffer();
-    const int32_t* PickColor(size_t frameIndex, double mouseX, double mouseY);
-    void Draw(size_t frameIndex, Scene& scene);
+    const int32_t* PickColor(double mouseX, double mouseY);
+    void Draw(const std::vector<Mesh>& meshes);
     ~Viewport();
 };
 

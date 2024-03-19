@@ -23,7 +23,7 @@ struct Vertex
         : pos(pos), normal(normal), color(color), texcoord(texcoord), tangent(tangent) {}
 };
 
-class MeshData
+class MeshBase
 {
 protected:
     std::vector<Vertex> vertices;

@@ -7,6 +7,7 @@
 #include "mesh.h"
 #include "light.h"
 #include "shadowMap.h"
+#include "../engine/viewport.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
 #include "../vulkan/pipeline.h"
@@ -37,9 +38,7 @@ struct Resource
 
 class Scene
 {
-    friend class Engine;
     friend class UI;
-    friend class Viewport;
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
@@ -53,29 +52,34 @@ class Scene
 
     void CreateDummyTexture();
 
-public:
-    std::vector<Mesh> meshes;
-    bool meshDirtyFlag;
-    std::vector<LightData> lights;
-    bool lightDirtyFlag;
-    std::vector<std::shared_ptr<Texture>> textures;
-    std::vector<Resource> resources;
-    Camera camera;
-    std::unique_ptr<Buffer> shadowMapCameraBuffer;
-    CameraData shadowMapCameraData;
-    int32_t selectedMeshID;
-    int32_t selectedMeshInstanceID;
-    int32_t selectedLightID;
+    std::vector<Mesh> meshes_;
+    bool meshDirtyFlag_;
+    std::vector<LightData> lights_;
+    bool lightDirtyFlag_;
+    std::vector<std::shared_ptr<Texture>> textures_;
+    std::vector<Resource> resources_;
+    Camera camera_;
+    std::unique_ptr<Buffer> shadowMapCameraBuffer_;
+    CameraData shadowMapCameraData_;
+    int32_t selectedMeshID_;
+    int32_t selectedMeshInstanceID_;
+    int32_t selectedLightID_;
 
-    Scene();
     void AddResource(std::string& filePath);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddTexture(const std::string& filePath);
     void AddLight();
     void DeleteMesh();
     void DeleteLight();
+
+public:
+    Scene();
     void Update();
     size_t GetInstanceCount();
+    const std::vector<Mesh>& GetMeshes() { return meshes_; }
+    MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
+    MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
+    void SelectByColorID(Viewport& viewport);
     ~Scene();
 };
 

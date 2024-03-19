@@ -1,6 +1,6 @@
 #include "meshData.h"
 
-vk::VertexInputBindingDescription MeshData::GetBindingDesc()
+vk::VertexInputBindingDescription MeshBase::GetBindingDesc()
 {
     vk::VertexInputBindingDescription bindingDesc;
     bindingDesc.setBinding(0);
@@ -10,7 +10,7 @@ vk::VertexInputBindingDescription MeshData::GetBindingDesc()
     return bindingDesc;
 }
 
-std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
+std::array<vk::VertexInputAttributeDescription, 4> MeshBase::GetAttributeDescs()
 {
     std::array<vk::VertexInputAttributeDescription, 4> attributes;
     uint32_t offset = 0;
@@ -53,7 +53,7 @@ std::array<vk::VertexInputAttributeDescription, 4> MeshData::GetAttributeDescs()
     return attributes;
 }
 
-void MeshData::CreateVertexBuffer()
+void MeshBase::CreateVertexBuffer()
 {
     BufferInput bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     vertexStagingBuffer = std::make_unique<Buffer>(bufferInput);
@@ -64,7 +64,7 @@ void MeshData::CreateVertexBuffer()
     vertexBuffer = std::make_unique<Buffer>(bufferInput);
 }
 
-void MeshData::CreateIndexBuffer()
+void MeshBase::CreateIndexBuffer()
 {
     BufferInput bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     indexStagingBuffer = std::make_unique<Buffer>(bufferInput);

@@ -108,7 +108,7 @@ void ShadowMap::UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& command
         commandBuffer.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
         commandBuffer.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
 
-        dynamicOffset += mesh.GetInstanceCount() * sizeof(InstanceData);
+        dynamicOffset += mesh.GetInstanceCount() * sizeof(MeshInstance);
     }
 
     commandBuffer.endRenderPass();

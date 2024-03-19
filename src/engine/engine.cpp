@@ -46,13 +46,9 @@ void Engine::Render()
     Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
     swapchain_.Draw(frameIndex_, UI::imDrawData);
-    viewport_.Draw(frameIndex_, *scene_);
+    viewport_.Draw(scene_->GetMeshes());
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
-        double mouseX = 0;
-        double mouseY = 0;
-        glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
-        scene_->selectedMeshID = viewport_.PickColor(frameIndex_, mouseX, mouseY)[0];
-        scene_->selectedMeshInstanceID = viewport_.PickColor(frameIndex_, mouseX, mouseY)[1];
+        scene_->SelectByColorID(viewport_);
     }
     imgui_.AcceptDragDrop(viewport_, *scene_, frameIndex_);
     swapchain_.Submit(frameIndex_);

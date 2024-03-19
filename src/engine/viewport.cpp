@@ -85,7 +85,7 @@ void Viewport::CreateViewportFrameBuffer()
     framebuffer = Device::GetBundle().device.createFramebuffer(framebufferInfo);
 }
 
-const int32_t* Viewport::PickColor(size_t frameIndex, double mouseX, double mouseY)
+const int32_t* Viewport::PickColor(double mouseX, double mouseY)
 {
     Command::Begin(commandBuffer_);
     Command::SetImageMemoryBarrier(commandBuffer_,
@@ -165,7 +165,7 @@ const int32_t* Viewport::PickColor(size_t frameIndex, double mouseX, double mous
     return data;
 }
 
-void Viewport::Draw(size_t frameIndex, Scene& scene)
+void Viewport::Draw(const std::vector<Mesh>& meshes)
 {
     Command::Begin(commandBuffer_);
     Command::SetImageMemoryBarrier(commandBuffer_,
@@ -225,15 +225,16 @@ void Viewport::Draw(size_t frameIndex, Scene& scene)
 
     vk::DeviceSize vertexOffsets[]{ 0 };
     uint32_t dynamicOffset = 0;
-    for (auto& mesh : scene.meshes) {
+    for (const auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 1, &dynamicOffset);
         commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
-        commandBuffer_.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
-
-        dynamicOffset += mesh.GetInstanceCount() * sizeof(InstanceData);
+        for (const auto& part : mesh.GetMeshParts()) {
+            commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 1, &dynamicOffset);
+            commandBuffer_.drawIndexed(part.indexCount, mesh.GetInstanceCount(), 0, part.indexBase, 0);
+        }
+        dynamicOffset += mesh.GetInstanceCount() * sizeof(MeshInstance);
     }
 
     commandBuffer_.endRenderPass();

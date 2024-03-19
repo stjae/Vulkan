@@ -139,9 +139,9 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     ImGui::NewFrame();
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered()) {
-        scene.selectedMeshID = -1;
-        scene.selectedMeshInstanceID = -1;
-        scene.selectedLightID = -1;
+        scene.selectedMeshID_ = -1;
+        scene.selectedMeshInstanceID_ = -1;
+        scene.selectedLightID_ = -1;
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
@@ -272,9 +272,9 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         ImGui::EndDragDropTarget();
     }
 
-    for (auto& light : scene.lights) {
+    for (auto& light : scene.lights_) {
 
-        glm::vec4 pos = scene.camera.GetMatrix().proj * scene.camera.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
+        glm::vec4 pos = scene.camera_.GetMatrix().proj * scene.camera_.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
@@ -288,11 +288,11 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
             ImGui::GetWindowDrawList()->AddImage(lightIconDescriptorSet_, viewport.panelPos + screenPos - offset, viewport.panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
-    if (scene.selectedMeshID > -1) {
+    if (scene.selectedMeshID_ > -1) {
         DrawMeshGuizmo(scene, viewport.panelPos);
     }
 
-    if (scene.selectedLightID > -1) {
+    if (scene.selectedLightID_ > -1) {
         DrawLightGuizmo(scene, viewport.panelPos);
     }
 
@@ -326,11 +326,11 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
 void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -343,26 +343,26 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float matrix[16];
 
-    auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation, rotation, scale);
+    auto& meshInstance = scene.GetSelectedMeshInstance();
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view), glm::value_ptr(scene.camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        scene.meshDirtyFlag = true;
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
+        scene.meshDirtyFlag_ = true;
     }
-    meshInstanceData.model = glm::make_mat4(matrix);
-    meshInstanceData.invTranspose = glm::make_mat4(matrix);
-    meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
+    meshInstance.model = glm::make_mat4(matrix);
+    meshInstance.invTranspose = glm::make_mat4(matrix);
+    meshInstance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
 }
 
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.camera_.IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -375,12 +375,12 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float matrix[16];
 
-    auto& lightData = scene.lights[scene.selectedLightID];
+    auto& lightData = scene.lights_[scene.selectedLightID_];
     glm::mat4 model = glm::translate(lightData.model, lightData.pos);
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view), glm::value_ptr(scene.camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        scene.lightDirtyFlag = true;
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
+        scene.lightDirtyFlag_ = true;
     }
     model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
     lightData.model = model;
@@ -393,19 +393,19 @@ void UI::DrawListWindow(Scene& scene)
     ImGui::BeginTabBar("MeshTab");
     if (ImGui::BeginTabItem("Meshes")) {
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
-            for (int i = 0; i < scene.meshes.size(); i++) {
-                std::string name(scene.meshes[i].GetName());
-                for (int j = 0; j < scene.meshes[i].instanceData_.size(); j++) {
+            for (int i = 0; i < scene.meshes_.size(); i++) {
+                std::string name(scene.meshes_[i].GetName());
+                for (int j = 0; j < scene.meshes_[i].GetInstanceCount(); j++) {
                     ImGui::PushID(i * j + j);
-                    if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID && j == scene.selectedMeshInstanceID)) {
-                        scene.selectedMeshID = i;
-                        scene.selectedMeshInstanceID = j;
-                        scene.selectedLightID = -1;
+                    if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID_ && j == scene.selectedMeshInstanceID_)) {
+                        scene.selectedMeshID_ = i;
+                        scene.selectedMeshInstanceID_ = j;
+                        scene.selectedLightID_ = -1;
                     }
                     if (ImGui::BeginPopupContextItem()) {
                         if (ImGui::MenuItem("Delete")) {
-                            scene.selectedMeshID = i;
-                            scene.selectedMeshInstanceID = j;
+                            scene.selectedMeshID_ = i;
+                            scene.selectedMeshInstanceID_ = j;
                             scene.DeleteMesh();
                         }
                         ImGui::EndPopup();
@@ -416,47 +416,47 @@ void UI::DrawListWindow(Scene& scene)
             ImGui::EndListBox();
         }
         // Attributes
-        if (scene.selectedMeshID > -1) {
+        if (scene.selectedMeshID_ > -1) {
 
-            auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
+            auto& meshInstance = scene.GetSelectedMeshInstance();
 
             float translation[3];
             float rotation[3];
             float scale[3];
             float matrix[16];
 
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation, rotation, scale);
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.model), translation, rotation, scale);
             std::vector<std::string> labels = { "Move", "Rotate" };
             ImGui::SeparatorText("Translation");
             ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
             ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-            meshInstanceData.model = glm::make_mat4(matrix);
-            meshInstanceData.invTranspose = glm::make_mat4(matrix);
-            meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            meshInstanceData.invTranspose = glm::transpose(glm::inverse(meshInstanceData.invTranspose));
+            meshInstance.model = glm::make_mat4(matrix);
+            meshInstance.invTranspose = glm::make_mat4(matrix);
+            meshInstance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
 
             ImGui::SeparatorText("Textures");
-            bool useTexture = meshInstanceData.useTexture;
+            bool useTexture = meshInstance.useTexture;
             ImGui::Checkbox("Use Texture", &useTexture);
-            meshInstanceData.useTexture = useTexture ? 1 : 0;
+            meshInstance.useTexture = useTexture ? 1 : 0;
         }
         ImGui::EndTabItem();
     }
     // Light List
     if (ImGui::BeginTabItem("Lights")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
-            for (int i = 0; i < scene.lights.size(); i++) {
+            for (int i = 0; i < scene.lights_.size(); i++) {
                 std::string name("light");
                 ImGui::PushID(i);
-                if (ImGui::Selectable(name.c_str(), i == scene.selectedLightID)) {
-                    scene.selectedLightID = i;
-                    scene.selectedMeshID = -1;
+                if (ImGui::Selectable(name.c_str(), i == scene.selectedLightID_)) {
+                    scene.selectedLightID_ = i;
+                    scene.selectedMeshID_ = -1;
                 }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
-                        scene.selectedLightID = i;
+                        scene.selectedLightID_ = i;
                         scene.DeleteLight();
                     }
                     ImGui::EndPopup();
@@ -466,9 +466,9 @@ void UI::DrawListWindow(Scene& scene)
             ImGui::EndListBox();
             ImGui::Checkbox("Show Light Icon", &scene.showLightIcon_);
             // Attributes
-            if (scene.selectedLightID > -1) {
+            if (scene.selectedLightID_ > -1) {
 
-                auto& lightData = scene.lights[scene.selectedLightID];
+                auto& lightData = scene.lights_[scene.selectedLightID_];
                 glm::mat4 model = glm::translate(lightData.model, lightData.pos);
 
                 float translation[3];
@@ -515,7 +515,7 @@ void UI::DrawResourceWindow(Scene& scene)
     }
     ImGui::NextColumn();
 
-    for (auto& resource : scene.resources) {
+    for (auto& resource : scene.resources_) {
         if (resource.resourceType == RESOURCETYPE::MESH) {
             ImGui::ImageButton(cubeIconDescriptorSet_, { getButtonSize(), getButtonSize() }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         } else {
@@ -545,7 +545,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene.camera.IsControllable() ? "on" : "off");
+    ImGui::Text("Camera Control: %s [press C]", scene.camera_.IsControllable() ? "on" : "off");
     ImGui::End();
 }
 
@@ -560,19 +560,19 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
     if (!dragDropped)
         return;
 
-    const int32_t* pickColor = viewport.PickColor(frameIndex, dragDropMouseX, dragDropMouseY);
+    const int32_t* pickColor = viewport.PickColor(dragDropMouseX, dragDropMouseY);
 
     switch (dragDropResource->resourceType) {
     case RESOURCETYPE::MESH:
-        scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->resource)->meshID);
+        scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->resource)->GetMeshID());
         break;
     case RESOURCETYPE::TEXTURE:
         if (pickColor[0] != -1) {
-            auto& instanceData = scene.meshes[pickColor[0]].instanceData_[pickColor[1]];
+            auto& meshInstance = scene.GetMeshInstance(pickColor[0], pickColor[1]);
 
-            instanceData.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
-            instanceData.useTexture = true;
-            scene.meshDirtyFlag = true;
+            meshInstance.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
+            meshInstance.useTexture = true;
+            scene.meshDirtyFlag_ = true;
         }
         break;
     }
