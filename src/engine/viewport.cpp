@@ -53,8 +53,6 @@ void Viewport::CreateViewportImages()
 
 void Viewport::DestroyViewportImages()
 {
-    Device::GetBundle().device.destroyFramebuffer(framebuffer);
-
     viewportImage.DestroyImage();
     viewportImage.DestroyImageView();
     viewportImage.memory.Free();

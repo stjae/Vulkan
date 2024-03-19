@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID(-1)
+Scene::Scene() : selectedMeshID(-1), selectedMeshInstanceID(-1), selectedLightID(-1), meshDirtyFlag(true), lightDirtyFlag(true), shadowMapDirtyFlag_(true), showLightIcon_(true)
 {
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
@@ -62,6 +62,7 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 {
     meshes[id].instanceData_.emplace_back(id, meshes[id].instanceID, pos, scale);
     meshes[id].instanceID++;
+    meshDirtyFlag = true;
 }
 
 void Scene::AddTexture(const std::string& filePath)
@@ -175,7 +176,19 @@ void Scene::CreateDummyTexture()
 
 void Scene::Update()
 {
-    // TODO: dirty flag
+    // Duplicate Light
+    if (selectedLightID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera.isControllable_) {
+        AddLight();
+        lights.back() = lights[selectedLightID];
+    }
+
+    // Duplicate Mesh
+    if (selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera.isControllable_) {
+        AddMeshInstance(selectedMeshID);
+        meshes[selectedMeshID].instanceData_.back() = meshes[selectedMeshID].instanceData_[selectedMeshInstanceID];
+        meshes[selectedMeshID].instanceData_.back().instanceID++;
+    }
+
     camera.Update();
     if (selectedMeshID > -1 && selectedMeshInstanceID > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
         camera.pos_ = glm::translate(meshes[selectedMeshID].instanceData_[selectedMeshInstanceID].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -186,9 +199,9 @@ void Scene::Update()
     camera.cameraBuffer_->Copy(&camera.cameraData);
 
     BufferInput bufferInput;
-    if (!lights.empty()) {
-        for (auto& light : lights)
-            light.maxLights = lights.size();
+    for (auto& light : lights)
+        light.maxLights = lights.size();
+    if (!lights.empty() && lightDirtyFlag) {
         bufferInput = { sizeof(LightData) * lights.size(), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         lightDataBuffer_.reset();
         lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
@@ -200,9 +213,11 @@ void Scene::Update()
             { shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowMapPipeline.lightDescriptor }
         };
         Device::GetBundle().device.updateDescriptorSets(light, nullptr);
+        lightDirtyFlag = false;
+        shadowMapDirtyFlag_ = true;
     }
 
-    if (!meshes.empty() && GetInstanceCount() > 0) {
+    if (GetInstanceCount() > 0 && meshDirtyFlag) {
         bufferInput = { sizeof(InstanceData) * GetInstanceCount(), sizeof(InstanceData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         meshInstanceDataBuffer_.reset();
         meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
@@ -220,13 +235,18 @@ void Scene::Update()
             { shadowMapPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &shadowMapPipeline.meshDescriptor }
         };
         Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
+        meshDirtyFlag = false;
+        shadowMapDirtyFlag_ = true;
     }
 
     shadowMapCameraData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.f);
     shadowMapCameraBuffer->Copy(&shadowMapCameraData);
 
-    for (int i = 0; i < lights.size(); i++) {
-        shadowMaps_[i].DrawShadowMap(commandBuffer_, i, lights, meshes);
+    if (shadowMapDirtyFlag_) {
+        for (int i = 0; i < lights.size(); i++) {
+            shadowMaps_[i].DrawShadowMap(commandBuffer_, i, lights, meshes);
+        }
+        shadowMapDirtyFlag_ = false;
     }
 
     std::vector<vk::DescriptorImageInfo> textureInfos;
@@ -248,6 +268,7 @@ void Scene::AddLight()
     lights.emplace_back();
     shadowMaps_.emplace_back();
     shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+    lightDirtyFlag = true;
 }
 
 void Scene::DeleteMesh()
@@ -263,6 +284,7 @@ void Scene::DeleteMesh()
 
     selectedMeshID = -1;
     selectedMeshInstanceID = -1;
+    meshDirtyFlag = true;
 }
 
 void Scene::DeleteLight()
@@ -272,6 +294,7 @@ void Scene::DeleteLight()
     lights.erase(lights.begin() + selectedLightID);
 
     selectedLightID = -1;
+    lightDirtyFlag = true;
 }
 
 size_t Scene::GetInstanceCount()

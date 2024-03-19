@@ -275,15 +275,17 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     for (auto& light : scene.lights) {
 
         glm::vec4 pos = scene.camera.GetMatrix().proj * scene.camera.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
+        float posZ = pos.z;
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
         pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
         pos.x *= width;
         pos.y *= height;
         ImVec2 screenPos(pos.x, pos.y);
-        ImVec2 offset(25, 25);
-        // TODO: fix
-        ImGui::GetWindowDrawList()->AddImage(lightIconDescriptorSet_, viewport.panelPos + screenPos - offset, viewport.panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
+        ImVec2 offset(100, 100);
+        offset /= posZ;
+        if (posZ > 1.0f && scene.showLightIcon_)
+            ImGui::GetWindowDrawList()->AddImage(lightIconDescriptorSet_, viewport.panelPos + screenPos - offset, viewport.panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
     if (scene.selectedMeshID > -1) {
@@ -312,6 +314,7 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
         viewport.extent = Swapchain::GetBundle().swapchainImageExtent;
 
+    Device::GetBundle().device.destroyFramebuffer(viewport.framebuffer);
     viewport.DestroyViewportImages();
     viewport.CreateViewportImages();
     viewport.CreateViewportFrameBuffer();
@@ -343,9 +346,9 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     auto& meshInstanceData = scene.meshes[scene.selectedMeshID].instanceData_[scene.selectedMeshInstanceID];
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceData.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
-                         glm::value_ptr(scene.camera.GetMatrix().proj), OP,
-                         ImGuizmo::LOCAL, matrix);
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view), glm::value_ptr(scene.camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
+        scene.meshDirtyFlag = true;
+    }
     meshInstanceData.model = glm::make_mat4(matrix);
     meshInstanceData.invTranspose = glm::make_mat4(matrix);
     meshInstanceData.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -376,9 +379,9 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     glm::mat4 model = glm::translate(lightData.model, lightData.pos);
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view),
-                         glm::value_ptr(scene.camera.GetMatrix().proj), OP,
-                         ImGuizmo::LOCAL, matrix);
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera.GetMatrix().view), glm::value_ptr(scene.camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
+        scene.lightDirtyFlag = true;
+    }
     model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
     lightData.model = model;
 }
@@ -461,6 +464,7 @@ void UI::DrawListWindow(Scene& scene)
                 ImGui::PopID();
             }
             ImGui::EndListBox();
+            ImGui::Checkbox("Show Light Icon", &scene.showLightIcon_);
             // Attributes
             if (scene.selectedLightID > -1) {
 
@@ -568,6 +572,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
 
             instanceData.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
             instanceData.useTexture = true;
+            scene.meshDirtyFlag = true;
         }
         break;
     }

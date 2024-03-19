@@ -47,11 +47,17 @@ class Scene
     std::unique_ptr<Buffer> meshInstanceDataBuffer_;
     std::unique_ptr<Buffer> lightDataBuffer_;
 
+    std::vector<ShadowMap> shadowMaps_;
+    bool shadowMapDirtyFlag_;
+    bool showLightIcon_;
+
     void CreateDummyTexture();
 
 public:
     std::vector<Mesh> meshes;
+    bool meshDirtyFlag;
     std::vector<LightData> lights;
+    bool lightDirtyFlag;
     std::vector<std::shared_ptr<Texture>> textures;
     std::vector<Resource> resources;
     Camera camera;
@@ -60,8 +66,6 @@ public:
     int32_t selectedMeshID;
     int32_t selectedMeshInstanceID;
     int32_t selectedLightID;
-
-    std::vector<ShadowMap> shadowMaps_;
 
     Scene();
     void AddResource(std::string& filePath);
