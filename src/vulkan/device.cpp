@@ -24,6 +24,7 @@ Device::Device()
     features12.descriptorBindingPartiallyBound = VK_TRUE;
     features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     features12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     deviceBundle_.physicalDevice.getFeatures(&supportedFeatures);

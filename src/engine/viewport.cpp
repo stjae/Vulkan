@@ -219,7 +219,6 @@ void Viewport::Draw(const std::vector<Mesh>& meshes)
     commandBuffer_.setScissor(0, scissor);
 
     commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 1, 1, &meshRenderPipeline.descriptorSets[1], 0, nullptr);
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 2, 1, &meshRenderPipeline.descriptorSets[2], 0, nullptr);
 
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
@@ -231,6 +230,13 @@ void Viewport::Draw(const std::vector<Mesh>& meshes)
         commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
         for (const auto& part : mesh.GetMeshParts()) {
+            int pushConstants = part.materialID + 1;
+            commandBuffer_.pushConstants(
+                meshRenderPipeline.pipelineLayout,
+                vk::ShaderStageFlagBits::eFragment,
+                0,
+                sizeof(int),
+                &pushConstants);
             commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 1, &dynamicOffset);
             commandBuffer_.drawIndexed(part.indexCount, mesh.GetInstanceCount(), 0, part.indexBase, 0);
         }

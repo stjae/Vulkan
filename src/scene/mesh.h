@@ -3,6 +3,7 @@
 
 #include "meshData.h"
 #include "../vulkan/command.h"
+#include "tiny_obj_loader.h"
 
 struct MeshPart
 {
@@ -19,10 +20,10 @@ struct MeshInstance
     glm::mat4 invTranspose;
     int32_t meshID;
     int32_t textureID;
-    int useTexture;
+    bool useTexture;
     int32_t instanceID;
 
-    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(0), instanceID(instanceID)
+    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID)
     {
         model = glm::translate(model, pos);
         model = glm::scale(model, scale);
@@ -42,6 +43,7 @@ class Mesh : public MeshBase
     int32_t instanceID_;
     std::vector<MeshInstance> meshInstances_;
     std::vector<MeshPart> meshParts_;
+    std::vector<tinyobj::material_t> materials_;
 
     void CreateSquare(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);

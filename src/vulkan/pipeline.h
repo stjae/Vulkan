@@ -40,7 +40,7 @@ struct ShadowMapPipeline
 } inline shadowMapPipeline;
 
 void CreatePipeline();
-void CreateDescriptorSetLayouts();
+void SetUpDescriptors();
 void CreateMeshRenderPass();
 void CreateShadowMapRenderPass();
 

@@ -2,8 +2,14 @@
 #extension GL_EXT_nonuniform_qualifier: enable
 #include "common.glsl"
 
+layout(push_constant) uniform PushConsts
+{
+    int materialID;
+} pushConsts;
+
 layout (set = 1, binding = 0) uniform sampler2D texSampler[];
-layout (set = 2, binding = 0) uniform samplerCube shadowCubeMap[];
+layout (set = 1, binding = 1) uniform samplerCube shadowCubeMap[];
+layout (set = 1, binding = 2) uniform sampler2D diffSampler[];
 
 layout (location = 0) in vec4 worldModel;
 layout (location = 1) in vec4 worldNormal;
@@ -21,8 +27,14 @@ void main() {
 
     vec4 dstColor = vec4(inColor, 1.0);
 
-    if (meshInstance.useTexture != 0) {
+    if (meshInstance.useTexture) {
         dstColor = texture(texSampler[meshInstance.textureID], inTexcoord);
+    }
+    if (pushConsts.materialID > 0) {
+        dstColor = texture(diffSampler[pushConsts.materialID], inTexcoord);
+    }
+    if (dstColor.a < 1.0f) {
+        discard;
     }
 
     for (int i = 0; i < light.data[0].maxLights; i++) {

@@ -15,7 +15,7 @@
 
 struct Texture
 {
-    std::unique_ptr<Image> image;
+    Image image;
     vk::DescriptorSet descriptorSet; // thumbnail for resource window
 
     int width, height;
@@ -50,13 +50,14 @@ class Scene
     bool shadowMapDirtyFlag_;
     bool showLightIcon_;
 
-    void CreateDummyTexture();
+    void CreateDummyTexture(Texture& texture);
 
     std::vector<Mesh> meshes_;
     bool meshDirtyFlag_;
     std::vector<LightData> lights_;
     bool lightDirtyFlag_;
-    std::vector<std::shared_ptr<Texture>> textures_;
+    std::vector<Texture> textures_;
+    std::vector<Texture> diffuseTextures_;
     std::vector<Resource> resources_;
     Camera camera_;
     std::unique_ptr<Buffer> shadowMapCameraBuffer_;
@@ -66,8 +67,9 @@ class Scene
     int32_t selectedLightID_;
 
     void AddResource(std::string& filePath);
+    void LoadMaterials(const std::string& modelPath, const std::vector<tinyobj::material_t>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void AddTexture(const std::string& filePath);
+    void CreateTexture(const std::string& filePath, Texture& texture);
     void AddLight();
     void DeleteMesh();
     void DeleteLight();

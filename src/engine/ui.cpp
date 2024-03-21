@@ -12,7 +12,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     std::vector<DescriptorBinding> imGuiBindings;
     imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 100);
     descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(imGuiBindings));
-    Descriptor::SetDescriptorPoolSize(poolSizes, imGuiBindings, maxSets);
+    Descriptor::SetPoolSizes(poolSizes, imGuiBindings, maxSets);
 
     Descriptor::CreateDescriptorPool(descriptorPool_, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
@@ -65,10 +65,10 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(cubeIcon_->GetBundle().sampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // TODO: for test
-    path = PROJECT_DIR "image/box.png";
-    scene.AddResource(path);
-    path = PROJECT_DIR "image/earth.jpg";
-    scene.AddResource(path);
+    // path = PROJECT_DIR "image/box.png";
+    // scene.AddResource(path);
+    // path = PROJECT_DIR "image/earth.jpg";
+    // scene.AddResource(path);
 
     dragDropped = false;
 }
@@ -438,9 +438,7 @@ void UI::DrawListWindow(Scene& scene)
             meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
 
             ImGui::SeparatorText("Textures");
-            bool useTexture = meshInstance.useTexture;
-            ImGui::Checkbox("Use Texture", &useTexture);
-            meshInstance.useTexture = useTexture ? 1 : 0;
+            ImGui::Checkbox("Use Texture", &meshInstance.useTexture);
         }
         ImGui::EndTabItem();
     }
@@ -508,7 +506,7 @@ void UI::DrawResourceWindow(Scene& scene)
     // Add Resource
     ImGui::Columns(columnCount, 0, false);
     if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSize, buttonSize }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-        std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj" });
+        std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj,tga" });
         if (!path.empty()) {
             scene.AddResource(path);
         }

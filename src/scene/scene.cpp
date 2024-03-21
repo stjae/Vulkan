@@ -10,11 +10,16 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
     camera_.pos_ = { -3.0, 3.3, 8.0 };
     camera_.at_ = { -2.5, 3.0, 7.3 };
 
-    CreateDummyTexture();
+    textures_.reserve(100);
+    textures_.emplace_back();
+    CreateDummyTexture(textures_.back());
     CreateShadowMapRenderPass();
     shadowMaps_.reserve(100);
     shadowMaps_.emplace_back();
     shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+    diffuseTextures_.reserve(100);
+    diffuseTextures_.emplace_back();
+    CreateDummyTexture(diffuseTextures_.back());
 
     BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     shadowMapCameraBuffer_ = std::make_unique<Buffer>(bufferInput);
@@ -49,12 +54,27 @@ void Scene::AddResource(std::string& filePath)
         meshes_.back().CreateBuffers();
         meshes_.back().meshID_++;
         resources_.back().resource = &meshes_.back();
+        if (!meshes_.back().materials_.empty()) {
+            LoadMaterials(filePath, meshes_.back().materials_);
+        }
         break;
     case RESOURCETYPE::TEXTURE:
-        AddTexture(filePath);
-        textures_.back()->descriptorSet = ImGui_ImplVulkan_AddTexture(textures_.back()->image->GetBundle().sampler, textures_.back()->image->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        resources_.back().resource = textures_.back().get();
+        textures_.emplace_back();
+        CreateTexture(filePath, textures_.back());
+        textures_.back().descriptorSet = ImGui_ImplVulkan_AddTexture(textures_.back().image.GetBundle().sampler, textures_.back().image.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        resources_.back().resource = &textures_.back();
         break;
+    }
+}
+
+void Scene::LoadMaterials(const std::string& modelPath, const std::vector<tinyobj::material_t>& materials)
+{
+    for (auto& material : materials) {
+        if (modelPath.find_last_of("/\\") != std::string::npos) {
+            std::string texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.diffuse_texname;
+            diffuseTextures_.emplace_back();
+            CreateTexture(texturePath, diffuseTextures_.back());
+        }
     }
 }
 
@@ -65,26 +85,26 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
     meshDirtyFlag_ = true;
 }
 
-void Scene::AddTexture(const std::string& filePath)
+void Scene::CreateTexture(const std::string& filePath, Texture& texture)
 {
-    int width, height, channel;
-    vk::DeviceSize imageSize;
-    stbi_uc* imageData;
+    int width = 0, height = 0, channel = 0;
+    vk::DeviceSize imageSize = 0;
+    stbi_uc* imageData = nullptr;
 
     imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
     imageSize = width * height * 4;
 
     if (!imageData) {
-        spdlog::error("failed to load texture");
+        // spdlog::error("failed to load texture");
+        CreateDummyTexture(texture);
         return;
     }
 
-    textures_.emplace_back(std::make_shared<Texture>());
-    auto& texture = textures_.back();
-    texture->width = width;
-    texture->height = height;
-    texture->size = static_cast<size_t>(imageSize);
-    texture->index = textures_.size() - 1;
+    texture.width = width;
+    texture.height = height;
+    texture.size = static_cast<size_t>(imageSize);
+    // TODO: index
+    texture.index = textures_.size() - 1;
 
     BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     Buffer stagingBuffer(bufferInput);
@@ -92,16 +112,16 @@ void Scene::AddTexture(const std::string& filePath)
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
-    texture->image = std::make_unique<Image>();
-    texture->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    texture->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    texture->image->CreateSampler();
-    texture->image->SetInfo();
+
+    texture.image.CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    texture.image.CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    texture.image.CreateSampler();
+    texture.image.SetInfo();
 
     Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures_.back()->image,
+                                   texture.image,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    {},
@@ -111,11 +131,11 @@ void Scene::AddTexture(const std::string& filePath)
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
                                stagingBuffer.GetBundle().buffer,
-                               textures_.back()->image->GetBundle().image, textures_.back()->width,
-                               textures_.back()->height);
+                               texture.image.GetBundle().image, texture.width,
+                               texture.height);
     // Set texture image layout to shader read only
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures_.back()->image,
+                                   texture.image,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    vk::AccessFlagBits::eTransferWrite,
@@ -126,30 +146,27 @@ void Scene::AddTexture(const std::string& filePath)
     Command::Submit(&commandBuffer_, 1);
 }
 
-void Scene::CreateDummyTexture()
+void Scene::CreateDummyTexture(Texture& texture)
 {
-    textures_.emplace_back(std::make_shared<Texture>());
-
     std::array<uint8_t, 4> dummyTexture = { 0, 0, 0, 255 };
-    textures_.back()->width = 1;
-    textures_.back()->height = 1;
-    textures_.back()->size = sizeof(dummyTexture);
+    texture.width = 1;
+    texture.height = 1;
+    texture.size = sizeof(dummyTexture);
 
     BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     Buffer stagingBuffer(bufferInput);
     stagingBuffer.Copy(&dummyTexture);
 
     vk::Extent3D extent(1, 1, 1);
-    textures_.back()->image = std::make_unique<Image>();
-    textures_.back()->image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    textures_.back()->image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    textures_.back()->image->CreateSampler();
-    textures_.back()->image->SetInfo();
+    texture.image.CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    texture.image.CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    texture.image.CreateSampler();
+    texture.image.SetInfo();
 
     Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures_.back()->image,
+                                   texture.image,
                                    vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    {},
@@ -159,11 +176,11 @@ void Scene::CreateDummyTexture()
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer_,
                                stagingBuffer.GetBundle().buffer,
-                               textures_.back()->image->GetBundle().image, textures_.back()->width,
-                               textures_.back()->height);
+                               texture.image.GetBundle().image, texture.width,
+                               texture.height);
     // Set texture image layout to shader read only
     Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *textures_.back()->image,
+                                   texture.image,
                                    vk::ImageLayout::eTransferDstOptimal,
                                    vk::ImageLayout::eShaderReadOnlyOptimal,
                                    vk::AccessFlagBits::eTransferWrite,
@@ -251,14 +268,20 @@ void Scene::Update()
 
     std::vector<vk::DescriptorImageInfo> textureInfos;
     for (auto& texture : textures_) {
-        textureInfos.push_back(texture->image->GetBundle().imageInfo);
+        textureInfos.push_back(texture.image.GetBundle().imageInfo);
     }
     std::vector<vk::DescriptorImageInfo> cubeMapInfos;
-    for (auto& cubeMapInfo : meshRenderPipeline.shadowCubeMapDescriptors)
+    for (auto& cubeMapInfo : meshRenderPipeline.shadowCubeMapDescriptors) {
         cubeMapInfos.push_back(cubeMapInfo);
+    }
+    std::vector<vk::DescriptorImageInfo> diffuseTextureInfos;
+    for (auto& diffuseTexture : diffuseTextures_) {
+        diffuseTextureInfos.push_back(diffuseTexture.image.GetBundle().imageInfo);
+    }
     std::vector<vk::WriteDescriptorSet> image = {
         { meshRenderPipeline.descriptorSets[1], 0, 0, (uint32_t)textureInfos.size(), vk::DescriptorType::eCombinedImageSampler, textureInfos.data() },
-        { meshRenderPipeline.descriptorSets[2], 0, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eCombinedImageSampler, cubeMapInfos.data() }
+        { meshRenderPipeline.descriptorSets[1], 1, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eCombinedImageSampler, cubeMapInfos.data() },
+        { meshRenderPipeline.descriptorSets[1], 2, 0, (uint32_t)diffuseTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, diffuseTextureInfos.data() }
     };
     Device::GetBundle().device.updateDescriptorSets(image, nullptr);
 }
@@ -330,7 +353,7 @@ Resource::Resource(std::string& path)
 
     if (fileFormat == "obj") {
         resourceType = RESOURCETYPE::MESH;
-    } else if (fileFormat == "png" || fileFormat == "jpg") {
+    } else if (fileFormat == "png" || fileFormat == "jpg" || fileFormat == "tga") {
         resourceType = RESOURCETYPE::TEXTURE;
     }
 }

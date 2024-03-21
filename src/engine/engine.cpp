@@ -8,7 +8,7 @@ Engine::Engine()
     Command::CreateCommandPool(commandPool_);
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    CreateDescriptorSetLayouts();
+    SetUpDescriptors();
     CreatePipeline();
 
     imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
