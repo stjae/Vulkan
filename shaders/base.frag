@@ -28,7 +28,7 @@ void main() {
 
     vec4 dstColor = vec4(inColor, 1.0);
 
-    if (meshInstance.useTexture) {
+    if (meshInstance.useTexture && meshInstance.textureID > 0) {
         dstColor = texture(texSampler[meshInstance.textureID], inTexcoord);
     }
     if (pushConsts.materialID > 0) {

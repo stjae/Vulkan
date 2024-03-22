@@ -145,7 +145,7 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
 void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
 {
-    int division = 128;
+    int division = 32;
     float degree = 360.0f / (float)division;
 
     glm::vec3 startPos{ 0.0f, -1.0f, 0.0f };

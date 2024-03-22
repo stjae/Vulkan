@@ -428,8 +428,10 @@ void UI::DrawListWindow(Scene& scene)
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.model), translation, rotation, scale);
             std::vector<std::string> labels = { "Move", "Rotate" };
             ImGui::SeparatorText("Translation");
-            ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
-            ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
+            if (ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f))
+                scene.meshDirtyFlag_ = true;
+            if (ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f))
+                scene.meshDirtyFlag_ = true;
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
             meshInstance.model = glm::make_mat4(matrix);
@@ -438,7 +440,9 @@ void UI::DrawListWindow(Scene& scene)
             meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
 
             ImGui::SeparatorText("Textures");
-            ImGui::Checkbox("Use Texture", &meshInstance.useTexture);
+            if (ImGui::Checkbox("Use Texture", &meshInstance.useTexture)) {
+                scene.meshDirtyFlag_ = true;
+            }
         }
         ImGui::EndTabItem();
     }
@@ -477,9 +481,10 @@ void UI::DrawListWindow(Scene& scene)
                 ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
                 std::vector<std::string> labels = { "Move", "Rotate", "Color" };
                 ImGui::SeparatorText("Translation");
-                ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f);
-                ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f);
-                ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f);
+                if (ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f))
+                    scene.lightDirtyFlag_ = true;
+                if (ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f))
+                    scene.lightDirtyFlag_ = true;
                 ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
                 model = glm::translate(glm::make_mat4(matrix), -lightData.pos);

@@ -20,8 +20,8 @@ struct MeshInstance
     glm::mat4 invTranspose;
     int32_t meshID;
     int32_t textureID;
-    bool useTexture;
     int32_t instanceID;
+    bool useTexture;
 
     MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID)
     {

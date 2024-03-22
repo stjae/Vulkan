@@ -4,8 +4,8 @@ struct MeshInstanceData
     mat4 invTranspose;
     int meshID;
     int textureID;
-    bool useTexture;
     int instanceID;
+    bool useTexture;
 };
 
 struct LightData
