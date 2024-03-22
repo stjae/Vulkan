@@ -28,10 +28,6 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
     lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
     meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
     shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-    bufferInput = { sizeof(MeshInstance), sizeof(MeshInstance), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
-    meshRenderPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
-    shadowMapPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
 
     meshes_.emplace_back(MESHTYPE::SQUARE);
     meshes_.back().CreateBuffers();
@@ -202,8 +198,14 @@ void Scene::Update()
     // Duplicate Mesh
     if (selectedMeshID_ > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera_.isControllable_) {
         AddMeshInstance(selectedMeshID_);
-        meshes_[selectedMeshID_].meshInstances_.back() = meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_];
-        meshes_[selectedMeshID_].meshInstances_.back().instanceID++;
+        int newInstanceID = meshes_[selectedMeshID_].meshInstances_.back().instanceID;
+        // copy data of source instance
+        auto& srcMeshInstance = meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_];
+        meshes_[selectedMeshID_].meshInstances_.back() = srcMeshInstance;
+        // except for id
+        meshes_[selectedMeshID_].meshInstances_.back().instanceID = newInstanceID;
+        // select new instance
+        selectedMeshInstanceID_ = newInstanceID;
     }
 
     camera_.Update();
@@ -219,7 +221,7 @@ void Scene::Update()
     for (auto& light : lights_)
         light.maxLights = lights_.size();
     if (!lights_.empty() && lightDirtyFlag_) {
-        bufferInput = { sizeof(LightData) * lights_.size(), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        bufferInput = { sizeof(LightData) * lights_.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         lightDataBuffer_.reset();
         lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
         lightDataBuffer_->Copy(lights_.data());
@@ -235,21 +237,23 @@ void Scene::Update()
     }
 
     if (GetInstanceCount() > 0 && meshDirtyFlag_) {
-        bufferInput = { sizeof(MeshInstance) * GetInstanceCount(), sizeof(MeshInstance), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        meshInstanceDataBuffer_.reset();
-        meshInstanceDataBuffer_ = std::make_unique<Buffer>(bufferInput);
-
-        std::vector<MeshInstance> instances;
-        instances.reserve(GetInstanceCount());
+        std::vector<vk::DescriptorBufferInfo> bufferInfos;
+        bufferInfos.reserve(meshes_.size());
         for (auto& mesh : meshes_) {
-            instances.insert(instances.end(), mesh.meshInstances_.begin(), mesh.meshInstances_.end());
+            if (mesh.GetInstanceCount() < 1)
+                continue;
+            bufferInput = { sizeof(MeshInstance) * mesh.GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+            mesh.meshInstanceBuffer_.reset();
+            mesh.meshInstanceBuffer_ = std::make_unique<Buffer>(bufferInput);
+            mesh.meshInstanceBuffer_->Copy(mesh.meshInstances_.data());
+
+            bufferInfos.emplace_back(mesh.meshInstanceBuffer_->GetBundle().descriptorBufferInfo);
         }
-        meshInstanceDataBuffer_->Copy(instances.data());
-        meshRenderPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
-        shadowMapPipeline.meshDescriptor = meshInstanceDataBuffer_->GetBundle().descriptorBufferInfo;
+        meshRenderPipeline.meshDescriptors = bufferInfos;
+        shadowMapPipeline.meshDescriptors = bufferInfos;
         std::vector<vk::WriteDescriptorSet> mesh = {
-            { meshRenderPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshRenderPipeline.meshDescriptor },
-            { shadowMapPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &shadowMapPipeline.meshDescriptor }
+            { meshRenderPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
+            { shadowMapPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() }
         };
         Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
         meshDirtyFlag_ = false;

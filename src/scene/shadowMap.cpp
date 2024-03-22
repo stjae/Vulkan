@@ -85,30 +85,29 @@ void ShadowMap::UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& command
         break;
     }
 
-    pushConstants.view = viewMatrix;
-    pushConstants.lightIndex = lightIndex;
+    shadowMapPushConsts.view = viewMatrix;
+    shadowMapPushConsts.lightIndex = lightIndex;
 
     commandBuffer.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
 
-    commandBuffer.pushConstants(
-        shadowMapPipeline.pipelineLayout,
-        vk::ShaderStageFlagBits::eVertex,
-        0,
-        sizeof(ShadowMapPassPushConstants),
-        &pushConstants);
-
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipeline);
+    int meshIndex = 0;
     vk::DeviceSize vertexOffsets[]{ 0 };
-    uint32_t dynamicOffset = 0;
     for (auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipelineLayout, 0, 1, &shadowMapPipeline.descriptorSets[0], 1, &dynamicOffset);
+        shadowMapPushConsts.meshIndex = meshIndex;
+        meshIndex++;
+        commandBuffer.pushConstants(
+            shadowMapPipeline.pipelineLayout,
+            vk::ShaderStageFlagBits::eVertex,
+            0,
+            sizeof(ShadowMapPushConstants),
+            &shadowMapPushConsts);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipelineLayout, 0, 1, &shadowMapPipeline.descriptorSets[0], 0, nullptr);
         commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
         commandBuffer.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
         commandBuffer.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
-
-        dynamicOffset += mesh.GetInstanceCount() * sizeof(MeshInstance);
     }
 
     commandBuffer.endRenderPass();

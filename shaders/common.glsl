@@ -29,7 +29,7 @@ layout(set = 0, binding = 1) readonly buffer Light {
 
 layout(set = 0, binding = 2) readonly buffer Mesh {
     MeshInstanceData data[];
-} mesh;
+} mesh[];
 
 float Lambert(vec3 worldNormal, vec3 worldModel, LightData lightData)
 {

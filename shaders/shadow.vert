@@ -1,10 +1,12 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier: enable
 #include "common.glsl"
 
 layout(push_constant) uniform PushConsts
 {
     mat4 view;
-    vec3 padding;
+    vec2 padding;
+    int meshIndex;
     int lightIndex;
 } pushConsts;
 
@@ -18,7 +20,7 @@ layout (location = 1) out vec4 outLightPos;
 
 void main() {
 
-    vec4 worldPos = mesh.data[gl_InstanceIndex].model * vec4(vertPos, 1.0);
+    vec4 worldPos = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(vertPos, 1.0);
 
     gl_Position = camera.proj * pushConsts.view * worldPos;
 

@@ -25,7 +25,7 @@ void CreatePipeline()
     vk::PipelineMultisampleStateCreateInfo multisampleStateCI({}, vk::SampleCountFlagBits::e1, vk::False);
     vk::PipelineColorBlendStateCreateInfo colorBlendStateCI({}, vk::False, {}, attachmentStates.size(), attachmentStates.data());
     vk::PipelineDepthStencilStateCreateInfo depthStencilStateCI({}, vk::True, vk::True, vk::CompareOp::eLess);
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(int));
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshRenderPushConstants));
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, meshRenderPipeline.descriptorSetLayouts.size(), meshRenderPipeline.descriptorSetLayouts.data(), 1, &pushConstantRange);
 
     pipelineCI.pVertexInputState = &vertexInputStateCI;
@@ -45,7 +45,7 @@ void CreatePipeline()
     meshRenderPipeline.pipeline = (Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineCI)).value;
 
     // Shadow Map
-    pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4) + sizeof(int) + sizeof(glm::vec3) };
+    pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(ShadowMapPushConstants) };
     vk::PipelineColorBlendAttachmentState attachment;
     attachment = vk::PipelineColorBlendAttachmentState(vk::False);
     attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -73,13 +73,13 @@ void SetUpDescriptors()
         std::vector<DescriptorBinding> bindings;
         bindings = {
             // camera
-            { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+            { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
             // light
-            { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eFragment },
+            { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
             // mesh
-            { 2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment },
+            { 2, vk::DescriptorType::eStorageBuffer, 100, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
         };
-        meshRenderPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bindings));
+        meshRenderPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
         bindings = {
@@ -99,7 +99,6 @@ void SetUpDescriptors()
         std::vector<vk::WriteDescriptorSet> write = {
             { meshRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor },
             { meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor },
-            { meshRenderPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &meshRenderPipeline.meshDescriptor }
         };
         Device::GetBundle().device.updateDescriptorSets(write, nullptr);
     }
@@ -112,22 +111,21 @@ void SetUpDescriptors()
         std::vector<DescriptorBinding> bindings;
         bindings = {
             // camera_
-            { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+            { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
             // lights_
-            { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+            { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
             // meshes_
-            { 2, vk::DescriptorType::eStorageBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex }
+            { 2, vk::DescriptorType::eStorageBuffer, 100, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind }
         };
-        shadowMapPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bindings));
+        shadowMapPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-        Descriptor::CreateDescriptorPool(shadowMapPipeline.descriptorPool, poolSizes, maxSets);
+        Descriptor::CreateDescriptorPool(shadowMapPipeline.descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
         Descriptor::AllocateDescriptorSets(shadowMapPipeline.descriptorPool, shadowMapPipeline.descriptorSets, shadowMapPipeline.descriptorSetLayouts);
 
         std::vector<vk::WriteDescriptorSet> write = {
             { shadowMapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowMapPipeline.cameraDescriptor },
             { shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowMapPipeline.lightDescriptor },
-            { shadowMapPipeline.descriptorSets[0], 2, 0, 1, vk::DescriptorType::eStorageBufferDynamic, nullptr, &shadowMapPipeline.meshDescriptor }
         };
         Device::GetBundle().device.updateDescriptorSets(write, nullptr);
     }

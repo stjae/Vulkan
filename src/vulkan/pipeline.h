@@ -10,6 +10,20 @@
 inline vk::Format shadowMapImageFormat = vk::Format::eR32Sfloat;
 inline vk::Format shadowMapDepthFormat = vk::Format::eD32Sfloat;
 
+struct MeshRenderPushConstants
+{
+    int meshIndex;
+    int materialID;
+} inline meshRenderPushConsts;
+
+struct ShadowMapPushConstants
+{
+    glm::mat4 view;
+    glm::vec2 padding;
+    int meshIndex;
+    int lightIndex;
+} inline shadowMapPushConsts;
+
 struct MeshRenderPipeline
 {
     vk::Pipeline pipeline;
@@ -21,7 +35,7 @@ struct MeshRenderPipeline
     std::vector<vk::DescriptorSet> descriptorSets;
     vk::DescriptorBufferInfo cameraDescriptor;
     vk::DescriptorBufferInfo lightDescriptor;
-    vk::DescriptorBufferInfo meshDescriptor;
+    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
     std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
 } inline meshRenderPipeline;
 
@@ -36,7 +50,7 @@ struct ShadowMapPipeline
     std::vector<vk::DescriptorSet> descriptorSets;
     vk::DescriptorBufferInfo cameraDescriptor;
     vk::DescriptorBufferInfo lightDescriptor;
-    vk::DescriptorBufferInfo meshDescriptor;
+    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
 } inline shadowMapPipeline;
 
 void CreatePipeline();

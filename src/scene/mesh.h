@@ -41,6 +41,7 @@ class Mesh : public MeshBase
 
     int32_t meshID_;
     int32_t instanceID_;
+    std::unique_ptr<Buffer> meshInstanceBuffer_;
     std::vector<MeshInstance> meshInstances_;
     std::vector<MeshPart> meshParts_;
     std::vector<tinyobj::material_t> materials_;

@@ -4,6 +4,7 @@
 
 layout(push_constant) uniform PushConsts
 {
+    int meshIndex;
     int materialID;
 } pushConsts;
 
@@ -23,7 +24,7 @@ layout (location = 1) out ivec2 outID;
 
 void main() {
 
-    MeshInstanceData meshInstance = mesh.data[instanceIndex];
+    MeshInstanceData meshInstance = mesh[pushConsts.meshIndex].data[instanceIndex];
 
     vec4 dstColor = vec4(inColor, 1.0);
 

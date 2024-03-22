@@ -223,24 +223,25 @@ void Viewport::Draw(const std::vector<Mesh>& meshes)
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    uint32_t dynamicOffset = 0;
+    int meshIndex = 0;
     for (const auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
         commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+        meshRenderPushConsts.meshIndex = meshIndex;
+        meshIndex++;
         for (const auto& part : mesh.GetMeshParts()) {
-            int pushConstants = part.materialID + 1;
+            meshRenderPushConsts.materialID = part.materialID + 1;
             commandBuffer_.pushConstants(
                 meshRenderPipeline.pipelineLayout,
-                vk::ShaderStageFlagBits::eFragment,
+                vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                 0,
-                sizeof(int),
-                &pushConstants);
-            commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 1, &dynamicOffset);
+                sizeof(MeshRenderPushConstants),
+                &meshRenderPushConsts);
+            commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
             commandBuffer_.drawIndexed(part.indexCount, mesh.GetInstanceCount(), 0, part.indexBase, 0);
         }
-        dynamicOffset += mesh.GetInstanceCount() * sizeof(MeshInstance);
     }
 
     commandBuffer_.endRenderPass();
