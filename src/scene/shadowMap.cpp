@@ -105,9 +105,11 @@ void ShadowMap::UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& command
             sizeof(ShadowMapPushConstants),
             &shadowMapPushConsts);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipelineLayout, 0, 1, &shadowMapPipeline.descriptorSets[0], 0, nullptr);
-        commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
-        commandBuffer.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
-        commandBuffer.drawIndexed(mesh.GetIndexCount(), mesh.GetInstanceCount(), 0, 0, 0);
+        for (auto& part : mesh.GetMeshParts()) {
+            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
+            commandBuffer.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
+            commandBuffer.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+        }
     }
 
     commandBuffer.endRenderPass();

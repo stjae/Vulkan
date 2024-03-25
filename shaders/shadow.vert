@@ -10,17 +10,18 @@ layout(push_constant) uniform PushConsts
     int lightIndex;
 } pushConsts;
 
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec3 vertNormal;
-layout (location = 2) in vec3 vertColor;
+layout (location = 0) in vec3 inPos;
+layout (location = 1) in vec3 inNormal;
+layout (location = 2) in vec3 inColor;
 layout (location = 3) in vec2 inTexcoord;
+layout (location = 4) in vec3 inTangent;
 
 layout (location = 0) out vec4 outPos;
 layout (location = 1) out vec4 outLightPos;
 
 void main() {
 
-    vec4 worldPos = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(vertPos, 1.0);
+    vec4 worldPos = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(inPos, 1.0);
 
     gl_Position = camera.proj * pushConsts.view * worldPos;
 

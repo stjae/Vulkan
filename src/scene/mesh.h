@@ -1,17 +1,19 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "meshData.h"
+#include "meshBase.h"
 #include "../vulkan/command.h"
 #include "tiny_obj_loader.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 struct MeshPart
 {
+    int32_t bufferIndex;
     int32_t materialID;
-    int32_t indexCount;
-    int32_t indexBase;
 
-    MeshPart(int32_t mID, int32_t idxCount, int32_t idxBase) : materialID(mID), indexCount(idxCount), indexBase(idxBase) {}
+    MeshPart(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
 };
 
 struct MeshInstance
@@ -33,6 +35,12 @@ struct MeshInstance
     }
 };
 
+struct Material
+{
+    std::string diffusePath;
+    std::string normalPath;
+};
+
 class Mesh : public MeshBase
 {
     friend class Scene;
@@ -44,12 +52,14 @@ class Mesh : public MeshBase
     std::unique_ptr<Buffer> meshInstanceBuffer_;
     std::vector<MeshInstance> meshInstances_;
     std::vector<MeshPart> meshParts_;
-    std::vector<tinyobj::material_t> materials_;
+    std::vector<Material> materials_;
 
     void CreateSquare(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);
     void CreateSphere(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* name = nullptr, const char* texturePath = nullptr);
     void LoadModel(const std::string& modelPath, const char* texturePath = nullptr, glm::vec3 color = glm::vec3(0.5f));
+    void ProcessNode(aiNode* node, const aiScene* scene);
+    void ProcessLoadedMesh(aiMesh* mesh);
     void CreateBuffers();
 
     inline static vk::CommandBuffer commandBuffer_;

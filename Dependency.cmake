@@ -132,6 +132,21 @@ ExternalProject_Add(
 )
 set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)
 
+# assimp
+ExternalProject_Add(
+        dep-assimp
+        GIT_REPOSITORY "https://github.com/assimp/assimp.git"
+        GIT_TAG "v5.3.1"
+        GIT_SHALLOW 1
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
+)
+set(DEP_LIST ${DEP_LIST} dep-assimp)
+set(DEP_LIBS ${DEP_LIBS} assimp)
+
 # Native File Dialog
 ExternalProject_Add(
         dep-nativefiledialog

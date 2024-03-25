@@ -58,6 +58,7 @@ class Scene
     bool lightDirtyFlag_;
     std::vector<Texture> textures_;
     std::vector<Texture> diffuseTextures_;
+    std::vector<Texture> normalTextures_;
     std::vector<Resource> resources_;
     Camera camera_;
     std::unique_ptr<Buffer> shadowMapCameraBuffer_;
@@ -67,9 +68,9 @@ class Scene
     int32_t selectedLightID_;
 
     void AddResource(std::string& filePath);
-    void LoadMaterials(const std::string& modelPath, const std::vector<tinyobj::material_t>& materials);
+    void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void CreateTexture(const std::string& filePath, Texture& texture);
+    void CreateTexture(const std::string& filePath, Texture& texture, vk::Format format = vk::Format::eR8G8B8A8Srgb);
     void AddLight();
     void DeleteMesh();
     void DeleteLight();

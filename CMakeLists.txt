@@ -29,7 +29,7 @@ add_executable(${PROJECT_NAME}
         src/engine/engine.h src/engine/engine.cpp
 
         src/scene/scene.h src/scene/scene.cpp
-        src/scene/meshData.h src/scene/meshData.cpp
+        src/scene/meshBase.h src/scene/meshBase.cpp
         src/scene/mesh.h src/scene/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
         src/engine/ui.h src/engine/ui.cpp

@@ -511,7 +511,7 @@ void UI::DrawResourceWindow(Scene& scene)
     // Add Resource
     ImGui::Columns(columnCount, 0, false);
     if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSize, buttonSize }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-        std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj,tga" });
+        std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj,tga,gltf" });
         if (!path.empty()) {
             scene.AddResource(path);
         }

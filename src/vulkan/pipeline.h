@@ -5,7 +5,7 @@
 #include "shader.h"
 #include "descriptor.h"
 #include "image.h"
-#include "../scene/meshData.h"
+#include "../scene/meshBase.h"
 
 inline vk::Format shadowMapImageFormat = vk::Format::eR32Sfloat;
 inline vk::Format shadowMapDepthFormat = vk::Format::eD32Sfloat;

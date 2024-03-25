@@ -227,11 +227,11 @@ void Viewport::Draw(const std::vector<Mesh>& meshes)
     for (const auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffer->GetBundle().buffer, vertexOffsets);
-        commandBuffer_.bindIndexBuffer(mesh.indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
         meshRenderPushConsts.meshIndex = meshIndex;
         meshIndex++;
         for (const auto& part : mesh.GetMeshParts()) {
+            commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
+            commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
             meshRenderPushConsts.materialID = part.materialID + 1;
             commandBuffer_.pushConstants(
                 meshRenderPipeline.pipelineLayout,
@@ -240,7 +240,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes)
                 sizeof(MeshRenderPushConstants),
                 &meshRenderPushConsts);
             commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
-            commandBuffer_.drawIndexed(part.indexCount, mesh.GetInstanceCount(), 0, part.indexBase, 0);
+            commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
         }
     }
 

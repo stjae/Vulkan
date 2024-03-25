@@ -27,6 +27,7 @@ Device::Device()
     features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
     features12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
     features12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+    features12.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     deviceBundle_.physicalDevice.getFeatures(&supportedFeatures);

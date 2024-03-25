@@ -88,7 +88,9 @@ void SetUpDescriptors()
             // cubemap
             { 1, vk::DescriptorType::eCombinedImageSampler, 100, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
             // diffuse
-            { 2, vk::DescriptorType::eCombinedImageSampler, 100, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind }
+            { 2, vk::DescriptorType::eCombinedImageSampler, 100, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind },
+            // normal
+            { 3, vk::DescriptorType::eCombinedImageSampler, 100, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind }
         };
         meshRenderPipeline.descriptorSetLayouts.push_back(Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);

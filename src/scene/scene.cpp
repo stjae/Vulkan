@@ -6,39 +6,53 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
     Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
     Command::AllocateCommandBuffer(commandPool_, Mesh::commandBuffer_);
 
-    camera_.dir_ = { 0.5, -0.3, -0.7, 0.0 };
-    camera_.pos_ = { -3.0, 3.3, 8.0 };
-    camera_.at_ = { -2.5, 3.0, 7.3 };
+    {
+        // init camera pos
+        camera_.dir_ = { 0.5, -0.3, -0.7, 0.0 };
+        camera_.pos_ = { -3.0, 3.3, 8.0 };
+        camera_.at_ = { -2.5, 3.0, 7.3 };
+    }
 
-    textures_.reserve(100);
-    textures_.emplace_back();
-    CreateDummyTexture(textures_.back());
-    CreateShadowMapRenderPass();
-    shadowMaps_.reserve(100);
-    shadowMaps_.emplace_back();
-    shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
-    diffuseTextures_.reserve(100);
-    diffuseTextures_.emplace_back();
-    CreateDummyTexture(diffuseTextures_.back());
+    {
+        // prepare textures
+        textures_.reserve(100);
+        textures_.emplace_back();
+        CreateDummyTexture(textures_.back());
+        CreateShadowMapRenderPass();
+        shadowMaps_.reserve(100);
+        shadowMaps_.emplace_back();
+        shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+        diffuseTextures_.reserve(100);
+        diffuseTextures_.emplace_back();
+        CreateDummyTexture(diffuseTextures_.back());
+        normalTextures_.reserve(100);
+        normalTextures_.emplace_back();
+        CreateDummyTexture(normalTextures_.back());
+    }
 
-    BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    shadowMapCameraBuffer_ = std::make_unique<Buffer>(bufferInput);
-    shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
-    bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
-    meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-    shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+    {
+        // prepare buffer, descriptor
+        BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        shadowMapCameraBuffer_ = std::make_unique<Buffer>(bufferInput);
+        shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
+        bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+    }
 
-    meshes_.emplace_back(MESHTYPE::SQUARE);
-    meshes_.back().CreateBuffers();
-    meshes_.emplace_back(MESHTYPE::CUBE);
-    meshes_.back().CreateBuffers();
-    meshes_.emplace_back(MESHTYPE::SPHERE);
-    meshes_.back().CreateBuffers();
-
-    AddMeshInstance(MESHTYPE::CUBE, glm::vec3(0.0f, -4.0f, 0.0f), glm::vec3(10.0f, 0.1f, 10.0f));
-    AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), glm::vec3(0.3f));
-    lights_.emplace_back();
+    {
+        // init scene
+        meshes_.emplace_back(MESHTYPE::SQUARE);
+        meshes_.back().CreateBuffers();
+        meshes_.emplace_back(MESHTYPE::CUBE);
+        meshes_.back().CreateBuffers();
+        meshes_.emplace_back(MESHTYPE::SPHERE);
+        meshes_.back().CreateBuffers();
+        // AddMeshInstance(MESHTYPE::CUBE, glm::vec3(0.0f, -4.0f, 0.0f), glm::vec3(10.0f, 0.1f, 10.0f));
+        // AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), glm::vec3(0.3f));
+        lights_.emplace_back(glm::vec3(0.0f, 1.2f, 0.5f));
+    }
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -63,13 +77,16 @@ void Scene::AddResource(std::string& filePath)
     }
 }
 
-void Scene::LoadMaterials(const std::string& modelPath, const std::vector<tinyobj::material_t>& materials)
+void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials)
 {
     for (auto& material : materials) {
         if (modelPath.find_last_of("/\\") != std::string::npos) {
-            std::string texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.diffuse_texname;
+            std::string texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.diffusePath;
             diffuseTextures_.emplace_back();
             CreateTexture(texturePath, diffuseTextures_.back());
+            texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normalPath;
+            normalTextures_.emplace_back();
+            CreateTexture(texturePath, normalTextures_.back(), vk::Format::eR8G8B8A8Unorm);
         }
     }
 }
@@ -81,7 +98,7 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
     meshDirtyFlag_ = true;
 }
 
-void Scene::CreateTexture(const std::string& filePath, Texture& texture)
+void Scene::CreateTexture(const std::string& filePath, Texture& texture, vk::Format format)
 {
     int width = 0, height = 0, channel = 0;
     vk::DeviceSize imageSize = 0;
@@ -91,10 +108,11 @@ void Scene::CreateTexture(const std::string& filePath, Texture& texture)
     imageSize = width * height * 4;
 
     if (!imageData) {
-        // spdlog::error("failed to load texture");
+        spdlog::error("failed to load texture from [{}], inserting dummy", filePath.c_str());
         CreateDummyTexture(texture);
         return;
     }
+    spdlog::info("load texture from [{}]", filePath.c_str());
 
     texture.width = width;
     texture.height = height;
@@ -109,8 +127,8 @@ void Scene::CreateTexture(const std::string& filePath, Texture& texture)
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
 
-    texture.image.CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    texture.image.CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    texture.image.CreateImage(format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
+    texture.image.CreateImageView(format, vk::ImageAspectFlagBits::eColor);
     texture.image.CreateSampler();
     texture.image.SetInfo();
 
@@ -279,13 +297,18 @@ void Scene::Update()
         cubeMapInfos.push_back(cubeMapInfo);
     }
     std::vector<vk::DescriptorImageInfo> diffuseTextureInfos;
-    for (auto& diffuseTexture : diffuseTextures_) {
-        diffuseTextureInfos.push_back(diffuseTexture.image.GetBundle().imageInfo);
+    for (auto& diffuse : diffuseTextures_) {
+        diffuseTextureInfos.push_back(diffuse.image.GetBundle().imageInfo);
+    }
+    std::vector<vk::DescriptorImageInfo> normalTextureInfos;
+    for (auto& normal : normalTextures_) {
+        normalTextureInfos.push_back(normal.image.GetBundle().imageInfo);
     }
     std::vector<vk::WriteDescriptorSet> image = {
         { meshRenderPipeline.descriptorSets[1], 0, 0, (uint32_t)textureInfos.size(), vk::DescriptorType::eCombinedImageSampler, textureInfos.data() },
         { meshRenderPipeline.descriptorSets[1], 1, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eCombinedImageSampler, cubeMapInfos.data() },
-        { meshRenderPipeline.descriptorSets[1], 2, 0, (uint32_t)diffuseTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, diffuseTextureInfos.data() }
+        { meshRenderPipeline.descriptorSets[1], 2, 0, (uint32_t)diffuseTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, diffuseTextureInfos.data() },
+        { meshRenderPipeline.descriptorSets[1], 3, 0, (uint32_t)normalTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, normalTextureInfos.data() }
     };
     Device::GetBundle().device.updateDescriptorSets(image, nullptr);
 }
@@ -355,7 +378,7 @@ Resource::Resource(std::string& path)
     this->fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
     this->fileFormat = path.substr(path.rfind('.') + 1, path.size());
 
-    if (fileFormat == "obj") {
+    if (fileFormat == "obj" || fileFormat == "gltf") {
         resourceType = RESOURCETYPE::MESH;
     } else if (fileFormat == "png" || fileFormat == "jpg" || fileFormat == "tga") {
         resourceType = RESOURCETYPE::TEXTURE;
