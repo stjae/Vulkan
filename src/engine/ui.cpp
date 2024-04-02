@@ -49,11 +49,11 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
     // DPI Scale
-    if (imguiViewport->DpiScale > 0.0f) {
-        ImFontConfig fontConfig;
-        fontConfig.SizePixels = 13.0f * imguiViewport->DpiScale;
-        io.Fonts->AddFontDefault(&fontConfig);
-    }
+    // if (imguiViewport->DpiScale > 0.0f) {
+    //     ImFontConfig fontConfig;
+    //     fontConfig.SizePixels = 13.0f * imguiViewport->DpiScale;
+    //     io.Fonts->AddFontDefault(&fontConfig);
+    // }
 
     descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 

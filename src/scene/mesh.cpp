@@ -231,7 +231,8 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
         }
     }
 
-    name_ = modelPath.substr(modelPath.rfind('/') + 1, modelPath.rfind('.') - modelPath.rfind('/') - 1);
+    // TODO:
+    name_ = modelPath.substr(modelPath.find_last_of("/\\") + 1, modelPath.rfind('.') - modelPath.find_last_of("/\\") - 1);
 }
 
 void Mesh::ProcessNode(aiNode* node, const aiScene* scene)

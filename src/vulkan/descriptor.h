@@ -19,10 +19,10 @@ struct DescriptorBinding
 class Descriptor
 {
 public:
-    static vk::DescriptorSetLayout CreateDescriptorSetLayout(const std::__1::vector<DescriptorBinding>& descriptorBindings, vk::DescriptorSetLayoutCreateFlags layoutCreateFlags = {});
-    static void SetPoolSizes(std::__1::vector<vk::DescriptorPoolSize>& poolSizes, const std::__1::vector<DescriptorBinding>& descriptorBindings, uint32_t& maxSets);
-    static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, std::__1::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags = {});
-    static void AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::__1::vector<vk::DescriptorSet>& descriptorSets, const std::__1::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
+    static vk::DescriptorSetLayout CreateDescriptorSetLayout(const std::vector<DescriptorBinding>& descriptorBindings, vk::DescriptorSetLayoutCreateFlags layoutCreateFlags = {});
+    static void SetPoolSizes(std::vector<vk::DescriptorPoolSize>& poolSizes, const std::vector<DescriptorBinding>& descriptorBindings, uint32_t& maxSets);
+    static void CreateDescriptorPool(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags = {});
+    static void AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts);
 };
 } // namespace vkn
 

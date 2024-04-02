@@ -81,6 +81,7 @@ void Scene::AddResource(std::string& filePath)
 void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials)
 {
     for (auto& material : materials) {
+        // TODO:
         if (modelPath.find_last_of("/\\") != std::string::npos) {
             std::string texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.diffusePath;
             diffuseTextures_.emplace_back();
@@ -376,8 +377,9 @@ Scene::~Scene()
 
 Resource::Resource(std::string& path)
 {
+    // TODO:
     this->filePath = path;
-    this->fileName = path.substr(path.rfind('/') + 1, path.rfind('.') - path.rfind('/') - 1);
+    this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
     this->fileFormat = path.substr(path.rfind('.') + 1, path.size());
 
     if (fileFormat == "obj" || fileFormat == "gltf") {

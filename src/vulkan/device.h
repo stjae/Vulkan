@@ -22,7 +22,7 @@ class Device
     inline static DeviceBundle deviceBundle_;
 
     void FindQueueFamilies(const VkSurfaceKHR& surface);
-    void SetDeviceQueueCreateInfo(std::__1::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
 
 public:
     inline static vk::PhysicalDeviceLimits physicalDeviceLimits;
