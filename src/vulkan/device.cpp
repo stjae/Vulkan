@@ -1,10 +1,10 @@
 #include "device.h"
 
-Device::Device()
+vkn::Device::Device()
 {
     PickPhysicalDevice();
     instance_.CreateSurface();
-    FindQueueFamilies(Instance::GetBundle().surface);
+    FindQueueFamilies(vkn::Instance::GetBundle().surface);
 
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     SetDeviceQueueCreateInfo(deviceQueueCreateInfos);
@@ -13,9 +13,9 @@ Device::Device()
     // enable argument buffers
     MVKConfiguration mvkConfig;
     size_t configurationSize = sizeof(MVKConfiguration);
-    vkGetMoltenVKConfigurationMVK(Instance::GetBundle().instance, &mvkConfig, &configurationSize);
+    vkGetMoltenVKConfigurationMVK(vkn::Instance::GetBundle().instance, &mvkConfig, &configurationSize);
     mvkConfig.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
-    vkSetMoltenVKConfigurationMVK(Instance::GetBundle().instance, &mvkConfig, &configurationSize);
+    vkSetMoltenVKConfigurationMVK(vkn::Instance::GetBundle().instance, &mvkConfig, &configurationSize);
 #endif
 
     vk::PhysicalDeviceVulkan12Features features12;
@@ -32,18 +32,18 @@ Device::Device()
     vk::PhysicalDeviceFeatures supportedFeatures;
     deviceBundle_.physicalDevice.getFeatures(&supportedFeatures);
     Device::physicalDeviceLimits = deviceBundle_.physicalDevice.getProperties().limits;
-    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance_.instanceLayers.size()), instance_.instanceLayers.data(), static_cast<uint32_t>(deviceExtensions_.size()), deviceExtensions_.data(), &supportedFeatures, &features12);
+    vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(instance_.instanceLayers_.size()), instance_.instanceLayers_.data(), static_cast<uint32_t>(deviceExtensions_.size()), deviceExtensions_.data(), &supportedFeatures, &features12);
 
     deviceBundle_.device = deviceBundle_.physicalDevice.createDevice(deviceCreateInfo);
 
-    deviceBundle_.graphicsQueue = deviceBundle_.device.getQueue(deviceBundle_.graphicsComputeFamilyIndex.value(), 0);
-    deviceBundle_.computeQueue = deviceBundle_.device.getQueue(deviceBundle_.graphicsComputeFamilyIndex.value(), 0);
+    deviceBundle_.graphicsQueue = deviceBundle_.device.getQueue(deviceBundle_.graphicsFamilyIndex.value(), 0);
+    deviceBundle_.computeQueue = deviceBundle_.device.getQueue(deviceBundle_.computeFamilyIndex.value(), 0);
     deviceBundle_.presentQueue = deviceBundle_.device.getQueue(deviceBundle_.presentFamilyIndex.value(), 0);
 }
 
-void Device::PickPhysicalDevice()
+void vkn::Device::PickPhysicalDevice()
 {
-    auto deviceList = Instance::GetBundle().instance.enumeratePhysicalDevices();
+    auto deviceList = vkn::Instance::GetBundle().instance.enumeratePhysicalDevices();
 
     for (auto& device : deviceList) {
         if (IsDeviceSuitable(device)) {
@@ -55,10 +55,10 @@ void Device::PickPhysicalDevice()
     if (deviceBundle_.physicalDevice == nullptr) {
         spdlog::error("no suitable device found");
     }
-    Log(debug, fmt::terminal_color::white, "physical device: {}", deviceBundle_.physicalDevice.getProperties().deviceName);
+    Log(debugMode, fmt::terminal_color::white, "physical device: {}", deviceBundle_.physicalDevice.getProperties().deviceName);
 }
 
-bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
+bool vkn::Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
 {
 #if defined(__APPLE__)
     deviceExtensions_.push_back("VK_KHR_portability_subset");
@@ -67,53 +67,61 @@ bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
     deviceExtensions_.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     deviceExtensions_.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    std::set<std::string>
-        ExtensionSets(deviceExtensions_.begin(), deviceExtensions_.end());
+    std::set<std::string> extensionSets(deviceExtensions_.begin(), deviceExtensions_.end());
 
     for (vk::ExtensionProperties& extension : vkPhysicalDevice.enumerateDeviceExtensionProperties()) {
-        ExtensionSets.erase(extension.extensionName);
+        extensionSets.erase(extension.extensionName);
     }
 
-    return ExtensionSets.empty();
+    return extensionSets.empty();
 }
 
-void Device::FindQueueFamilies(const VkSurfaceKHR& surface)
+void vkn::Device::FindQueueFamilies(const VkSurfaceKHR& surface)
 {
     std::vector<vk::QueueFamilyProperties> queueFamilies = deviceBundle_.physicalDevice.getQueueFamilyProperties();
 
     int i = 0;
     for (auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && (queueFamily.queueFlags & vk::QueueFlagBits::eCompute)) {
-            deviceBundle_.graphicsComputeFamilyIndex = i;
+        if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
+            deviceBundle_.graphicsFamilyIndex = i;
 
-            Log(debug, fmt::terminal_color::white, "graphics queue family index: {}", i);
+            Log(debugMode, fmt::terminal_color::white, "graphics queue family index: {}", i);
+        }
+
+        if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
+            deviceBundle_.computeFamilyIndex = i;
+
+            Log(debugMode, fmt::terminal_color::white, "compute queue family index: {}", i);
         }
 
         if (deviceBundle_.physicalDevice.getSurfaceSupportKHR(i, surface)) {
             deviceBundle_.presentFamilyIndex = i;
 
-            Log(debug, fmt::terminal_color::white, "present queue family index: {}", i);
+            Log(debugMode, fmt::terminal_color::white, "present queue family index: {}", i);
         }
 
-        if (deviceBundle_.graphicsComputeFamilyIndex.has_value() && deviceBundle_.presentFamilyIndex.has_value()) {
+        if (deviceBundle_.graphicsFamilyIndex.has_value() && deviceBundle_.computeFamilyIndex.has_value() && deviceBundle_.presentFamilyIndex.has_value()) {
             break;
         }
 
         i++;
     }
 
-    if (!(deviceBundle_.graphicsComputeFamilyIndex.has_value() && deviceBundle_.presentFamilyIndex.has_value())) {
+    if (!(deviceBundle_.graphicsFamilyIndex.has_value() && deviceBundle_.computeFamilyIndex.has_value() && deviceBundle_.presentFamilyIndex.has_value())) {
         spdlog::error("device is not suitable for required queue family");
     }
 }
 
-void Device::SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueInfos)
+void vkn::Device::SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueInfos)
 {
     // In case queue families have different indices
     std::vector<uint32_t> uniqueIndices;
 
-    uniqueIndices.push_back(deviceBundle_.graphicsComputeFamilyIndex.value());
-    if (deviceBundle_.graphicsComputeFamilyIndex.value() != deviceBundle_.presentFamilyIndex.value()) {
+    uniqueIndices.push_back(deviceBundle_.graphicsFamilyIndex.value());
+    if (deviceBundle_.graphicsFamilyIndex.value() != deviceBundle_.computeFamilyIndex.value()) {
+        uniqueIndices.push_back(deviceBundle_.computeFamilyIndex.value());
+    }
+    if (deviceBundle_.graphicsFamilyIndex.value() != deviceBundle_.presentFamilyIndex.value()) {
         uniqueIndices.push_back(deviceBundle_.presentFamilyIndex.value());
     }
 
@@ -125,7 +133,7 @@ void Device::SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& de
     }
 }
 
-Device::~Device()
+vkn::Device::~Device()
 {
     deviceBundle_.device.destroy();
 }

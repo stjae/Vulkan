@@ -13,9 +13,14 @@
 #include "../vulkan/pipeline.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
+enum RESOURCETYPE {
+    MESH,
+    TEXTURE,
+};
+
 struct Texture
 {
-    Image image;
+    vkn::Image image;
     vk::DescriptorSet descriptorSet; // thumbnail for resource window
 
     int width, height;
@@ -43,8 +48,8 @@ class Scene
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
 
-    std::unique_ptr<Buffer> meshInstanceDataBuffer_;
-    std::unique_ptr<Buffer> lightDataBuffer_;
+    std::unique_ptr<vkn::Buffer> meshInstanceDataBuffer_;
+    std::unique_ptr<vkn::Buffer> lightDataBuffer_;
 
     std::vector<ShadowMap> shadowMaps_;
     bool shadowMapDirtyFlag_;
@@ -61,7 +66,7 @@ class Scene
     std::vector<Texture> normalTextures_;
     std::vector<Resource> resources_;
     Camera camera_;
-    std::unique_ptr<Buffer> shadowMapCameraBuffer_;
+    std::unique_ptr<vkn::Buffer> shadowMapCameraBuffer_;
     CameraData shadowMapCameraData_;
     int32_t selectedMeshID_;
     int32_t selectedMeshInstanceID_;
@@ -82,6 +87,7 @@ public:
     const std::vector<Mesh>& GetMeshes() { return meshes_; }
     MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
     MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
+    int GetLightCount() { return lights_.size(); }
     void SelectByColorID(Viewport& viewport);
     ~Scene();
 };

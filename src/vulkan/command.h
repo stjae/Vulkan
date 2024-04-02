@@ -5,6 +5,7 @@
 #include "image.h"
 #include "../scene/mesh.h"
 
+namespace vkn {
 class Command
 {
 public:
@@ -17,5 +18,6 @@ public:
     static void SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer, const vk::Image& image, vk::ImageLayout srcImageLayout = vk::ImageLayout::eUndefined, vk::ImageLayout dstImageLayout = vk::ImageLayout::eUndefined, vk::AccessFlags srcAccessFlags = {}, vk::AccessFlags dstAccessFlags = {}, vk::PipelineStageFlags srcPipelineStageFlags = {}, vk::PipelineStageFlags dstPipelineStageFlags = {}, vk::ImageSubresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
     static void Submit(vk::CommandBuffer* commandBuffers, uint32_t count);
 };
+} // namespace vkn
 
 #endif

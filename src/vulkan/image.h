@@ -3,15 +3,16 @@
 
 #include "memory.h"
 
+namespace vkn {
 struct ImageBundle
 {
     vk::Image image;
     vk::ImageView imageView;
     vk::Format format;
-    vk::Sampler sampler;
+    // vk::Sampler sampler;
+    inline static vk::Sampler globalSampler;
     vk::DescriptorImageInfo imageInfo;
 };
-
 class Image
 {
     ImageBundle imageBundle_;
@@ -24,6 +25,7 @@ public:
     void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags);
     void CreateImageView(vk::ImageViewCreateInfo& imageViewCI);
     void CreateSampler();
+    static void CreateGlobalSampler();
     void SetInfo(vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined);
     void DestroyImage();
     void DestroyImageView();
@@ -31,5 +33,6 @@ public:
 
     const ImageBundle& GetBundle() const { return imageBundle_; }
 };
+} // namespace vkn
 
 #endif

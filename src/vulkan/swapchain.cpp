@@ -1,6 +1,10 @@
 #include "swapchain.h"
+#include "instance.h"
+#include "device.h"
+#include "command.h"
+#include "image.h"
 
-Swapchain::Swapchain()
+vkn::Swapchain::Swapchain()
 {
     CreateSwapchain();
     CreateRenderPass();
@@ -8,19 +12,19 @@ Swapchain::Swapchain()
     PrepareFrames();
 }
 
-void Swapchain::CreateSwapchain()
+void vkn::Swapchain::CreateSwapchain()
 {
     QuerySwapchainSupport();
     ChooseSurfaceFormat();
     ChoosePresentMode();
     ChooseExtent();
 
-    uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
+    uint32_t imageCount = std::min(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount + 1);
 
-    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, Instance::GetBundle().surface, imageCount, swapchainBundle_.surfaceFormat.format, swapchainBundle_.surfaceFormat.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
+    vk::SwapchainCreateInfoKHR swapchainCreateInfo({}, vkn::Instance::GetBundle().surface, imageCount, swapchainBundle_.surfaceFormat.format, swapchainBundle_.surfaceFormat.colorSpace, swapchainBundle_.swapchainImageExtent, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
-    uint32_t indices[] = { Device::GetBundle().graphicsComputeFamilyIndex.value(), Device::GetBundle().presentFamilyIndex.value() };
-    if (Device::GetBundle().graphicsComputeFamilyIndex.value() != Device::GetBundle().presentFamilyIndex.value()) {
+    uint32_t indices[] = { vkn::Device::GetBundle().graphicsFamilyIndex.value(), vkn::Device::GetBundle().presentFamilyIndex.value() };
+    if (vkn::Device::GetBundle().graphicsFamilyIndex.value() != vkn::Device::GetBundle().presentFamilyIndex.value()) {
         swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
         swapchainCreateInfo.queueFamilyIndexCount = 2;
         swapchainCreateInfo.pQueueFamilyIndices = indices;
@@ -32,11 +36,11 @@ void Swapchain::CreateSwapchain()
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = nullptr;
 
-    swapchainBundle_.swapchain = Device::GetBundle().device.createSwapchainKHR(swapchainCreateInfo);
-    Log(debug, fmt::terminal_color::bright_green, "swapchain created");
+    swapchainBundle_.swapchain = vkn::Device::GetBundle().device.createSwapchainKHR(swapchainCreateInfo);
+    Log(debugMode, fmt::terminal_color::bright_green, "swapchain created");
 
     // GetBundle swapchain image handle
-    std::vector<vk::Image> swapchainImages = Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
+    std::vector<vk::Image> swapchainImages = vkn::Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
     swapchainBundle_.frameImageCount = swapchainImages.size();
     frames.resize(swapchainBundle_.frameImageCount);
 
@@ -52,47 +56,47 @@ void Swapchain::CreateSwapchain()
         imageViewCreateInfo.format = swapchainBundle_.surfaceFormat.format;
 
         frames[i].swapchainImage = swapchainImages[i];
-        frames[i].swapchainImageView = Device::GetBundle().device.createImageView(imageViewCreateInfo);
+        frames[i].swapchainImageView = vkn::Device::GetBundle().device.createImageView(imageViewCreateInfo);
     }
 }
 
-void Swapchain::QuerySwapchainSupport()
+void vkn::Swapchain::QuerySwapchainSupport()
 {
-    capabilities = Device::GetBundle().physicalDevice.getSurfaceCapabilitiesKHR(Instance::GetBundle().surface);
-    supportedFormats_ = Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(Instance::GetBundle().surface);
-    supportedPresentModes_ = Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(Instance::GetBundle().surface);
+    surfaceCapabilities = vkn::Device::GetBundle().physicalDevice.getSurfaceCapabilitiesKHR(vkn::Instance::GetBundle().surface);
+    supportedFormats_ = vkn::Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(vkn::Instance::GetBundle().surface);
+    supportedPresentModes_ = vkn::Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(vkn::Instance::GetBundle().surface);
 
-    Log(debug, fmt::terminal_color::black, "printing queries for surface supports..");
+    Log(debugMode, fmt::terminal_color::black, "printing queries for surface supports..");
 
-    Log(debug, fmt::terminal_color::white, "current surface extent width: {}", capabilities.currentExtent.width);
-    Log(debug, fmt::terminal_color::white, "current surface extent height: {}", capabilities.currentExtent.height);
+    Log(debugMode, fmt::terminal_color::white, "current surface extent width: {}", surfaceCapabilities.currentExtent.width);
+    Log(debugMode, fmt::terminal_color::white, "current surface extent height: {}", surfaceCapabilities.currentExtent.height);
 
     for (auto& mode : supportedPresentModes_) {
-        Log(debug, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
+        Log(debugMode, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
 
-void Swapchain::ChooseSurfaceFormat()
+void vkn::Swapchain::ChooseSurfaceFormat()
 {
-    Log(debug, fmt::terminal_color::black, "setting swapchain details..");
+    Log(debugMode, fmt::terminal_color::black, "setting swapchain details..");
 
     for (auto& format : supportedFormats_) {
         if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-            Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
-            Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
+            Log(debugMode, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
+            Log(debugMode, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
 
             swapchainBundle_.surfaceFormat = format;
             return;
         }
     }
 
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
-    Log(debug, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
+    Log(debugMode, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
+    Log(debugMode, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
 
     swapchainBundle_.surfaceFormat = supportedFormats_[0].format;
 }
 
-void Swapchain::ChoosePresentMode()
+void vkn::Swapchain::ChoosePresentMode()
 {
     vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
@@ -102,19 +106,19 @@ void Swapchain::ChoosePresentMode()
         }
     }
 
-    Log(debug, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
+    Log(debugMode, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
 
     swapchainBundle_.presentMode = mode;
 }
 
-void Swapchain::ChooseExtent()
+void vkn::Swapchain::ChooseExtent()
 {
     // extent is set
-    if (capabilities.currentExtent.width != UINT32_MAX) {
+    if (surfaceCapabilities.currentExtent.width != UINT32_MAX) {
 
-        Log(debug, fmt::terminal_color::white, "no change in extent range");
+        Log(debugMode, fmt::terminal_color::white, "no change in extent range");
 
-        swapchainBundle_.swapchainImageExtent = capabilities.currentExtent;
+        swapchainBundle_.swapchainImageExtent = surfaceCapabilities.currentExtent;
         return;
 
     } else {
@@ -124,15 +128,15 @@ void Swapchain::ChooseExtent()
 
         vk::Extent2D extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
-        if (extent.width > capabilities.maxImageExtent.width) {
+        if (extent.width > surfaceCapabilities.maxImageExtent.width) {
 
-            extent.width = capabilities.maxImageExtent.width;
-            Log(debug, fmt::terminal_color::yellow, "extent width is clamped");
+            extent.width = surfaceCapabilities.maxImageExtent.width;
+            Log(debugMode, fmt::terminal_color::yellow, "extent width is clamped");
         }
-        if (extent.height > capabilities.maxImageExtent.height) {
+        if (extent.height > surfaceCapabilities.maxImageExtent.height) {
 
-            extent.height = capabilities.maxImageExtent.height;
-            Log(debug, fmt::terminal_color::yellow, "extent height is clamped");
+            extent.height = surfaceCapabilities.maxImageExtent.height;
+            Log(debugMode, fmt::terminal_color::yellow, "extent height is clamped");
         }
 
         swapchainBundle_.swapchainImageExtent = extent;
@@ -140,7 +144,7 @@ void Swapchain::ChooseExtent()
     }
 }
 
-void Swapchain::CreateRenderPass()
+void vkn::Swapchain::CreateRenderPass()
 {
     vk::AttachmentDescription swapchainAttachment;
     swapchainAttachment.format = vk::Format::eB8G8R8A8Srgb;
@@ -167,10 +171,10 @@ void Swapchain::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass_ = Device::GetBundle().device.createRenderPass(renderPassInfo);
+    renderPass_ = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
 }
 
-void Swapchain::CreateFrameBuffer()
+void vkn::Swapchain::CreateFrameBuffer()
 {
     for (int i = 0; i < frames.size(); ++i) {
 
@@ -186,36 +190,36 @@ void Swapchain::CreateFrameBuffer()
         framebufferInfo.height = swapchainBundle_.swapchainImageExtent.height;
         framebufferInfo.layers = 1;
 
-        frames[i].framebuffer = Device::GetBundle().device.createFramebuffer(framebufferInfo);
-        Log(debug, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
+        frames[i].framebuffer = vkn::Device::GetBundle().device.createFramebuffer(framebufferInfo);
+        Log(debugMode, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
 
-void Swapchain::PrepareFrames()
+void vkn::Swapchain::PrepareFrames()
 {
     for (auto& frame : frames) {
-        frame.inFlight = MakeFence();
-        frame.imageAvailable = MakeSemaphore();
-        frame.renderFinished = MakeSemaphore();
+        frame.inFlight = CreateFence();
+        frame.imageAvailable = CreateSemaphore();
+        frame.renderFinished = CreateSemaphore();
 
-        Command::CreateCommandPool(frame.commandPool);
-        Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
-        Command::AllocateCommandBuffer(frame.commandPool, frame.renderPassCommandBuffer);
+        vkn::Command::CreateCommandPool(frame.commandPool);
+        vkn::Command::AllocateCommandBuffer(frame.commandPool, frame.commandBuffer);
+        vkn::Command::AllocateCommandBuffer(frame.commandPool, frame.renderPassCommandBuffer);
     }
 }
 
-void Swapchain::Draw(size_t frameIndex, ImDrawData* imDrawData)
+void vkn::Swapchain::Draw(size_t frameIndex, ImDrawData* imDrawData)
 {
     auto& frame = frames[frameIndex];
 
-    Command::Begin(frame.renderPassCommandBuffer);
-    Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
-                                   frame.swapchainImage,
-                                   vk::ImageLayout::ePresentSrcKHR,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   {}, vk::AccessFlagBits::eColorAttachmentWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    vkn::Command::Begin(frame.renderPassCommandBuffer);
+    vkn::Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
+                                        frame.swapchainImage,
+                                        vk::ImageLayout::ePresentSrcKHR,
+                                        vk::ImageLayout::eColorAttachmentOptimal,
+                                        {}, vk::AccessFlagBits::eColorAttachmentWrite,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = renderPass_;
@@ -251,17 +255,17 @@ void Swapchain::Draw(size_t frameIndex, ImDrawData* imDrawData)
 
     frame.renderPassCommandBuffer.endRenderPass();
 
-    Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
-                                   frame.swapchainImage,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   vk::ImageLayout::ePresentSrcKHR,
-                                   vk::AccessFlagBits::eColorAttachmentWrite, {},
-                                   vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                   vk::PipelineStageFlagBits::eBottomOfPipe);
+    vkn::Command::SetImageMemoryBarrier(frame.renderPassCommandBuffer,
+                                        frame.swapchainImage,
+                                        vk::ImageLayout::eColorAttachmentOptimal,
+                                        vk::ImageLayout::ePresentSrcKHR,
+                                        vk::AccessFlagBits::eColorAttachmentWrite, {},
+                                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                        vk::PipelineStageFlagBits::eBottomOfPipe);
     frame.renderPassCommandBuffer.end();
 }
 
-void Swapchain::Submit(size_t frameIndex)
+void vkn::Swapchain::Submit(size_t frameIndex)
 {
     auto& frame = frames[frameIndex];
 
@@ -277,10 +281,10 @@ void Swapchain::Submit(size_t frameIndex)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    Device::GetBundle().graphicsQueue.submit(submitInfo, frame.inFlight);
+    vkn::Device::GetBundle().graphicsQueue.submit(submitInfo, frame.inFlight);
 }
 
-vk::PresentInfoKHR Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage)
+vk::PresentInfoKHR vkn::Swapchain::Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage)
 {
     auto& frame = frames[frameIndex];
 
@@ -288,34 +292,35 @@ vk::PresentInfoKHR Swapchain::Present(size_t frameIndex, const vk::ResultValue<u
     vk::PresentInfoKHR presentInfo;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
-    vk::SwapchainKHR swapchains[] = { Swapchain::GetBundle().swapchain };
+    vk::SwapchainKHR swapchains[] = { vkn::Swapchain::GetBundle().swapchain };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &waitFrameImage.value;
-    auto result = Device::GetBundle().presentQueue.presentKHR(presentInfo);
+    vkn::Device::GetBundle().presentQueue.presentKHR(presentInfo);
 
     return presentInfo;
 }
 
-void Swapchain::Destroy()
+void vkn::Swapchain::Destroy()
 {
     for (auto& frame : frames) {
-        Device::GetBundle().device.destroyImageView(frame.swapchainImageView);
-        Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
-        Device::GetBundle().device.destroyFence(frame.inFlight);
-        Device::GetBundle().device.destroySemaphore(frame.imageAvailable);
-        Device::GetBundle().device.destroySemaphore(frame.renderFinished);
+        vkn::Device::GetBundle().device.destroyImageView(frame.swapchainImageView);
+        vkn::Device::GetBundle().device.destroyFramebuffer(frame.framebuffer);
+        vkn::Device::GetBundle().device.destroyFence(frame.inFlight);
+        vkn::Device::GetBundle().device.destroySemaphore(frame.imageAvailable);
+        vkn::Device::GetBundle().device.destroySemaphore(frame.renderFinished);
     }
-    Device::GetBundle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
+    vkn::Device::GetBundle().device.destroySwapchainKHR(swapchainBundle_.swapchain);
 }
 
-Swapchain::~Swapchain()
+vkn::Swapchain::~Swapchain()
 {
     Destroy();
     for (auto& layout : descriptorSetLayouts_) {
-        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+        vkn::Device::GetBundle().device.destroyDescriptorSetLayout(layout);
     }
     for (auto& frame : frames)
-        Device::GetBundle().device.destroyCommandPool(frame.commandPool);
-    Device::GetBundle().device.destroyRenderPass(renderPass_);
+        vkn::Device::GetBundle().device.destroyCommandPool(frame.commandPool);
+    vkn::Device::GetBundle().device.destroyRenderPass(renderPass_);
+    vkn::Device::GetBundle().device.destroySampler(vkn::ImageBundle::globalSampler);
 }

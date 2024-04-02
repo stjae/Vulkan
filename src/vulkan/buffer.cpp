@@ -1,11 +1,13 @@
 #include "buffer.h"
+#include "device.h"
+#include "memory.h"
 
-Buffer::Buffer(BufferInput bufferInput) : bufferInput_(bufferInput)
+vkn::Buffer::Buffer(BufferInput bufferInput) : bufferInput_(bufferInput)
 {
     vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
                                     vk::SharingMode::eExclusive);
 
-    bufferBundle_.buffer = Device::GetBundle().device.createBuffer(bufferInfo);
+    bufferBundle_.buffer = vkn::Device::GetBundle().device.createBuffer(bufferInfo);
     bufferBundle_.descriptorBufferInfo.buffer = bufferBundle_.buffer;
     bufferBundle_.descriptorBufferInfo.offset = 0;
     bufferBundle_.descriptorBufferInfo.range = bufferInput.range;
@@ -15,25 +17,24 @@ Buffer::Buffer(BufferInput bufferInput) : bufferInput_(bufferInput)
         MapMemory();
 }
 
-void Buffer::MapMemory()
+void vkn::Buffer::MapMemory()
 {
-    void* bufferMemoryAddress = Device::GetBundle().device.mapMemory(Memory::GetMemory(), 0, bufferInput_.size);
+    void* bufferMemoryAddress = vkn::Device::GetBundle().device.mapMemory(vkn::Memory::GetMemory(), 0, bufferInput_.size);
     Memory::SetAddress(bufferMemoryAddress);
     bufferBundle_.bufferMemory = Memory::GetMemory();
 }
 
-void Buffer::Destroy()
+void vkn::Buffer::Destroy()
 {
-    Device::GetBundle().device.waitIdle();
+    vkn::Device::GetBundle().device.waitIdle();
     if (bufferBundle_.buffer != VK_NULL_HANDLE) {
-        Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
+        vkn::Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
         bufferBundle_.buffer = nullptr;
     }
     if (Memory::GetMemory() != VK_NULL_HANDLE) {
-        Device::GetBundle().device.freeMemory(Memory::GetMemory());
+        vkn::Device::GetBundle().device.freeMemory(Memory::GetMemory());
         Memory::Set(nullptr);
     }
-    Log(logBuffer, fmt::terminal_color::bright_yellow, "buffer destroyed {}", to_string(bufferInput_.usage));
 }
 
-Buffer::~Buffer() { Destroy(); }
+vkn::Buffer::~Buffer() { Destroy(); }

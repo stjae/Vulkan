@@ -22,10 +22,10 @@ else ()
 endif ()
 
 add_executable(${PROJECT_NAME}
-        src/config.h
+        src/path.h
         src/main.cpp
         src/common.h src/common.cpp
-        src/engine/baseApp.h src/engine/baseApp.cpp
+        src/engine/app.h src/engine/app.cpp
         src/engine/engine.h src/engine/engine.cpp
 
         src/scene/scene.h src/scene/scene.cpp
@@ -79,4 +79,4 @@ elseif (WIN32)
     set(PROJECT_DIR_WINDOWS ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
-configure_file(config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+configure_file(path.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/path.h)

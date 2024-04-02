@@ -5,6 +5,7 @@
 #include "device.h"
 #include "memory.h"
 
+namespace vkn {
 struct BufferInput
 {
     size_t size;
@@ -18,8 +19,7 @@ struct BufferBundle
     vk::DeviceMemory bufferMemory;
     vk::DescriptorBufferInfo descriptorBufferInfo;
 };
-
-class Buffer : public Memory
+class Buffer : public vkn::Memory
 {
     const BufferInput bufferInput_;
     BufferBundle bufferBundle_;
@@ -35,5 +35,6 @@ public:
 
     const BufferBundle& GetBundle() { return bufferBundle_; }
 };
+} // namespace vkn
 
 #endif

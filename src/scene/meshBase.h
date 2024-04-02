@@ -20,8 +20,8 @@ struct Vertex
 class MeshBase
 {
 protected:
-    std::vector<std::vector<Vertex>> vertices_;
-    std::vector<std::vector<uint32_t>> indices_;
+    std::vector<std::vector<Vertex>> vertexContainers_;
+    std::vector<std::vector<uint32_t>> indexContainers_;
 
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();
@@ -29,13 +29,13 @@ public:
     void CreateVertexBuffers(std::vector<Vertex>& vertices);
     void CreateIndexBuffers(std::vector<uint32_t>& indices);
 
-    size_t GetIndicesCount(uint32_t bufferIndex) const { return indices_[bufferIndex].size(); }
+    size_t GetIndicesCount(uint32_t bufferIndex) const { return indexContainers_[bufferIndex].size(); }
 
-    std::vector<std::unique_ptr<Buffer>> vertexStagingBuffers;
-    std::vector<std::unique_ptr<Buffer>> vertexBuffers;
+    std::vector<std::unique_ptr<vkn::Buffer>> vertexStagingBuffers;
+    std::vector<std::unique_ptr<vkn::Buffer>> vertexBuffers;
 
-    std::vector<std::unique_ptr<Buffer>> indexStagingBuffers;
-    std::vector<std::unique_ptr<Buffer>> indexBuffers;
+    std::vector<std::unique_ptr<vkn::Buffer>> indexStagingBuffers;
+    std::vector<std::unique_ptr<vkn::Buffer>> indexBuffers;
 };
 
 #endif

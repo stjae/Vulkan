@@ -58,13 +58,13 @@ void MeshBase::CreateVertexBuffers(std::vector<Vertex>& vertices)
     vertexStagingBuffers.emplace_back();
     vertexBuffers.emplace_back();
 
-    BufferInput bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    vertexStagingBuffers.back() = std::make_unique<Buffer>(bufferInput);
+    vkn::BufferInput bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vertexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
     vertexStagingBuffers.back()->Copy(vertices.data());
 
     bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    vertexBuffers.back() = std::make_unique<Buffer>(bufferInput);
+    vertexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
 void MeshBase::CreateIndexBuffers(std::vector<uint32_t>& indices)
@@ -72,11 +72,11 @@ void MeshBase::CreateIndexBuffers(std::vector<uint32_t>& indices)
     indexStagingBuffers.emplace_back();
     indexBuffers.emplace_back();
 
-    BufferInput bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    indexStagingBuffers.back() = std::make_unique<Buffer>(bufferInput);
+    vkn::BufferInput bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    indexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
     indexStagingBuffers.back()->Copy(indices.data());
 
     bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    indexBuffers.back() = std::make_unique<Buffer>(bufferInput);
+    indexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
 }

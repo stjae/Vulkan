@@ -1,8 +1,8 @@
 #include "logger.h"
 
-void Logger::CreateDebugMessenger()
+void vkn::Logger::CreateDebugMessenger()
 {
-    if (!debug) {
+    if (!debugMode) {
         return;
     }
 
@@ -20,7 +20,7 @@ void Logger::CreateDebugMessenger()
     debugMessenger_ = vkInstance_.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi_);
 }
 
-void Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
+void vkn::Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo.messageSeverity =
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
@@ -55,7 +55,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
-void Logger::Destroy()
+void vkn::Logger::Destroy()
 {
     vkInstance_.destroyDebugUtilsMessengerEXT(debugMessenger_, nullptr, dldi_);
 }

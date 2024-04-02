@@ -1,8 +1,9 @@
 #include "memory.h"
+#include "device.h"
 
-uint32_t Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties)
+uint32_t vkn::Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties)
 {
-    vk::PhysicalDeviceMemoryProperties memoryProperties = Device::GetBundle().physicalDevice.getMemoryProperties();
+    vk::PhysicalDeviceMemoryProperties memoryProperties = vkn::Device::GetBundle().physicalDevice.getMemoryProperties();
 
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
 
@@ -17,33 +18,33 @@ uint32_t Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::Memory
 
     throw std::runtime_error("failed to find suitable memory type");
 }
-void Memory::AllocateMemory(const vk::Buffer& buffer, vk::MemoryPropertyFlags properties)
+void vkn::Memory::AllocateMemory(const vk::Buffer& buffer, vk::MemoryPropertyFlags properties)
 {
-    vk::MemoryRequirements memoryRequirements = Device::GetBundle().device.getBufferMemoryRequirements(buffer);
+    vk::MemoryRequirements memoryRequirements = vkn::Device::GetBundle().device.getBufferMemoryRequirements(buffer);
 
     vk::MemoryAllocateInfo allocateInfo;
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    memory_ = Device::GetBundle().device.allocateMemory(allocateInfo);
-    Device::GetBundle().device.bindBufferMemory(buffer, memory_, 0);
+    memory_ = vkn::Device::GetBundle().device.allocateMemory(allocateInfo);
+    vkn::Device::GetBundle().device.bindBufferMemory(buffer, memory_, 0);
 }
-void Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
+void vkn::Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
 {
     vk::MemoryRequirements memoryRequirements;
-    Device::GetBundle().device.getImageMemoryRequirements(vkImage, &memoryRequirements);
+    vkn::Device::GetBundle().device.getImageMemoryRequirements(vkImage, &memoryRequirements);
 
     vk::MemoryAllocateInfo allocateInfo;
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    memory_ = Device::GetBundle().device.allocateMemory(allocateInfo);
-    Device::GetBundle().device.bindImageMemory(vkImage, memory_, 0);
+    memory_ = vkn::Device::GetBundle().device.allocateMemory(allocateInfo);
+    vkn::Device::GetBundle().device.bindImageMemory(vkImage, memory_, 0);
 }
-void Memory::Free()
+void vkn::Memory::Free()
 {
     if (memory_ != VK_NULL_HANDLE) {
-        Device::GetBundle().device.freeMemory(memory_);
+        vkn::Device::GetBundle().device.freeMemory(memory_);
         memory_ = nullptr;
     }
 }

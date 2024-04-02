@@ -13,14 +13,14 @@ class Viewport
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
 
-    Image colorPicked_;
+    vkn::Image colorPicked_;
 
 public:
     vk::Framebuffer framebuffer;
 
-    Image viewportImage;
-    Image depthImage;
-    Image colorID;
+    vkn::Image viewportImage;
+    vkn::Image depthImage;
+    vkn::Image colorID;
 
     vk::Extent2D extent;
     ImVec2 panelPos;
@@ -35,7 +35,7 @@ public:
     void DestroyViewportImages();
     void CreateViewportFrameBuffer();
     const int32_t* PickColor(double mouseX, double mouseY);
-    void Draw(const std::vector<Mesh>& meshes);
+    void Draw(const std::vector<Mesh>& meshes, int lightCount);
     ~Viewport();
 };
 

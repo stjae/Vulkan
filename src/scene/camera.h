@@ -32,7 +32,7 @@ class Camera
     float speed_ = 4.0f;
 
     CameraData cameraData{};
-    std::unique_ptr<Buffer> cameraBuffer_;
+    std::unique_ptr<vkn::Buffer> cameraBuffer_;
 
     void SetCameraControl();
     void Update();

@@ -1,12 +1,12 @@
 #include "shader.h"
 
-vk::ShaderModule Shader::CreateModule(const std::string& filepath)
+vk::ShaderModule vkn::Shader::CreateModule(const std::string& filepath)
 {
-    std::vector<char> sourceCode = ReadCode(filepath);
+    std::vector<char> sourceCode = FetchCode(filepath);
 
     vk::ShaderModuleCreateInfo createInfo;
     createInfo.setCodeSize(sourceCode.size());
     createInfo.setPCode(reinterpret_cast<const uint32_t*>(sourceCode.data()));
 
-    return Device::GetBundle().device.createShaderModule(createInfo);
+    return vkn::Device::GetBundle().device.createShaderModule(createInfo);
 }

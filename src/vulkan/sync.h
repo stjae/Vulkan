@@ -4,19 +4,20 @@
 #include "../common.h"
 #include "device.h"
 
-static vk::Semaphore MakeSemaphore()
+namespace vkn {
+static vk::Semaphore CreateSemaphore()
 {
     vk::SemaphoreCreateInfo semaphoreInfo;
 
     return Device::GetBundle().device.createSemaphore(semaphoreInfo);
 }
-
-static vk::Fence MakeFence()
+static vk::Fence CreateFence()
 {
     vk::FenceCreateInfo fenceInfo;
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
     return Device::GetBundle().device.createFence(fenceInfo);
 }
+} // namespace vkn
 
 #endif

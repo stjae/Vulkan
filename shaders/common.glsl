@@ -12,9 +12,9 @@ struct LightData
 {
     mat4 model;
     vec3 pos;
-    int maxLights;
+    float padding0;
     vec3 color;
-    float padding;
+    float padding1;
 };
 
 layout(set = 0, binding = 0) uniform Camera {

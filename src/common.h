@@ -2,9 +2,9 @@
 #define COMMON_H
 
 #ifdef NDEBUG
-const bool debug = false;
+const bool debugMode = false;
 #else
-const bool debug = true;
+const bool debugMode = true;
 #endif
 
 // glfw, vulkan library
@@ -33,19 +33,8 @@ const bool debug = true;
 #include <glm/gtx/string_cast.hpp>
 #include <nfd.h>
 #include <stb/stb_image.h>
+#include "path.h"
 
-#include "config.h"
-
-const bool logUniformBuffer = false;
-const bool logBuffer = false;
-
-std::string& GetFrameRate();
-std::vector<char> ReadCode(const std::string& filename);
-std::string LaunchNfd(nfdfilteritem_t filterItem);
-void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
-void AlignedFree(void* aligned);
-
-// spdlog::info
 template <typename... T>
 void Log(bool isDebugMode, fmt::terminal_color color, T... args)
 {
@@ -55,15 +44,14 @@ void Log(bool isDebugMode, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
-enum MESHTYPE {
-    SQUARE,
-    CUBE,
-    SPHERE,
-};
+std::string& GetFrameRate();
+std::vector<char> FetchCode(const std::string& filename);
+std::string LaunchNfd(nfdfilteritem_t filterItem);
+void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
+void AlignedFree(void* aligned);
 
-enum RESOURCETYPE {
-    MESH,
-    TEXTURE,
-};
+namespace vkn {
+void CheckResult(vk::Result result);
+}
 
 #endif

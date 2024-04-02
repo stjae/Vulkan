@@ -41,18 +41,18 @@ void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
                                         { 1.0f, 1.0f },
                                         { 1.0f, 0.0f } };
 
-    vertices_.reserve(1);
-    vertices_.emplace_back();
+    vertexContainers_.reserve(1);
+    vertexContainers_.emplace_back();
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
         position[i] *= scale;
-        vertices_.back().emplace_back(position[i], normal[i], color, texcoord[i], glm::vec3(0.0f));
+        vertexContainers_.back().emplace_back(position[i], normal[i], color, texcoord[i], glm::vec3(0.0f));
     }
 
-    indices_.reserve(1);
-    indices_.emplace_back();
-    indices_.back() = { 0, 1, 2, 2, 3, 0 };
+    indexContainers_.reserve(1);
+    indexContainers_.emplace_back();
+    indexContainers_.back() = { 0, 1, 2, 2, 3, 0 };
 
     name_ = "square";
 
@@ -126,18 +126,18 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
     std::vector<glm::vec2> texcoord = { { 0.0f, 0.0f }, { 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f } };
 
-    vertices_.reserve(1);
-    vertices_.emplace_back();
+    vertexContainers_.reserve(1);
+    vertexContainers_.emplace_back();
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        vertices_.back().emplace_back(position[i], normal[i], color, texcoord[i % 4], glm::vec3(0.0f));
+        vertexContainers_.back().emplace_back(position[i], normal[i], color, texcoord[i % 4], glm::vec3(0.0f));
     }
 
-    indices_.reserve(1);
-    indices_.emplace_back();
-    indices_.back() = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
-                        12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
+    indexContainers_.reserve(1);
+    indexContainers_.emplace_back();
+    indexContainers_.back() = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
+                                12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
 
     name_ = "cube";
 
@@ -147,8 +147,8 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
 void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
 {
-    vertices_.reserve(1);
-    vertices_.emplace_back();
+    vertexContainers_.reserve(1);
+    vertexContainers_.emplace_back();
 
     int division = 32;
     float degree = 360.0f / (float)division;
@@ -172,22 +172,22 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
             texU = 1.0f - 1.0f / ((float)division) * (float)j;
-            vertices_.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, glm::vec2(texU, texV), glm::vec3(0.0f));
+            vertexContainers_.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, glm::vec2(texU, texV), glm::vec3(0.0f));
         }
     }
 
-    indices_.reserve(1);
-    indices_.emplace_back();
+    indexContainers_.reserve(1);
+    indexContainers_.emplace_back();
 
     for (int j = 0; j < division / 2; j++) {
         for (int i = division * j; i < division * (j + 1); i++) {
-            indices_.back().push_back(i + j);
-            indices_.back().push_back(i + j + 2 + division);
-            indices_.back().push_back(i + j + 1);
+            indexContainers_.back().push_back(i + j);
+            indexContainers_.back().push_back(i + j + 2 + division);
+            indexContainers_.back().push_back(i + j + 1);
 
-            indices_.back().push_back(i + j + 2 + division);
-            indices_.back().push_back(i + j);
-            indices_.back().push_back(i + j + 1 + division);
+            indexContainers_.back().push_back(i + j + 2 + division);
+            indexContainers_.back().push_back(i + j);
+            indexContainers_.back().push_back(i + j + 1 + division);
         }
     }
 
@@ -206,7 +206,6 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
 
     const aiScene* scene = importer.ReadFile(modelPath.c_str(),
                                              aiProcess_CalcTangentSpace |
-                                                 // TODO:
                                                  aiProcess_JoinIdenticalVertices |
                                                  aiProcess_Triangulate |
                                                  aiProcess_FlipUVs |
@@ -219,9 +218,6 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
 
     aiNode* node = scene->mRootNode;
     ProcessNode(node, scene);
-
-    std::cout << meshParts_.size() << '\n';
-    std::cout << scene->mNumMaterials << '\n';
 
     if (scene->HasMaterials()) {
         materials_.reserve(scene->mNumMaterials);
@@ -242,28 +238,37 @@ void Mesh::ProcessNode(aiNode* node, const aiScene* scene)
 {
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        ProcessLoadedMesh(mesh);
+        node->mTransformation.Transpose();
+        glm::mat4 modelMat(1.0f);
+        modelMat[0] = { node->mTransformation.a1, node->mTransformation.a2, node->mTransformation.a3, node->mTransformation.a4 };
+        modelMat[1] = { node->mTransformation.b1, node->mTransformation.b2, node->mTransformation.b3, node->mTransformation.b4 };
+        modelMat[2] = { node->mTransformation.c1, node->mTransformation.c2, node->mTransformation.c3, node->mTransformation.c4 };
+        modelMat[3] = { node->mTransformation.d1, node->mTransformation.d2, node->mTransformation.d3, node->mTransformation.d4 };
+
+        ProcessLoadedMesh(mesh, modelMat);
     }
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         ProcessNode(node->mChildren[i], scene);
     }
 }
 
-void Mesh::ProcessLoadedMesh(aiMesh* mesh)
+void Mesh::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
 {
-    vertices_.emplace_back();
-    indices_.emplace_back();
+    vertexContainers_.emplace_back();
+    indexContainers_.emplace_back();
 
     aiFace* faces = mesh->mFaces;
     for (unsigned int f = 0; f < mesh->mNumFaces; f++) {
         unsigned int* indices = faces[f].mIndices;
-        indices_.back().push_back(indices[0]);
-        indices_.back().push_back(indices[1]);
-        indices_.back().push_back(indices[2]);
+        indexContainers_.back().push_back(indices[0]);
+        indexContainers_.back().push_back(indices[1]);
+        indexContainers_.back().push_back(indices[2]);
     }
 
     for (unsigned int v = 0; v < mesh->mNumVertices; v++) {
-        auto& pos = mesh->mVertices[v];
+        glm::vec4 pos(mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z, 1.0f);
+        pos = modelMat * pos;
+
         glm::vec3 normal(0.0f);
         if (mesh->HasNormals())
             normal = { mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z };
@@ -274,11 +279,11 @@ void Mesh::ProcessLoadedMesh(aiMesh* mesh)
         glm::vec3 biTangent(0.0f);
         if (mesh->HasTangentsAndBitangents())
             tangent = { mesh->mTangents[v].x, mesh->mTangents[v].y, mesh->mTangents[v].z };
-        vertices_.back().emplace_back(glm::vec3(pos.x, pos.y, pos.z),
-                                      normal,
-                                      glm::vec3(0.5f),
-                                      texcoord,
-                                      tangent);
+        vertexContainers_.back().emplace_back(glm::vec3(pos.x, pos.y, pos.z),
+                                              normal,
+                                              glm::vec3(0.5f),
+                                              texcoord,
+                                              tangent);
     }
 
     meshParts_.emplace_back(meshParts_.size(), mesh->mMaterialIndex);
@@ -286,26 +291,26 @@ void Mesh::ProcessLoadedMesh(aiMesh* mesh)
 
 void Mesh::CreateBuffers()
 {
-    for (uint32_t i = 0; i < vertices_.size(); i++) {
+    for (uint32_t i = 0; i < vertexContainers_.size(); i++) {
 
-        CreateVertexBuffers(vertices_[i]);
-        CreateIndexBuffers(indices_[i]);
+        CreateVertexBuffers(vertexContainers_[i]);
+        CreateIndexBuffers(indexContainers_[i]);
 
-        Command::Begin(commandBuffer_);
+        vkn::Command::Begin(commandBuffer_);
         // Copy vertices from staging buffer
-        Command::CopyBufferToBuffer(commandBuffer_,
-                                    vertexStagingBuffers.back()->GetBundle().buffer,
-                                    vertexBuffers.back()->GetBundle().buffer,
-                                    vertexStagingBuffers.back()->GetBufferInput().size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer_,
+                                         vertexStagingBuffers.back()->GetBundle().buffer,
+                                         vertexBuffers.back()->GetBundle().buffer,
+                                         vertexStagingBuffers.back()->GetBufferInput().size);
 
         // Copy indices from staging buffer
-        Command::CopyBufferToBuffer(commandBuffer_,
-                                    indexStagingBuffers.back()->GetBundle().buffer,
-                                    indexBuffers.back()->GetBundle().buffer,
-                                    indexStagingBuffers.back()->GetBufferInput().size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer_,
+                                         indexStagingBuffers.back()->GetBundle().buffer,
+                                         indexBuffers.back()->GetBundle().buffer,
+                                         indexStagingBuffers.back()->GetBufferInput().size);
 
         commandBuffer_.end();
-        Command::Submit(&commandBuffer_, 1);
+        vkn::Command::Submit(&commandBuffer_, 1);
 
         vertexStagingBuffers.back()->Destroy();
         indexStagingBuffers.back()->Destroy();

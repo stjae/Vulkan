@@ -3,6 +3,7 @@
 
 #include "instance.h"
 
+namespace vkn {
 struct DeviceBundle
 {
     vk::Device device;
@@ -10,10 +11,10 @@ struct DeviceBundle
     vk::Queue graphicsQueue;
     vk::Queue computeQueue;
     vk::Queue presentQueue;
-    std::optional<uint32_t> graphicsComputeFamilyIndex;
+    std::optional<uint32_t> graphicsFamilyIndex;
+    std::optional<uint32_t> computeFamilyIndex;
     std::optional<uint32_t> presentFamilyIndex;
 };
-
 class Device
 {
     Instance instance_;
@@ -21,7 +22,7 @@ class Device
     inline static DeviceBundle deviceBundle_;
 
     void FindQueueFamilies(const VkSurfaceKHR& surface);
-    void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    void SetDeviceQueueCreateInfo(std::__1::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
 
 public:
     inline static vk::PhysicalDeviceLimits physicalDeviceLimits;
@@ -33,4 +34,6 @@ public:
 
     static const DeviceBundle& GetBundle() { return deviceBundle_; }
 };
+} // namespace vkn
+
 #endif

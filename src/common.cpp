@@ -26,7 +26,7 @@ std::string& GetFrameRate()
     return frameRate;
 }
 
-std::vector<char> ReadCode(const std::string& filename)
+std::vector<char> FetchCode(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -43,7 +43,7 @@ std::vector<char> ReadCode(const std::string& filename)
     file.close();
 
     if (!buffer.empty()) {
-        Log(debug, fmt::terminal_color::white, "{0} loaded with code length of {1}",
+        Log(debugMode, fmt::terminal_color::white, "{0} loaded with code length of {1}",
             filename, buffer.size());
     }
 
@@ -74,9 +74,9 @@ std::string LaunchNfd(nfdfilteritem_t filterItem)
 
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
 {
-#if defined(__APPLE__)
+#ifdef __APPLE__
     return aligned_alloc(dynamicBufferAlignment, bufferSize);
-#elif defined(_WIN32)
+#elif _WIN32
     return _aligned_malloc(bufferSize, dynamicBufferAlignment);
 #else
     return nullptr;
@@ -85,9 +85,17 @@ void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
 
 void AlignedFree(void* aligned)
 {
-#if defined(__APPLE__)
+#ifdef __APPLE__
     free(aligned);
-#elif defined(_WIN32)
+#elif _WIN32
     _aligned_free(aligned);
 #endif
+}
+
+void vkn::CheckResult(vk::Result result)
+{
+    if (result != vk::Result::eSuccess) {
+        Log(debugMode, fmt::terminal_color::red, "VkResult: ", vk::to_string(result), __FILE__, __LINE__);
+        assert(result == vk::Result::eSuccess);
+    }
 }

@@ -4,6 +4,7 @@
 #include "../common.h"
 #include "device.h"
 
+namespace vkn {
 class Memory
 {
     vk::DeviceMemory memory_;
@@ -22,5 +23,6 @@ public:
     const vk::DeviceMemory& GetMemory() { return memory_; }
     void* GetMemoryAddress() { return address_; }
 };
+} // namespace vkn
 
 #endif

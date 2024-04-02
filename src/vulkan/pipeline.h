@@ -14,6 +14,7 @@ struct MeshRenderPushConstants
 {
     int meshIndex;
     int materialID;
+    int lightCount;
 } inline meshRenderPushConsts;
 
 struct ShadowMapPushConstants
@@ -29,7 +30,7 @@ struct MeshRenderPipeline
     vk::Pipeline pipeline;
     vk::PipelineLayout pipelineLayout;
     vk::RenderPass renderPass;
-    Shader shader;
+    vkn::Shader shader;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
     std::vector<vk::DescriptorSet> descriptorSets;
@@ -44,7 +45,7 @@ struct ShadowMapPipeline
     vk::Pipeline pipeline;
     vk::PipelineLayout pipelineLayout;
     vk::RenderPass renderPass;
-    Shader shader;
+    vkn::Shader shader;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     vk::DescriptorPool descriptorPool;
     std::vector<vk::DescriptorSet> descriptorSets;
@@ -53,9 +54,11 @@ struct ShadowMapPipeline
     std::vector<vk::DescriptorBufferInfo> meshDescriptors;
 } inline shadowMapPipeline;
 
+namespace vkn {
 void CreatePipeline();
 void SetUpDescriptors();
 void CreateMeshRenderPass();
 void CreateShadowMapRenderPass();
+} // namespace vkn
 
 #endif

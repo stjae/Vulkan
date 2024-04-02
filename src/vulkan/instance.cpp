@@ -1,23 +1,21 @@
 #include "instance.h"
 
-Instance::Instance() : logger_(instanceBundle_.instance)
+vkn::Instance::Instance() : logger_(instanceBundle_.instance)
 {
     vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo createInfo({}, &appInfo);
-    SetExtensions(instanceExtensions, createInfo);
+    SetExtensions(instanceExtensions_, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    SetLayers(instanceLayers, createInfo, debugInfo);
+    SetLayers(instanceLayers_, createInfo, debugInfo);
 
-    if (vk::createInstance(&createInfo, nullptr, &instanceBundle_.instance) != vk::Result::eSuccess) {
-        spdlog::error("failed to create instance");
-    }
+    vkn::CheckResult(vk::createInstance(&createInfo, nullptr, &instanceBundle_.instance));
 
     logger_.CreateDebugMessenger();
 }
 
-void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
+void vkn::Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
 {
 #if defined(__APPLE__)
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -32,7 +30,7 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
         extensions.push_back(glfwExtensions[i]);
     }
 
-    if (debug) {
+    if (debugMode) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -40,9 +38,9 @@ void Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceC
     createInfo.ppEnabledExtensionNames = extensions.data();
 }
 
-void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo)
+void vkn::Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo)
 {
-    if (debug) {
+    if (debugMode) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
         createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
@@ -53,16 +51,16 @@ void Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInf
     }
 }
 
-void Instance::CreateSurface()
+void vkn::Instance::CreateSurface()
 {
     if (glfwCreateWindowSurface(instanceBundle_.instance, Window::GetWindow(), nullptr, &instanceBundle_.surface)) {
         spdlog::error("failed to create window surface");
     }
 }
 
-Instance::~Instance()
+vkn::Instance::~Instance()
 {
-    if (debug) {
+    if (debugMode) {
         logger_.Destroy();
     }
     instanceBundle_.instance.destroySurfaceKHR(instanceBundle_.surface);

@@ -12,8 +12,8 @@ class ShadowMap
 {
     std::array<vk::ImageView, 6> shadowCubeMapFaceImageViews;
     std::array<vk::Framebuffer, 6> framebuffers;
-    Image shadowCubeMap;
-    Image depth;
+    vkn::Image shadowCubeMap;
+    vkn::Image depth;
 
     void UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<Mesh>& meshes);
     void CreateFrameBuffer(vk::CommandBuffer& commandBuffer);

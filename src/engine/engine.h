@@ -20,8 +20,8 @@ class Engine
     vk::CommandBuffer commandBuffer_;
 
     size_t frameIndex_ = 0;
-    Device device_;
-    Swapchain swapchain_;
+    vkn::Device device_;
+    vkn::Swapchain swapchain_;
     Viewport viewport_;
     UI imgui_;
     std::unique_ptr<Scene> scene_;

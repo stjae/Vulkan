@@ -3,18 +3,18 @@
 
 void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
 {
-    Command::CreateCommandPool(commandPool_);
-    Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+    vkn::Command::CreateCommandPool(commandPool_);
+    vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
 
-    std::vector<DescriptorBinding> imGuiBindings;
+    std::vector<vkn::DescriptorBinding> imGuiBindings;
     imGuiBindings.emplace_back(0, vk::DescriptorType::eCombinedImageSampler, 100);
-    descriptorSetLayouts_.push_back(Descriptor::CreateDescriptorSetLayout(imGuiBindings));
-    Descriptor::SetPoolSizes(poolSizes, imGuiBindings, maxSets);
+    descriptorSetLayouts_.push_back(vkn::Descriptor::CreateDescriptorSetLayout(imGuiBindings));
+    vkn::Descriptor::SetPoolSizes(poolSizes, imGuiBindings, maxSets);
 
-    Descriptor::CreateDescriptorPool(descriptorPool_, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+    vkn::Descriptor::CreateDescriptorPool(descriptorPool_, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -23,15 +23,15 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
 
     ImGui_ImplGlfw_InitForVulkan(Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = Instance::GetBundle().instance;
-    init_info.PhysicalDevice = Device::GetBundle().physicalDevice;
-    init_info.Device = Device::GetBundle().device;
-    init_info.QueueFamily = Device::GetBundle().graphicsComputeFamilyIndex.value();
-    init_info.Queue = Device::GetBundle().graphicsQueue;
+    init_info.Instance = vkn::Instance::GetBundle().instance;
+    init_info.PhysicalDevice = vkn::Device::GetBundle().physicalDevice;
+    init_info.Device = vkn::Device::GetBundle().device;
+    init_info.QueueFamily = vkn::Device::GetBundle().graphicsFamilyIndex.value();
+    init_info.Queue = vkn::Device::GetBundle().graphicsQueue;
     init_info.DescriptorPool = descriptorPool_;
     init_info.Subpass = 0;
-    init_info.MinImageCount = Swapchain::capabilities.minImageCount;
-    init_info.ImageCount = Swapchain::GetBundle().frameImageCount;
+    init_info.MinImageCount = vkn::Swapchain::surfaceCapabilities.minImageCount;
+    init_info.ImageCount = vkn::Swapchain::GetBundle().frameImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
 
@@ -55,14 +55,14 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
         io.Fonts->AddFontDefault(&fontConfig);
     }
 
-    descriptorSet_ = ImGui_ImplVulkan_AddTexture(viewport.viewportImage.GetBundle().sampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     plusIcon_ = GenerateIcon(PROJECT_DIR "image/icon/plus.png");
-    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(plusIcon_->GetBundle().sampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     lightIcon_ = GenerateIcon(PROJECT_DIR "image/icon/light.png");
-    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(lightIcon_->GetBundle().sampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     cubeIcon_ = GenerateIcon(PROJECT_DIR "image/icon/cube.png");
-    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(cubeIcon_->GetBundle().sampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // TODO: for test
     // path = PROJECT_DIR "image/box.png";
@@ -73,7 +73,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     dragDropped = false;
 }
 
-std::unique_ptr<Image> UI::GenerateIcon(const std::string& filePath)
+std::unique_ptr<vkn::Image> UI::GenerateIcon(const std::string& filePath)
 {
     int width, height, channel;
     vk::DeviceSize imageSize;
@@ -87,44 +87,44 @@ std::unique_ptr<Image> UI::GenerateIcon(const std::string& filePath)
         return nullptr;
     }
 
-    BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
+    vkn::BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::Buffer stagingBuffer(bufferInput);
     stagingBuffer.Copy(imageData);
 
     stbi_image_free(imageData);
     vk::Extent3D extent(width, height, 1);
-    std::unique_ptr<Image> image = std::make_unique<Image>();
+    std::unique_ptr<vkn::Image> image = std::make_unique<vkn::Image>();
     image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
     image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
     image->CreateSampler();
     image->SetInfo();
 
-    Command::Begin(commandBuffer_);
+    vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *image,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        *image,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
-    Command::CopyBufferToImage(commandBuffer_,
-                               stagingBuffer.GetBundle().buffer,
-                               image->GetBundle().image, width,
-                               height);
+    vkn::Command::CopyBufferToImage(commandBuffer_,
+                                    stagingBuffer.GetBundle().buffer,
+                                    image->GetBundle().image, width,
+                                    height);
     // Set texture image layout to shader read only
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   *image,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        *image,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
+    vkn::Command::Submit(&commandBuffer_, 1);
 
     return std::move(image);
 }
@@ -219,30 +219,30 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
     if (width == 0 || height == 0)
         return;
 
-    Command::Begin(commandBuffer_);
-    Command::SetImageMemoryBarrier(commandBuffer_, viewport.viewportImage,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
-    Command::SetImageMemoryBarrier(commandBuffer_, viewport.colorID,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::Begin(commandBuffer_);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_, viewport.viewportImage,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_, viewport.colorID,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
+    vkn::Command::Submit(&commandBuffer_, 1);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
 
     viewport.panelPos = ImGui::GetWindowPos() + ImGui::GetWindowContentRegionMin();
     viewport.panelSize = ImGui::GetContentRegionAvail();
-    // debug: drawRect
+    // debugMode: drawRect
     // ImGui::GetForegroundDrawList()->AddRect(viewport.panelPos, viewport.panelPos + viewport.panelSize, IM_COL32(255, 0, 0, 255));
     float viewportPanelRatio = viewport.panelSize.x / viewport.panelSize.y;
 
@@ -312,9 +312,9 @@ void UI::SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize
 #endif
 
     if (viewport.extent.width == 0 || viewport.extent.height == 0)
-        viewport.extent = Swapchain::GetBundle().swapchainImageExtent;
+        viewport.extent = vkn::Swapchain::GetBundle().swapchainImageExtent;
 
-    Device::GetBundle().device.destroyFramebuffer(viewport.framebuffer);
+    vkn::Device::GetBundle().device.destroyFramebuffer(viewport.framebuffer);
     viewport.DestroyViewportImages();
     viewport.CreateViewportImages();
     viewport.CreateViewportFrameBuffer();
@@ -555,7 +555,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
 void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
 {
     ImGui_ImplVulkan_RemoveTexture(descriptorSet_);
-    descriptorSet_ = ImGui_ImplVulkan_AddTexture(viewport.viewportImage.GetBundle().sampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
@@ -585,12 +585,12 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
 
 UI::~UI()
 {
-    Device::GetBundle().device.destroyCommandPool(commandPool_);
+    vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
     for (auto& layout : descriptorSetLayouts_)
-        Device::GetBundle().device.destroyDescriptorSetLayout(layout);
+        vkn::Device::GetBundle().device.destroyDescriptorSetLayout(layout);
     ImGui_ImplVulkan_RemoveTexture(descriptorSet_);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
+    vkn::Device::GetBundle().device.destroyDescriptorPool(descriptorPool_);
 }

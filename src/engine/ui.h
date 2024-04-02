@@ -21,13 +21,13 @@ class UI
     inline static vk::CommandBuffer commandBuffer_;
 
     inline static vk::DescriptorPool descriptorPool_;
-    inline static std::vector<DescriptorBinding> descriptorBindings_;
+    inline static std::vector<vkn::DescriptorBinding> descriptorBindings_;
     inline static std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
     inline static vk::DescriptorSet descriptorSet_;
 
-    std::unique_ptr<Image> plusIcon_;
-    std::unique_ptr<Image> lightIcon_;
-    std::unique_ptr<Image> cubeIcon_;
+    std::unique_ptr<vkn::Image> plusIcon_;
+    std::unique_ptr<vkn::Image> lightIcon_;
+    std::unique_ptr<vkn::Image> cubeIcon_;
     vk::DescriptorSet plusIconDescriptorSet_;
     vk::DescriptorSet lightIconDescriptorSet_;
     vk::DescriptorSet cubeIconDescriptorSet_;
@@ -49,7 +49,7 @@ public:
     inline static ImDrawData* imDrawData;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
-    std::unique_ptr<Image> GenerateIcon(const std::string& filePath);
+    std::unique_ptr<vkn::Image> GenerateIcon(const std::string& filePath);
     void Draw(Scene& scene, Viewport& viewport, size_t frameIndex);
     void RecreateViewportDescriptorSets(const Viewport& viewport);
     void AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex);

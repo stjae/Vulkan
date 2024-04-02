@@ -8,6 +8,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+enum MESHTYPE {
+    SQUARE,
+    CUBE,
+    SPHERE,
+};
+
 struct MeshPart
 {
     int32_t bufferIndex;
@@ -49,7 +55,7 @@ class Mesh : public MeshBase
 
     int32_t meshID_;
     int32_t instanceID_;
-    std::unique_ptr<Buffer> meshInstanceBuffer_;
+    std::unique_ptr<vkn::Buffer> meshInstanceBuffer_;
     std::vector<MeshInstance> meshInstances_;
     std::vector<MeshPart> meshParts_;
     std::vector<Material> materials_;
@@ -59,7 +65,7 @@ class Mesh : public MeshBase
     void CreateSphere(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* name = nullptr, const char* texturePath = nullptr);
     void LoadModel(const std::string& modelPath, const char* texturePath = nullptr, glm::vec3 color = glm::vec3(0.5f));
     void ProcessNode(aiNode* node, const aiScene* scene);
-    void ProcessLoadedMesh(aiMesh* mesh);
+    void ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat);
     void CreateBuffers();
 
     inline static vk::CommandBuffer commandBuffer_;
@@ -70,6 +76,7 @@ public:
     const std::string& GetName() { return name_; }
     int32_t GetMeshID() const { return meshID_; }
     size_t GetInstanceCount() const { return meshInstances_.size(); }
+    size_t GetMaterialCount() const { return materials_.size(); }
     const std::vector<MeshPart>& GetMeshParts() const { return meshParts_; }
 };
 

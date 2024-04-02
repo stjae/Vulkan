@@ -5,27 +5,22 @@ Engine::Engine()
     InitSwapchainImages();
     scene_ = std::make_unique<Scene>();
 
-    Command::CreateCommandPool(commandPool_);
-    Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+    vkn::Command::CreateCommandPool(commandPool_);
+    vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    SetUpDescriptors();
-    CreatePipeline();
+    vkn::SetUpDescriptors();
+    vkn::CreatePipeline();
 
     imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
 }
 
 void Engine::InitSwapchainImages()
 {
-    vk::CommandBufferBeginInfo beginInfo;
-    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-
     for (auto& frame : swapchain_.frames) {
-        Command::Begin(frame.commandBuffer);
-        Command::SetImageMemoryBarrier(frame.commandBuffer, frame.swapchainImage, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
+        vkn::Command::Begin(frame.commandBuffer);
+        vkn::Command::SetImageMemoryBarrier(frame.commandBuffer, frame.swapchainImage, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
         frame.commandBuffer.end();
-        Command::Submit(&frame.commandBuffer, 1);
-
-        Device::GetBundle().device.waitIdle();
+        vkn::Command::Submit(&frame.commandBuffer, 1);
     }
 }
 
@@ -33,9 +28,11 @@ void Engine::Render()
 {
     scene_->Update();
 
-    Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
+    int w, h;
 
-    auto waitFrameImage = Device::GetBundle().device.acquireNextImageKHR(Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
+    vkn::Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
+
+    auto waitFrameImage = vkn::Device::GetBundle().device.acquireNextImageKHR(vkn::Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
 
     if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR || waitFrameImage.result == vk::Result::eSuboptimalKHR || Window::resized) {
         Window::resized = false;
@@ -43,10 +40,10 @@ void Engine::Render()
         return;
     }
 
-    Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
+    vkn::Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
 
     swapchain_.Draw(frameIndex_, UI::imDrawData);
-    viewport_.Draw(scene_->GetMeshes());
+    viewport_.Draw(scene_->GetMeshes(), scene_->GetLightCount());
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
         scene_->SelectByColorID(viewport_);
     }
@@ -54,7 +51,7 @@ void Engine::Render()
     swapchain_.Submit(frameIndex_);
     swapchain_.Present(frameIndex_, waitFrameImage);
 
-    frameIndex_ = (frameIndex_ + 1) % Swapchain::GetBundle().frameImageCount;
+    frameIndex_ = (frameIndex_ + 1) % vkn::Swapchain::GetBundle().frameImageCount;
 }
 
 void Engine::UpdateSwapchain()
@@ -76,10 +73,9 @@ void Engine::RecreateSwapchain()
         glfwWaitEvents();
     }
 
-    Device::GetBundle().device.waitIdle();
+    vkn::Device::GetBundle().device.waitIdle();
     for (auto& frame : swapchain_.frames) {
-        Device::GetBundle().device.freeCommandBuffers(frame.commandPool, frame.commandBuffer);
-        Device::GetBundle().device.destroyCommandPool(frame.commandPool);
+        vkn::Device::GetBundle().device.destroyCommandPool(frame.commandPool);
     }
     swapchain_.Destroy();
 
@@ -97,6 +93,6 @@ void Engine::DrawUI()
 
 Engine::~Engine()
 {
-    Device::GetBundle().device.destroyCommandPool(commandPool_);
-    Device::GetBundle().device.waitIdle();
+    vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
+    vkn::Device::GetBundle().device.waitIdle();
 }

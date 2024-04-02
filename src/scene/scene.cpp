@@ -2,9 +2,9 @@
 
 Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowMapDirtyFlag_(true), showLightIcon_(true)
 {
-    Command::CreateCommandPool(commandPool_);
-    Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
-    Command::AllocateCommandBuffer(commandPool_, Mesh::commandBuffer_);
+    vkn::Command::CreateCommandPool(commandPool_);
+    vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
+    vkn::Command::AllocateCommandBuffer(commandPool_, Mesh::commandBuffer_);
 
     {
         // init camera pos
@@ -15,28 +15,29 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 
     {
         // prepare textures
-        textures_.reserve(100);
+        vkn::Image::CreateGlobalSampler();
+        textures_.reserve(1000);
         textures_.emplace_back();
         CreateDummyTexture(textures_.back());
-        CreateShadowMapRenderPass();
-        shadowMaps_.reserve(100);
+        vkn::CreateShadowMapRenderPass();
+        shadowMaps_.reserve(1000);
         shadowMaps_.emplace_back();
         shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
-        diffuseTextures_.reserve(100);
+        diffuseTextures_.reserve(1000);
         diffuseTextures_.emplace_back();
         CreateDummyTexture(diffuseTextures_.back());
-        normalTextures_.reserve(100);
+        normalTextures_.reserve(1000);
         normalTextures_.emplace_back();
         CreateDummyTexture(normalTextures_.back());
     }
 
     {
         // prepare buffer, descriptor
-        BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        shadowMapCameraBuffer_ = std::make_unique<Buffer>(bufferInput);
+        vkn::BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        shadowMapCameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
         shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
         bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+        lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
         meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
         shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
     }
@@ -71,7 +72,7 @@ void Scene::AddResource(std::string& filePath)
     case RESOURCETYPE::TEXTURE:
         textures_.emplace_back();
         CreateTexture(filePath, textures_.back());
-        textures_.back().descriptorSet = ImGui_ImplVulkan_AddTexture(textures_.back().image.GetBundle().sampler, textures_.back().image.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        textures_.back().descriptorSet = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, textures_.back().image.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         resources_.back().resource = &textures_.back();
         break;
     }
@@ -120,8 +121,8 @@ void Scene::CreateTexture(const std::string& filePath, Texture& texture, vk::For
     // TODO: index
     texture.index = textures_.size() - 1;
 
-    BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
+    vkn::BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::Buffer stagingBuffer(bufferInput);
     stagingBuffer.Copy(imageData);
 
     stbi_image_free(imageData);
@@ -132,32 +133,32 @@ void Scene::CreateTexture(const std::string& filePath, Texture& texture, vk::For
     texture.image.CreateSampler();
     texture.image.SetInfo();
 
-    Command::Begin(commandBuffer_);
+    vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   texture.image,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        texture.image,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
-    Command::CopyBufferToImage(commandBuffer_,
-                               stagingBuffer.GetBundle().buffer,
-                               texture.image.GetBundle().image, texture.width,
-                               texture.height);
+    vkn::Command::CopyBufferToImage(commandBuffer_,
+                                    stagingBuffer.GetBundle().buffer,
+                                    texture.image.GetBundle().image, texture.width,
+                                    texture.height);
     // Set texture image layout to shader read only
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   texture.image,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        texture.image,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
+    vkn::Command::Submit(&commandBuffer_, 1);
 }
 
 void Scene::CreateDummyTexture(Texture& texture)
@@ -167,8 +168,8 @@ void Scene::CreateDummyTexture(Texture& texture)
     texture.height = 1;
     texture.size = sizeof(dummyTexture);
 
-    BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
+    vkn::BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::Buffer stagingBuffer(bufferInput);
     stagingBuffer.Copy(&dummyTexture);
 
     vk::Extent3D extent(1, 1, 1);
@@ -177,32 +178,32 @@ void Scene::CreateDummyTexture(Texture& texture)
     texture.image.CreateSampler();
     texture.image.SetInfo();
 
-    Command::Begin(commandBuffer_);
+    vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   texture.image,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        texture.image,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
-    Command::CopyBufferToImage(commandBuffer_,
-                               stagingBuffer.GetBundle().buffer,
-                               texture.image.GetBundle().image, texture.width,
-                               texture.height);
+    vkn::Command::CopyBufferToImage(commandBuffer_,
+                                    stagingBuffer.GetBundle().buffer,
+                                    texture.image.GetBundle().image, texture.width,
+                                    texture.height);
     // Set texture image layout to shader read only
-    Command::SetImageMemoryBarrier(commandBuffer_,
-                                   texture.image,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        texture.image,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer_.end();
-    Command::Submit(&commandBuffer_, 1);
+    vkn::Command::Submit(&commandBuffer_, 1);
 }
 
 void Scene::Update()
@@ -231,17 +232,15 @@ void Scene::Update()
         camera_.pos_ = glm::translate(meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
     camera_.cameraData.view = glm::lookAt(camera_.pos_, camera_.at_, camera_.up_);
-    camera_.cameraData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
+    camera_.cameraData.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
     camera_.cameraData.pos = camera_.pos_;
     camera_.cameraBuffer_->Copy(&camera_.cameraData);
 
-    BufferInput bufferInput;
-    for (auto& light : lights_)
-        light.maxLights = lights_.size();
+    vkn::BufferInput bufferInput;
     if (!lights_.empty() && lightDirtyFlag_) {
         bufferInput = { sizeof(LightData) * lights_.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         lightDataBuffer_.reset();
-        lightDataBuffer_ = std::make_unique<Buffer>(bufferInput);
+        lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
         lightDataBuffer_->Copy(lights_.data());
         meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
         shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
@@ -249,7 +248,7 @@ void Scene::Update()
             { meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor },
             { shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowMapPipeline.lightDescriptor }
         };
-        Device::GetBundle().device.updateDescriptorSets(light, nullptr);
+        vkn::Device::GetBundle().device.updateDescriptorSets(light, nullptr);
         lightDirtyFlag_ = false;
         shadowMapDirtyFlag_ = true;
     }
@@ -262,7 +261,7 @@ void Scene::Update()
                 continue;
             bufferInput = { sizeof(MeshInstance) * mesh.GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
             mesh.meshInstanceBuffer_.reset();
-            mesh.meshInstanceBuffer_ = std::make_unique<Buffer>(bufferInput);
+            mesh.meshInstanceBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
             mesh.meshInstanceBuffer_->Copy(mesh.meshInstances_.data());
 
             bufferInfos.emplace_back(mesh.meshInstanceBuffer_->GetBundle().descriptorBufferInfo);
@@ -273,12 +272,12 @@ void Scene::Update()
             { meshRenderPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
             { shadowMapPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() }
         };
-        Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
+        vkn::Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
         meshDirtyFlag_ = false;
         shadowMapDirtyFlag_ = true;
     }
 
-    shadowMapCameraData_.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1024.f);
+    shadowMapCameraData_.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.001f, 1024.f);
     shadowMapCameraBuffer_->Copy(&shadowMapCameraData_);
 
     if (shadowMapDirtyFlag_) {
@@ -288,6 +287,7 @@ void Scene::Update()
         shadowMapDirtyFlag_ = false;
     }
 
+    vk::DescriptorImageInfo samplerInfo(vkn::ImageBundle::globalSampler);
     std::vector<vk::DescriptorImageInfo> textureInfos;
     for (auto& texture : textures_) {
         textureInfos.push_back(texture.image.GetBundle().imageInfo);
@@ -304,13 +304,15 @@ void Scene::Update()
     for (auto& normal : normalTextures_) {
         normalTextureInfos.push_back(normal.image.GetBundle().imageInfo);
     }
-    std::vector<vk::WriteDescriptorSet> image = {
-        { meshRenderPipeline.descriptorSets[1], 0, 0, (uint32_t)textureInfos.size(), vk::DescriptorType::eCombinedImageSampler, textureInfos.data() },
-        { meshRenderPipeline.descriptorSets[1], 1, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eCombinedImageSampler, cubeMapInfos.data() },
-        { meshRenderPipeline.descriptorSets[1], 2, 0, (uint32_t)diffuseTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, diffuseTextureInfos.data() },
-        { meshRenderPipeline.descriptorSets[1], 3, 0, (uint32_t)normalTextureInfos.size(), vk::DescriptorType::eCombinedImageSampler, normalTextureInfos.data() }
-    };
-    Device::GetBundle().device.updateDescriptorSets(image, nullptr);
+    std::vector<vk::WriteDescriptorSet>
+        image = {
+            { meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo },
+            { meshRenderPipeline.descriptorSets[1], 1, 0, (uint32_t)textureInfos.size(), vk::DescriptorType::eSampledImage, textureInfos.data() },
+            { meshRenderPipeline.descriptorSets[1], 2, 0, (uint32_t)cubeMapInfos.size(), vk::DescriptorType::eSampledImage, cubeMapInfos.data() },
+            { meshRenderPipeline.descriptorSets[1], 3, 0, (uint32_t)diffuseTextureInfos.size(), vk::DescriptorType::eSampledImage, diffuseTextureInfos.data() },
+            { meshRenderPipeline.descriptorSets[1], 4, 0, (uint32_t)normalTextureInfos.size(), vk::DescriptorType::eSampledImage, normalTextureInfos.data() }
+        };
+    vkn::Device::GetBundle().device.updateDescriptorSets(image, nullptr);
 }
 
 void Scene::AddLight()
@@ -368,8 +370,8 @@ void Scene::SelectByColorID(Viewport& viewport)
 
 Scene::~Scene()
 {
-    Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
-    Device::GetBundle().device.destroyCommandPool(commandPool_);
+    vkn::Device::GetBundle().device.freeCommandBuffers(commandPool_, commandBuffer_);
+    vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
 }
 
 Resource::Resource(std::string& path)

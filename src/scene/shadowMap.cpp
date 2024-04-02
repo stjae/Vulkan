@@ -2,21 +2,21 @@
 
 void ShadowMap::PrepareShadowCubeMap(vk::CommandBuffer& commandBuffer)
 {
-    vk::ImageCreateInfo shadowCubeMapImageCI(vk::ImageCreateFlagBits::eCubeCompatible, vk::ImageType::e2D, shadowMapImageFormat, { shadowMapSize, shadowMapSize, 1 }, 1, 6, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive);
+    vk::ImageCreateInfo shadowCubeMapImageCI(vk::ImageCreateFlagBits::eCubeCompatible, vk::ImageType::e2D, shadowMapImageFormat, { shadowMapSize, shadowMapSize, 1 }, 1, 6, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::SharingMode::eExclusive);
     shadowCubeMap.CreateImage(shadowCubeMapImageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    Command::Begin(commandBuffer);
+    vkn::Command::Begin(commandBuffer);
     vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   shadowCubeMap,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   subresourceRange);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer,
+                                        shadowCubeMap,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        subresourceRange);
     commandBuffer.end();
-    Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(&commandBuffer, 1);
 
     shadowCubeMap.CreateSampler();
 
@@ -30,7 +30,7 @@ void ShadowMap::PrepareShadowCubeMap(vk::CommandBuffer& commandBuffer)
 
     for (uint32_t i = 0; i < 6; i++) {
         viewCI.subresourceRange.baseArrayLayer = i;
-        Device::GetBundle().device.createImageView(&viewCI, nullptr, &shadowCubeMapFaceImageViews[i]);
+        vkn::Device::GetBundle().device.createImageView(&viewCI, nullptr, &shadowCubeMapFaceImageViews[i]);
     }
 
     CreateFrameBuffer(commandBuffer);
@@ -38,7 +38,7 @@ void ShadowMap::PrepareShadowCubeMap(vk::CommandBuffer& commandBuffer)
 
 void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<Mesh>& meshes)
 {
-    Command::Begin(commandBuffer);
+    vkn::Command::Begin(commandBuffer);
 
     vk::Viewport viewport({}, {}, (float)shadowMapSize, (float)shadowMapSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -51,7 +51,7 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, int lightIndex, 
     }
 
     commandBuffer.end();
-    Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(&commandBuffer, 1);
 }
 
 void ShadowMap::UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<Mesh>& meshes)
@@ -65,22 +65,22 @@ void ShadowMap::UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& command
     glm::mat4 viewMatrix = lights[lightIndex].model;
     glm::vec3 lightPos = lights[lightIndex].model * glm::vec4(lights[lightIndex].pos, 1.0f);
     switch (faceIndex) {
-    case 0: // POSITIVE_X
+    case 0: // POS X
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
         break;
-    case 1: // NEGATIVE_X
+    case 1: // NEG X
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
         break;
-    case 2: // POSITIVE_Y
+    case 2: // POS Y
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         break;
-    case 3: // NEGATIVE_Y
+    case 3: // NEG Y
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
         break;
-    case 4: // POSITIVE_Z
+    case 4: // POS Z
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
         break;
-    case 5: // NEGATIVE_Z
+    case 5: // NEG Z
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
         break;
     }
@@ -120,10 +120,18 @@ void ShadowMap::CreateFrameBuffer(vk::CommandBuffer& commandBuffer)
     depth.CreateImage(imageCI, vk::MemoryPropertyFlagBits::eDeviceLocal);
     vk::ImageViewCreateInfo depthStencilViewCI({}, depth.GetBundle().image, vk::ImageViewType::e2D, shadowMapDepthFormat, {}, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 
-    Command::Begin(commandBuffer);
-    Command::SetImageMemoryBarrier(commandBuffer, depth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, {}, vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::PipelineStageFlagBits::eAllCommands, vk::PipelineStageFlagBits::eAllCommands, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+    vkn::Command::Begin(commandBuffer);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer,
+                                        depth,
+                                        {},
+                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
-    Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(&commandBuffer, 1);
 
     depth.CreateImageView(depthStencilViewCI);
 
@@ -134,14 +142,14 @@ void ShadowMap::CreateFrameBuffer(vk::CommandBuffer& commandBuffer)
 
     for (uint32_t i = 0; i < 6; i++) {
         attachments[0] = shadowCubeMapFaceImageViews[i];
-        Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &framebuffers[i]);
+        vkn::Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &framebuffers[i]);
     }
 }
 
 ShadowMap::~ShadowMap()
 {
     for (auto& framebuffer : framebuffers)
-        Device::GetBundle().device.destroyFramebuffer(framebuffer);
+        vkn::Device::GetBundle().device.destroyFramebuffer(framebuffer);
     for (auto& imageView : shadowCubeMapFaceImageViews)
-        Device::GetBundle().device.destroyImageView(imageView);
+        vkn::Device::GetBundle().device.destroyImageView(imageView);
 }

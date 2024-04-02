@@ -2,12 +2,13 @@
 #define INSTANCE_H
 
 #include "../common.h"
-#include "logger.h"
 #include "../window.h"
+#include "logger.h"
 
+namespace vkn {
 struct InstanceBundle
 {
-    VkSurfaceKHR surface{};
+    VkSurfaceKHR surface;
     vk::Instance instance;
 };
 
@@ -18,8 +19,8 @@ class Instance
     Logger logger_;
     inline static InstanceBundle instanceBundle_;
 
-    std::vector<const char*> instanceExtensions;
-    std::vector<const char*> instanceLayers;
+    std::vector<const char*> instanceExtensions_;
+    std::vector<const char*> instanceLayers_;
 
     Instance();
     void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
@@ -30,5 +31,6 @@ class Instance
 public:
     static const InstanceBundle& GetBundle() { return instanceBundle_; }
 };
+} // namespace vkn
 
 #endif

@@ -11,6 +11,7 @@
 #include "../../imgui/imgui.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
+namespace vkn {
 struct SwapchainFrame
 {
     vk::Framebuffer framebuffer;
@@ -26,7 +27,6 @@ struct SwapchainFrame
     vk::Semaphore imageAvailable;
     vk::Semaphore renderFinished;
 };
-
 struct SwapchainBundle
 {
     uint32_t frameImageCount;
@@ -35,7 +35,6 @@ struct SwapchainBundle
     vk::Extent2D swapchainImageExtent;
     vk::SwapchainKHR swapchain;
 };
-
 class Swapchain
 {
     std::vector<vk::SurfaceFormatKHR> supportedFormats_;
@@ -68,8 +67,9 @@ public:
     static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
     const vk::RenderPass& GetRenderPass() { return renderPass_; }
 
-    inline static vk::SurfaceCapabilitiesKHR capabilities;
+    inline static vk::SurfaceCapabilitiesKHR surfaceCapabilities;
     std::vector<SwapchainFrame> frames;
 };
+} // namespace vkn
 
 #endif
