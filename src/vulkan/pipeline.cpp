@@ -83,7 +83,7 @@ void SetUpDescriptors()
             // mesh
             { 2, vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound },
         };
-        meshRenderPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
+        meshRenderPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
         bindings = {
@@ -98,10 +98,10 @@ void SetUpDescriptors()
             // normal
             { 4, vk::DescriptorType::eSampledImage, 1000, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::ePartiallyBound }
         };
-        meshRenderPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
+        meshRenderPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-        vkn::Descriptor::CreateDescriptorPool(meshRenderPipeline.descriptorPool, poolSizes, maxSets);
+        vkn::Descriptor::CreateDescriptorPool(meshRenderPipeline.descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
         vkn::Descriptor::AllocateDescriptorSets(meshRenderPipeline.descriptorPool, meshRenderPipeline.descriptorSets, meshRenderPipeline.descriptorSetLayouts);
 
         std::vector<vk::WriteDescriptorSet> write = {
@@ -125,10 +125,10 @@ void SetUpDescriptors()
             // meshes_
             { 2, vk::DescriptorType::eStorageBuffer, 100, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound }
         };
-        shadowMapPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
+        shadowMapPipeline.descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
         vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-        vkn::Descriptor::CreateDescriptorPool(shadowMapPipeline.descriptorPool, poolSizes, maxSets);
+        vkn::Descriptor::CreateDescriptorPool(shadowMapPipeline.descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
         vkn::Descriptor::AllocateDescriptorSets(shadowMapPipeline.descriptorPool, shadowMapPipeline.descriptorSets, shadowMapPipeline.descriptorSetLayouts);
 
         std::vector<vk::WriteDescriptorSet> write = {
