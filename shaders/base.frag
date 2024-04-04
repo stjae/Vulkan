@@ -2,7 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier: enable
 #include "common.glsl"
 
-layout(push_constant) uniform PushConsts
+layout (push_constant) uniform PushConsts
 {
     int meshIndex;
     int materialID;
@@ -33,7 +33,7 @@ void main() {
     outColor = vec4(inColor, 1.0);
     vec3 normalWorld = inNormal.xyz;
 
-    if (meshInstance.useTexture && meshInstance.textureID > 0) {
+    if (meshInstance.useTexture > 0 && meshInstance.textureID > 0) {
         outColor = texture(sampler2D(textures[meshInstance.textureID], texSampler), inTexcoord);
     }
     if (pushConsts.materialID > 0) {

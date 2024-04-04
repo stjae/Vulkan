@@ -12,23 +12,20 @@ Viewport::Viewport()
     CreateViewportImages();
     CreateViewportFrameBuffer();
 
-    colorPicked_.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, { 1, 1, 1 }, vk::ImageTiling::eLinear);
+    colorPicked_.CreateImage({ 1, 1, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 }
 
 void Viewport::CreateViewportImages()
 {
-    viewportImage.CreateImage(vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
-    viewportImage.CreateImageView(vk::Format::eB8G8R8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    // if (viewportImage.GetBundle().sampler == VK_NULL_HANDLE)
-    //     viewportImage.CreateSampler();
+    viewportImage.CreateImage({ extent.width, extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    viewportImage.CreateImageView();
 
-    colorID.CreateImage(vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
-    colorID.CreateImageView(vk::Format::eR32G32Sint, vk::ImageAspectFlagBits::eColor);
-    // if (colorID.GetBundle().sampler == VK_NULL_HANDLE)
-    //     colorID.CreateSampler();
+    colorID.CreateImage({ extent.width, extent.height, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    colorID.CreateImageView();
 
-    depthImage.CreateImage(vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, { extent.width, extent.height, 1 }, vk::ImageTiling::eOptimal);
-    depthImage.CreateImageView(vk::Format::eD32Sfloat, vk::ImageAspectFlagBits::eDepth);
+    depthImage.CreateImage({ extent.width, extent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    depthImage.imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    depthImage.CreateImageView();
 
     vkn::Command::Begin(commandBuffer_);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
@@ -280,6 +277,8 @@ Viewport::~Viewport()
     vkn::Device::GetBundle().device.destroyPipeline(shadowMapPipeline.pipeline);
     vkn::Device::GetBundle().device.destroyRenderPass(meshRenderPipeline.renderPass);
     vkn::Device::GetBundle().device.destroyRenderPass(shadowMapPipeline.renderPass);
+    vkn::Device::GetBundle().device.destroySampler(vkn::Image::repeatSampler);
+    vkn::Device::GetBundle().device.destroySampler(vkn::Image::clampSampler);
     for (auto& descriptorSetLayout : meshRenderPipeline.descriptorSetLayouts)
         vkn::Device::GetBundle().device.destroyDescriptorSetLayout(descriptorSetLayout);
     for (auto& descriptorSetLayout : shadowMapPipeline.descriptorSetLayouts)

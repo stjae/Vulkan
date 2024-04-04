@@ -58,7 +58,6 @@ void vkn::Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer,
     barrier.subresourceRange = subresourceRange;
 
     commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-    image.SetInfo(dstImageLayout);
 }
 
 void vkn::Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer,

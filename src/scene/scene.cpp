@@ -15,7 +15,7 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 
     {
         // prepare textures
-        vkn::Image::CreateGlobalSampler();
+        vkn::Image::CreateSampler();
         textures_.reserve(1000);
         textures_.emplace_back();
         CreateDummyTexture(textures_.back());
@@ -72,7 +72,7 @@ void Scene::AddResource(std::string& filePath)
     case RESOURCETYPE::TEXTURE:
         textures_.emplace_back();
         CreateTexture(filePath, textures_.back());
-        textures_.back().descriptorSet = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, textures_.back().image.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        textures_.back().descriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, textures_.back().image.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         resources_.back().resource = &textures_.back();
         break;
     }
@@ -127,12 +127,9 @@ void Scene::CreateTexture(const std::string& filePath, Texture& texture, vk::For
     stagingBuffer.Copy(imageData);
 
     stbi_image_free(imageData);
-    vk::Extent3D extent(width, height, 1);
 
-    texture.image.CreateImage(format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    texture.image.CreateImageView(format, vk::ImageAspectFlagBits::eColor);
-    texture.image.CreateSampler();
-    texture.image.SetInfo();
+    texture.image.CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    texture.image.CreateImageView();
 
     vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
@@ -173,11 +170,8 @@ void Scene::CreateDummyTexture(Texture& texture)
     vkn::Buffer stagingBuffer(bufferInput);
     stagingBuffer.Copy(&dummyTexture);
 
-    vk::Extent3D extent(1, 1, 1);
-    texture.image.CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    texture.image.CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-    texture.image.CreateSampler();
-    texture.image.SetInfo();
+    texture.image.CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    texture.image.CreateImageView();
 
     vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
@@ -288,22 +282,26 @@ void Scene::Update()
         shadowMapDirtyFlag_ = false;
     }
 
-    vk::DescriptorImageInfo samplerInfo(vkn::ImageBundle::globalSampler);
+    vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
     std::vector<vk::DescriptorImageInfo> textureInfos;
+    textureInfos.reserve(textures_.size());
     for (auto& texture : textures_) {
-        textureInfos.push_back(texture.image.GetBundle().imageInfo);
+        textureInfos.emplace_back(vkn::Image::repeatSampler, texture.image.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
     std::vector<vk::DescriptorImageInfo> cubeMapInfos;
+    cubeMapInfos.reserve(meshRenderPipeline.shadowCubeMapDescriptors.size());
     for (auto& cubeMapInfo : meshRenderPipeline.shadowCubeMapDescriptors) {
         cubeMapInfos.push_back(cubeMapInfo);
     }
     std::vector<vk::DescriptorImageInfo> diffuseTextureInfos;
+    diffuseTextureInfos.reserve(diffuseTextures_.size());
     for (auto& diffuse : diffuseTextures_) {
-        diffuseTextureInfos.push_back(diffuse.image.GetBundle().imageInfo);
+        diffuseTextureInfos.emplace_back(vkn::Image::repeatSampler, diffuse.image.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
     std::vector<vk::DescriptorImageInfo> normalTextureInfos;
+    normalTextureInfos.reserve(normalTextures_.size());
     for (auto& normal : normalTextures_) {
-        normalTextureInfos.push_back(normal.image.GetBundle().imageInfo);
+        normalTextureInfos.emplace_back(vkn::Image::repeatSampler, normal.image.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
     std::vector<vk::WriteDescriptorSet>
         image = {

@@ -5,7 +5,7 @@ struct MeshInstanceData
     int meshID;
     int textureID;
     int instanceID;
-    bool useTexture;
+    int useTexture;
 };
 
 struct LightData
@@ -17,17 +17,17 @@ struct LightData
     float padding1;
 };
 
-layout(set = 0, binding = 0) uniform Camera {
+layout (set = 0, binding = 0) uniform Camera {
     mat4 view;
     mat4 proj;
     vec3 pos;
 } camera;
 
-layout(set = 0, binding = 1) readonly buffer Light {
+layout (set = 0, binding = 1) readonly buffer Light {
     LightData data[];
 } light;
 
-layout(set = 0, binding = 2) readonly buffer Mesh {
+layout (set = 0, binding = 2) readonly buffer Mesh {
     MeshInstanceData data[];
 } mesh[];
 

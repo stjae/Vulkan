@@ -55,7 +55,9 @@ class Scene
     bool shadowMapDirtyFlag_;
     bool showLightIcon_;
 
-    void CreateDummyTexture(Texture& texture);
+    std::unique_ptr<vkn::Image> diffuseIBL_;
+    std::unique_ptr<vkn::Image> specularIBL_;
+    std::unique_ptr<vkn::Image> brdf_;
 
     std::vector<Mesh> meshes_;
     bool meshDirtyFlag_;
@@ -76,6 +78,7 @@ class Scene
     void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void CreateTexture(const std::string& filePath, Texture& texture, vk::Format format = vk::Format::eR8G8B8A8Srgb);
+    void CreateDummyTexture(Texture& texture);
     void AddLight();
     void DeleteMesh();
     void DeleteLight();

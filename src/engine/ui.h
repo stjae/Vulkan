@@ -37,7 +37,7 @@ class UI
     void SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
-    void DrawListWindow(Scene& scene);
+    void DrawSceneAttribWindow(Scene& scene);
     void DrawResourceWindow(Scene& scene);
     void ShowInformationOverlay(const Scene& scene);
 
@@ -47,6 +47,9 @@ public:
     inline static double dragDropMouseY;
     inline static std::unique_ptr<Resource> dragDropResource;
     inline static ImDrawData* imDrawData;
+    inline static float buttonSize = 100.0f;
+    inline static float padding = buttonSize * 0.4f;
+    inline static float buttonSizeWithoutPadding = buttonSize - padding * 2.0f;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
     std::unique_ptr<vkn::Image> GenerateIcon(const std::string& filePath);

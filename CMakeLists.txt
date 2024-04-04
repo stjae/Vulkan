@@ -4,6 +4,7 @@ set(PROJECT_NAME vulkanApp)
 project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
+
 if (APPLE)
     set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework AppKit -framework UniformTypeIdentifiers")
     find_package(Vulkan REQUIRED MoltenVK SPIRV-Tools)
@@ -54,6 +55,8 @@ add_executable(${PROJECT_NAME}
         src/scene/light.h
         src/scene/shadowMap.h
         src/scene/shadowMap.cpp
+        src/vulkan/cubeMap.cpp
+        src/vulkan/cubeMap.h
 )
 
 include(Dependency.cmake)
@@ -61,7 +64,17 @@ include(Shader.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
+#target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
+file(GLOB_RECURSE LIBS "*.lib")
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
+file(GLOB DLLS "${DEP_INSTALL_DIR}/bin/*.dll")
+foreach (DLL ${DLLS})
+    add_custom_command(TARGET ${PROJECT_NAME}
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${DLL}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/"
+    )
+endforeach ()
 
 add_dependencies(${PROJECT_NAME} ${DEP_LIST} Shaders)
 

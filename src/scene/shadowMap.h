@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "light.h"
+#include "../vulkan/cubeMap.h"
 #include "../vulkan/pipeline.h"
 #include "../vulkan/command.h"
 
@@ -12,8 +13,8 @@ class ShadowMap
 {
     std::array<vk::ImageView, 6> shadowCubeMapFaceImageViews;
     std::array<vk::Framebuffer, 6> framebuffers;
-    vkn::Image shadowCubeMap;
-    vkn::Image depth;
+    vkn::CubeMap shadowCubeMap;
+    vkn::Image depthImage;
 
     void UpdateCubeMapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<Mesh>& meshes);
     void CreateFrameBuffer(vk::CommandBuffer& commandBuffer);

@@ -296,7 +296,7 @@ vk::PresentInfoKHR vkn::Swapchain::Present(size_t frameIndex, const vk::ResultVa
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &waitFrameImage.value;
-    vkn::Device::GetBundle().presentQueue.presentKHR(presentInfo);
+    vkn::CheckResult(vkn::Device::GetBundle().presentQueue.presentKHR(presentInfo));
 
     return presentInfo;
 }
@@ -322,5 +322,4 @@ vkn::Swapchain::~Swapchain()
     for (auto& frame : frames)
         vkn::Device::GetBundle().device.destroyCommandPool(frame.commandPool);
     vkn::Device::GetBundle().device.destroyRenderPass(renderPass_);
-    vkn::Device::GetBundle().device.destroySampler(vkn::ImageBundle::globalSampler);
 }

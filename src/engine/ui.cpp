@@ -55,14 +55,14 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     //     io.Fonts->AddFontDefault(&fontConfig);
     // }
 
-    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     plusIcon_ = GenerateIcon(PROJECT_DIR "image/icon/plus.png");
-    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     lightIcon_ = GenerateIcon(PROJECT_DIR "image/icon/light.png");
-    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     cubeIcon_ = GenerateIcon(PROJECT_DIR "image/icon/cube.png");
-    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // TODO: for test
     // path = PROJECT_DIR "image/box.png";
@@ -92,12 +92,10 @@ std::unique_ptr<vkn::Image> UI::GenerateIcon(const std::string& filePath)
     stagingBuffer.Copy(imageData);
 
     stbi_image_free(imageData);
-    vk::Extent3D extent(width, height, 1);
     std::unique_ptr<vkn::Image> image = std::make_unique<vkn::Image>();
-    image->CreateImage(vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal, extent, vk::ImageTiling::eOptimal);
-    image->CreateImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    image->CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    image->CreateImageView();
     image->CreateSampler();
-    image->SetInfo();
 
     vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
@@ -151,7 +149,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     DrawDockSpace(scene);
     DrawViewport(scene, viewport, frameIndex);
-    DrawListWindow(scene);
+    DrawSceneAttribWindow(scene);
     DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
 
@@ -181,7 +179,7 @@ void UI::DrawDockSpace(Scene& scene)
 
     if (!opt_padding)
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &p_open, window_flags);
+    ImGui::Begin("DockSpace", &p_open, window_flags);
     ImGui::PopStyleVar();
     ImGui::PopStyleVar(2);
 
@@ -190,20 +188,27 @@ void UI::DrawDockSpace(Scene& scene)
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
+    // Top Menu Bar
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Create")) {
-            if (ImGui::MenuItem("Light")) {
-                scene.AddLight();
+        if (ImGui::BeginMenu("Add")) {
+            if (ImGui::BeginMenu("Light")) {
+                if (ImGui::MenuItem("Point Light")) {
+                    scene.AddLight();
+                }
+                ImGui::EndMenu();
             }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Square")) {
-                scene.AddMeshInstance(MESHTYPE::SQUARE);
-            }
-            if (ImGui::MenuItem("Cube")) {
-                scene.AddMeshInstance(MESHTYPE::CUBE);
-            }
-            if (ImGui::MenuItem("Sphere")) {
-                scene.AddMeshInstance(MESHTYPE::SPHERE);
+            if (ImGui::BeginMenu("Mesh")) {
+                ImGui::Separator();
+                if (ImGui::MenuItem("Square")) {
+                    scene.AddMeshInstance(MESHTYPE::SQUARE);
+                }
+                if (ImGui::MenuItem("Cube")) {
+                    scene.AddMeshInstance(MESHTYPE::CUBE);
+                }
+                if (ImGui::MenuItem("Sphere")) {
+                    scene.AddMeshInstance(MESHTYPE::SPHERE);
+                }
+                ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
@@ -386,11 +391,11 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     lightData.model = model;
 }
 
-void UI::DrawListWindow(Scene& scene)
+void UI::DrawSceneAttribWindow(Scene& scene)
 {
-    // Mesh List
-    ImGui::Begin("List");
+    ImGui::Begin("Scene");
     ImGui::BeginTabBar("MeshTab");
+    // Mesh List
     if (ImGui::BeginTabItem("Meshes")) {
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.meshes_.size(); i++) {
@@ -415,7 +420,7 @@ void UI::DrawListWindow(Scene& scene)
             }
             ImGui::EndListBox();
         }
-        // Attributes
+        // Mesh Attributes
         if (scene.selectedMeshID_ > -1) {
 
             auto& meshInstance = scene.GetSelectedMeshInstance();
@@ -440,7 +445,9 @@ void UI::DrawListWindow(Scene& scene)
             meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
 
             ImGui::SeparatorText("Textures");
-            if (ImGui::Checkbox("Use Texture", &meshInstance.useTexture)) {
+            bool useTexture = meshInstance.useTexture > 0;
+            if (ImGui::Checkbox("Use Texture", &useTexture)) {
+                meshInstance.useTexture = useTexture ? 1 : -1;
                 scene.meshDirtyFlag_ = true;
             }
         }
@@ -467,7 +474,7 @@ void UI::DrawListWindow(Scene& scene)
             }
             ImGui::EndListBox();
             ImGui::Checkbox("Show Light Icon", &scene.showLightIcon_);
-            // Attributes
+            // Light Attributes
             if (scene.selectedLightID_ > -1) {
 
                 auto& lightData = scene.lights_[scene.selectedLightID_];
@@ -493,24 +500,42 @@ void UI::DrawListWindow(Scene& scene)
         }
         ImGui::EndTabItem();
     }
+    if (ImGui::BeginTabItem("IBL")) {
+
+        // image button
+        float panelSize = ImGui::GetContentRegionAvail().x;
+        int columnCount = std::max(1, (int)(panelSize / buttonSize));
+        // Add Resource
+        ImGui::Columns(columnCount, 0, false);
+        if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+            scene.diffuseIBL_ = std::make_unique<vkn::Image>();
+            // scene.diffuseIBL_->CreateImage()
+        }
+        ImGui::Text("Diffuse");
+        ImGui::NextColumn();
+        if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+        }
+        ImGui::Text("Specular");
+        ImGui::NextColumn();
+        if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+        }
+        ImGui::Text("BRDF");
+        ImGui::Columns(1);
+        ImGui::EndTabItem();
+    }
     ImGui::EndTabBar();
     ImGui::End();
 }
 
 void UI::DrawResourceWindow(Scene& scene)
 {
-    float desiredButtonSize = 100.0f;
-    float padding = desiredButtonSize * 0.4f;
-    auto getButtonSize = [desiredButtonSize, padding]() { return desiredButtonSize - padding * 2.0f; };
-    float buttonSize = getButtonSize();
-
     ImGui::Begin("Resources");
 
     float panelSize = ImGui::GetContentRegionAvail().x;
-    int columnCount = std::max(1, (int)(panelSize / desiredButtonSize));
+    int columnCount = std::max(1, (int)(panelSize / buttonSize));
     // Add Resource
     ImGui::Columns(columnCount, 0, false);
-    if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSize, buttonSize }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+    if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
         std::string path = LaunchNfd({ "Image,Mesh", "jpg,png,obj,tga,gltf" });
         if (!path.empty()) {
             scene.AddResource(path);
@@ -520,7 +545,7 @@ void UI::DrawResourceWindow(Scene& scene)
 
     for (auto& resource : scene.resources_) {
         if (resource.resourceType == RESOURCETYPE::MESH) {
-            ImGui::ImageButton(cubeIconDescriptorSet_, { getButtonSize(), getButtonSize() }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+            ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         } else {
             ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
         }
@@ -555,7 +580,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
 void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
 {
     ImGui_ImplVulkan_RemoveTexture(descriptorSet_);
-    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::ImageBundle::globalSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
@@ -574,7 +599,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
             auto& meshInstance = scene.GetMeshInstance(pickColor[0], pickColor[1]);
 
             meshInstance.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
-            meshInstance.useTexture = true;
+            meshInstance.useTexture = 1;
             scene.meshDirtyFlag_ = true;
         }
         break;

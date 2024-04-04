@@ -8,27 +8,25 @@ struct ImageBundle
 {
     vk::Image image;
     vk::ImageView imageView;
-    vk::Format format;
-    // vk::Sampler sampler;
-    inline static vk::Sampler globalSampler;
-    vk::DescriptorImageInfo imageInfo;
 };
 class Image
 {
+protected:
     ImageBundle imageBundle_;
 
 public:
+    vk::ImageCreateInfo imageCreateInfo;
+    vk::ImageViewCreateInfo imageViewCreateInfo;
     Memory memory;
+    inline static vk::Sampler repeatSampler;
+    inline static vk::Sampler clampSampler;
 
-    void CreateImage(vk::Format format, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Extent3D extent, vk::ImageTiling imageTiling);
-    void CreateImage(vk::ImageCreateInfo& imageCI, vk::MemoryPropertyFlags memProperty);
-    void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlags);
-    void CreateImageView(vk::ImageViewCreateInfo& imageViewCI);
-    void CreateSampler();
-    static void CreateGlobalSampler();
-    void SetInfo(vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined);
+    Image();
+    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty);
+    void CreateImageView();
     void DestroyImage();
     void DestroyImageView();
+    static void CreateSampler();
     ~Image();
 
     const ImageBundle& GetBundle() const { return imageBundle_; }

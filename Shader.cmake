@@ -1,6 +1,6 @@
 set(GLSL_VALIDATOR "${Vulkan_INCLUDE_DIRS}/../bin/glslc")
 
-file(GLOB_RECURSE GLSL_SOURCE_FILES
+file(GLOB GLSL_SOURCE_FILES
         "shaders/*.frag"
         "shaders/*.vert"
 )
