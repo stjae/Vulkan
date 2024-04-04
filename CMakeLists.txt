@@ -51,8 +51,6 @@ add_executable(${PROJECT_NAME}
         src/vulkan/image.h src/vulkan/image.cpp
         src/engine/viewport.h
         src/engine/viewport.cpp
-        src/scene/light.cpp
-        src/scene/light.h
         src/scene/shadowMap.h
         src/scene/shadowMap.cpp
         src/vulkan/cubeMap.cpp
@@ -64,9 +62,9 @@ include(Shader.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
-#target_link_libraries(${PROJECT_NAME} PUBLIC ${DEP_LIBS})
-file(GLOB_RECURSE LIBS "*.lib")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
+message(${DEP_LIBS})
+file(GLOB LIBS "${DEP_INSTALL_DIR}/lib/*.lib" "${DEP_INSTALL_DIR}/lib/*.a" "${DEP_INSTALL_DIR}/lib/*.dylib")
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS} ${DEP_LIBS})
 file(GLOB DLLS "${DEP_INSTALL_DIR}/bin/*.dll")
 foreach (DLL ${DLLS})
     add_custom_command(TARGET ${PROJECT_NAME}

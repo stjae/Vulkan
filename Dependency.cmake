@@ -16,11 +16,6 @@ ExternalProject_Add(
 )
 
 set(DEP_LIST ${DEP_LIST} dep-spdlog)
-if (MSVC)
-    set(DEP_LIBS ${DEP_LIBS} spdlogd)
-else ()
-    set(DEP_LIBS ${DEP_LIBS} spdlog)
-endif ()
 
 #glfw
 ExternalProject_Add(
@@ -38,7 +33,7 @@ ExternalProject_Add(
         -DGLFW_BUILD_DOCS=OFF
 )
 set(DEP_LIST ${DEP_LIST} dep-glfw)
-set(DEP_LIBS ${DEP_LIBS} glfw3)
+#set(DEP_LIBS ${DEP_LIBS} glfw3)
 
 #glm
 ExternalProject_Add(
@@ -145,7 +140,7 @@ ExternalProject_Add(
         -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
 )
 set(DEP_LIST ${DEP_LIST} dep-assimp)
-set(DEP_LIBS ${DEP_LIBS} assimp)
+#set(DEP_LIBS ${DEP_LIBS} assimp)
 
 # Native File Dialog
 ExternalProject_Add(
@@ -161,4 +156,4 @@ ExternalProject_Add(
         -DNFD_BUILD_TESTS=OFF
 )
 set(DEP_LIST ${DEP_LIST} dep-nativefiledialog)
-set(DEP_LIBS ${DEP_LIBS} nfd)
+#set(DEP_LIBS ${DEP_LIBS} nfd)

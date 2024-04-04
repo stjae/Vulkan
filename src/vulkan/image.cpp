@@ -50,12 +50,12 @@ void vkn::Image::CreateSampler()
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
-    vkn::CheckResult(vkn::Device::GetBundle().device.createSampler(&samplerInfo, nullptr, &Image::repeatSampler));
+    vkn::CheckResult(vkn::Device::GetBundle().device.createSampler(&samplerInfo, nullptr, &repeatSampler));
 
     samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    // vkn::CheckResult(vkn::Device::GetBundle().device.createSampler(&samplerInfo, nullptr, &Image::clampSampler));
+    vkn::CheckResult(vkn::Device::GetBundle().device.createSampler(&samplerInfo, nullptr, &clampSampler));
 }
 
 void vkn::Image::DestroyImage()

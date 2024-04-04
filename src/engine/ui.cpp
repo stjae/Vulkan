@@ -95,7 +95,6 @@ std::unique_ptr<vkn::Image> UI::GenerateIcon(const std::string& filePath)
     std::unique_ptr<vkn::Image> image = std::make_unique<vkn::Image>();
     image->CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     image->CreateImageView();
-    image->CreateSampler();
 
     vkn::Command::Begin(commandBuffer_);
     // Set texture image layout to transfer dst optimal
@@ -198,7 +197,6 @@ void UI::DrawDockSpace(Scene& scene)
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Mesh")) {
-                ImGui::Separator();
                 if (ImGui::MenuItem("Square")) {
                     scene.AddMeshInstance(MESHTYPE::SQUARE);
                 }
