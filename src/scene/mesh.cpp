@@ -22,7 +22,7 @@ Mesh::Mesh(uint32_t meshID, const std::string& filePath) : instanceID_(0)
     this->meshID_ = meshID;
 }
 
-void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
+void Mesh::CreateSquare(float scale, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
 
@@ -47,7 +47,7 @@ void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
 
         position[i] *= scale;
-        vertexContainers_.back().emplace_back(position[i], normal[i], color, texcoord[i], glm::vec3(0.0f));
+        vertexContainers_.back().emplace_back(position[i], normal[i], texcoord[i]);
     }
 
     indexContainers_.reserve(1);
@@ -60,7 +60,7 @@ void Mesh::CreateSquare(float scale, glm::vec3 color, const char* texturePath)
     meshParts_.emplace_back(0, -1);
 }
 
-void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
+void Mesh::CreateCube(float scale, const char* texturePath)
 {
     const int CUBE_VERTEX_COUNT = 24;
 
@@ -131,7 +131,7 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
 
-        vertexContainers_.back().emplace_back(position[i], normal[i], color, texcoord[i % 4], glm::vec3(0.0f));
+        vertexContainers_.back().emplace_back(position[i], normal[i], texcoord[i % 4]);
     }
 
     indexContainers_.reserve(1);
@@ -145,7 +145,7 @@ void Mesh::CreateCube(float scale, glm::vec3 color, const char* texturePath)
     meshParts_.emplace_back(0, -1);
 }
 
-void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const char* texture)
+void Mesh::CreateSphere(float scale, const char* name, const char* texture)
 {
     vertexContainers_.reserve(1);
     vertexContainers_.emplace_back();
@@ -172,7 +172,7 @@ void Mesh::CreateSphere(float scale, glm::vec3 color, const char* name, const ch
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
             texU = 1.0f - 1.0f / ((float)division) * (float)j;
-            vertexContainers_.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), color, glm::vec2(texU, texV), glm::vec3(0.0f));
+            vertexContainers_.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), glm::vec2(texU, texV));
         }
     }
 
@@ -222,12 +222,14 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
     if (scene->HasMaterials()) {
         materials_.reserve(scene->mNumMaterials);
         for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
-            materials_.emplace_back();
             aiString path;
+            materials_.emplace_back();
             scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-            materials_.back().diffusePath = path.C_Str();
+            materials_.back().albedo = path.C_Str();
             scene->mMaterials[m]->GetTexture(aiTextureType_NORMALS, 0, &path);
-            materials_.back().normalPath = path.C_Str();
+            materials_.back().normal = path.C_Str();
+            // scene->mMaterials[m]->GetTexture(aiTextureType_METALNESS, 0, &path);
+            // materials_.back().metallic = path.C_Str();
         }
     }
 
@@ -278,13 +280,15 @@ void Mesh::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
             texcoord = { mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y };
         glm::vec3 tangent(0.0f);
         glm::vec3 biTangent(0.0f);
-        if (mesh->HasTangentsAndBitangents())
+        if (mesh->HasTangentsAndBitangents()) {
             tangent = { mesh->mTangents[v].x, mesh->mTangents[v].y, mesh->mTangents[v].z };
+            biTangent = { mesh->mBitangents[v].x, mesh->mBitangents[v].y, mesh->mBitangents[v].z };
+        }
         vertexContainers_.back().emplace_back(glm::vec3(pos.x, pos.y, pos.z),
                                               normal,
-                                              glm::vec3(0.5f),
                                               texcoord,
-                                              tangent);
+                                              tangent,
+                                              biTangent);
     }
 
     meshParts_.emplace_back(meshParts_.size(), mesh->mMaterialIndex);

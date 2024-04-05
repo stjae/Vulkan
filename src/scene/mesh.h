@@ -30,8 +30,12 @@ struct MeshInstance
     int32_t textureID;
     int32_t instanceID;
     int32_t useTexture;
+    glm::vec3 albedo;
+    float metallic;
+    float roughness;
+    float padding[3];
 
-    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID)
+    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
     {
         model = glm::translate(model, pos);
         model = glm::scale(model, scale);
@@ -43,8 +47,10 @@ struct MeshInstance
 
 struct Material
 {
-    std::string diffusePath;
-    std::string normalPath;
+    std::string albedo;
+    std::string normal;
+    std::string metallic;
+    std::string roughness;
 };
 
 class Mesh : public MeshBase
@@ -60,9 +66,9 @@ class Mesh : public MeshBase
     std::vector<MeshPart> meshParts_;
     std::vector<Material> materials_;
 
-    void CreateSquare(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);
-    void CreateCube(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* texturePath = nullptr);
-    void CreateSphere(float scale = 1.0f, glm::vec3 color = glm::vec3(0.5f), const char* name = nullptr, const char* texturePath = nullptr);
+    void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
+    void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
+    void CreateSphere(float scale = 1.0f, const char* name = nullptr, const char* texturePath = nullptr);
     void LoadModel(const std::string& modelPath, const char* texturePath = nullptr, glm::vec3 color = glm::vec3(0.5f));
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat);

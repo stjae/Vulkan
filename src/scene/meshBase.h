@@ -7,14 +7,14 @@ struct Vertex
 {
     glm::vec3 pos;
     glm::vec3 normal;
-    glm::vec3 color;
     glm::vec2 texcoord;
     glm::vec3 tangent;
+    glm::vec3 bitangent;
 
     Vertex()
-        : pos(0.0f), normal(0.0f), color(0.0f), texcoord(0.0f), tangent(0.0f) {}
-    Vertex(glm::vec3 pos, glm::vec3 normal, glm::vec3 color, glm::vec2 texcoord, glm::vec3 tangent)
-        : pos(pos), normal(normal), color(color), texcoord(texcoord), tangent(tangent) {}
+        : pos(0.0f), normal(0.0f), texcoord(0.0f), tangent(0.0f), bitangent(0.0f) {}
+    Vertex(glm::vec3 pos, glm::vec3 normal, glm::vec2 texcoord, glm::vec3 tangent = glm::vec3(0.0f), glm::vec3 bitangent = glm::vec3(0.0f))
+        : pos(pos), normal(normal), texcoord(texcoord), tangent(tangent), bitangent(bitangent) {}
 };
 
 class MeshBase

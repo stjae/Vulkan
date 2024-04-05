@@ -29,7 +29,7 @@ void Viewport::CreateViewportImages()
 
     vkn::Command::Begin(commandBuffer_);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        viewportImage,
+                                        viewportImage.GetBundle().image,
                                         {},
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         {},
@@ -37,7 +37,7 @@ void Viewport::CreateViewportImages()
                                         vk::PipelineStageFlagBits::eTopOfPipe,
                                         vk::PipelineStageFlagBits::eFragmentShader);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        colorID,
+                                        colorID.GetBundle().image,
                                         {},
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         {},
@@ -86,7 +86,7 @@ const int32_t* Viewport::PickColor(double mouseX, double mouseY)
 {
     vkn::Command::Begin(commandBuffer_);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        colorID,
+                                        colorID.GetBundle().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eTransferSrcOptimal,
                                         vk::AccessFlagBits::eShaderRead,
@@ -133,7 +133,7 @@ const int32_t* Viewport::PickColor(double mouseX, double mouseY)
     commandBuffer_.copyImage(colorID.GetBundle().image, vk::ImageLayout::eTransferSrcOptimal, colorPicked_.GetBundle().image, vk::ImageLayout::eTransferDstOptimal, region);
 
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        colorID,
+                                        colorID.GetBundle().image,
                                         vk::ImageLayout::eTransferSrcOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eTransferRead,
@@ -167,7 +167,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
 {
     vkn::Command::Begin(commandBuffer_);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        viewportImage,
+                                        viewportImage.GetBundle().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::AccessFlagBits::eShaderRead,
@@ -175,7 +175,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
                                         vk::PipelineStageFlagBits::eFragmentShader,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        colorID,
+                                        colorID.GetBundle().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::AccessFlagBits::eShaderRead,
@@ -221,6 +221,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
+    // not the actual index
     int meshIndex = 0;
     int materialOffset = 0;
     for (const auto& mesh : meshes) {
@@ -232,7 +233,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
         for (const auto& part : mesh.GetMeshParts()) {
             commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
             commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
-            meshRenderPushConsts.materialID = materialOffset + part.materialID + 1;
+            meshRenderPushConsts.materialID = materialOffset + part.materialID;
             commandBuffer_.pushConstants(
                 meshRenderPipeline.pipelineLayout,
                 vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
@@ -248,7 +249,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
     commandBuffer_.endRenderPass();
 
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        viewportImage,
+                                        viewportImage.GetBundle().image,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eColorAttachmentRead,
@@ -256,7 +257,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                         vk::PipelineStageFlagBits::eFragmentShader);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        colorID,
+                                        colorID.GetBundle().image,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eColorAttachmentRead,

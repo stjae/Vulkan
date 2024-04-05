@@ -1,3 +1,5 @@
+#include "brdf.glsl"
+
 struct MeshInstanceData
 {
     mat4 model;
@@ -6,6 +8,10 @@ struct MeshInstanceData
     int textureID;
     int instanceID;
     int useTexture;
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float padding[3];
 };
 
 struct LightData
@@ -34,9 +40,10 @@ layout (set = 0, binding = 2) readonly buffer Mesh {
 float Lambert(vec3 worldNormal, vec3 worldModel, LightData lightData)
 {
     vec4 lightPos = lightData.model * vec4(lightData.pos, 1.0);
-    vec3 L = normalize(lightPos.xyz - worldModel);
     vec3 N = worldNormal;
+    vec3 L = normalize(lightPos.xyz - worldModel);
 
     float dist = length(worldModel - lightPos.xyz);
-    return max(0.0, dot(L, N)) * (1.0 / (1.0 + (0.25 * dist * dist)));
+    float attenuation = 1.0 / (1.0 + (0.25 * dist * dist));
+    return max(0.0, dot(L, N)) * attenuation;
 }

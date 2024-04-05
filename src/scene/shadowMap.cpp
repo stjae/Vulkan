@@ -5,7 +5,7 @@ void ShadowMap::PrepareShadowCubeMap(vk::CommandBuffer& commandBuffer)
     shadowCubeMap.CreateImage({ shadowMapSize, shadowMapSize, 1 }, shadowMapImageFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        shadowCubeMap,
+                                        shadowCubeMap.GetBundle().image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
@@ -113,7 +113,7 @@ void ShadowMap::CreateFrameBuffer(vk::CommandBuffer& commandBuffer)
 
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        depthImage,
+                                        depthImage.GetBundle().image,
                                         {},
                                         vk::ImageLayout::eDepthStencilAttachmentOptimal,
                                         {},

@@ -29,26 +29,26 @@ std::array<vk::VertexInputAttributeDescription, 5> MeshBase::GetAttributeDescs()
     attributes[1].offset = offset;
     offset += sizeof(Vertex::normal);
 
-    // Normal
+    // Texcoord
     attributes[2].binding = 0;
     attributes[2].location = 2;
-    attributes[2].format = vk::Format::eR32G32B32Sfloat;
+    attributes[2].format = vk::Format::eR32G32Sfloat;
     attributes[2].offset = offset;
-    offset += sizeof(Vertex::color);
-
-    // Texcoord
-    attributes[3].binding = 0;
-    attributes[3].location = 3;
-    attributes[3].format = vk::Format::eR32G32Sfloat;
-    attributes[3].offset = offset;
     offset += sizeof(Vertex::texcoord);
 
     // Tangent
+    attributes[3].binding = 0;
+    attributes[3].location = 3;
+    attributes[3].format = vk::Format::eR32G32B32Sfloat;
+    attributes[3].offset = offset;
+    offset += sizeof(Vertex::tangent);
+
+    // Bitangent
     attributes[4].binding = 0;
     attributes[4].location = 4;
     attributes[4].format = vk::Format::eR32G32B32Sfloat;
     attributes[4].offset = offset;
-    offset += sizeof(Vertex::tangent);
+    offset += sizeof(Vertex::bitangent);
 
     return attributes;
 }

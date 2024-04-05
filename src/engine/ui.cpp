@@ -57,12 +57,12 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
 
     descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    plusIcon_ = GenerateIcon(PROJECT_DIR "image/icon/plus.png");
-    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, plusIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    lightIcon_ = GenerateIcon(PROJECT_DIR "image/icon/light.png");
-    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    cubeIcon_ = GenerateIcon(PROJECT_DIR "image/icon/cube.png");
-    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_->GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    plusIcon_.InsertImage(PROJECT_DIR "image/icon/plus.png", commandBuffer_);
+    plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, plusIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    lightIcon_.InsertImage(PROJECT_DIR "image/icon/light.png", commandBuffer_);
+    lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", commandBuffer_);
+    cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // TODO: for test
     // path = PROJECT_DIR "image/box.png";
@@ -71,59 +71,6 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     // scene.AddResource(path);
 
     dragDropped = false;
-}
-
-std::unique_ptr<vkn::Image> UI::GenerateIcon(const std::string& filePath)
-{
-    int width, height, channel;
-    vk::DeviceSize imageSize;
-    stbi_uc* imageData;
-
-    imageData = stbi_load(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
-    imageSize = width * height * 4;
-
-    if (!imageData) {
-        spdlog::error("failed to load image");
-        return nullptr;
-    }
-
-    vkn::BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    vkn::Buffer stagingBuffer(bufferInput);
-    stagingBuffer.Copy(imageData);
-
-    stbi_image_free(imageData);
-    std::unique_ptr<vkn::Image> image = std::make_unique<vkn::Image>();
-    image->CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    image->CreateImageView();
-
-    vkn::Command::Begin(commandBuffer_);
-    // Set texture image layout to transfer dst optimal
-    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        *image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eTransferWrite,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eTransfer);
-    // Copy texture image from staging buffer
-    vkn::Command::CopyBufferToImage(commandBuffer_,
-                                    stagingBuffer.GetBundle().buffer,
-                                    image->GetBundle().image, width,
-                                    height);
-    // Set texture image layout to shader read only
-    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        *image,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eTransferWrite,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTransfer,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    commandBuffer_.end();
-    vkn::Command::Submit(&commandBuffer_, 1);
-
-    return std::move(image);
 }
 
 void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
@@ -223,14 +170,16 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         return;
 
     vkn::Command::Begin(commandBuffer_);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer_, viewport.viewportImage,
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        viewport.viewportImage.GetBundle().image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         {},
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eTopOfPipe,
                                         vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer_, viewport.colorID,
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        viewport.colorID.GetBundle().image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         {},
@@ -448,6 +397,14 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 meshInstance.useTexture = useTexture ? 1 : -1;
                 scene.meshDirtyFlag_ = true;
             }
+
+            ImGui::SeparatorText("Material");
+            if (ImGui::SliderFloat3("Albedo", &meshInstance.albedo[0], 0.0f, 1.0f))
+                scene.meshDirtyFlag_ = true;
+            if (ImGui::SliderFloat("Metallic", &meshInstance.metallic, 0.0f, 1.0f))
+                scene.meshDirtyFlag_ = true;
+            if (ImGui::SliderFloat("Roughness", &meshInstance.roughness, 0.0f, 1.0f))
+                scene.meshDirtyFlag_ = true;
         }
         ImGui::EndTabItem();
     }
@@ -500,14 +457,12 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     }
     if (ImGui::BeginTabItem("IBL")) {
 
-        // image button
         float panelSize = ImGui::GetContentRegionAvail().x;
         int columnCount = std::max(1, (int)(panelSize / buttonSize));
-        // Add Resource
+
         ImGui::Columns(columnCount, 0, false);
+
         if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-            scene.diffuseIBL_ = std::make_unique<vkn::Image>();
-            // scene.diffuseIBL_->CreateImage()
         }
         ImGui::Text("Diffuse");
         ImGui::NextColumn();
@@ -544,14 +499,15 @@ void UI::DrawResourceWindow(Scene& scene)
     for (auto& resource : scene.resources_) {
         if (resource.resourceType == RESOURCETYPE::MESH) {
             ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
-        } else {
-            ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
         }
+        // else {
+        //     ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
+        // }
 
         // Send Drag Drop
         if (ImGui::BeginDragDropSource()) {
-            if (resource.resourceType == RESOURCETYPE::TEXTURE)
-                ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
+            // if (resource.resourceType == RESOURCETYPE::TEXTURE)
+            // ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
             ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&resource, sizeof(resource));
             ImGui::EndDragDropSource();
         }
@@ -592,15 +548,15 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
     case RESOURCETYPE::MESH:
         scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->resource)->GetMeshID());
         break;
-    case RESOURCETYPE::TEXTURE:
-        if (pickColor[0] != -1) {
-            auto& meshInstance = scene.GetMeshInstance(pickColor[0], pickColor[1]);
-
-            meshInstance.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
-            meshInstance.useTexture = 1;
-            scene.meshDirtyFlag_ = true;
-        }
-        break;
+        // case RESOURCETYPE::TEXTURE:
+        //     if (pickColor[0] != -1) {
+        //         auto& meshInstance = scene.GetMeshInstance(pickColor[0], pickColor[1]);
+        //
+        //         // meshInstance.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
+        //         meshInstance.useTexture = 1;
+        //         scene.meshDirtyFlag_ = true;
+        //     }
+        //     break;
     }
 
     dragDropped = false;

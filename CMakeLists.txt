@@ -55,6 +55,8 @@ add_executable(${PROJECT_NAME}
         src/scene/shadowMap.cpp
         src/vulkan/cubeMap.cpp
         src/vulkan/cubeMap.h
+        src/vulkan/imageArray.cpp
+        src/vulkan/imageArray.h
 )
 
 include(Dependency.cmake)
@@ -62,7 +64,6 @@ include(Shader.cmake)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
-message(${DEP_LIBS})
 file(GLOB LIBS "${DEP_INSTALL_DIR}/lib/*.lib" "${DEP_INSTALL_DIR}/lib/*.a" "${DEP_INSTALL_DIR}/lib/*.dylib")
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS} ${DEP_LIBS})
 file(GLOB DLLS "${DEP_INSTALL_DIR}/bin/*.dll")

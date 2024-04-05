@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "light.h"
+#include "mesh.h"
 #include "../vulkan/cubeMap.h"
 #include "../vulkan/pipeline.h"
 #include "../vulkan/command.h"

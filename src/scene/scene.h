@@ -11,23 +11,12 @@
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
 #include "../vulkan/pipeline.h"
+#include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
 enum RESOURCETYPE {
     MESH,
-    TEXTURE,
-};
-
-struct Texture
-{
-    vkn::Image image;
-    vk::DescriptorSet descriptorSet; // thumbnail for resource window
-
-    int width, height;
-    size_t size;
-    int32_t index;
-
-    ~Texture() { ImGui_ImplVulkan_RemoveTexture(descriptorSet); }
+    // TEXTURE,
 };
 
 struct Resource
@@ -52,36 +41,42 @@ class Scene
     std::unique_ptr<vkn::Buffer> lightDataBuffer_;
 
     std::vector<ShadowMap> shadowMaps_;
-    bool shadowMapDirtyFlag_;
-    bool showLightIcon_;
 
     std::unique_ptr<vkn::Image> diffuseIBL_;
     std::unique_ptr<vkn::Image> specularIBL_;
     std::unique_ptr<vkn::Image> brdf_;
 
     std::vector<Mesh> meshes_;
-    bool meshDirtyFlag_;
     std::vector<LightData> lights_;
-    bool lightDirtyFlag_;
-    std::vector<Texture> textures_;
-    std::vector<Texture> diffuseTextures_;
-    std::vector<Texture> normalTextures_;
+    std::vector<vkn::Image> textureArrays_;
     std::vector<Resource> resources_;
+
     Camera camera_;
     std::unique_ptr<vkn::Buffer> shadowMapCameraBuffer_;
     CameraData shadowMapCameraData_;
+
     int32_t selectedMeshID_;
     int32_t selectedMeshInstanceID_;
     int32_t selectedLightID_;
 
+    bool shadowMapDirtyFlag_;
+    bool showLightIcon_;
+    bool lightDirtyFlag_;
+    bool meshDirtyFlag_;
+
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void CreateTexture(const std::string& filePath, Texture& texture, vk::Format format = vk::Format::eR8G8B8A8Srgb);
-    void CreateDummyTexture(Texture& texture);
     void AddLight();
     void DeleteMesh();
     void DeleteLight();
+    void HandleLightDuplication();
+    void HandleMeshDuplication();
+    void UpdateCamera();
+    void UpdateLight();
+    void UpdateMesh();
+    void UpdateShadowMap();
+    void UpdateDescriptorSet();
 
 public:
     Scene();

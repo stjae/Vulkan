@@ -32,15 +32,16 @@ void vkn::Command::CopyBufferToBuffer(vk::CommandBuffer& commandBuffer, const vk
     commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
 }
 
-void vkn::Command::CopyBufferToImage(vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Image& dstImage, int width, int height)
+void vkn::Command::CopyBufferToImage(vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Image& dstImage, int width, int height, uint32_t layerIndex)
 {
-    vk::ImageSubresourceLayers subResLayer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+    vk::ImageSubresourceLayers subResLayer(vk::ImageAspectFlagBits::eColor, 0, layerIndex, 1);
     vk::BufferImageCopy copyRegion(0, 0, 0, subResLayer, { 0, 0, 0 }, { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 });
     commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
 }
 
 void vkn::Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer,
-                                         Image& image,
+                                         const vk::Image& image,
+                                         vk::DescriptorImageInfo& descriptorImageInfo,
                                          vk::ImageLayout srcImageLayout,
                                          vk::ImageLayout dstImageLayout,
                                          vk::AccessFlags srcAccessFlags,
@@ -54,8 +55,9 @@ void vkn::Command::SetImageMemoryBarrier(vk::CommandBuffer& commandBuffer,
     barrier.dstAccessMask = dstAccessFlags;
     barrier.oldLayout = srcImageLayout;
     barrier.newLayout = dstImageLayout;
-    barrier.image = image.GetBundle().image;
+    barrier.image = image;
     barrier.subresourceRange = subresourceRange;
+    descriptorImageInfo.imageLayout = dstImageLayout;
 
     commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 }

@@ -10,5 +10,4 @@ vkn::CubeMap::CubeMap()
     vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
     imageViewCreateInfo.subresourceRange = subresourceRange;
     imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
-    imageViewCreateInfo.subresourceRange = subresourceRange;
 }
