@@ -48,7 +48,10 @@ class Scene
 
     std::vector<Mesh> meshes_;
     std::vector<LightData> lights_;
-    std::vector<vkn::Image> textureArrays_;
+    std::vector<vkn::Image> albedoTextures_;
+    std::vector<vkn::Image> normalTextures_;
+    std::vector<vkn::Image> metallicTextures_;
+    std::vector<vkn::Image> roughnessTextures_;
     std::vector<Resource> resources_;
 
     Camera camera_;

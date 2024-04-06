@@ -55,8 +55,6 @@ add_executable(${PROJECT_NAME}
         src/scene/shadowMap.cpp
         src/vulkan/cubeMap.cpp
         src/vulkan/cubeMap.h
-        src/vulkan/imageArray.cpp
-        src/vulkan/imageArray.h
 )
 
 include(Dependency.cmake)

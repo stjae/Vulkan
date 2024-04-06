@@ -16,7 +16,10 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
     {
         // prepare textures
         vkn::Image::CreateSampler();
-        textureArrays_.reserve(1000);
+        albedoTextures_.reserve(1000);
+        normalTextures_.reserve(1000);
+        metallicTextures_.reserve(1000);
+        roughnessTextures_.reserve(1000);
         vkn::CreateShadowMapRenderPass();
         shadowMaps_.reserve(1000);
         shadowMaps_.emplace_back();
@@ -73,17 +76,15 @@ void Scene::AddResource(std::string& filePath)
 
 void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials)
 {
-    std::array<std::string, 2> texturePaths;
-
     for (auto& material : materials) {
-        if (modelPath.find_last_of("/\\") != std::string::npos) {
-            texturePaths[0] = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo;
-            texturePaths[1] = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal;
-            // texturePaths[2] = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic;
-            // texturePaths[3] = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness;
-        }
-        textureArrays_.emplace_back();
-        textureArrays_.back().InsertImageArrays(texturePaths, commandBuffer_);
+        albedoTextures_.emplace_back();
+        albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+        normalTextures_.emplace_back();
+        normalTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
+        metallicTextures_.emplace_back();
+        metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+        roughnessTextures_.emplace_back();
+        roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     }
 }
 
@@ -260,12 +261,24 @@ void Scene::UpdateDescriptorSet()
     vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
     descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
 
-    for (int i = 0; i < textureArrays_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &textureArrays_[i].GetBundle().descriptorImageInfo);
+    for (int i = 0; i < albedoTextures_.size(); i++) {
+        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &albedoTextures_[i].GetBundle().descriptorImageInfo);
+    }
+
+    for (int i = 0; i < normalTextures_.size(); i++) {
+        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &normalTextures_[i].GetBundle().descriptorImageInfo);
+    }
+
+    for (int i = 0; i < metallicTextures_.size(); i++) {
+        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 3, i, 1, vk::DescriptorType::eSampledImage, &metallicTextures_[i].GetBundle().descriptorImageInfo);
+    }
+
+    for (int i = 0; i < roughnessTextures_.size(); i++) {
+        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 4, i, 1, vk::DescriptorType::eSampledImage, &roughnessTextures_[i].GetBundle().descriptorImageInfo);
     }
 
     for (int i = 0; i < shadowMaps_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &meshRenderPipeline.shadowCubeMapDescriptors[i]);
+        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 5, i, 1, vk::DescriptorType::eSampledImage, &meshRenderPipeline.shadowCubeMapDescriptors[i]);
     }
 
     vkn::Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);

@@ -57,11 +57,11 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
 
     descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    plusIcon_.InsertImage(PROJECT_DIR "image/icon/plus.png", commandBuffer_);
+    plusIcon_.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, plusIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    lightIcon_.InsertImage(PROJECT_DIR "image/icon/light.png", commandBuffer_);
+    lightIcon_.InsertImage(PROJECT_DIR "image/icon/light.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", commandBuffer_);
+    cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // TODO: for test
@@ -496,8 +496,9 @@ void UI::DrawResourceWindow(Scene& scene)
     }
     ImGui::NextColumn();
 
-    for (auto& resource : scene.resources_) {
-        if (resource.resourceType == RESOURCETYPE::MESH) {
+    for (int i = 0; i < scene.resources_.size(); i++) {
+        ImGui::PushID(i);
+        if (scene.resources_[i].resourceType == RESOURCETYPE::MESH) {
             ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         }
         // else {
@@ -508,11 +509,12 @@ void UI::DrawResourceWindow(Scene& scene)
         if (ImGui::BeginDragDropSource()) {
             // if (resource.resourceType == RESOURCETYPE::TEXTURE)
             // ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
-            ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&resource, sizeof(resource));
+            ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.resources_[i], sizeof(scene.resources_[i]));
             ImGui::EndDragDropSource();
         }
 
-        ImGui::Text("%s", resource.fileName.c_str());
+        ImGui::PopID();
+        ImGui::Text("%s", scene.resources_[i].fileName.c_str());
         ImGui::NextColumn();
     }
     ImGui::Columns(1);

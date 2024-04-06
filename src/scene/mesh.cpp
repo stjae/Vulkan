@@ -150,7 +150,7 @@ void Mesh::CreateSphere(float scale, const char* name, const char* texture)
     vertexContainers_.reserve(1);
     vertexContainers_.emplace_back();
 
-    int division = 32;
+    int division = 128;
     float degree = 360.0f / (float)division;
 
     glm::vec3 startPos{ 0.0f, -1.0f, 0.0f };
@@ -224,12 +224,14 @@ void Mesh::LoadModel(const std::string& modelPath, const char* texturePath, glm:
         for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
             aiString path;
             materials_.emplace_back();
-            scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+            scene->mMaterials[m]->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &path);
             materials_.back().albedo = path.C_Str();
             scene->mMaterials[m]->GetTexture(aiTextureType_NORMALS, 0, &path);
             materials_.back().normal = path.C_Str();
-            // scene->mMaterials[m]->GetTexture(aiTextureType_METALNESS, 0, &path);
-            // materials_.back().metallic = path.C_Str();
+            scene->mMaterials[m]->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path);
+            materials_.back().metallic = path.C_Str();
+            scene->mMaterials[m]->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &path);
+            materials_.back().roughness = path.C_Str();
         }
     }
 

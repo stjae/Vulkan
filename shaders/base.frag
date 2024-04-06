@@ -9,9 +9,12 @@ layout (push_constant) uniform PushConsts
     int lightCount;
 } pushConsts;
 
-layout (set = 1, binding = 0) uniform sampler texSampler;
-layout (set = 1, binding = 1) uniform texture2DArray textures[];
-layout (set = 1, binding = 2) uniform textureCube shadowCubeMaps[];
+layout (set = 1, binding = 0) uniform sampler repeatSampler;
+layout (set = 1, binding = 1) uniform texture2D albedoTex[];
+layout (set = 1, binding = 2) uniform texture2D normalTex[];
+layout (set = 1, binding = 3) uniform texture2D metallicTex[];
+layout (set = 1, binding = 4) uniform texture2D roughnessTex[];
+layout (set = 1, binding = 5) uniform textureCube shadowCubeMaps[];
 
 layout (location = 0) in vec4 inModel;
 layout (location = 1) in vec4 inNormal;
@@ -36,14 +39,14 @@ void main() {
     vec3 normalWorld = inNormal.xyz;
 
     if (pushConsts.materialID > -1) {
-        vec4 texColor = texture(sampler2DArray(textures[pushConsts.materialID], texSampler), vec3(inTexcoord, 0));
+        vec4 texColor = texture(sampler2D(albedoTex[pushConsts.materialID], repeatSampler), inTexcoord);
         if (texColor.a < 1.0) {
             discard;
         }
         if (length(texColor.rgb) != 0.0) {
             albedo = texColor.rgb;
         }
-        vec3 texNormal = texture(sampler2DArray(textures[pushConsts.materialID], texSampler), vec3(inTexcoord, 1)).rgb;
+        vec3 texNormal = texture(sampler2D(normalTex[pushConsts.materialID], repeatSampler), inTexcoord).rgb;
         if (length(texNormal.rgb) != 0.0) {
             texNormal = 2.0 * texNormal - 1.0;
 
@@ -54,6 +57,8 @@ void main() {
             mat3 TBN = mat3(T, B, N);
             normalWorld = TBN * normalize(texNormal);
         }
+        metallic = texture(sampler2D(metallicTex[pushConsts.materialID], repeatSampler), inTexcoord).b;
+        roughness = texture(sampler2D(roughnessTex[pushConsts.materialID], repeatSampler), inTexcoord).g;
     }
 
     vec3 worldModel = inModel.xyz;
@@ -69,7 +74,7 @@ void main() {
 
         vec4 lightPos = light.data[i].model * vec4(light.data[i].pos, 1.0);
         vec3 lightVec = (inModel - lightPos).xyz;
-        float sampledDist = texture(samplerCube(shadowCubeMaps[i], texSampler), lightVec).r;
+        float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);
         float offset = 0.005;
         bool castShadow = distToLight > sampledDist + offset;
@@ -102,8 +107,8 @@ void main() {
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
-    //    outColor.rgb = color;
-    outColor.rgb = normalWorld.rgb;
+    outColor.rgb = color;
+    //    outColor.rgb = normalWorld;
 
     outID.r = meshInstance.meshID;
     outID.g = meshInstance.instanceID;

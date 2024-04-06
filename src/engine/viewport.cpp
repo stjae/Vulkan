@@ -191,7 +191,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue colorClearValue;
     vk::ClearValue idClearValue;
-    colorClearValue.color = { std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } };
+    colorClearValue.color = { std::array<float, 4>{ 0.3f, 0.3f, 0.3f, 1.0f } };
     idClearValue.color = { std::array<int32_t, 4>{ -1, -1, -1, -1 } };
     vk::ClearValue depthClearValue;
     depthClearValue.depthStencil.depth = 1.0f;
@@ -225,23 +225,23 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
     int meshIndex = 0;
     int materialOffset = 0;
     for (const auto& mesh : meshes) {
-        if (mesh.GetInstanceCount() < 1)
-            continue;
-        meshRenderPushConsts.meshIndex = meshIndex;
-        meshRenderPushConsts.lightCount = lightCount;
-        meshIndex++;
-        for (const auto& part : mesh.GetMeshParts()) {
-            commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
-            commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
-            meshRenderPushConsts.materialID = materialOffset + part.materialID;
-            commandBuffer_.pushConstants(
-                meshRenderPipeline.pipelineLayout,
-                vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-                0,
-                sizeof(MeshRenderPushConstants),
-                &meshRenderPushConsts);
-            commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
-            commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+        if (mesh.GetInstanceCount() > 0) {
+            meshRenderPushConsts.meshIndex = meshIndex;
+            meshRenderPushConsts.lightCount = lightCount;
+            meshIndex++;
+            for (const auto& part : mesh.GetMeshParts()) {
+                commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
+                commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
+                meshRenderPushConsts.materialID = materialOffset + part.materialID;
+                commandBuffer_.pushConstants(
+                    meshRenderPipeline.pipelineLayout,
+                    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+                    0,
+                    sizeof(MeshRenderPushConstants),
+                    &meshRenderPushConsts);
+                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
+                commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+            }
         }
         materialOffset += mesh.GetMaterialCount();
     }

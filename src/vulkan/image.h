@@ -26,12 +26,13 @@ public:
     Image();
     void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = vkn::Image::repeatSampler);
     void CreateImageView();
-    void InsertImage(const std::string& filePath, vk::CommandBuffer& commandBuffer);
-    void InsertImageArrays(const std::array<std::string, 2>& filePaths, vk::CommandBuffer& commandBuffer);
+    void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
+    void InsertDummyImage(vk::CommandBuffer& commandBuffer);
     void DestroyImage();
     void DestroyImageView();
     static void CreateSampler();
     ~Image();
+    // void InsertImageArrays(const std::array<std::string, 2>& filePaths, vk::CommandBuffer& commandBuffer);
 
     const ImageBundle& GetBundle() const { return imageBundle_; }
 };
