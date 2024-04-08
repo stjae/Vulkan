@@ -1,25 +1,16 @@
 #include "mesh.h"
 
-Mesh::Mesh(MESHTYPE meshType) : meshID_(meshType), instanceID_(0)
-{
-    switch (meshType) {
-    case MESHTYPE::SQUARE:
-        CreateSquare();
-        break;
-    case MESHTYPE::CUBE:
-        CreateCube();
-        break;
-    case MESHTYPE::SPHERE:
-        CreateSphere();
-        break;
-    }
-}
-
-Mesh::Mesh(uint32_t meshID, const std::string& filePath) : instanceID_(0)
+Mesh::Mesh(int meshID, const std::string& filePath) : instanceID_(0)
 {
     if (!filePath.empty())
         LoadModel(filePath);
     this->meshID_ = meshID;
+}
+
+void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
+{
+    meshInstances_.emplace_back(meshID_, instanceID_, pos, scale);
+    instanceID_++;
 }
 
 void Mesh::CreateSquare(float scale, const char* texturePath)

@@ -35,7 +35,7 @@ struct MeshInstance
     float roughness;
     float padding[3];
 
-    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3& pos, glm::vec3& scale) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
+    MeshInstance(int32_t meshID, int32_t instanceID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(false), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
     {
         model = glm::translate(model, pos);
         model = glm::scale(model, scale);
@@ -77,8 +77,10 @@ class Mesh : public MeshBase
     inline static vk::CommandBuffer commandBuffer_;
 
 public:
-    explicit Mesh(MESHTYPE meshType);
-    Mesh(uint32_t meshID, const std::string& filePath);
+    Mesh() : meshID_(-1), instanceID_(0) {}
+    explicit Mesh(int meshID) : meshID_(meshID), instanceID_(0) {}
+    Mesh(int meshID, const std::string& filePath);
+    void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     const std::string& GetName() { return name_; }
     int32_t GetMeshID() const { return meshID_; }
     size_t GetInstanceCount() const { return meshInstances_.size(); }

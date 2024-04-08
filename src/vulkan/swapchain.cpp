@@ -81,7 +81,7 @@ void vkn::Swapchain::ChooseSurfaceFormat()
     Log(debugMode, fmt::terminal_color::black, "setting swapchain details..");
 
     for (auto& format : supportedFormats_) {
-        if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+        if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             Log(debugMode, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
             Log(debugMode, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
 
@@ -147,7 +147,7 @@ void vkn::Swapchain::ChooseExtent()
 void vkn::Swapchain::CreateRenderPass()
 {
     vk::AttachmentDescription swapchainAttachment;
-    swapchainAttachment.format = vk::Format::eB8G8R8A8Unorm;
+    swapchainAttachment.format = vk::Format::eB8G8R8A8Srgb;
     swapchainAttachment.samples = vk::SampleCountFlagBits::e1;
     swapchainAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     swapchainAttachment.storeOp = vk::AttachmentStoreOp::eStore;

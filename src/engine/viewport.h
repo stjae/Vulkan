@@ -2,6 +2,7 @@
 #define VIEWPORT_H
 
 #include "../common.h"
+#include "../scene/scene.h"
 #include "../vulkan/image.h"
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
@@ -35,7 +36,7 @@ public:
     void DestroyViewportImages();
     void CreateViewportFrameBuffer();
     const int32_t* PickColor(double mouseX, double mouseY);
-    void Draw(const std::vector<Mesh>& meshes, int lightCount);
+    void Draw(const Scene& scene);
     ~Viewport();
 };
 

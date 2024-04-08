@@ -7,7 +7,11 @@ Viewport::Viewport()
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    vkn::CreateMeshRenderPass();
+    vkn::meshRenderPipeline.CreatePipeline();
+    vkn::shadowMapPipeline.CreatePipeline();
+    vkn::envTexPipeline.CreatePipeline();
+    vkn::irradianceCubemapPipeline.CreatePipeline();
+    vkn::skyboxRenderPipeline.CreatePipeline();
 
     CreateViewportImages();
     CreateViewportFrameBuffer();
@@ -72,7 +76,7 @@ void Viewport::CreateViewportFrameBuffer()
     };
 
     vk::FramebufferCreateInfo framebufferInfo;
-    framebufferInfo.renderPass = meshRenderPipeline.renderPass;
+    framebufferInfo.renderPass = vkn::meshRenderPipeline.renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = extent.width;
@@ -156,14 +160,14 @@ const int32_t* Viewport::PickColor(double mouseX, double mouseY)
     vkn::Device::GetBundle().device.getImageSubresourceLayout(colorPicked_.GetBundle().image, &subResource, &subResourceLayout);
 
     const int32_t* data;
-    vkn::Device::GetBundle().device.mapMemory(colorPicked_.memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data);
+    vkn::CheckResult(vkn::Device::GetBundle().device.mapMemory(colorPicked_.memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
     std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
     vkn::Device::GetBundle().device.unmapMemory(colorPicked_.memory.GetMemory());
 
     return data;
 }
 
-void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
+void Viewport::Draw(const Scene& scene)
 {
     vkn::Command::Begin(commandBuffer_);
     vkn::Command::SetImageMemoryBarrier(commandBuffer_,
@@ -184,7 +188,7 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = meshRenderPipeline.renderPass;
+    renderPassInfo.renderPass = vkn::meshRenderPipeline.renderPass;
     renderPassInfo.framebuffer = framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = extent;
@@ -216,34 +220,43 @@ void Viewport::Draw(const std::vector<Mesh>& meshes, int lightCount)
     commandBuffer_.setViewport(0, viewport);
     commandBuffer_.setScissor(0, scissor);
 
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 1, 1, &meshRenderPipeline.descriptorSets[1], 0, nullptr);
-
-    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
-
     vk::DeviceSize vertexOffsets[]{ 0 };
+
+    if (scene.envCubemap_.GetBundle().imageView != VK_NULL_HANDLE) {
+        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipelineLayout, 0, 1, &vkn::skyboxRenderPipeline.descriptorSets[0], 0, nullptr);
+        commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipeline);
+
+        commandBuffer_.bindVertexBuffers(0, 1, &scene.envCube_.vertexBuffers[0]->GetBundle().buffer, vertexOffsets);
+        commandBuffer_.bindIndexBuffer(scene.envCube_.indexBuffers[0]->GetBundle().buffer, 0, vk::IndexType::eUint32);
+        commandBuffer_.drawIndexed(scene.envCube_.GetIndicesCount(0), scene.envCube_.GetInstanceCount(), 0, 0, 0);
+    }
+
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipelineLayout, 1, 1, &vkn::meshRenderPipeline.descriptorSets[1], 0, nullptr);
+    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipeline);
+
     // not the actual index
     int meshIndex = 0;
     int materialOffset = 0;
-    for (const auto& mesh : meshes) {
+    for (const auto& mesh : scene.meshes_) {
         if (mesh.GetInstanceCount() > 0) {
             meshRenderPushConsts.meshIndex = meshIndex;
-            meshRenderPushConsts.lightCount = lightCount;
+            meshRenderPushConsts.lightCount = (int)scene.lights_.size();
             meshIndex++;
             for (const auto& part : mesh.GetMeshParts()) {
                 commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
                 commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
                 meshRenderPushConsts.materialID = materialOffset + part.materialID;
                 commandBuffer_.pushConstants(
-                    meshRenderPipeline.pipelineLayout,
+                    vkn::meshRenderPipeline.pipelineLayout,
                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                     0,
                     sizeof(MeshRenderPushConstants),
                     &meshRenderPushConsts);
-                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
+                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipelineLayout, 0, 1, &vkn::meshRenderPipeline.descriptorSets[0], 0, nullptr);
                 commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
             }
         }
-        materialOffset += mesh.GetMaterialCount();
+        materialOffset += (int)mesh.GetMaterialCount();
     }
 
     commandBuffer_.endRenderPass();
@@ -272,26 +285,11 @@ Viewport::~Viewport()
 {
     vkn::Device::GetBundle().device.destroyFramebuffer(framebuffer);
     vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
-    vkn::Device::GetBundle().device.destroyPipelineLayout(meshRenderPipeline.pipelineLayout);
-    vkn::Device::GetBundle().device.destroyPipelineLayout(shadowMapPipeline.pipelineLayout);
-    vkn::Device::GetBundle().device.destroyPipeline(meshRenderPipeline.pipeline);
-    vkn::Device::GetBundle().device.destroyPipeline(shadowMapPipeline.pipeline);
-    vkn::Device::GetBundle().device.destroyRenderPass(meshRenderPipeline.renderPass);
-    vkn::Device::GetBundle().device.destroyRenderPass(shadowMapPipeline.renderPass);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::repeatSampler);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::clampSampler);
-    for (auto& descriptorSetLayout : meshRenderPipeline.descriptorSetLayouts)
-        vkn::Device::GetBundle().device.destroyDescriptorSetLayout(descriptorSetLayout);
-    for (auto& descriptorSetLayout : shadowMapPipeline.descriptorSetLayouts)
-        vkn::Device::GetBundle().device.destroyDescriptorSetLayout(descriptorSetLayout);
-    vkn::Device::GetBundle().device.destroyDescriptorPool(meshRenderPipeline.descriptorPool);
-    vkn::Device::GetBundle().device.destroyDescriptorPool(shadowMapPipeline.descriptorPool);
-    if (meshRenderPipeline.shader.vertexShaderModule)
-        vkn::Device::GetBundle().device.destroyShaderModule(meshRenderPipeline.shader.vertexShaderModule);
-    if (shadowMapPipeline.shader.vertexShaderModule)
-        vkn::Device::GetBundle().device.destroyShaderModule(shadowMapPipeline.shader.vertexShaderModule);
-    if (meshRenderPipeline.shader.fragmentShaderModule)
-        vkn::Device::GetBundle().device.destroyShaderModule(meshRenderPipeline.shader.fragmentShaderModule);
-    if (shadowMapPipeline.shader.fragmentShaderModule)
-        vkn::Device::GetBundle().device.destroyShaderModule(shadowMapPipeline.shader.fragmentShaderModule);
+    vkn::meshRenderPipeline.~MeshRenderPipeline();
+    vkn::shadowMapPipeline.~ShadowMapPipeline();
+    vkn::envTexPipeline.~EnvTexPipeline();
+    vkn::irradianceCubemapPipeline.~IrradianceCubemapPipeline();
+    vkn::skyboxRenderPipeline.~SkyboxRenderPipeline();
 }

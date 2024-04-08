@@ -132,6 +132,61 @@ void vkn::Image::InsertDummyImage(vk::CommandBuffer& commandBuffer)
     vkn::Command::Submit(&commandBuffer, 1);
 }
 
+void vkn::Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
+{
+    stbi_set_flip_vertically_on_load(true);
+    int width = 0, height = 0, channel = 0;
+    vk::DeviceSize imageSize = 0;
+    float* imageData = nullptr;
+
+    imageData = stbi_loadf(filePath.c_str(), &width, &height, &channel, STBI_rgb_alpha);
+    imageSize = width * height * 16;
+
+    if (!imageData) {
+        spdlog::error("failed to load texture from [{}]", filePath.c_str());
+        return;
+    }
+    spdlog::info("load texture from [{}]", filePath.c_str());
+
+    BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    Buffer stagingBuffer(bufferInput);
+    stagingBuffer.Copy(imageData);
+
+    stbi_image_free(imageData);
+
+    CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::clampSampler);
+    CreateImageView();
+
+    Command::Begin(commandBuffer);
+    // Set texture image layout to transfer dst optimal
+    Command::SetImageMemoryBarrier(commandBuffer,
+                                   imageBundle_.image,
+                                   imageBundle_.descriptorImageInfo,
+                                   vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal,
+                                   {},
+                                   vk::AccessFlagBits::eTransferWrite,
+                                   vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eTransfer);
+    // Copy texture image from staging buffer
+    vkn::Command::CopyBufferToImage(commandBuffer,
+                                    stagingBuffer.GetBundle().buffer,
+                                    imageBundle_.image, width,
+                                    height);
+    // Set texture image layout to shader read only
+    vkn::Command::SetImageMemoryBarrier(commandBuffer,
+                                        imageBundle_.image,
+                                        imageBundle_.descriptorImageInfo,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
+    commandBuffer.end();
+    vkn::Command::Submit(&commandBuffer, 1);
+}
+
 void vkn::Image::CreateSampler()
 {
     vk::SamplerCreateInfo samplerInfo;

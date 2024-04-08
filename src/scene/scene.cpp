@@ -20,31 +20,37 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         normalTextures_.reserve(1000);
         metallicTextures_.reserve(1000);
         roughnessTextures_.reserve(1000);
-        vkn::CreateShadowMapRenderPass();
         shadowMaps_.reserve(1000);
         shadowMaps_.emplace_back();
-        shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+        shadowMaps_.back().CreateShadowMap(commandBuffer_);
     }
 
     {
         // prepare buffer, descriptor
         vkn::BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         shadowMapCameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-        shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::shadowMapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
         bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-        shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
     }
 
     {
         // init scene
         meshes_.emplace_back(MESHTYPE::SQUARE);
+        meshes_.back().CreateSquare();
         meshes_.back().CreateBuffers();
         meshes_.emplace_back(MESHTYPE::CUBE);
+        meshes_.back().CreateCube();
         meshes_.back().CreateBuffers();
         meshes_.emplace_back(MESHTYPE::SPHERE);
+        meshes_.back().CreateSphere();
         meshes_.back().CreateBuffers();
+        envCube_.CreateCube();
+        envCube_.CreateBuffers();
+        envCube_.meshInstances_.emplace_back(0, 0);
+
         // AddMeshInstance(MESHTYPE::CUBE, glm::vec3(0.0f, -4.0f, 0.0f), glm::vec3(10.0f, 0.1f, 10.0f));
         // AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), glm::vec3(0.3f));
         lights_.emplace_back(glm::vec3(0.0f, 1.2f, 0.5f));
@@ -90,8 +96,7 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
 
 void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 {
-    meshes_[id].meshInstances_.emplace_back(id, meshes_[id].instanceID_, pos, scale);
-    meshes_[id].instanceID_++;
+    meshes_[id].AddInstance(pos, scale);
     meshDirtyFlag_ = true;
 }
 
@@ -111,7 +116,7 @@ void Scene::AddLight()
 {
     lights_.emplace_back();
     shadowMaps_.emplace_back();
-    shadowMaps_.back().PrepareShadowCubeMap(commandBuffer_);
+    shadowMaps_.back().CreateShadowMap(commandBuffer_);
     lightDirtyFlag_ = true;
 }
 
@@ -150,14 +155,10 @@ size_t Scene::GetInstanceCount()
     return instanceCount;
 }
 
-void Scene::SelectByColorID(Viewport& viewport)
+void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 {
-    double mouseX = 0;
-    double mouseY = 0;
-    glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
-    const int32_t* colorID = viewport.PickColor(mouseX, mouseY);
-    selectedMeshID_ = colorID[0];
-    selectedMeshInstanceID_ = colorID[1];
+    selectedMeshID_ = meshID;
+    selectedMeshInstanceID_ = instanceID;
 }
 
 void Scene::HandleLightDuplication()
@@ -202,11 +203,11 @@ void Scene::UpdateLight()
         lightDataBuffer_.reset();
         lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
         lightDataBuffer_->Copy(lights_.data());
-        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-        shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::shadowMapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
         std::vector<vk::WriteDescriptorSet> light = {
-            { meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor },
-            { shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowMapPipeline.lightDescriptor }
+            { vkn::meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &vkn::meshRenderPipeline.lightDescriptor },
+            { vkn::shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &vkn::shadowMapPipeline.lightDescriptor }
         };
         vkn::Device::GetBundle().device.updateDescriptorSets(light, nullptr);
         lightDirtyFlag_ = false;
@@ -229,11 +230,11 @@ void Scene::UpdateMesh()
 
             bufferInfos.emplace_back(mesh.meshInstanceBuffer_->GetBundle().descriptorBufferInfo);
         }
-        meshRenderPipeline.meshDescriptors = bufferInfos;
-        shadowMapPipeline.meshDescriptors = bufferInfos;
+        vkn::meshRenderPipeline.meshDescriptors = bufferInfos;
+        vkn::shadowMapPipeline.meshDescriptors = bufferInfos;
         std::vector<vk::WriteDescriptorSet> mesh = {
-            { meshRenderPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
-            { shadowMapPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() }
+            { vkn::meshRenderPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
+            { vkn::shadowMapPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() }
         };
         vkn::Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
         meshDirtyFlag_ = false;
@@ -258,27 +259,38 @@ void Scene::UpdateDescriptorSet()
 {
     std::vector<vk::WriteDescriptorSet> descriptorWrites;
 
+    descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &vkn::meshRenderPipeline.cameraDescriptor);
+    descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &vkn::meshRenderPipeline.lightDescriptor);
+
     vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
-    descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
+    descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
 
     for (int i = 0; i < albedoTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &albedoTextures_[i].GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &albedoTextures_[i].GetBundle().descriptorImageInfo);
     }
 
     for (int i = 0; i < normalTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &normalTextures_[i].GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &normalTextures_[i].GetBundle().descriptorImageInfo);
     }
 
     for (int i = 0; i < metallicTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 3, i, 1, vk::DescriptorType::eSampledImage, &metallicTextures_[i].GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 3, i, 1, vk::DescriptorType::eSampledImage, &metallicTextures_[i].GetBundle().descriptorImageInfo);
     }
 
     for (int i = 0; i < roughnessTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 4, i, 1, vk::DescriptorType::eSampledImage, &roughnessTextures_[i].GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 4, i, 1, vk::DescriptorType::eSampledImage, &roughnessTextures_[i].GetBundle().descriptorImageInfo);
     }
 
     for (int i = 0; i < shadowMaps_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 5, i, 1, vk::DescriptorType::eSampledImage, &meshRenderPipeline.shadowCubeMapDescriptors[i]);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 5, i, 1, vk::DescriptorType::eSampledImage, &vkn::meshRenderPipeline.shadowCubeMapDescriptors[i]);
+    }
+
+    descriptorWrites.emplace_back(vkn::shadowMapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &vkn::shadowMapPipeline.cameraDescriptor);
+    descriptorWrites.emplace_back(vkn::shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &vkn::shadowMapPipeline.lightDescriptor);
+
+    if (envCubemap_.GetBundle().imageView != VK_NULL_HANDLE) {
+        descriptorWrites.emplace_back(vkn::skyboxRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &vkn::meshRenderPipeline.cameraDescriptor);
+        descriptorWrites.emplace_back(vkn::skyboxRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_.GetBundle().descriptorImageInfo);
     }
 
     vkn::Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);

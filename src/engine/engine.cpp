@@ -8,9 +8,6 @@ Engine::Engine()
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    vkn::SetUpDescriptors();
-    vkn::CreatePipeline();
-
     imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
 }
 
@@ -28,9 +25,7 @@ void Engine::Render()
 {
     scene_->Update();
 
-    int w, h;
-
-    vkn::Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX);
+    vkn::CheckResult(vkn::Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX));
 
     auto waitFrameImage = vkn::Device::GetBundle().device.acquireNextImageKHR(vkn::Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
 
@@ -40,12 +35,13 @@ void Engine::Render()
         return;
     }
 
-    vkn::Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight);
+    vkn::CheckResult(vkn::Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight));
 
     swapchain_.Draw(frameIndex_, UI::imDrawData);
-    viewport_.Draw(scene_->GetMeshes(), scene_->GetLightCount());
+    viewport_.Draw(*scene_);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
-        scene_->SelectByColorID(viewport_);
+        const int32_t* colorID = viewport_.PickColor(Window::GetMousePosX(), Window::GetMousePosY());
+        scene_->SelectByColorID(colorID[0], colorID[1]);
     }
     imgui_.AcceptDragDrop(viewport_, *scene_, frameIndex_);
     swapchain_.Submit(frameIndex_);

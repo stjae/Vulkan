@@ -43,6 +43,7 @@ void main() {
         if (texColor.a < 1.0) {
             discard;
         }
+        texColor.rgb = pow(texColor.rgb, vec3(2.2));
         if (length(texColor.rgb) != 0.0) {
             albedo = texColor.rgb;
         }
@@ -108,7 +109,6 @@ void main() {
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
     outColor.rgb = color;
-    //    outColor.rgb = normalWorld;
 
     outID.r = meshInstance.meshID;
     outID.g = meshInstance.instanceID;

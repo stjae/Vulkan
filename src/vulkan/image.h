@@ -28,6 +28,7 @@ public:
     void CreateImageView();
     void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
     void InsertDummyImage(vk::CommandBuffer& commandBuffer);
+    void InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
     void DestroyImage();
     void DestroyImageView();
     static void CreateSampler();

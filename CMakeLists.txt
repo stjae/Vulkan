@@ -51,10 +51,12 @@ add_executable(${PROJECT_NAME}
         src/vulkan/image.h src/vulkan/image.cpp
         src/engine/viewport.h
         src/engine/viewport.cpp
-        src/scene/shadowMap.h
-        src/scene/shadowMap.cpp
-        src/vulkan/cubeMap.cpp
-        src/vulkan/cubeMap.h
+        src/scene/shadowCubemap.h
+        src/scene/shadowCubemap.cpp
+        src/vulkan/cubemap.cpp
+        src/vulkan/cubemap.h
+        src/scene/envCubemap.cpp
+        src/scene/envCubemap.h
 )
 
 include(Dependency.cmake)

@@ -6,8 +6,8 @@
 #include "camera.h"
 #include "mesh.h"
 #include "light.h"
-#include "shadowMap.h"
-#include "../engine/viewport.h"
+#include "shadowCubemap.h"
+#include "envCubemap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
 #include "../vulkan/pipeline.h"
@@ -27,12 +27,14 @@ struct Resource
     RESOURCETYPE resourceType;
     void* resource;
 
-    Resource(std::string& path);
+    explicit Resource(std::string& path);
 };
 
 class Scene
 {
     friend class UI;
+    friend class Viewport;
+    friend class EnvCubemap;
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
@@ -40,13 +42,14 @@ class Scene
     std::unique_ptr<vkn::Buffer> meshInstanceDataBuffer_;
     std::unique_ptr<vkn::Buffer> lightDataBuffer_;
 
-    std::vector<ShadowMap> shadowMaps_;
-
-    std::unique_ptr<vkn::Image> diffuseIBL_;
-    std::unique_ptr<vkn::Image> specularIBL_;
-    std::unique_ptr<vkn::Image> brdf_;
+    std::vector<ShadowCubemap> shadowMaps_;
 
     std::vector<Mesh> meshes_;
+    Mesh envCube_;
+    vkn::Image envMap_;
+    EnvCubemap envCubemap_;
+    EnvCubemap irradianceCubemap_;
+
     std::vector<LightData> lights_;
     std::vector<vkn::Image> albedoTextures_;
     std::vector<vkn::Image> normalTextures_;
@@ -85,11 +88,11 @@ public:
     Scene();
     void Update();
     size_t GetInstanceCount();
+    size_t GetLightCount() { return lights_.size(); }
     const std::vector<Mesh>& GetMeshes() { return meshes_; }
     MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
     MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
-    int GetLightCount() { return lights_.size(); }
-    void SelectByColorID(Viewport& viewport);
+    void SelectByColorID(int32_t meshID, int32_t instanceID);
     ~Scene();
 };
 
