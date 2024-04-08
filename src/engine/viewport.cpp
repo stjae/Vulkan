@@ -195,7 +195,7 @@ void Viewport::Draw(const Scene& scene)
     renderPassInfo.renderArea = renderArea;
     vk::ClearValue colorClearValue;
     vk::ClearValue idClearValue;
-    colorClearValue.color = { std::array<float, 4>{ 0.3f, 0.3f, 0.3f, 1.0f } };
+    colorClearValue.color = { std::array<float, 4>{ 0.05f, 0.05f, 0.05f, 1.0f } };
     idClearValue.color = { std::array<int32_t, 4>{ -1, -1, -1, -1 } };
     vk::ClearValue depthClearValue;
     depthClearValue.depthStencil.depth = 1.0f;
@@ -222,7 +222,7 @@ void Viewport::Draw(const Scene& scene)
 
     vk::DeviceSize vertexOffsets[]{ 0 };
 
-    if (scene.envCubemap_.GetBundle().imageView != VK_NULL_HANDLE) {
+    if (scene.envCubemap_ != nullptr) {
         commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipelineLayout, 0, 1, &vkn::skyboxRenderPipeline.descriptorSets[0], 0, nullptr);
         commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipeline);
 
@@ -233,6 +233,8 @@ void Viewport::Draw(const Scene& scene)
 
     commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipelineLayout, 1, 1, &vkn::meshRenderPipeline.descriptorSets[1], 0, nullptr);
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipeline);
+
+    meshRenderPushConsts.useIBL = scene.envCubemap_ == nullptr ? -1 : 1;
 
     // not the actual index
     int meshIndex = 0;

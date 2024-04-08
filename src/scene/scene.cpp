@@ -53,7 +53,7 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 
         // AddMeshInstance(MESHTYPE::CUBE, glm::vec3(0.0f, -4.0f, 0.0f), glm::vec3(10.0f, 0.1f, 10.0f));
         // AddMeshInstance(MESHTYPE::SPHERE, glm::vec3(1.0f, -1.0f, 0.0f), glm::vec3(0.3f));
-        lights_.emplace_back(glm::vec3(0.0f, 1.2f, 0.5f));
+        // lights_.emplace_back(glm::vec3(0.0f, 1.2f, 0.5f));
     }
 }
 
@@ -118,6 +118,21 @@ void Scene::AddLight()
     shadowMaps_.emplace_back();
     shadowMaps_.back().CreateShadowMap(commandBuffer_);
     lightDirtyFlag_ = true;
+}
+
+void Scene::AddEnvironmentMap()
+{
+    std::string hdriPath = LaunchNfd({ "HDRI", "hdr" });
+    if (!hdriPath.empty()) {
+        envMap_ = std::make_unique<vkn::Image>();
+        envMap_->InsertHDRImage(hdriPath, vk::Format::eR32G32B32A32Sfloat, commandBuffer_);
+        envCubemap_ = std::make_unique<EnvCubemap>();
+        envCubemap_->CreateEnvCubemap(512, vkn::envTexPipeline, commandBuffer_);
+        envCubemap_->DrawEnvCubemap(envCube_, *envMap_, vkn::envTexPipeline, commandBuffer_);
+        irradianceCubemap_ = std::make_unique<EnvCubemap>();
+        irradianceCubemap_->CreateEnvCubemap(32, vkn::irradianceCubemapPipeline, commandBuffer_);
+        irradianceCubemap_->DrawEnvCubemap(envCube_, *envCubemap_, vkn::irradianceCubemapPipeline, commandBuffer_);
+    }
 }
 
 void Scene::DeleteMesh()
@@ -288,9 +303,10 @@ void Scene::UpdateDescriptorSet()
     descriptorWrites.emplace_back(vkn::shadowMapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &vkn::shadowMapPipeline.cameraDescriptor);
     descriptorWrites.emplace_back(vkn::shadowMapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &vkn::shadowMapPipeline.lightDescriptor);
 
-    if (envCubemap_.GetBundle().imageView != VK_NULL_HANDLE) {
+    if (envCubemap_ != nullptr) {
         descriptorWrites.emplace_back(vkn::skyboxRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &vkn::meshRenderPipeline.cameraDescriptor);
-        descriptorWrites.emplace_back(vkn::skyboxRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_.GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::skyboxRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
+        descriptorWrites.emplace_back(vkn::meshRenderPipeline.descriptorSets[1], 6, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
     }
 
     vkn::Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);

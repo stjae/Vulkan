@@ -458,23 +458,16 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     if (ImGui::BeginTabItem("IBL")) {
 
         float panelSize = ImGui::GetContentRegionAvail().x;
-        int columnCount = std::max(1, (int)(panelSize / buttonSize));
-
-        ImGui::Columns(columnCount, 0, false);
-
         if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-            std::string hdriPath = LaunchNfd({ "HDRI", "hdr" });
-            if (!hdriPath.empty()) {
-                scene.envMap_.InsertHDRImage(hdriPath, vk::Format::eR32G32B32A32Sfloat, commandBuffer_);
-                scene.envCubemap_.CreateEnvCubemap(512, vkn::envTexPipeline, commandBuffer_);
-                scene.envCubemap_.DrawEnvCubemap(scene.envCube_, scene.envMap_, vkn::envTexPipeline, commandBuffer_);
-                scene.irradianceCubemap_.CreateEnvCubemap(32, vkn::irradianceCubemapPipeline, commandBuffer_);
-                scene.irradianceCubemap_.DrawEnvCubemap(scene.envCube_, scene.envCubemap_, vkn::irradianceCubemapPipeline, commandBuffer_);
+            scene.AddEnvironmentMap();
+        }
+        if (scene.envCubemap_ != nullptr) {
+            if (ImGui::Button("Remove")) {
+                scene.envMap_.reset();
+                scene.envCubemap_.reset();
+                scene.irradianceCubemap_.reset();
             }
         }
-        ImGui::Text("HDRI");
-        ImGui::NextColumn();
-        ImGui::Columns(1);
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

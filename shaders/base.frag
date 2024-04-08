@@ -7,6 +7,7 @@ layout (push_constant) uniform PushConsts
     int meshIndex;
     int materialID;
     int lightCount;
+    int useIBL;
 } pushConsts;
 
 layout (set = 1, binding = 0) uniform sampler repeatSampler;
@@ -15,6 +16,7 @@ layout (set = 1, binding = 2) uniform texture2D normalTex[];
 layout (set = 1, binding = 3) uniform texture2D metallicTex[];
 layout (set = 1, binding = 4) uniform texture2D roughnessTex[];
 layout (set = 1, binding = 5) uniform textureCube shadowCubeMaps[];
+layout (set = 1, binding = 6) uniform samplerCube irradianceCubemap;
 
 layout (location = 0) in vec4 inModel;
 layout (location = 1) in vec4 inNormal;
@@ -103,7 +105,20 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 ambient;
+    if (pushConsts.useIBL > 0) {
+
+        vec3 kS = FresnelSchlick(max(dot(N, V), 0.0), F0, roughness);
+        vec3 kD = 1.0 - kS;
+        kD *= 1.0 - metallic;
+        vec3 irradiance = texture(irradianceCubemap, N).rgb;
+        vec3 diffuse = irradiance * albedo;
+        ambient = (kD * diffuse) * ao;
+    } else {
+
+        ambient = vec3(0.03) * albedo * ao;
+    }
+
     vec3 color = ambient + Lo;
 
     color = color / (color + vec3(1.0));

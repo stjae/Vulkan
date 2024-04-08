@@ -36,6 +36,7 @@ void vkn::Image::CreateImageView()
 
 void vkn::Image::InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
 {
+    stbi_set_flip_vertically_on_load(false);
     int width = 0, height = 0, channel = 0;
     vk::DeviceSize imageSize = 0;
     stbi_uc* imageData = nullptr;

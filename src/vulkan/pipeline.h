@@ -15,6 +15,7 @@ struct MeshRenderPushConstants
     int meshIndex;
     int materialID;
     int lightCount;
+    int useIBL;
 } inline meshRenderPushConsts;
 
 struct ShadowMapPushConstants

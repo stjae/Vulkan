@@ -46,9 +46,9 @@ class Scene
 
     std::vector<Mesh> meshes_;
     Mesh envCube_;
-    vkn::Image envMap_;
-    EnvCubemap envCubemap_;
-    EnvCubemap irradianceCubemap_;
+    std::unique_ptr<vkn::Image> envMap_;
+    std::unique_ptr<EnvCubemap> envCubemap_;
+    std::unique_ptr<EnvCubemap> irradianceCubemap_;
 
     std::vector<LightData> lights_;
     std::vector<vkn::Image> albedoTextures_;
@@ -74,6 +74,7 @@ class Scene
     void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddLight();
+    void AddEnvironmentMap();
     void DeleteMesh();
     void DeleteLight();
     void HandleLightDuplication();
