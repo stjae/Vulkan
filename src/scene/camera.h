@@ -4,7 +4,7 @@
 #include "../common.h"
 #include "../window.h"
 #include "../vulkan/buffer.h"
-#include "../vulkan/pipeline.h"
+#include "../pipeline/meshRender.h"
 #include "../../imgui/imgui.h"
 
 struct CameraData

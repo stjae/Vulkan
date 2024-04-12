@@ -5,14 +5,16 @@
 #include "light.h"
 #include "mesh.h"
 #include "../vulkan/cubemap.h"
-#include "../vulkan/pipeline.h"
+#include "../pipeline/meshRender.h"
+#include "../pipeline/shadowCubemap.h"
 #include "../vulkan/command.h"
 
 inline static uint32_t shadowCubemapSize = 1024;
 
 class ShadowCubemap : public vkn::Cubemap
 {
-    vkn::Image depthImage;
+    ShadowMapPushConstants pushConstants_;
+    vkn::Image depthImage_;
 
     void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<Mesh>& meshes);
     void CreateFramebuffer(vk::CommandBuffer& commandBuffer);

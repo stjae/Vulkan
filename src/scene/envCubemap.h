@@ -10,14 +10,14 @@
 
 class EnvCubemap : public vkn::Cubemap
 {
-    uint32_t cubemapSize_;
+    CubemapPushConstants pushConstants_;
 
     void CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
-    void DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
     void UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap);
+    void DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
 
 public:
-    void CreateEnvCubemap(uint32_t cubemapSize, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
+    void CreateEnvCubemap(uint32_t cubemapSize, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
     void DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
 };
 

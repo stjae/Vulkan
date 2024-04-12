@@ -14,7 +14,7 @@ protected:
 
 public:
     Cubemap();
-    void CreateCubemap(uint32_t imageSize, vk::Format format, vk::CommandBuffer& commandBuffer);
+    void CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsageFlags usage, vk::CommandBuffer& commandBuffer);
     ~Cubemap();
 };
 } // namespace vkn

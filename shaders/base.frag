@@ -16,7 +16,10 @@ layout (set = 1, binding = 2) uniform texture2D normalTex[];
 layout (set = 1, binding = 3) uniform texture2D metallicTex[];
 layout (set = 1, binding = 4) uniform texture2D roughnessTex[];
 layout (set = 1, binding = 5) uniform textureCube shadowCubeMaps[];
-layout (set = 1, binding = 6) uniform samplerCube irradianceCubemap;
+
+layout (set = 2, binding = 0) uniform samplerCube irradianceCubemap;
+layout (set = 2, binding = 1) uniform samplerCube prefilteredCubemap;
+layout (set = 2, binding = 2) uniform sampler2D brdfLUT;
 
 layout (location = 0) in vec4 inModel;
 layout (location = 1) in vec4 inNormal;
@@ -67,6 +70,7 @@ void main() {
     vec3 worldModel = inModel.xyz;
     vec3 N = normalWorld;
     vec3 V = normalize(camera.pos - worldModel);
+    vec3 R = reflect(-V, N);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -108,12 +112,21 @@ void main() {
     vec3 ambient;
     if (pushConsts.useIBL > 0) {
 
-        vec3 kS = FresnelSchlick(max(dot(N, V), 0.0), F0, roughness);
+        vec3 F = FresnelSchlick(max(dot(N, V), 0.0), F0, roughness);
+        vec3 kS = F;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
+
         vec3 irradiance = texture(irradianceCubemap, N).rgb;
         vec3 diffuse = irradiance * albedo;
-        ambient = (kD * diffuse) * ao;
+
+        const float MAX_REFLECTION_LOD = 4.0;
+        vec3 prefilteredColor = textureLod(prefilteredCubemap, R, roughness * MAX_REFLECTION_LOD).rgb;
+        vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+        vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+        ambient = (kD * diffuse + specular) * ao;
+
     } else {
 
         ambient = vec3(0.03) * albedo * ao;

@@ -57,6 +57,22 @@ add_executable(${PROJECT_NAME}
         src/vulkan/cubemap.h
         src/scene/envCubemap.cpp
         src/scene/envCubemap.h
+        src/pipeline/meshRender.cpp
+        src/pipeline/meshRender.h
+        src/pipeline/shadowCubemap.cpp
+        src/pipeline/shadowCubemap.h
+        src/pipeline/envCubemap.cpp
+        src/pipeline/envCubemap.h
+        src/pipeline/irradianceCubemap.cpp
+        src/pipeline/irradianceCubemap.h
+        src/pipeline/skyboxRender.cpp
+        src/pipeline/skyboxRender.h
+        src/pipeline/prefilteredCubemap.cpp
+        src/pipeline/prefilteredCubemap.h
+        src/scene/prefilteredCubemap.cpp
+        src/scene/prefilteredCubemap.h
+        src/pipeline/brdfLut.cpp
+        src/pipeline/brdfLut.h
 )
 
 include(Dependency.cmake)

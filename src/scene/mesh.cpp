@@ -17,10 +17,14 @@ void Mesh::CreateSquare(float scale, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
 
-    std::vector<glm::vec3> position = { { -1.0f, 0.0f, -1.0f },
-                                        { -1.0f, 0.0f, 1.0f },
-                                        { 1.0f, 0.0f, 1.0f },
-                                        { 1.0f, 0.0f, -1.0f } };
+    // std::vector<glm::vec3> position = { { -1.0f, 0.0f, -1.0f },
+    //                                     { -1.0f, 0.0f, 1.0f },
+    //                                     { 1.0f, 0.0f, 1.0f },
+    //                                     { 1.0f, 0.0f, -1.0f } };
+    std::vector<glm::vec3> position = { { -1.0f, 1.0f, 0.0f },
+                                        { -1.0f, -1.0f, 0.0f },
+                                        { 1.0f, -1.0f, 0.0f },
+                                        { 1.0f, 1.0f, 0.0f } };
 
     std::vector<glm::vec3> normal = { { 0.0f, 1.0f, 0.0f },
                                       { 0.0f, 1.0f, 0.0f },

@@ -8,9 +8,14 @@
 #include "light.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
+#include "prefilteredCubemap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
-#include "../vulkan/pipeline.h"
+#include "../pipeline/envCubemap.h"
+#include "../pipeline/irradianceCubemap.h"
+#include "../pipeline/prefilteredCubemap.h"
+#include "../pipeline/brdfLut.h"
+#include "../pipeline/skyboxRender.h"
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
@@ -34,7 +39,6 @@ class Scene
 {
     friend class UI;
     friend class Viewport;
-    friend class EnvCubemap;
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
@@ -49,6 +53,9 @@ class Scene
     std::unique_ptr<vkn::Image> envMap_;
     std::unique_ptr<EnvCubemap> envCubemap_;
     std::unique_ptr<EnvCubemap> irradianceCubemap_;
+    std::unique_ptr<PrefilteredCubemap> prefilteredCubemap_;
+    Mesh brdfLutSquare_;
+    vkn::Image brdfLut_;
 
     std::vector<LightData> lights_;
     std::vector<vkn::Image> albedoTextures_;

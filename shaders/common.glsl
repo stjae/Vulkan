@@ -1,4 +1,4 @@
-#include "brdf.glsl"
+#include "pbr.glsl"
 
 struct MeshInstanceData
 {

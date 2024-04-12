@@ -4,7 +4,7 @@ Camera::Camera()
 {
     vkn::BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     cameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-    vkn::meshRenderPipeline.cameraDescriptor = cameraBuffer_->GetBundle().descriptorBufferInfo;
+    meshRenderPipeline.cameraDescriptor = cameraBuffer_->GetBundle().descriptorBufferInfo;
 }
 
 void Camera::SetCameraControl()

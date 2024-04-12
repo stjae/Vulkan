@@ -3,6 +3,8 @@
 
 #include "buffer.h"
 #include "command.h"
+#include "pipeline.h"
+#include "../scene/mesh.h"
 
 namespace vkn {
 struct ImageBundle
@@ -13,6 +15,9 @@ struct ImageBundle
 };
 class Image
 {
+private:
+    vk::Framebuffer framebuffer_;
+
 protected:
     ImageBundle imageBundle_;
 
@@ -24,8 +29,10 @@ public:
     inline static vk::Sampler clampSampler;
 
     Image();
-    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = vkn::Image::repeatSampler);
+    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = repeatSampler);
     void CreateImageView();
+    void CreateFramebuffer(const Pipeline& pipeline);
+    void Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer);
     void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
     void InsertDummyImage(vk::CommandBuffer& commandBuffer);
     void InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
@@ -33,7 +40,6 @@ public:
     void DestroyImageView();
     static void CreateSampler();
     ~Image();
-    // void InsertImageArrays(const std::array<std::string, 2>& filePaths, vk::CommandBuffer& commandBuffer);
 
     const ImageBundle& GetBundle() const { return imageBundle_; }
 };

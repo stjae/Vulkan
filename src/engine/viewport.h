@@ -6,7 +6,12 @@
 #include "../vulkan/image.h"
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
-#include "../vulkan/pipeline.h"
+#include "../pipeline/meshRender.h"
+#include "../pipeline/shadowCubemap.h"
+#include "../pipeline/envCubemap.h"
+#include "../pipeline/irradianceCubemap.h"
+#include "../pipeline/brdfLut.h"
+#include "../pipeline/skyboxRender.h"
 #include "../scene/mesh.h"
 
 class Viewport

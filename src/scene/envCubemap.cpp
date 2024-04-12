@@ -1,10 +1,11 @@
 #include "envCubemap.h"
 
-void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    cubemapSize_ = cubemapSize;
+    imageSize_ = cubemapSize;
 
-    CreateCubemap(cubemapSize_, vk::Format::eR32G32B32A32Sfloat, commandBuffer);
+    CreateCubemap(imageSize_, vk::Format::eR32G32B32A32Sfloat, usage, commandBuffer);
+
     for (int i = 0; i < 6; i++) {
         vkn::Command::Begin(commandBuffer);
         imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
@@ -20,13 +21,14 @@ void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, const vkn::Pipeline& cub
         commandBuffer.end();
         vkn::Command::Submit(&commandBuffer, 1);
     }
+
     CreateFramebuffer(cubemapPipeline, commandBuffer);
 }
 
 void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     vk::ImageView attachment;
-    vk::FramebufferCreateInfo frameBufferCI({}, cubemapPipeline.renderPass, 1, &attachment, cubemapSize_, cubemapSize_, 1);
+    vk::FramebufferCreateInfo frameBufferCI({}, cubemapPipeline.renderPass, 1, &attachment, imageSize_, imageSize_, 1);
 
     for (uint32_t i = 0; i < 6; i++) {
         attachment = cubemapFaceImageViews_[i];
@@ -40,10 +42,10 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
 
     UpdateDescriptorSets(cubemapPipeline, envMap);
 
-    vk::Viewport viewport({}, {}, (float)cubemapSize_, (float)cubemapSize_, 0.0f, 1.0f);
+    vk::Viewport viewport({}, {}, (float)imageSize_, (float)imageSize_, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
-    vk::Rect2D scissor({ 0, 0 }, { cubemapSize_, cubemapSize_ });
+    vk::Rect2D scissor({ 0, 0 }, { imageSize_, imageSize_ });
     commandBuffer.setScissor(0, 1, &scissor);
 
     for (uint32_t face = 0; face < 6; face++) {
@@ -84,7 +86,7 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
 {
     vk::ClearValue clearValues = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
-    vk::RenderPassBeginInfo renderPassBI(cubemapPipeline.renderPass, framebuffers_[faceIndex], { { 0, 0 }, { cubemapSize_, cubemapSize_ } }, 2, &clearValues);
+    vk::RenderPassBeginInfo renderPassBI(cubemapPipeline.renderPass, framebuffers_[faceIndex], { { 0, 0 }, { imageSize_, imageSize_ } }, 2, &clearValues);
 
     glm::mat4 viewMatrix;
     glm::mat4 projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -114,14 +116,14 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.pipelineLayout, 0, 1, &cubemapPipeline.descriptorSets[0], 0, nullptr);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    genEnvCubePushConstants.view = viewMatrix;
-    genEnvCubePushConstants.proj = projMatrix;
+    pushConstants_.view = viewMatrix;
+    pushConstants_.proj = projMatrix;
     commandBuffer.pushConstants(
         cubemapPipeline.pipelineLayout,
         vk::ShaderStageFlagBits::eVertex,
         0,
-        sizeof(GenEnvCubePushConstants),
-        &genEnvCubePushConstants);
+        sizeof(CubemapPushConstants),
+        &pushConstants_);
     commandBuffer.bindVertexBuffers(0, 1, &envCube.vertexBuffers[0]->GetBundle().buffer, vertexOffsets);
     commandBuffer.bindIndexBuffer(envCube.indexBuffers[0]->GetBundle().buffer, 0, vk::IndexType::eUint32);
     commandBuffer.drawIndexed(envCube.GetIndicesCount(0), envCube.GetInstanceCount(), 0, 0, 0);

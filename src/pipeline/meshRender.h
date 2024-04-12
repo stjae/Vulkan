@@ -1,0 +1,29 @@
+#ifndef MESHRENDER_H
+#define MESHRENDER_H
+
+#include "../vulkan/pipeline.h"
+
+struct MeshRenderPushConstants
+{
+    int meshIndex;
+    int materialID;
+    int lightCount;
+    int useIBL;
+} inline meshRenderPushConsts;
+
+class MeshRenderPipeline : public vkn::Pipeline
+{
+    void SetUpDescriptors() override;
+    void CreateRenderPass() override;
+
+public:
+    vk::DescriptorBufferInfo cameraDescriptor;
+    vk::DescriptorBufferInfo lightDescriptor;
+    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
+    std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
+
+    void CreatePipeline() override;
+
+} inline meshRenderPipeline;
+
+#endif

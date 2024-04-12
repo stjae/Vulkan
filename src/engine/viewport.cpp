@@ -7,11 +7,13 @@ Viewport::Viewport()
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
-    vkn::meshRenderPipeline.CreatePipeline();
-    vkn::shadowMapPipeline.CreatePipeline();
-    vkn::envTexPipeline.CreatePipeline();
-    vkn::irradianceCubemapPipeline.CreatePipeline();
-    vkn::skyboxRenderPipeline.CreatePipeline();
+    meshRenderPipeline.CreatePipeline();
+    shadowCubemapPipeline.CreatePipeline();
+    envCubemapPipeline.CreatePipeline();
+    irradianceCubemapPipeline.CreatePipeline();
+    prefilteredCubemapPipeline.CreatePipeline();
+    brdfLutPipeline.CreatePipeline();
+    skyboxRenderPipeline.CreatePipeline();
 
     CreateViewportImages();
     CreateViewportFrameBuffer();
@@ -76,7 +78,7 @@ void Viewport::CreateViewportFrameBuffer()
     };
 
     vk::FramebufferCreateInfo framebufferInfo;
-    framebufferInfo.renderPass = vkn::meshRenderPipeline.renderPass;
+    framebufferInfo.renderPass = meshRenderPipeline.renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = extent.width;
@@ -188,7 +190,7 @@ void Viewport::Draw(const Scene& scene)
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
     vk::RenderPassBeginInfo renderPassInfo;
-    renderPassInfo.renderPass = vkn::meshRenderPipeline.renderPass;
+    renderPassInfo.renderPass = meshRenderPipeline.renderPass;
     renderPassInfo.framebuffer = framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = extent;
@@ -223,16 +225,17 @@ void Viewport::Draw(const Scene& scene)
     vk::DeviceSize vertexOffsets[]{ 0 };
 
     if (scene.envCubemap_ != nullptr) {
-        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipelineLayout, 0, 1, &vkn::skyboxRenderPipeline.descriptorSets[0], 0, nullptr);
-        commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::skyboxRenderPipeline.pipeline);
+        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.pipelineLayout, 0, 1, &skyboxRenderPipeline.descriptorSets[0], 0, nullptr);
+        commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.pipeline);
 
         commandBuffer_.bindVertexBuffers(0, 1, &scene.envCube_.vertexBuffers[0]->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(scene.envCube_.indexBuffers[0]->GetBundle().buffer, 0, vk::IndexType::eUint32);
         commandBuffer_.drawIndexed(scene.envCube_.GetIndicesCount(0), scene.envCube_.GetInstanceCount(), 0, 0, 0);
     }
 
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipelineLayout, 1, 1, &vkn::meshRenderPipeline.descriptorSets[1], 0, nullptr);
-    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipeline);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 1, 1, &meshRenderPipeline.descriptorSets[1], 0, nullptr);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 2, 1, &meshRenderPipeline.descriptorSets[2], 0, nullptr);
+    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
     meshRenderPushConsts.useIBL = scene.envCubemap_ == nullptr ? -1 : 1;
 
@@ -249,12 +252,12 @@ void Viewport::Draw(const Scene& scene)
                 commandBuffer_.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
                 meshRenderPushConsts.materialID = materialOffset + part.materialID;
                 commandBuffer_.pushConstants(
-                    vkn::meshRenderPipeline.pipelineLayout,
+                    meshRenderPipeline.pipelineLayout,
                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                     0,
                     sizeof(MeshRenderPushConstants),
                     &meshRenderPushConsts);
-                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::meshRenderPipeline.pipelineLayout, 0, 1, &vkn::meshRenderPipeline.descriptorSets[0], 0, nullptr);
+                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
                 commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
             }
         }
@@ -289,9 +292,11 @@ Viewport::~Viewport()
     vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::repeatSampler);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::clampSampler);
-    vkn::meshRenderPipeline.~MeshRenderPipeline();
-    vkn::shadowMapPipeline.~ShadowMapPipeline();
-    vkn::envTexPipeline.~EnvTexPipeline();
-    vkn::irradianceCubemapPipeline.~IrradianceCubemapPipeline();
-    vkn::skyboxRenderPipeline.~SkyboxRenderPipeline();
+    meshRenderPipeline.~MeshRenderPipeline();
+    shadowCubemapPipeline.~ShadowCubemapPipeline();
+    envCubemapPipeline.~EnvCubemapPipeline();
+    irradianceCubemapPipeline.~IrradianceCubemapPipeline();
+    prefilteredCubemapPipeline.~PrefilteredCubemapPipeline();
+    brdfLutPipeline.~BrdfLutPipeline();
+    skyboxRenderPipeline.~SkyboxRenderPipeline();
 }

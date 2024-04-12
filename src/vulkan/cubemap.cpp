@@ -15,10 +15,10 @@ Cubemap::Cubemap()
     imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
 }
 
-void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::CommandBuffer& commandBuffer)
+void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsageFlags usage, vk::CommandBuffer& commandBuffer)
 {
     imageSize_ = imageSize;
-    CreateImage({ imageSize, imageSize, 1 }, format, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    CreateImage({ imageSize, imageSize, 1 }, format, usage, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                         imageBundle_.image,

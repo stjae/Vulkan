@@ -2,7 +2,7 @@
 
 void ShadowCubemap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 {
-    CreateCubemap(shadowCubemapSize, shadowMapImageFormat, commandBuffer);
+    CreateCubemap(shadowCubemapSize, shadowMapImageFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, commandBuffer);
 
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
@@ -17,18 +17,18 @@ void ShadowCubemap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
     commandBuffer.end();
     vkn::Command::Submit(&commandBuffer, 1);
 
-    vkn::meshRenderPipeline.shadowCubeMapDescriptors.emplace_back(vkn::Image::repeatSampler, imageBundle_.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+    meshRenderPipeline.shadowCubeMapDescriptors.emplace_back(vkn::Image::repeatSampler, imageBundle_.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     CreateDepthImage(commandBuffer);
     CreateFramebuffer(commandBuffer);
 }
 
 void ShadowCubemap::CreateDepthImage(vk::CommandBuffer& commandBuffer)
 {
-    depthImage.CreateImage({ shadowCubemapSize, shadowCubemapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    depthImage_.CreateImage({ shadowCubemapSize, shadowCubemapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        depthImage.GetBundle().image,
+                                        depthImage_.GetBundle().image,
                                         {},
                                         vk::ImageLayout::eDepthStencilAttachmentOptimal,
                                         {},
@@ -39,16 +39,16 @@ void ShadowCubemap::CreateDepthImage(vk::CommandBuffer& commandBuffer)
     commandBuffer.end();
     vkn::Command::Submit(&commandBuffer, 1);
 
-    depthImage.imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    depthImage.CreateImageView();
+    depthImage_.imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    depthImage_.CreateImageView();
 }
 
 void ShadowCubemap::CreateFramebuffer(vk::CommandBuffer& commandBuffer)
 {
     std::array<vk::ImageView, 2> attachments;
-    attachments[1] = depthImage.GetBundle().imageView;
+    attachments[1] = depthImage_.GetBundle().imageView;
 
-    vk::FramebufferCreateInfo frameBufferCI({}, vkn::shadowMapPipeline.renderPass, attachments.size(), attachments.data(), shadowCubemapSize, shadowCubemapSize, 1);
+    vk::FramebufferCreateInfo frameBufferCI({}, shadowCubemapPipeline.renderPass, attachments.size(), attachments.data(), shadowCubemapSize, shadowCubemapSize, 1);
 
     for (uint32_t i = 0; i < 6; i++) {
         attachments[0] = cubemapFaceImageViews_[i];
@@ -80,7 +80,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& com
     clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
     clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
-    vk::RenderPassBeginInfo renderPassBI(vkn::shadowMapPipeline.renderPass, framebuffers_[faceIndex], { { 0, 0 }, { shadowCubemapSize, shadowCubemapSize } }, 2, clearValues.data());
+    vk::RenderPassBeginInfo renderPassBI(shadowCubemapPipeline.renderPass, framebuffers_[faceIndex], { { 0, 0 }, { shadowCubemapSize, shadowCubemapSize } }, 2, clearValues.data());
 
     glm::mat4 viewMatrix = lights[lightIndex].model;
     glm::vec3 lightPos = lights[lightIndex].model * glm::vec4(lights[lightIndex].pos, 1.0f);
@@ -105,26 +105,26 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& com
         break;
     }
 
-    shadowMapPushConsts.view = viewMatrix;
-    shadowMapPushConsts.lightIndex = lightIndex;
+    pushConstants_.view = viewMatrix;
+    pushConstants_.lightIndex = lightIndex;
 
     commandBuffer.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkn::shadowMapPipeline.pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowCubemapPipeline.pipeline);
     int meshIndex = 0;
     vk::DeviceSize vertexOffsets[]{ 0 };
     for (auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        shadowMapPushConsts.meshIndex = meshIndex;
+        pushConstants_.meshIndex = meshIndex;
         meshIndex++;
         commandBuffer.pushConstants(
-            vkn::shadowMapPipeline.pipelineLayout,
+            shadowCubemapPipeline.pipelineLayout,
             vk::ShaderStageFlagBits::eVertex,
             0,
             sizeof(ShadowMapPushConstants),
-            &shadowMapPushConsts);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, vkn::shadowMapPipeline.pipelineLayout, 0, 1, &vkn::shadowMapPipeline.descriptorSets[0], 0, nullptr);
+            &pushConstants_);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowCubemapPipeline.pipelineLayout, 0, 1, &shadowCubemapPipeline.descriptorSets[0], 0, nullptr);
         for (auto& part : mesh.GetMeshParts()) {
             commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
             commandBuffer.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
