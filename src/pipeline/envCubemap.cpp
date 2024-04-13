@@ -51,7 +51,7 @@ void EnvCubemapPipeline::CreateRenderPass()
 {
     vk::AttachmentDescription envCubemapAttachment;
 
-    envCubemapAttachment.format = vk::Format::eR32G32B32A32Sfloat;
+    envCubemapAttachment.format = vk::Format::eR16G16B16A16Sfloat;
     envCubemapAttachment.samples = vk::SampleCountFlagBits::e1;
     envCubemapAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     envCubemapAttachment.storeOp = vk::AttachmentStoreOp::eStore;

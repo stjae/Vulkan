@@ -112,7 +112,7 @@ void main() {
     vec3 ambient;
     if (pushConsts.useIBL > 0) {
 
-        vec3 F = FresnelSchlick(max(dot(N, V), 0.0), F0, roughness);
+        vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
         vec3 kS = F;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
@@ -133,9 +133,6 @@ void main() {
     }
 
     vec3 color = ambient + Lo;
-
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
     outColor.rgb = color;
 
     outID.r = meshInstance.meshID;

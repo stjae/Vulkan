@@ -90,13 +90,13 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
 {
     for (auto& material : materials) {
         albedoTextures_.emplace_back();
-        albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+        albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
         normalTextures_.emplace_back();
         normalTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
         metallicTextures_.emplace_back();
-        metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+        metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
         roughnessTextures_.emplace_back();
-        roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+        roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
     }
 }
 
@@ -133,10 +133,10 @@ void Scene::AddEnvironmentMap()
         envMap_ = std::make_unique<vkn::Image>();
         envMap_->InsertHDRImage(hdriPath, vk::Format::eR32G32B32A32Sfloat, commandBuffer_);
         envCubemap_ = std::make_unique<EnvCubemap>();
-        envCubemap_->CreateEnvCubemap(512, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, commandBuffer_);
+        envCubemap_->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, commandBuffer_);
         envCubemap_->DrawEnvCubemap(envCube_, *envMap_, envCubemapPipeline, commandBuffer_);
         irradianceCubemap_ = std::make_unique<EnvCubemap>();
-        irradianceCubemap_->CreateEnvCubemap(32, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, commandBuffer_);
+        irradianceCubemap_->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, commandBuffer_);
         irradianceCubemap_->DrawEnvCubemap(envCube_, *envCubemap_, irradianceCubemapPipeline, commandBuffer_);
         prefilteredCubemap_ = std::make_unique<PrefilteredCubemap>();
         prefilteredCubemap_->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, commandBuffer_);

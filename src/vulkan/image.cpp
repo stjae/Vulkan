@@ -137,6 +137,7 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer)
 void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
 {
     stbi_set_flip_vertically_on_load(true);
+
     int width = 0, height = 0, channel = 0;
     vk::DeviceSize imageSize = 0;
     float* imageData = nullptr;

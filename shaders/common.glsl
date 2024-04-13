@@ -43,7 +43,5 @@ float Lambert(vec3 worldNormal, vec3 worldModel, LightData lightData)
     vec3 N = worldNormal;
     vec3 L = normalize(lightPos.xyz - worldModel);
 
-    float dist = length(worldModel - lightPos.xyz);
-    float attenuation = 1.0 / (dist * dist);
-    return max(0.0, dot(L, N)) * attenuation;
+    return max(0.0, dot(L, N));
 }

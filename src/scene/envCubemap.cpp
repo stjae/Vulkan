@@ -1,10 +1,10 @@
 #include "envCubemap.h"
 
-void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     imageSize_ = cubemapSize;
 
-    CreateCubemap(imageSize_, vk::Format::eR32G32B32A32Sfloat, usage, commandBuffer);
+    CreateCubemap(imageSize_, format, usage, commandBuffer);
 
     for (int i = 0; i < 6; i++) {
         vkn::Command::Begin(commandBuffer);
