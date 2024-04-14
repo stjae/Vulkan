@@ -4,7 +4,7 @@
 #include "../common.h"
 #include "scene.h"
 #include "camera.h"
-#include "mesh.h"
+#include "mesh/meshModel.h"
 #include "light.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
@@ -48,7 +48,7 @@ class Scene
 
     std::vector<ShadowCubemap> shadowMaps_;
 
-    std::vector<Mesh> meshes_;
+    std::vector<MeshModel> meshes_;
     Mesh envCube_;
     std::unique_ptr<vkn::Image> envMap_;
     std::unique_ptr<EnvCubemap> envCubemap_;
@@ -97,7 +97,7 @@ public:
     void Update();
     size_t GetInstanceCount();
     size_t GetLightCount() { return lights_.size(); }
-    const std::vector<Mesh>& GetMeshes() { return meshes_; }
+    const std::vector<MeshModel>& GetMeshes() { return meshes_; }
     MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
     MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);

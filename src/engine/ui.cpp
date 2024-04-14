@@ -145,13 +145,13 @@ void UI::DrawDockSpace(Scene& scene)
             }
             if (ImGui::BeginMenu("Mesh")) {
                 if (ImGui::MenuItem("Square")) {
-                    scene.AddMeshInstance(MESHTYPE::SQUARE);
+                    scene.AddMeshInstance(PRIMITIVE::SQUARE);
                 }
                 if (ImGui::MenuItem("Cube")) {
-                    scene.AddMeshInstance(MESHTYPE::CUBE);
+                    scene.AddMeshInstance(PRIMITIVE::CUBE);
                 }
                 if (ImGui::MenuItem("Sphere")) {
-                    scene.AddMeshInstance(MESHTYPE::SPHERE);
+                    scene.AddMeshInstance(PRIMITIVE::SPHERE);
                 }
                 ImGui::EndMenu();
             }

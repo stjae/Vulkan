@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowMapDirtyFlag_(true), showLightIcon_(true)
+Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowMapDirtyFlag_(true), showLightIcon_(true), envCube_(PRIMITIVE::CUBE), brdfLutSquare_(PRIMITIVE::SQUARE)
 {
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
@@ -38,13 +38,13 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 
     {
         // init scene
-        meshes_.emplace_back(MESHTYPE::SQUARE);
+        meshes_.emplace_back(PRIMITIVE::SQUARE);
         meshes_.back().CreateSquare();
         meshes_.back().CreateBuffers();
-        meshes_.emplace_back(MESHTYPE::CUBE);
+        meshes_.emplace_back(PRIMITIVE::CUBE);
         meshes_.back().CreateCube();
         meshes_.back().CreateBuffers();
-        meshes_.emplace_back(MESHTYPE::SPHERE);
+        meshes_.emplace_back(PRIMITIVE::SPHERE);
         meshes_.back().CreateSphere();
         meshes_.back().CreateBuffers();
         envCube_.CreateCube();

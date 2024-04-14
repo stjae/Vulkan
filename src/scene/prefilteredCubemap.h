@@ -3,7 +3,7 @@
 
 #include "../vulkan/pipeline.h"
 #include "../vulkan/cubemap.h"
-#include "../scene/mesh.h"
+#include "mesh/meshPrimitive.h"
 
 class PrefilteredCubemap : public vkn::Cubemap
 {
