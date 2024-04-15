@@ -17,9 +17,10 @@ struct CameraData
 class Camera
 {
     friend class Scene;
+    friend class SceneSerializer;
 
     bool isControllable_ = false;
-    bool isInitial_ = true; // prevent sudden camera_ move
+    bool isInitial_ = true; // prevent sudden camera move
 
     glm::vec3 pos_ = { 0.0f, 0.0f, 4.0f };
     glm::vec4 dir_ = { 0.0f, 0.0f, -1.0f, 0.0f };

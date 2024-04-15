@@ -48,13 +48,6 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     path.append(FONT_ICON_FILE_NAME_FAS);
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
-    // DPI Scale
-    // if (imguiViewport->DpiScale > 0.0f) {
-    //     ImFontConfig fontConfig;
-    //     fontConfig.SizePixels = 13.0f * imguiViewport->DpiScale;
-    //     io.Fonts->AddFontDefault(&fontConfig);
-    // }
-
     descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     plusIcon_.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
@@ -63,12 +56,6 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // TODO: for test
-    // path = PROJECT_DIR "image/box.png";
-    // scene.AddResource(path);
-    // path = PROJECT_DIR "image/earth.jpg";
-    // scene.AddResource(path);
 
     dragDropped = false;
 }
@@ -136,28 +123,68 @@ void UI::DrawDockSpace(Scene& scene)
 
     // Top Menu Bar
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Add")) {
-            if (ImGui::BeginMenu("Light")) {
-                if (ImGui::MenuItem("Point Light")) {
-                    scene.AddLight();
-                }
-                ImGui::EndMenu();
+        bool openNewScene = false;
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New")) {
+                openNewScene = true;
             }
-            if (ImGui::BeginMenu("Mesh")) {
-                if (ImGui::MenuItem("Square")) {
-                    scene.AddMeshInstance(PRIMITIVE::SQUARE);
+            if (ImGui::MenuItem("Open")) {
+                std::string openFilePath = nfdOpen({ "Scene", "scn" });
+                if (!openFilePath.empty()) {
+                    scene.saveFilePath_ = openFilePath;
+                    SceneSerializer serializer;
+                    serializer.Deserialize(scene, openFilePath);
                 }
-                if (ImGui::MenuItem("Cube")) {
-                    scene.AddMeshInstance(PRIMITIVE::CUBE);
+            }
+            if (ImGui::MenuItem("Save")) {
+                SceneSerializer serializer;
+                if (!scene.saveFilePath_.empty()) {
+                    serializer.Serialize(scene, scene.saveFilePath_);
+                } else {
+                    std::string saveFilePath = nfdSave({ "Scene", "scn" });
+                    serializer.Serialize(scene, saveFilePath);
                 }
-                if (ImGui::MenuItem("Sphere")) {
-                    scene.AddMeshInstance(PRIMITIVE::SPHERE);
-                }
-                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Save as")) {
+                std::string saveFilePath = nfdSave({ "Scene", "scn" });
+                SceneSerializer serializer;
+                serializer.Serialize(scene, saveFilePath);
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Add")) {
+            if (ImGui::MenuItem("Point Light")) {
+                scene.AddLight();
             }
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
+
+        // open new scene popup modal
+        if (openNewScene)
+            ImGui::OpenPopup("NewScene");
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("NewScene", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Are you sure to open a new scene?\nUnsaved work will be lost.");
+            ImGui::Separator();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::PopStyleVar();
+
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                scene.InitScene();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
     }
     ImGui::End();
 }
@@ -224,7 +251,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex)
         ImGui::EndDragDropTarget();
     }
 
-    for (auto& light : scene.lights_) {
+    for (auto& light : scene.pointLights_) {
 
         glm::vec4 pos = scene.camera_.GetMatrix().proj * scene.camera_.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
         float posZ = pos.z;
@@ -327,7 +354,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float scale[3];
     float matrix[16];
 
-    auto& lightData = scene.lights_[scene.selectedLightID_];
+    auto& lightData = scene.pointLights_[scene.selectedLightID_];
     glm::mat4 model = glm::translate(lightData.model, lightData.pos);
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
@@ -411,7 +438,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     // Light List
     if (ImGui::BeginTabItem("Lights")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
-            for (int i = 0; i < scene.lights_.size(); i++) {
+            for (int i = 0; i < scene.pointLights_.size(); i++) {
                 std::string name("light");
                 ImGui::PushID(i);
                 if (ImGui::Selectable(name.c_str(), i == scene.selectedLightID_)) {
@@ -432,7 +459,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             // Light Attributes
             if (scene.selectedLightID_ > -1) {
 
-                auto& lightData = scene.lights_[scene.selectedLightID_];
+                auto& lightData = scene.pointLights_[scene.selectedLightID_];
                 glm::mat4 model = glm::translate(lightData.model, lightData.pos);
 
                 float translation[3];
@@ -456,10 +483,11 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("IBL")) {
-
-        float panelSize = ImGui::GetContentRegionAvail().x;
         if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-            scene.AddEnvironmentMap();
+            std::string hdriFilePath = nfdOpen({ "HDRI", "hdr" });
+            if (!hdriFilePath.empty()) {
+                scene.AddEnvironmentMap(hdriFilePath);
+            }
         }
         if (scene.envCubemap_ != nullptr) {
             if (ImGui::Button("Remove")) {
@@ -483,7 +511,7 @@ void UI::DrawResourceWindow(Scene& scene)
     // Add Resource
     ImGui::Columns(columnCount, nullptr, false);
     if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-        std::string path = LaunchNfd({ "Model", "gltf" });
+        std::string path = nfdOpen({ "Model", "gltf,fbx" });
         if (!path.empty()) {
             scene.AddResource(path);
         }
@@ -492,17 +520,10 @@ void UI::DrawResourceWindow(Scene& scene)
 
     for (int i = 0; i < scene.resources_.size(); i++) {
         ImGui::PushID(i);
-        if (scene.resources_[i].resourceType == RESOURCETYPE::MESH) {
-            ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
-        }
-        // else {
-        //     ImGui::ImageButton(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 }, 0);
-        // }
+        ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
 
         // Send Drag Drop
         if (ImGui::BeginDragDropSource()) {
-            // if (resource.resourceType == RESOURCETYPE::TEXTURE)
-            // ImGui::Image(static_cast<Texture*>(resource.resource)->descriptorSet, { 100, 100 }, { 0, 0 }, { 1, 1 });
             ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.resources_[i], sizeof(scene.resources_[i]));
             ImGui::EndDragDropSource();
         }
@@ -539,22 +560,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
         return;
 
     const int32_t* pickColor = viewport.PickColor(dragDropMouseX, dragDropMouseY);
-
-    switch (dragDropResource->resourceType) {
-    case RESOURCETYPE::MESH:
-        scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->resource)->GetMeshID());
-        break;
-        // case RESOURCETYPE::TEXTURE:
-        //     if (pickColor[0] != -1) {
-        //         auto& meshInstance = scene.GetMeshInstance(pickColor[0], pickColor[1]);
-        //
-        //         // meshInstance.textureID = static_cast<Texture*>(dragDropResource->resource)->index;
-        //         meshInstance.useTexture = 1;
-        //         scene.meshDirtyFlag_ = true;
-        //     }
-        //     break;
-    }
-
+    scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->ptr)->GetMeshID());
     dragDropped = false;
 }
 

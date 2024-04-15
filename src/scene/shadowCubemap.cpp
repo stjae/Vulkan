@@ -17,7 +17,6 @@ void ShadowCubemap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
     commandBuffer.end();
     vkn::Command::Submit(&commandBuffer, 1);
 
-    meshRenderPipeline.shadowCubeMapDescriptors.emplace_back(vkn::Image::repeatSampler, imageBundle_.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     CreateDepthImage(commandBuffer);
     CreateFramebuffer(commandBuffer);
 }

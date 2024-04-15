@@ -245,7 +245,7 @@ void Viewport::Draw(const Scene& scene)
     for (const auto& mesh : scene.meshes_) {
         if (mesh.GetInstanceCount() > 0) {
             meshRenderPushConsts.meshIndex = meshIndex;
-            meshRenderPushConsts.lightCount = (int)scene.lights_.size();
+            meshRenderPushConsts.lightCount = (int)scene.pointLights_.size();
             meshIndex++;
             for (const auto& part : mesh.GetMeshParts()) {
                 commandBuffer_.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);

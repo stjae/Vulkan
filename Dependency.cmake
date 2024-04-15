@@ -157,3 +157,18 @@ ExternalProject_Add(
 )
 set(DEP_LIST ${DEP_LIST} dep-nativefiledialog)
 #set(DEP_LIBS ${DEP_LIBS} nfd)
+
+# yaml
+ExternalProject_Add(
+        dep-yaml
+        GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp.git"
+        GIT_TAG "0.8.0"
+        GIT_SHALLOW 1
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
+        -DYAML_BUILD_SHARED_LIBS=ON
+)
+set(DEP_LIST ${DEP_LIST} dep-yaml)

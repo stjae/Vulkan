@@ -4,7 +4,7 @@
 #include "buffer.h"
 #include "command.h"
 #include "pipeline.h"
-#include "../scene/mesh/meshPrimitive.h"
+#include "../scene/mesh/mesh.h"
 
 namespace vkn {
 struct ImageBundle

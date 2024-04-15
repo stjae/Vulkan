@@ -56,6 +56,7 @@ struct Material
 class Mesh : public MeshBase
 {
     friend class Scene;
+    friend class SceneSerializer;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
@@ -70,9 +71,7 @@ protected:
     std::vector<MeshInstance> meshInstances_;
     std::vector<MeshPart> meshParts_;
     std::vector<Material> materials_;
-
     inline static vk::CommandBuffer commandBuffer_;
-
     void CreateBuffers();
 
 public:

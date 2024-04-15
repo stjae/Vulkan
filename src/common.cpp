@@ -50,18 +50,45 @@ std::vector<char> FetchCode(const std::string& filename)
     return buffer;
 }
 
-std::string LaunchNfd(nfdfilteritem_t filterItem)
+std::string nfdOpen(nfdfilteritem_t filterItem)
 {
     NFD_Init();
     std::string filePath;
 
-    nfdchar_t* outPath;
-    nfdresult_t result = NFD_OpenDialog(&outPath, &filterItem, 1, nullptr);
+    nfdchar_t* openPath;
+    nfdresult_t result = NFD_OpenDialog(&openPath, &filterItem, 1, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
-        puts(outPath);
-        filePath = outPath;
-        NFD_FreePath(outPath);
+        puts(openPath);
+        filePath = openPath;
+        NFD_FreePath(openPath);
+    } else if (result == NFD_CANCEL) {
+        puts("User pressed cancel.");
+    } else {
+        printf("Error: %s\n", NFD_GetError());
+    }
+
+    NFD_Quit();
+    return filePath;
+}
+// NFD_API nfdresult_t NFD_SaveDialogU8(nfdu8char_t** outPath,
+//                                      const nfdu8filteritem_t* filterList,
+//                                      nfdfiltersize_t count,
+//                                      const nfdu8char_t* defaultPath,
+//                                      const nfdu8char_t* defaultName);
+
+std::string nfdSave(nfdu8filteritem_t filterItem)
+{
+    NFD_Init();
+    std::string filePath;
+    nfdu8char_t* savePath;
+
+    nfdresult_t result = NFD_SaveDialog(&savePath, &filterItem, 1, PROJECT_DIR "scene", nullptr);
+    if (result == NFD_OKAY) {
+        puts("Success!");
+        puts(savePath);
+        filePath = savePath;
+        NFD_FreePath(savePath);
     } else if (result == NFD_CANCEL) {
         puts("User pressed cancel.");
     } else {

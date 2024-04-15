@@ -46,7 +46,8 @@ void Log(bool isDebugMode, fmt::terminal_color color, T... args)
 
 std::string& GetFrameRate();
 std::vector<char> FetchCode(const std::string& filename);
-std::string LaunchNfd(nfdfilteritem_t filterItem);
+std::string nfdOpen(nfdfilteritem_t filterItem);
+std::string nfdSave(nfdu8filteritem_t filterItem);
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
 void AlignedFree(void* aligned);
 

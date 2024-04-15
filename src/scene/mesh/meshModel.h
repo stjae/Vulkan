@@ -1,7 +1,7 @@
 #ifndef MESHMODEL_H
 #define MESHMODEL_H
 
-#include "meshPrimitive.h"
+#include "mesh.h"
 
 class MeshModel : public Mesh
 {

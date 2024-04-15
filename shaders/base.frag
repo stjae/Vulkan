@@ -63,8 +63,17 @@ void main() {
             mat3 TBN = mat3(T, B, N);
             normalWorld = TBN * normalize(texNormal);
         }
-        metallic = texture(sampler2D(metallicTex[pushConsts.materialID], repeatSampler), inTexcoord).b;
-        roughness = texture(sampler2D(roughnessTex[pushConsts.materialID], repeatSampler), inTexcoord).g;
+
+        vec4 texMetallic = texture(sampler2D(metallicTex[pushConsts.materialID], repeatSampler), inTexcoord);
+        // check if it's dummy texture
+        if (length(texMetallic.rgb) != 0.0) {
+            metallic = texMetallic.b;
+        }
+        vec4 texRoughness = texture(sampler2D(roughnessTex[pushConsts.materialID], repeatSampler), inTexcoord);
+        // check if it's dummy texture
+        if (length(texRoughness.rgb) != 0.0) {
+            roughness = texRoughness.g;
+        }
     }
 
     vec3 worldModel = inModel.xyz;

@@ -20,7 +20,6 @@ public:
     vk::DescriptorBufferInfo cameraDescriptor;
     vk::DescriptorBufferInfo lightDescriptor;
     std::vector<vk::DescriptorBufferInfo> meshDescriptors;
-    std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
 
     void CreatePipeline() override;
 

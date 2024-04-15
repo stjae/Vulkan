@@ -19,26 +19,24 @@
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 
-enum RESOURCETYPE {
-    MESH,
-    // TEXTURE,
-};
-
 struct Resource
 {
-    std::string fileName;
-    std::string fileFormat;
     std::string filePath;
-    RESOURCETYPE resourceType;
-    void* resource;
+    std::string fileName;
+    void* ptr;
 
-    explicit Resource(std::string& path);
+    explicit Resource(std::string& path) : ptr(nullptr)
+    {
+        this->filePath = path;
+        this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
+    }
 };
 
 class Scene
 {
     friend class UI;
     friend class Viewport;
+    friend class SceneSerializer;
 
     vk::CommandPool commandPool_;
     vk::CommandBuffer commandBuffer_;
@@ -50,6 +48,7 @@ class Scene
 
     std::vector<MeshModel> meshes_;
     Mesh envCube_;
+    std::string hdriFilePath_;
     std::unique_ptr<vkn::Image> envMap_;
     std::unique_ptr<EnvCubemap> envCubemap_;
     std::unique_ptr<EnvCubemap> irradianceCubemap_;
@@ -57,7 +56,7 @@ class Scene
     Mesh brdfLutSquare_;
     vkn::Image brdfLut_;
 
-    std::vector<LightData> lights_;
+    std::vector<LightData> pointLights_;
     std::vector<vkn::Image> albedoTextures_;
     std::vector<vkn::Image> normalTextures_;
     std::vector<vkn::Image> metallicTextures_;
@@ -77,11 +76,13 @@ class Scene
     bool lightDirtyFlag_;
     bool meshDirtyFlag_;
 
+    std::string saveFilePath_;
+
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddLight();
-    void AddEnvironmentMap();
+    void AddEnvironmentMap(const std::string& hdriFilePath);
     void DeleteMesh();
     void DeleteLight();
     void HandleLightDuplication();
@@ -91,12 +92,13 @@ class Scene
     void UpdateMesh();
     void UpdateShadowMap();
     void UpdateDescriptorSet();
+    void InitScene();
 
 public:
     Scene();
     void Update();
     size_t GetInstanceCount();
-    size_t GetLightCount() { return lights_.size(); }
+    size_t GetLightCount() { return pointLights_.size(); }
     const std::vector<MeshModel>& GetMeshes() { return meshes_; }
     MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
     MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }

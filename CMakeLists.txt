@@ -31,7 +31,7 @@ add_executable(${PROJECT_NAME}
 
         src/scene/scene.h src/scene/scene.cpp
         src/scene/mesh/meshBase.h src/scene/mesh/meshBase.cpp
-        src/scene/mesh/meshPrimitive.h src/scene/mesh/meshPrimitive.cpp
+        src/scene/mesh/mesh.h src/scene/mesh/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
         src/engine/ui.h src/engine/ui.cpp
 
@@ -75,6 +75,8 @@ add_executable(${PROJECT_NAME}
         src/pipeline/brdfLut.h
         src/scene/mesh/meshModel.cpp
         src/scene/mesh/meshModel.h
+        src/engine/sceneSerializer.cpp
+        src/engine/sceneSerializer.h
 )
 
 include(Dependency.cmake)

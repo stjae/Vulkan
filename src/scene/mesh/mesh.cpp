@@ -1,4 +1,4 @@
-#include "meshPrimitive.h"
+#include "mesh.h"
 
 void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
 {
