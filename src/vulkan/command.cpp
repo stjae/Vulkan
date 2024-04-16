@@ -24,7 +24,7 @@ void vkn::Command::AllocateCommandBuffer(const vk::CommandPool& commandPool, vk:
 void vkn::Command::Begin(vk::CommandBuffer& commandBuffer, vk::CommandBufferUsageFlags flag)
 {
     vk::CommandBufferBeginInfo beginInfo(flag, {});
-    commandBuffer.begin(&beginInfo);
+    vkn::CheckResult(commandBuffer.begin(&beginInfo));
 }
 void vkn::Command::CopyBufferToBuffer(vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {

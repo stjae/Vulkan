@@ -63,7 +63,7 @@ public:
     std::vector<vk::DescriptorSet> descriptorSets;
 
     Pipeline();
-    ~Pipeline();
+    void Destroy();
 };
 
 } // namespace vkn

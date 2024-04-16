@@ -7,7 +7,7 @@ layout (push_constant) uniform PushConsts
     int meshIndex;
     int materialID;
     int lightCount;
-    int useIBL;
+    float iblExposure;
 } pushConsts;
 
 layout (set = 1, binding = 0) uniform sampler repeatSampler;
@@ -118,28 +118,20 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient;
-    if (pushConsts.useIBL > 0) {
+    vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
 
-        vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-        vec3 kS = F;
-        vec3 kD = 1.0 - kS;
-        kD *= 1.0 - metallic;
+    vec3 irradiance = texture(irradianceCubemap, N).rgb * pushConsts.iblExposure;
+    vec3 diffuse = irradiance * albedo;
 
-        vec3 irradiance = texture(irradianceCubemap, N).rgb;
-        vec3 diffuse = irradiance * albedo;
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilteredCubemap, R, roughness * MAX_REFLECTION_LOD).rgb * pushConsts.iblExposure;
+    vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-        const float MAX_REFLECTION_LOD = 4.0;
-        vec3 prefilteredColor = textureLod(prefilteredCubemap, R, roughness * MAX_REFLECTION_LOD).rgb;
-        vec2 brdf = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
-        vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
-
-        ambient = (kD * diffuse + specular) * ao;
-
-    } else {
-
-        ambient = vec3(0.03) * albedo * ao;
-    }
+    vec3 ambient = (kD * diffuse + specular) * ao;
 
     vec3 color = ambient + Lo;
     outColor.rgb = color;

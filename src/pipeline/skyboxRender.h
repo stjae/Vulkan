@@ -3,6 +3,11 @@
 
 #include "../vulkan/pipeline.h"
 
+struct SkyboxRenderPushConstants
+{
+    float exposure;
+} inline skyboxRenderPushConstants;
+
 class SkyboxRenderPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;

@@ -142,6 +142,7 @@ void UI::DrawDockSpace(Scene& scene)
                     serializer.Serialize(scene, scene.saveFilePath_);
                 } else {
                     std::string saveFilePath = nfdSave({ "Scene", "scn" });
+                    scene.saveFilePath_ = saveFilePath;
                     serializer.Serialize(scene, saveFilePath);
                 }
             }
@@ -489,12 +490,13 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.AddEnvironmentMap(hdriFilePath);
             }
         }
-        if (scene.envCubemap_ != nullptr) {
-            if (ImGui::Button("Remove")) {
-                scene.envMap_.reset();
-                scene.envCubemap_.reset();
-                scene.irradianceCubemap_.reset();
-            }
+        if (ImGui::Button("Remove")) {
+            scene.InitHdri();
+        }
+        ImGui::Separator();
+        ImGui::SliderFloat("Exposure", &scene.iblExposure_, 0.0f, 10.0f);
+        if (ImGui::Button("Reset")) {
+            scene.iblExposure_ = 1.0f;
         }
         ImGui::EndTabItem();
     }

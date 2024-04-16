@@ -8,7 +8,7 @@ struct MeshRenderPushConstants
     int meshIndex;
     int materialID;
     int lightCount;
-    int useIBL;
+    float iblExposure;
 } inline meshRenderPushConsts;
 
 class MeshRenderPipeline : public vkn::Pipeline

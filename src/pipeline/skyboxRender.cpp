@@ -16,7 +16,8 @@ void SkyboxRenderPipeline::CreatePipeline()
     SetUpDescriptors();
     CreateRenderPass();
 
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, descriptorSetLayouts.size(), descriptorSetLayouts.data());
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(SkyboxRenderPipeline));
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange);
 
     depthStencilStateCI_.depthTestEnable = vk::False;
     depthStencilStateCI_.depthWriteEnable = vk::False;

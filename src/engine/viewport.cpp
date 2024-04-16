@@ -1,6 +1,6 @@
 ﻿#include "viewport.h"
 
-Viewport::Viewport()
+Viewport::Viewport() : panelRatio(0.0f), outDated(false), isMouseHovered(false)
 {
     extent = vk::Extent2D((uint32_t)vkn::Swapchain::GetBundle().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::GetBundle().swapchainImageExtent.height);
 
@@ -224,10 +224,17 @@ void Viewport::Draw(const Scene& scene)
 
     vk::DeviceSize vertexOffsets[]{ 0 };
 
-    if (scene.envCubemap_ != nullptr) {
+    {
+        // skybox
         commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.pipelineLayout, 0, 1, &skyboxRenderPipeline.descriptorSets[0], 0, nullptr);
         commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.pipeline);
-
+        skyboxRenderPushConstants.exposure = scene.iblExposure_;
+        commandBuffer_.pushConstants(
+            skyboxRenderPipeline.pipelineLayout,
+            vk::ShaderStageFlagBits::eFragment,
+            0,
+            sizeof(SkyboxRenderPushConstants),
+            &skyboxRenderPushConstants);
         commandBuffer_.bindVertexBuffers(0, 1, &scene.envCube_.vertexBuffers[0]->GetBundle().buffer, vertexOffsets);
         commandBuffer_.bindIndexBuffer(scene.envCube_.indexBuffers[0]->GetBundle().buffer, 0, vk::IndexType::eUint32);
         commandBuffer_.drawIndexed(scene.envCube_.GetIndicesCount(0), scene.envCube_.GetInstanceCount(), 0, 0, 0);
@@ -237,7 +244,7 @@ void Viewport::Draw(const Scene& scene)
     commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 2, 1, &meshRenderPipeline.descriptorSets[2], 0, nullptr);
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
-    meshRenderPushConsts.useIBL = scene.envCubemap_ == nullptr ? -1 : 1;
+    meshRenderPushConsts.iblExposure = scene.iblExposure_;
 
     // not the actual index
     int meshIndex = 0;
@@ -292,11 +299,11 @@ Viewport::~Viewport()
     vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::repeatSampler);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::clampSampler);
-    meshRenderPipeline.~MeshRenderPipeline();
-    shadowCubemapPipeline.~ShadowCubemapPipeline();
-    envCubemapPipeline.~EnvCubemapPipeline();
-    irradianceCubemapPipeline.~IrradianceCubemapPipeline();
-    prefilteredCubemapPipeline.~PrefilteredCubemapPipeline();
-    brdfLutPipeline.~BrdfLutPipeline();
-    skyboxRenderPipeline.~SkyboxRenderPipeline();
+    meshRenderPipeline.Destroy();
+    shadowCubemapPipeline.Destroy();
+    envCubemapPipeline.Destroy();
+    irradianceCubemapPipeline.Destroy();
+    prefilteredCubemapPipeline.Destroy();
+    brdfLutPipeline.Destroy();
+    skyboxRenderPipeline.Destroy();
 }

@@ -55,6 +55,7 @@ class Scene
     std::unique_ptr<PrefilteredCubemap> prefilteredCubemap_;
     Mesh brdfLutSquare_;
     vkn::Image brdfLut_;
+    float iblExposure_;
 
     std::vector<LightData> pointLights_;
     std::vector<vkn::Image> albedoTextures_;
@@ -71,10 +72,12 @@ class Scene
     int32_t selectedMeshInstanceID_;
     int32_t selectedLightID_;
 
-    bool shadowMapDirtyFlag_;
     bool showLightIcon_;
-    bool lightDirtyFlag_;
     bool meshDirtyFlag_;
+    bool lightDirtyFlag_;
+    bool shadowMapDirtyFlag_;
+    bool resourceDirtyFlag_;
+    bool envCubemapDirtyFlag_;
 
     std::string saveFilePath_;
 
@@ -92,7 +95,12 @@ class Scene
     void UpdateMesh();
     void UpdateShadowMap();
     void UpdateDescriptorSet();
+    void UpdateUniformDescriptors();
+    void UpdateTextureDescriptors();
+    void UpdateShadowCubemapDescriptors();
+    void UpdateEnvCubemapDescriptors();
     void InitScene();
+    void InitHdri();
 
 public:
     Scene();

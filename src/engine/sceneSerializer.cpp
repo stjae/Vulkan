@@ -80,6 +80,7 @@ void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
     if (!scene.hdriFilePath_.empty()) {
         out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.hdriFilePath_;
     }
+    out << YAML::Key << "IBLExposure" << YAML::Value << scene.iblExposure_;
     SerializeLights(out, scene.pointLights_);
     SerializeCamera(out, scene.camera_);
     SerializeResources(out, scene.resources_);
@@ -181,6 +182,11 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
         scene.AddEnvironmentMap(hdriFilePath.as<std::string>());
+    }
+
+    auto iblExposure = data["IBLExposure"];
+    if (iblExposure) {
+        scene.iblExposure_ = iblExposure.as<float>();
     }
 
     auto pointLights = data["PointLights"];

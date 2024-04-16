@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowMapDirtyFlag_(true), showLightIcon_(true), envCube_(PRIMITIVE::CUBE), brdfLutSquare_(PRIMITIVE::SQUARE), saveFilePath_("")
+Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowMapDirtyFlag_(true), showLightIcon_(true), envCube_(PRIMITIVE::CUBE), brdfLutSquare_(PRIMITIVE::SQUARE), saveFilePath_(""), iblExposure_(1.0f), resourceDirtyFlag_(true), envCubemapDirtyFlag_(true)
 {
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
@@ -21,6 +21,9 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         metallicTextures_.reserve(1000);
         roughnessTextures_.reserve(1000);
         shadowMaps_.reserve(1000);
+        vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
+        vk::WriteDescriptorSet writeDescriptorSet(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
     }
 
     {
@@ -47,6 +50,8 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         brdfLut_.CreateFramebuffer(brdfLutPipeline);
         brdfLut_.Draw(brdfLutSquare_, brdfLutPipeline, commandBuffer_);
     }
+
+    InitHdri();
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -59,6 +64,7 @@ void Scene::AddResource(std::string& filePath)
 
     if (!meshes_.back().materials_.empty()) {
         LoadMaterials(filePath, meshes_.back().materials_);
+        resourceDirtyFlag_ = true;
     }
 }
 
@@ -116,6 +122,7 @@ void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
     prefilteredCubemap_ = std::make_unique<PrefilteredCubemap>();
     prefilteredCubemap_->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, commandBuffer_);
     prefilteredCubemap_->DrawPrefilteredCubemap(envCube_, *envCubemap_, prefilteredCubemapPipeline, commandBuffer_);
+    envCubemapDirtyFlag_ = true;
 }
 
 void Scene::DeleteMesh()
@@ -249,55 +256,76 @@ void Scene::UpdateShadowMap()
         for (int i = 0; i < pointLights_.size(); i++) {
             shadowMaps_[i].DrawShadowMap(commandBuffer_, i, pointLights_, meshes_);
         }
+
+        UpdateShadowCubemapDescriptors();
+
         shadowMapDirtyFlag_ = false;
     }
 }
 
-void Scene::UpdateDescriptorSet()
+void Scene::UpdateUniformDescriptors()
 {
-    std::vector<vk::WriteDescriptorSet> descriptorWrites;
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.reserve(2);
 
-    descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor);
-    descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor);
+    writeDescriptorSets.emplace_back(shadowCubemapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowCubemapPipeline.cameraDescriptor);
+    writeDescriptorSets.emplace_back(shadowCubemapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowCubemapPipeline.lightDescriptor);
 
-    vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
-    descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSets, nullptr);
+}
 
+void Scene::UpdateTextureDescriptors()
+{
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     for (int i = 0; i < albedoTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &albedoTextures_[i].GetBundle().descriptorImageInfo);
+        writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 1, i, 1, vk::DescriptorType::eSampledImage, &albedoTextures_[i].GetBundle().descriptorImageInfo);
     }
-
     for (int i = 0; i < normalTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &normalTextures_[i].GetBundle().descriptorImageInfo);
+        writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 2, i, 1, vk::DescriptorType::eSampledImage, &normalTextures_[i].GetBundle().descriptorImageInfo);
     }
-
     for (int i = 0; i < metallicTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 3, i, 1, vk::DescriptorType::eSampledImage, &metallicTextures_[i].GetBundle().descriptorImageInfo);
+        writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 3, i, 1, vk::DescriptorType::eSampledImage, &metallicTextures_[i].GetBundle().descriptorImageInfo);
     }
-
     for (int i = 0; i < roughnessTextures_.size(); i++) {
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 4, i, 1, vk::DescriptorType::eSampledImage, &roughnessTextures_[i].GetBundle().descriptorImageInfo);
+        writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 4, i, 1, vk::DescriptorType::eSampledImage, &roughnessTextures_[i].GetBundle().descriptorImageInfo);
     }
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSets, nullptr);
+    resourceDirtyFlag_ = false;
+}
 
+void Scene::UpdateShadowCubemapDescriptors()
+{
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
     shadowCubeMapDescriptors.reserve(shadowMaps_.size());
     for (auto& shadowMap : shadowMaps_)
-        shadowCubeMapDescriptors.emplace_back(vkn::Image::repeatSampler, shadowMap.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+        shadowCubeMapDescriptors.emplace_back(nullptr, shadowMap.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     if (!shadowCubeMapDescriptors.empty())
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[1], 5, 0, shadowCubeMapDescriptors.size(), vk::DescriptorType::eSampledImage, shadowCubeMapDescriptors.data());
+        writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 5, 0, shadowCubeMapDescriptors.size(), vk::DescriptorType::eSampledImage, shadowCubeMapDescriptors.data());
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSets, nullptr);
+}
 
-    descriptorWrites.emplace_back(shadowCubemapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowCubemapPipeline.cameraDescriptor);
-    descriptorWrites.emplace_back(shadowCubemapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowCubemapPipeline.lightDescriptor);
+void Scene::UpdateEnvCubemapDescriptors()
+{
+    std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+    writeDescriptorSets.emplace_back(skyboxRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor);
+    writeDescriptorSets.emplace_back(skyboxRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[2], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[2], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &prefilteredCubemap_->mipmapDescriptorImageInfo);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[2], 2, 0, 1, vk::DescriptorType::eCombinedImageSampler, &brdfLut_.GetBundle().descriptorImageInfo);
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSets, nullptr);
+    envCubemapDirtyFlag_ = false;
+}
 
-    if (envCubemap_ != nullptr) {
-        descriptorWrites.emplace_back(skyboxRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor);
-        descriptorWrites.emplace_back(skyboxRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[2], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &irradianceCubemap_->GetBundle().descriptorImageInfo);
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[2], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &prefilteredCubemap_->mipmapDescriptorImageInfo);
-        descriptorWrites.emplace_back(meshRenderPipeline.descriptorSets[2], 2, 0, 1, vk::DescriptorType::eCombinedImageSampler, &brdfLut_.GetBundle().descriptorImageInfo);
-    }
-
-    vkn::Device::GetBundle().device.updateDescriptorSets(descriptorWrites, nullptr);
+void Scene::UpdateDescriptorSet()
+{
+    UpdateUniformDescriptors();
+    if (resourceDirtyFlag_)
+        UpdateTextureDescriptors();
+    if (envCubemapDirtyFlag_)
+        UpdateEnvCubemapDescriptors();
 }
 
 void Scene::InitScene()
@@ -317,6 +345,24 @@ void Scene::InitScene()
     normalTextures_.clear();
     metallicTextures_.clear();
     roughnessTextures_.clear();
+
+    InitHdri();
+}
+
+void Scene::InitHdri()
+{
+    envMap_ = std::make_unique<vkn::Image>();
+    envMap_->InsertDummyImage(commandBuffer_, { 128, 128, 128, 255 });
+    envCubemap_ = std::make_unique<EnvCubemap>();
+    envCubemap_->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, commandBuffer_);
+    envCubemap_->DrawEnvCubemap(envCube_, *envMap_, envCubemapPipeline, commandBuffer_);
+    irradianceCubemap_ = std::make_unique<EnvCubemap>();
+    irradianceCubemap_->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, commandBuffer_);
+    irradianceCubemap_->DrawEnvCubemap(envCube_, *envCubemap_, irradianceCubemapPipeline, commandBuffer_);
+    prefilteredCubemap_ = std::make_unique<PrefilteredCubemap>();
+    prefilteredCubemap_->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, commandBuffer_);
+    prefilteredCubemap_->DrawPrefilteredCubemap(envCube_, *envCubemap_, prefilteredCubemapPipeline, commandBuffer_);
+    envCubemapDirtyFlag_ = true;
 }
 
 Scene::~Scene()

@@ -92,13 +92,11 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
 }
 
 // TODO: reuse dummy
-void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer)
+void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
 {
-    std::array<uint8_t, 4> dummyTexture = { 0, 0, 0, 255 };
-
-    BufferInput bufferInput = { sizeof(dummyTexture), sizeof(dummyTexture), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    BufferInput bufferInput = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     Buffer stagingBuffer(bufferInput);
-    stagingBuffer.Copy(&dummyTexture);
+    stagingBuffer.Copy(&color);
 
     CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
@@ -147,6 +145,7 @@ void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::C
 
     if (!imageData) {
         spdlog::error("failed to load texture from [{}]", filePath.c_str());
+        InsertDummyImage(commandBuffer, { 32, 32, 32, 255 });
         return;
     }
     spdlog::info("load texture from [{}]", filePath.c_str());

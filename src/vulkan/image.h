@@ -34,7 +34,7 @@ public:
     void CreateFramebuffer(const Pipeline& pipeline);
     void Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer);
     void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
-    void InsertDummyImage(vk::CommandBuffer& commandBuffer);
+    void InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color = { 0, 0, 0, 255 });
     void InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
     void DestroyImage();
     void DestroyImageView();

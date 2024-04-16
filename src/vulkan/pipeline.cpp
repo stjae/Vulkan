@@ -27,7 +27,7 @@ Pipeline::Pipeline()
     pipelineCI_.pDepthStencilState = &depthStencilStateCI_;
 }
 
-Pipeline::~Pipeline()
+void Pipeline::Destroy()
 {
     vkn::Device::GetBundle().device.destroyPipeline(pipeline);
     vkn::Device::GetBundle().device.destroyPipelineLayout(pipelineLayout);
@@ -40,5 +40,4 @@ Pipeline::~Pipeline()
     if (shader.fragmentShaderModule)
         vkn::Device::GetBundle().device.destroyShaderModule(shader.fragmentShaderModule);
 }
-
 } // namespace vkn
