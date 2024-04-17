@@ -139,8 +139,8 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
         for (auto& mesh : meshes) {
             out << YAML::BeginMap;
             out << YAML::Key << "Instances";
+            out << YAML::Value << YAML::BeginSeq;
             if (!mesh.meshInstances_.empty()) {
-                out << YAML::Value << YAML::BeginSeq;
                 for (auto& instance : mesh.meshInstances_) {
                     out << YAML::BeginMap;
                     out << YAML::Key << "ID" << YAML::Value << instance.instanceID;
@@ -152,8 +152,8 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
                     out << YAML::Key << "Roughness" << YAML::Value << instance.roughness;
                     out << YAML::EndMap;
                 }
-                out << YAML::EndSeq;
             }
+            out << YAML::EndSeq;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -182,6 +182,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
         scene.AddEnvironmentMap(hdriFilePath.as<std::string>());
+        scene.hdriFilePath_ = hdriFilePath.as<std::string>();
     }
 
     auto iblExposure = data["IBLExposure"];

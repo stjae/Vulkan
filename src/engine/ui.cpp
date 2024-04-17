@@ -493,11 +493,14 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.AddEnvironmentMap(hdriFilePath);
             }
         }
+        if (!scene.hdriFilePath_.empty()) {
+            ImGui::Text("%s", scene.hdriFilePath_.c_str());
+        }
         if (ImGui::Button("Remove")) {
             scene.InitHdri();
         }
-        ImGui::Separator();
-        ImGui::SliderFloat("Exposure", &scene.iblExposure_, 0.0f, 10.0f);
+        ImGui::SeparatorText("Exposure");
+        ImGui::SliderFloat("##Exposure", &scene.iblExposure_, 0.0f, 10.0f);
         if (ImGui::Button("Reset")) {
             scene.iblExposure_ = 1.0f;
         }

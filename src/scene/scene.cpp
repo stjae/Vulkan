@@ -359,8 +359,8 @@ void Scene::UpdateDescriptorSet()
 
 void Scene::InitScene()
 {
-    saveFilePath_ = "";
-    hdriFilePath_ = "";
+    saveFilePath_.clear();
+    hdriFilePath_.clear();
     envMap_.reset();
     envCubemap_.reset();
     irradianceCubemap_.reset();
@@ -380,6 +380,7 @@ void Scene::InitScene()
 
 void Scene::InitHdri()
 {
+    hdriFilePath_.clear();
     envMap_ = std::make_unique<vkn::Image>();
     envMap_->InsertDummyImage(commandBuffer_, { 128, 128, 128, 255 });
     vkn::Command::Submit(&commandBuffer_, 1);
@@ -392,6 +393,7 @@ void Scene::InitHdri()
     prefilteredCubemap_ = std::make_unique<PrefilteredCubemap>();
     prefilteredCubemap_->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, commandBuffer_);
     prefilteredCubemap_->DrawPrefilteredCubemap(envCube_, *envCubemap_, prefilteredCubemapPipeline, commandBuffer_);
+    iblExposure_ = 1.0f;
     envCubemapDirtyFlag_ = true;
 }
 
