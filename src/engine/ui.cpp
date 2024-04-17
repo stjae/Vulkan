@@ -51,10 +51,13 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     descriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, viewport.viewportImage.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     plusIcon_.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+    vkn::Command::Submit(&commandBuffer_, 1);
     plusIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, plusIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     lightIcon_.InsertImage(PROJECT_DIR "image/icon/light.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+    vkn::Command::Submit(&commandBuffer_, 1);
     lightIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, lightIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+    vkn::Command::Submit(&commandBuffer_, 1);
     cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     dragDropped = false;

@@ -70,16 +70,45 @@ void Scene::AddResource(std::string& filePath)
 
 void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials)
 {
+    std::vector<vk::CommandPool> commandPools;
+    commandPools.resize(4);
+    for (auto& commandPool : commandPools)
+        vkn::Command::CreateCommandPool(commandPool);
+    std::vector<vk::CommandBuffer> commandBuffers;
+    commandBuffers.resize(4);
+
     for (auto& material : materials) {
         albedoTextures_.emplace_back();
-        albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
+        std::thread t0 = std::thread([&]() {
+            vkn::Command::AllocateCommandBuffer(commandPools[0], commandBuffers[0]);
+            albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffers[0]);
+        });
         normalTextures_.emplace_back();
-        normalTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
+        std::thread t1 = std::thread([&]() {
+            vkn::Command::AllocateCommandBuffer(commandPools[1], commandBuffers[1]);
+            normalTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffers[1]);
+        });
         metallicTextures_.emplace_back();
-        metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
+        std::thread t2 = std::thread([&]() {
+            vkn::Command::AllocateCommandBuffer(commandPools[2], commandBuffers[2]);
+            metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffers[2]);
+        });
         roughnessTextures_.emplace_back();
-        roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffer_);
+        std::thread t3 = std::thread([&]() {
+            vkn::Command::AllocateCommandBuffer(commandPools[3], commandBuffers[3]);
+            roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffers[3]);
+        });
+
+        t0.join();
+        t1.join();
+        t2.join();
+        t3.join();
+
+        vkn::Command::Submit(commandBuffers.data(), commandBuffers.size());
     }
+
+    for (auto& commandPool : commandPools)
+        vkn::Device::GetBundle().device.destroyCommandPool(commandPool);
 }
 
 void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
@@ -353,6 +382,7 @@ void Scene::InitHdri()
 {
     envMap_ = std::make_unique<vkn::Image>();
     envMap_->InsertDummyImage(commandBuffer_, { 128, 128, 128, 255 });
+    vkn::Command::Submit(&commandBuffer_, 1);
     envCubemap_ = std::make_unique<EnvCubemap>();
     envCubemap_->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, commandBuffer_);
     envCubemap_->DrawEnvCubemap(envCube_, *envMap_, envCubemapPipeline, commandBuffer_);

@@ -53,8 +53,8 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     spdlog::info("load texture from [{}]", filePath.c_str());
 
     BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
-    stagingBuffer.Copy(imageData);
+    stagingBuffer_ = std::make_shared<Buffer>(bufferInput);
+    stagingBuffer_->Copy(imageData);
 
     stbi_image_free(imageData);
 
@@ -74,7 +74,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer,
-                               stagingBuffer.GetBundle().buffer,
+                               stagingBuffer_->GetBundle().buffer,
                                imageBundle_.image, width,
                                height);
     // Set texture image layout to shader read only
@@ -88,15 +88,14 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
                                    vk::PipelineStageFlagBits::eTransfer,
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer.end();
-    Command::Submit(&commandBuffer, 1);
 }
 
 // TODO: reuse dummy
 void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
 {
     BufferInput bufferInput = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
-    stagingBuffer.Copy(&color);
+    stagingBuffer_ = std::make_shared<Buffer>(bufferInput);
+    stagingBuffer_->Copy(&color);
 
     CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
@@ -114,7 +113,7 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
                                    vk::PipelineStageFlagBits::eTransfer);
     // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer,
-                               stagingBuffer.GetBundle().buffer,
+                               stagingBuffer_->GetBundle().buffer,
                                imageBundle_.image,
                                1,
                                1);
@@ -129,7 +128,6 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
                                    vk::PipelineStageFlagBits::eTransfer,
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer.end();
-    Command::Submit(&commandBuffer, 1);
 }
 
 void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
