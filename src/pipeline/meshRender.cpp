@@ -71,6 +71,15 @@ void MeshRenderPipeline::SetUpDescriptors()
         { 1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
         // brdfLUT
         { 2, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
+        // shadow map
+        { 3, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
+    };
+    descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
+    vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
+
+    bindings = {
+        // shadowMap view projection
+        { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
     };
     descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);

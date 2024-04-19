@@ -11,6 +11,11 @@ inline vk::Format shadowMapDepthFormat = vk::Format::eD32Sfloat;
 
 struct ShadowMapPushConstants
 {
+    int meshIndex;
+};
+
+struct ShadowCubemapPushConstants
+{
     glm::mat4 view;
     glm::vec2 padding;
     int meshIndex;

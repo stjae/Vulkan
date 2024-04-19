@@ -7,6 +7,7 @@
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
 #include "../pipeline/meshRender.h"
+#include "../pipeline/shadowMap.h"
 #include "../pipeline/shadowCubemap.h"
 #include "../pipeline/envCubemap.h"
 #include "../pipeline/irradianceCubemap.h"

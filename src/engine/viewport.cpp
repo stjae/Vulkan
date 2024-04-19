@@ -8,6 +8,7 @@ Viewport::Viewport() : panelRatio(0.0f), outDated(false), isMouseHovered(false)
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
 
     meshRenderPipeline.CreatePipeline();
+    shadowMapPipeline.CreatePipeline();
     shadowCubemapPipeline.CreatePipeline();
     envCubemapPipeline.CreatePipeline();
     irradianceCubemapPipeline.CreatePipeline();
@@ -188,6 +189,15 @@ void Viewport::Draw(const Scene& scene)
                                         vk::AccessFlagBits::eColorAttachmentRead,
                                         vk::PipelineStageFlagBits::eFragmentShader,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        scene.shadowMap_.GetBundle().image,
+                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = meshRenderPipeline.renderPass;
@@ -240,8 +250,7 @@ void Viewport::Draw(const Scene& scene)
         commandBuffer_.drawIndexed(scene.envCube_.GetIndicesCount(0), scene.envCube_.GetInstanceCount(), 0, 0, 0);
     }
 
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 1, 1, &meshRenderPipeline.descriptorSets[1], 0, nullptr);
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 2, 1, &meshRenderPipeline.descriptorSets[2], 0, nullptr);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, meshRenderPipeline.descriptorSets.size(), meshRenderPipeline.descriptorSets.data(), 0, nullptr);
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
 
     meshRenderPushConsts.iblExposure = scene.iblExposure_;
@@ -264,7 +273,6 @@ void Viewport::Draw(const Scene& scene)
                     0,
                     sizeof(MeshRenderPushConstants),
                     &meshRenderPushConsts);
-                commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, 1, &meshRenderPipeline.descriptorSets[0], 0, nullptr);
                 commandBuffer_.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
             }
         }
@@ -289,6 +297,15 @@ void Viewport::Draw(const Scene& scene)
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                         vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
+                                        scene.shadowMap_.GetBundle().image,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer_.end();
     vkn::Command::Submit(&commandBuffer_, 1);
 }
@@ -300,6 +317,7 @@ Viewport::~Viewport()
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::repeatSampler);
     vkn::Device::GetBundle().device.destroySampler(vkn::Image::clampSampler);
     meshRenderPipeline.Destroy();
+    shadowMapPipeline.Destroy();
     shadowCubemapPipeline.Destroy();
     envCubemapPipeline.Destroy();
     irradianceCubemapPipeline.Destroy();

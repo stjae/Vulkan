@@ -121,7 +121,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& com
             shadowCubemapPipeline.pipelineLayout,
             vk::ShaderStageFlagBits::eVertex,
             0,
-            sizeof(ShadowMapPushConstants),
+            sizeof(ShadowCubemapPushConstants),
             &pushConstants_);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowCubemapPipeline.pipelineLayout, 0, 1, &shadowCubemapPipeline.descriptorSets[0], 0, nullptr);
         for (auto& part : mesh.GetMeshParts()) {

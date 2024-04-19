@@ -15,11 +15,9 @@ struct ImageBundle
 };
 class Image
 {
-private:
+protected:
     vk::Framebuffer framebuffer_;
     std::shared_ptr<Buffer> stagingBuffer_;
-
-protected:
     ImageBundle imageBundle_;
 
 public:

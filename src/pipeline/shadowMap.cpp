@@ -1,11 +1,11 @@
-#include "shadowCubemap.h"
+#include "shadowMap.h"
 
-void ShadowCubemapPipeline::CreatePipeline()
+void ShadowMapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/pointlightshadow.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/pointlightshadow.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/dirlightshadow.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/dirlightshadow.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
@@ -14,7 +14,7 @@ void ShadowCubemapPipeline::CreatePipeline()
     SetUpDescriptors();
     CreateRenderPass();
 
-    vk::PushConstantRange pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(ShadowCubemapPushConstants) };
+    vk::PushConstantRange pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(ShadowMapPushConstants) };
     vk::PipelineLayoutCreateInfo pipelineLayoutCI = { {}, (uint32_t)descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange };
 
     rasterizeStateCI_.cullMode = vk::CullModeFlagBits::eFront;
@@ -30,7 +30,7 @@ void ShadowCubemapPipeline::CreatePipeline()
     pipeline = (vkn::Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineCI_)).value;
 }
 
-void ShadowCubemapPipeline::SetUpDescriptors()
+void ShadowMapPipeline::SetUpDescriptors()
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
@@ -39,10 +39,8 @@ void ShadowCubemapPipeline::SetUpDescriptors()
     bindings = {
         // camera
         { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
-        // lights
-        { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
         // meshes
-        { 2, vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound }
+        { 1, vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound }
     };
     descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
@@ -51,46 +49,32 @@ void ShadowCubemapPipeline::SetUpDescriptors()
     vkn::Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts);
 }
 
-void ShadowCubemapPipeline::CreateRenderPass()
+void ShadowMapPipeline::CreateRenderPass()
 {
-    std::array<vk::AttachmentDescription, 2> attachments;
-
-    attachments[0].format = shadowMapImageFormat;
-    attachments[0].samples = vk::SampleCountFlagBits::e1;
-    attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
-    attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
-    attachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    attachments[0].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    attachments[0].initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-    attachments[0].finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    vk::AttachmentDescription attachment;
 
     // Depth
-    attachments[1].format = shadowMapDepthFormat;
-    attachments[1].samples = vk::SampleCountFlagBits::e1;
-    attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
-    attachments[1].storeOp = vk::AttachmentStoreOp::eStore;
-    attachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    attachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    attachments[1].initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    attachments[1].finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    attachment.format = shadowMapDepthFormat;
+    attachment.samples = vk::SampleCountFlagBits::e1;
+    attachment.loadOp = vk::AttachmentLoadOp::eClear;
+    attachment.storeOp = vk::AttachmentStoreOp::eStore;
+    attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    attachment.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    attachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-    vk::AttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
+    vk::AttachmentReference depthAttachmentRef;
+    depthAttachmentRef.attachment = 0;
     depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     vk::SubpassDescription subpassDesc{};
     subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpassDesc.colorAttachmentCount = 1;
-    subpassDesc.pColorAttachments = &colorAttachmentRef;
+    subpassDesc.colorAttachmentCount = 0;
     subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
 
     vk::RenderPassCreateInfo renderPassCI{};
-    renderPassCI.attachmentCount = attachments.size();
-    renderPassCI.pAttachments = attachments.data();
+    renderPassCI.attachmentCount = 1;
+    renderPassCI.pAttachments = &attachment;
     renderPassCI.subpassCount = 1;
     renderPassCI.pSubpasses = &subpassDesc;
 

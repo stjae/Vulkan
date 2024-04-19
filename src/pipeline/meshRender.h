@@ -1,5 +1,5 @@
-#ifndef MESHRENDER_H
-#define MESHRENDER_H
+#ifndef MESHRENDERPIPELINE_H
+#define MESHRENDERPIPELINE_H
 
 #include "../vulkan/pipeline.h"
 

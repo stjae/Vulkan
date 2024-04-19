@@ -1,5 +1,5 @@
-#ifndef BRDFLUT_H
-#define BRDFLUT_H
+#ifndef BRDFLUTPIPELINE_H
+#define BRDFLUTPIPELINE_H
 
 #include "../vulkan/pipeline.h"
 

@@ -80,7 +80,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
         scene.DeleteMesh();
-        scene.DeleteLight();
+        scene.DeletePointLight();
     }
 
     DrawDockSpace(scene);
@@ -127,7 +127,7 @@ void UI::DrawDockSpace(Scene& scene)
     // Top Menu Bar
     if (ImGui::BeginMenuBar()) {
         bool openNewScene = false;
-        if (ImGui::BeginMenu("File")) {
+        if (ImGui::BeginMenu("Scene")) {
             if (ImGui::MenuItem("New")) {
                 openNewScene = true;
             }
@@ -452,7 +452,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
                         scene.selectedLightID_ = i;
-                        scene.DeleteLight();
+                        scene.DeletePointLight();
                     }
                     ImGui::EndPopup();
                 }
@@ -483,6 +483,9 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
                 lightData.model = model;
             }
+            ImGui_ImplVulkan_RemoveTexture(shadowMapDescriptorSet_);
+            shadowMapDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, scene.shadowMap_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            ImGui::Image(shadowMapDescriptorSet_, { 200, 200 });
         }
         ImGui::EndTabItem();
     }

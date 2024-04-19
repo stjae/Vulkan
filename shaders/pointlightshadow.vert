@@ -2,6 +2,18 @@
 #extension GL_EXT_nonuniform_qualifier: enable
 #include "common.glsl"
 
+layout (set = 0, binding = 0) uniform Camera {
+    CameraData data;
+} camera;
+
+layout (set = 0, binding = 1) readonly buffer Light {
+    LightData data[];
+} light;
+
+layout (set = 0, binding = 2) readonly buffer Mesh {
+    MeshInstanceData data[];
+} mesh[];
+
 layout(push_constant) uniform PushConsts
 {
     mat4 view;
@@ -23,7 +35,8 @@ void main() {
 
     vec4 worldPos = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(inPos, 1.0);
 
-    gl_Position = camera.proj * pushConsts.view * worldPos;
+    //TODO: no need camera proj, just pass it by pushconsts
+    gl_Position = camera.data.proj * pushConsts.view * worldPos;
 
     outPos = worldPos;
     outLightPos = light.data[pushConsts.lightIndex].model * vec4(light.data[pushConsts.lightIndex].pos, 1.0);

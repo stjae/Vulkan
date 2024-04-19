@@ -1,4 +1,9 @@
-#include "pbr.glsl"
+struct CameraData
+{
+    mat4 view;
+    mat4 proj;
+    vec3 pos;
+};
 
 struct MeshInstanceData
 {
@@ -22,20 +27,6 @@ struct LightData
     vec3 color;
     float padding1;
 };
-
-layout (set = 0, binding = 0) uniform Camera {
-    mat4 view;
-    mat4 proj;
-    vec3 pos;
-} camera;
-
-layout (set = 0, binding = 1) readonly buffer Light {
-    LightData data[];
-} light;
-
-layout (set = 0, binding = 2) readonly buffer Mesh {
-    MeshInstanceData data[];
-} mesh[];
 
 float Lambert(vec3 worldNormal, vec3 worldModel, LightData lightData)
 {

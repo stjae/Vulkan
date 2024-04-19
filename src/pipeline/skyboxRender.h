@@ -1,5 +1,5 @@
-#ifndef SKYBOXRENDER_H
-#define SKYBOXRENDER_H
+#ifndef SKYBOXRENDERPIPELINE_H
+#define SKYBOXRENDERPIPELINE_H
 
 #include "../vulkan/pipeline.h"
 

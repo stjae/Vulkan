@@ -6,11 +6,13 @@
 #include "camera.h"
 #include "mesh/meshModel.h"
 #include "light.h"
+#include "shadowMap.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
 #include "prefilteredCubemap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
+#include "../pipeline/shadowMap.h"
 #include "../pipeline/envCubemap.h"
 #include "../pipeline/irradianceCubemap.h"
 #include "../pipeline/prefilteredCubemap.h"
@@ -42,9 +44,11 @@ class Scene
     vk::CommandBuffer commandBuffer_;
 
     std::unique_ptr<vkn::Buffer> meshInstanceDataBuffer_;
-    std::unique_ptr<vkn::Buffer> lightDataBuffer_;
+    std::unique_ptr<vkn::Buffer> dirLightDataBuffer_;
+    std::unique_ptr<vkn::Buffer> pointLightDataBuffer_;
 
-    std::vector<ShadowCubemap> shadowMaps_;
+    ShadowMap shadowMap_;
+    std::vector<ShadowCubemap> shadowCubemaps_;
 
     std::vector<MeshModel> meshes_;
     Mesh envCube_;
@@ -65,8 +69,10 @@ class Scene
     std::vector<Resource> resources_;
 
     Camera camera_;
-    std::unique_ptr<vkn::Buffer> shadowMapCameraBuffer_;
-    CameraData shadowMapCameraData_;
+    std::unique_ptr<vkn::Buffer> shadowMapViewProjBuffer_;
+    glm::mat4 shadowMapViewProjData_;
+    std::unique_ptr<vkn::Buffer> shadowCubemapCameraBuffer_;
+    CameraData shadowCubemapCameraData_;
 
     int32_t selectedMeshID_;
     int32_t selectedMeshInstanceID_;
@@ -87,16 +93,17 @@ class Scene
     void AddLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
     void DeleteMesh();
-    void DeleteLight();
-    void HandleLightDuplication();
+    void DeletePointLight();
+    void HandlePointLightDuplication();
     void HandleMeshDuplication();
     void UpdateCamera();
-    void UpdateLight();
+    void UpdatePointLight();
     void UpdateMesh();
     void UpdateShadowMap();
     void UpdateDescriptorSet();
     void UpdateUniformDescriptors();
     void UpdateTextureDescriptors();
+    void UpdateShadowMapDescriptor();
     void UpdateShadowCubemapDescriptors();
     void UpdateEnvCubemapDescriptors();
     void InitScene();

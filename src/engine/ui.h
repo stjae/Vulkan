@@ -33,6 +33,7 @@ class UI
     vk::DescriptorSet lightIconDescriptorSet_;
     vk::DescriptorSet cubeIconDescriptorSet_;
     vk::DescriptorSet hdriThumbnailDescriptorSet_;
+    vk::DescriptorSet shadowMapDescriptorSet_;
 
     void DrawDockSpace(Scene& scene);
     void DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex);

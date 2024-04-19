@@ -77,6 +77,10 @@ add_executable(${PROJECT_NAME}
         src/scene/mesh/meshModel.h
         src/engine/sceneSerializer.cpp
         src/engine/sceneSerializer.h
+        src/pipeline/shadowMap.cpp
+        src/pipeline/shadowMap.h
+        src/scene/shadowMap.cpp
+        src/scene/shadowMap.h
 )
 
 include(Dependency.cmake)

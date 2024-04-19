@@ -13,6 +13,9 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         camera_.at_ = { -2.5, 3.0, 7.3 };
     }
 
+    meshes_.reserve(1000);
+    resources_.reserve(1000);
+
     {
         // prepare textures
         vkn::Image::CreateSampler();
@@ -20,7 +23,8 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         normalTextures_.reserve(1000);
         metallicTextures_.reserve(1000);
         roughnessTextures_.reserve(1000);
-        shadowMaps_.reserve(1000);
+        shadowMap_.CreateShadowMap(commandBuffer_);
+        shadowCubemaps_.reserve(1000);
         vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
         vk::WriteDescriptorSet writeDescriptorSet(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
         vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
@@ -28,13 +32,17 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 
     {
         // prepare buffer, descriptor
-        vkn::BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        shadowMapCameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-        shadowCubemapPipeline.cameraDescriptor = shadowMapCameraBuffer_->GetBundle().descriptorBufferInfo;
+        vkn::BufferInput bufferInput = { sizeof(glm::mat4), sizeof(glm::mat4), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        shadowMapViewProjBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+        shadowMapPipeline.viewProjDescriptor = shadowMapViewProjBuffer_->GetBundle().descriptorBufferInfo;
+        bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        shadowCubemapCameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+        shadowCubemapPipeline.cameraDescriptor = shadowCubemapCameraBuffer_->GetBundle().descriptorBufferInfo;
         bufferInput = { sizeof(LightData), sizeof(LightData), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-        shadowCubemapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        dirLightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+        pointLightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+        meshRenderPipeline.lightDescriptor = pointLightDataBuffer_->GetBundle().descriptorBufferInfo;
+        shadowCubemapPipeline.lightDescriptor = pointLightDataBuffer_->GetBundle().descriptorBufferInfo;
     }
 
     {
@@ -119,11 +127,11 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 
 void Scene::Update()
 {
-    HandleLightDuplication();
+    HandlePointLightDuplication();
     HandleMeshDuplication();
 
     UpdateCamera();
-    UpdateLight();
+    UpdatePointLight();
     UpdateMesh();
     UpdateShadowMap();
     UpdateDescriptorSet();
@@ -132,8 +140,8 @@ void Scene::Update()
 void Scene::AddLight()
 {
     pointLights_.emplace_back();
-    shadowMaps_.emplace_back();
-    shadowMaps_.back().CreateShadowMap(commandBuffer_);
+    shadowCubemaps_.emplace_back();
+    shadowCubemaps_.back().CreateShadowMap(commandBuffer_);
     lightDirtyFlag_ = true;
 }
 
@@ -170,7 +178,7 @@ void Scene::DeleteMesh()
     meshDirtyFlag_ = true;
 }
 
-void Scene::DeleteLight()
+void Scene::DeletePointLight()
 {
     if (selectedLightID_ < 0)
         return;
@@ -195,7 +203,7 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
     selectedMeshInstanceID_ = instanceID;
 }
 
-void Scene::HandleLightDuplication()
+void Scene::HandlePointLightDuplication()
 {
     if (selectedLightID_ > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera_.isControllable_) {
         AddLight();
@@ -230,15 +238,15 @@ void Scene::UpdateCamera()
     camera_.cameraBuffer_->Copy(&camera_.cameraData);
 }
 
-void Scene::UpdateLight()
+void Scene::UpdatePointLight()
 {
     if (!pointLights_.empty() && lightDirtyFlag_) {
         vkn::BufferInput bufferInput = { sizeof(LightData) * pointLights_.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        lightDataBuffer_.reset();
-        lightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-        lightDataBuffer_->Copy(pointLights_.data());
-        meshRenderPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
-        shadowCubemapPipeline.lightDescriptor = lightDataBuffer_->GetBundle().descriptorBufferInfo;
+        pointLightDataBuffer_.reset();
+        pointLightDataBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+        pointLightDataBuffer_->Copy(pointLights_.data());
+        meshRenderPipeline.lightDescriptor = pointLightDataBuffer_->GetBundle().descriptorBufferInfo;
+        shadowCubemapPipeline.lightDescriptor = pointLightDataBuffer_->GetBundle().descriptorBufferInfo;
         std::vector<vk::WriteDescriptorSet> light = {
             { meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor },
             { shadowCubemapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowCubemapPipeline.lightDescriptor }
@@ -265,9 +273,11 @@ void Scene::UpdateMesh()
             bufferInfos.emplace_back(mesh.meshInstanceBuffer_->GetBundle().descriptorBufferInfo);
         }
         meshRenderPipeline.meshDescriptors = bufferInfos;
+        shadowMapPipeline.meshDescriptors = bufferInfos;
         shadowCubemapPipeline.meshDescriptors = bufferInfos;
         std::vector<vk::WriteDescriptorSet> mesh = {
             { meshRenderPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
+            { shadowMapPipeline.descriptorSets[0], 1, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() },
             { shadowCubemapPipeline.descriptorSets[0], 2, 0, (uint32_t)bufferInfos.size(), vk::DescriptorType::eStorageBuffer, {}, bufferInfos.data() }
         };
         vkn::Device::GetBundle().device.updateDescriptorSets(mesh, nullptr);
@@ -278,12 +288,23 @@ void Scene::UpdateMesh()
 
 void Scene::UpdateShadowMap()
 {
-    shadowMapCameraData_.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.001f, 1024.f);
-    shadowMapCameraBuffer_->Copy(&shadowMapCameraData_);
+    float near_plane = 1.0f, far_plane = 47.5f;
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 40.0f, -1.0f),
+                                      glm::vec3(0.0f, 0.0f, 0.0f),
+                                      glm::vec3(0.0f, 1.0f, 0.0f));
+    shadowMapViewProjData_ = lightProjection * lightView;
+    shadowMapViewProjBuffer_->Copy(&shadowMapViewProjData_);
+
+    shadowMap_.DrawShadowMap(commandBuffer_, meshes_);
+    UpdateShadowMapDescriptor();
+
+    shadowCubemapCameraData_.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.001f, 1024.f);
+    shadowCubemapCameraBuffer_->Copy(&shadowCubemapCameraData_);
 
     if (shadowMapDirtyFlag_) {
         for (int i = 0; i < pointLights_.size(); i++) {
-            shadowMaps_[i].DrawShadowMap(commandBuffer_, i, pointLights_, meshes_);
+            shadowCubemaps_[i].DrawShadowMap(commandBuffer_, i, pointLights_, meshes_);
         }
 
         UpdateShadowCubemapDescriptors();
@@ -295,10 +316,11 @@ void Scene::UpdateShadowMap()
 void Scene::UpdateUniformDescriptors()
 {
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
-    writeDescriptorSets.reserve(2);
 
     writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &meshRenderPipeline.cameraDescriptor);
     writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &meshRenderPipeline.lightDescriptor);
+    writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[3], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowMapPipeline.viewProjDescriptor);
+    writeDescriptorSets.emplace_back(shadowMapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowMapPipeline.viewProjDescriptor);
     writeDescriptorSets.emplace_back(shadowCubemapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &shadowCubemapPipeline.cameraDescriptor);
     writeDescriptorSets.emplace_back(shadowCubemapPipeline.descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &shadowCubemapPipeline.lightDescriptor);
 
@@ -324,13 +346,20 @@ void Scene::UpdateTextureDescriptors()
     resourceDirtyFlag_ = false;
 }
 
+void Scene::UpdateShadowMapDescriptor()
+{
+    vk::DescriptorImageInfo shadowMapDescriptor(vkn::Image::repeatSampler, shadowMap_.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vk::WriteDescriptorSet writeDescriptorSet(meshRenderPipeline.descriptorSets[2], 3, 0, 1, vk::DescriptorType::eCombinedImageSampler, &shadowMapDescriptor);
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
 void Scene::UpdateShadowCubemapDescriptors()
 {
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     std::vector<vk::DescriptorImageInfo> shadowCubeMapDescriptors;
-    shadowCubeMapDescriptors.reserve(shadowMaps_.size());
-    for (auto& shadowMap : shadowMaps_)
-        shadowCubeMapDescriptors.emplace_back(nullptr, shadowMap.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+    shadowCubeMapDescriptors.reserve(shadowCubemaps_.size());
+    for (auto& shadowCubemap : shadowCubemaps_)
+        shadowCubeMapDescriptors.emplace_back(nullptr, shadowCubemap.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     if (!shadowCubeMapDescriptors.empty())
         writeDescriptorSets.emplace_back(meshRenderPipeline.descriptorSets[1], 5, 0, shadowCubeMapDescriptors.size(), vk::DescriptorType::eSampledImage, shadowCubeMapDescriptors.data());
     vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSets, nullptr);
@@ -369,7 +398,7 @@ void Scene::InitScene()
     meshes_.clear();
     resources_.clear();
     pointLights_.clear();
-    shadowMaps_.clear();
+    shadowCubemaps_.clear();
     albedoTextures_.clear();
     normalTextures_.clear();
     metallicTextures_.clear();

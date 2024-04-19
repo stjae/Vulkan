@@ -1,5 +1,5 @@
-#ifndef SHADOWCUBEMAP_H
-#define SHADOWCUBEMAP_H
+#ifndef SHADOWCUBEMAPPIPELINE_H
+#define SHADOWCUBEMAPPIPELINE_H
 
 #include "../vulkan/pipeline.h"
 
