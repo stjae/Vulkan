@@ -78,6 +78,12 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
         scene.selectedLightID_ = -1;
     }
 
+    if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.camera_.IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+        scene.selectedMeshID_ = -1;
+        scene.selectedMeshInstanceID_ = -1;
+        scene.selectedLightID_ = -1;
+    }
+
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
         scene.DeleteMesh();
         scene.DeletePointLight();
@@ -560,7 +566,8 @@ void UI::DrawResourceWindow(Scene& scene)
         ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Delete")) {
-                scene.resources_.erase(scene.resources_.begin() + i);
+                // TODO:
+                // scene.resources_.erase(scene.resources_.begin() + i);
             }
             ImGui::EndPopup();
         }
