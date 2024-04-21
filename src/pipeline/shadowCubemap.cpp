@@ -96,3 +96,39 @@ void ShadowCubemapPipeline::CreateRenderPass()
 
     vkn::CheckResult(vkn::Device::GetBundle().device.createRenderPass(&renderPassCI, nullptr, &renderPass));
 }
+
+void ShadowCubemapPipeline::UpdateProjDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &projDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void ShadowCubemapPipeline::UpdatePointLightDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+    writeDescriptorSet.pBufferInfo = &pointLightDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void ShadowCubemapPipeline::UpdateMeshDescriptors()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 2;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = meshDescriptors.size();
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+    writeDescriptorSet.pBufferInfo = meshDescriptors.data();
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}

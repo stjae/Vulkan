@@ -429,7 +429,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.meshDirtyFlag_ = true;
             }
 
-            ImGui::SeparatorText("Material");
+            ImGui::SeparatorText("MaterialFilePath");
             if (ImGui::SliderFloat3("Albedo", &meshInstance.albedo[0], 0.0f, 1.0f))
                 scene.meshDirtyFlag_ = true;
             if (ImGui::SliderFloat("Metallic", &meshInstance.metallic, 0.0f, 1.0f))
@@ -472,9 +472,9 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 float matrix[16];
 
                 ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
-                std::vector<std::string> labels = { "Move", "Rotate", "Color" };
-                ImGui::SeparatorText("Translation");
-                if (ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f))
+                std::vector<std::string> labels = { "Position", "Rotate", "Color" };
+                ImGui::SeparatorText("Point Light");
+                if (ImGui::SliderFloat3(labels[0].append("##position").c_str(), translation, -10.0f, 10.0f))
                     scene.lightDirtyFlag_ = true;
                 if (ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f))
                     scene.lightDirtyFlag_ = true;
@@ -483,6 +483,32 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
                 lightData.model = model;
             }
+            // Directional Light
+            ImGui::SeparatorText("Directional Light");
+
+            glm::mat4 rotMat(1.0f);
+            float translation[3];
+            float rotation[3];
+            float scale[3];
+            float matrix[16];
+
+            // TODO: fix rotation load on light tab open
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene.dirLightRot_), translation, rotation, scale);
+            ImGui::SliderFloat("Near Plane", &scene.dirLightNearPlane_, 0.0f, 100.0f);
+            ImGui::SliderFloat("Far Plane", &scene.dirLightFarPlane_, 0.0f, 100.0f);
+            ImGui::SliderFloat("Size", &scene.dirLightSize_, 0.0f, 50.0f);
+            ImGui::SliderFloat("Distance", &scene.dirLightDistance_, 0.0f, 100.0f);
+            ImGui::SliderFloat3("Rotation", &rotation[0], -1.0f, 1.0f);
+            ImGui::SliderFloat3("Color", &scene.dirLightUBO_.color[0], 0.0f, 1.0f);
+            ImGui::SliderFloat("Intensity", &scene.dirLightUBO_.intensity, 0.0f, 10.0f);
+            rotMat = glm::rotate(rotMat, rotation[0], glm::vec3(1.0f, 0.0f, 0.0f));
+            rotMat = glm::rotate(rotMat, rotation[1], glm::vec3(0.0f, 1.0f, 0.0f));
+            rotMat = glm::rotate(rotMat, rotation[2], glm::vec3(0.0f, 0.0f, 1.0f));
+            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+            scene.dirLightRot_ = glm::make_mat4(matrix);
+            scene.dirLightPos_ = rotMat * glm::vec4(0.0f, scene.dirLightDistance_, 0.0f, 1.0f);
+
+            // dir light shadow depth map
             ImGui_ImplVulkan_RemoveTexture(shadowMapDescriptorSet_);
             shadowMapDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, scene.shadowMap_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             ImGui::Image(shadowMapDescriptorSet_, { 200, 200 });
@@ -532,6 +558,12 @@ void UI::DrawResourceWindow(Scene& scene)
     for (int i = 0; i < scene.resources_.size(); i++) {
         ImGui::PushID(i);
         ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Delete")) {
+                scene.resources_.erase(scene.resources_.begin() + i);
+            }
+            ImGui::EndPopup();
+        }
 
         // Send Drag Drop
         if (ImGui::BeginDragDropSource()) {

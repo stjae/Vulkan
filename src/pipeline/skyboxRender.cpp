@@ -115,3 +115,27 @@ void SkyboxRenderPipeline::CreateRenderPass()
 
     renderPass = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
 }
+
+void SkyboxRenderPipeline::UpdateCameraDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &cameraDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void SkyboxRenderPipeline::UpdateIrradianceCubemapDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.pImageInfo = &irradianceCubemapDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}

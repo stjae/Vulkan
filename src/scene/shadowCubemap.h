@@ -2,7 +2,7 @@
 #define SHADOWCUBEMAP_H
 
 #include "../common.h"
-#include "light.h"
+#include "dataType.h"
 #include "mesh/meshModel.h"
 #include "../vulkan/cubemap.h"
 #include "../pipeline/meshRender.h"
@@ -16,13 +16,13 @@ class ShadowCubemap : public vkn::Cubemap
     ShadowCubemapPushConstants pushConstants_;
     vkn::Image depthImage_;
 
-    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<MeshModel>& meshes);
+    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes);
     void CreateFramebuffer(vk::CommandBuffer& commandBuffer);
     void CreateDepthImage(vk::CommandBuffer& commandBuffer);
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<LightData>& lights, std::vector<MeshModel>& meshes);
+    void DrawShadowMap(vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes);
 };
 
 #endif

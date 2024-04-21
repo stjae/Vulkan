@@ -17,7 +17,7 @@ void ShadowMapPipeline::CreatePipeline()
     vk::PushConstantRange pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(ShadowMapPushConstants) };
     vk::PipelineLayoutCreateInfo pipelineLayoutCI = { {}, (uint32_t)descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange };
 
-    rasterizeStateCI_.cullMode = vk::CullModeFlagBits::eFront;
+    rasterizeStateCI_.cullMode = vk::CullModeFlagBits::eNone;
     pipelineCI_.stageCount = (uint32_t)shaderStageInfos.size();
     pipelineCI_.pStages = shaderStageInfos.data();
     pipelineCI_.renderPass = renderPass;
@@ -79,4 +79,28 @@ void ShadowMapPipeline::CreateRenderPass()
     renderPassCI.pSubpasses = &subpassDesc;
 
     vkn::CheckResult(vkn::Device::GetBundle().device.createRenderPass(&renderPassCI, nullptr, &renderPass));
+}
+
+void ShadowMapPipeline::UpdateShadowMapSpaceViewProjDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &shadowMapSpaceViewProjDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void ShadowMapPipeline::UpdateMeshDescriptors()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = meshDescriptors.size();
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+    writeDescriptorSet.pBufferInfo = meshDescriptors.data();
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

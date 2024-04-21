@@ -80,6 +80,8 @@ void MeshRenderPipeline::SetUpDescriptors()
     bindings = {
         // shadowMap view projection
         { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+        // directional light
+        { 1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment },
     };
     descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
@@ -148,4 +150,182 @@ void MeshRenderPipeline::CreateRenderPass()
     renderPassInfo.pSubpasses = &subpassDesc;
 
     renderPass = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
+}
+
+void MeshRenderPipeline::UpdateCameraDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &cameraDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdatePointLightDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+    writeDescriptorSet.pBufferInfo = &pointLightDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateMeshDescriptors()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstBinding = 2;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = meshDescriptors.size();
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+    writeDescriptorSet.pBufferInfo = meshDescriptors.data();
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateShadowMapDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[2];
+    writeDescriptorSet.dstBinding = 3;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.pImageInfo = &shadowMapImageDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateShadowCubemapDescriptors()
+{
+    if (!shadowCubemapDescriptors.empty()) {
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.dstBinding = 5;
+        writeDescriptorSet.dstArrayElement = 0;
+        writeDescriptorSet.descriptorCount = shadowCubemapDescriptors.size();
+        writeDescriptorSet.descriptorType = vk::DescriptorType::eSampledImage;
+        writeDescriptorSet.pImageInfo = shadowCubemapDescriptors.data();
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    }
+}
+
+void MeshRenderPipeline::UpdateShadowMapSpaceViewProjDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[3];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &shadowMapSpaceViewProjDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateAlbedoTextureWriteDescriptors()
+{
+    if (!albeodoTextureDescriptors.empty()) {
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.dstBinding = 1;
+        writeDescriptorSet.dstArrayElement = 0;
+        writeDescriptorSet.descriptorCount = albeodoTextureDescriptors.size();
+        writeDescriptorSet.descriptorType = vk::DescriptorType::eSampledImage;
+        writeDescriptorSet.pImageInfo = albeodoTextureDescriptors.data();
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    }
+}
+
+void MeshRenderPipeline::UpdateNormalTextureWriteDescriptors()
+{
+    if (!normalTextureDescriptors.empty()) {
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.dstBinding = 2;
+        writeDescriptorSet.dstArrayElement = 0;
+        writeDescriptorSet.descriptorCount = normalTextureDescriptors.size();
+        writeDescriptorSet.descriptorType = vk::DescriptorType::eSampledImage;
+        writeDescriptorSet.pImageInfo = normalTextureDescriptors.data();
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    }
+}
+
+void MeshRenderPipeline::UpdateMetallicTextureWriteDescriptors()
+{
+    if (!metallicTextureDescriptors.empty()) {
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.dstBinding = 3;
+        writeDescriptorSet.dstArrayElement = 0;
+        writeDescriptorSet.descriptorCount = metallicTextureDescriptors.size();
+        writeDescriptorSet.descriptorType = vk::DescriptorType::eSampledImage;
+        writeDescriptorSet.pImageInfo = normalTextureDescriptors.data();
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    }
+}
+
+void MeshRenderPipeline::UpdateRoughnessTextureWriteDescriptors()
+{
+    if (!roughnessTextureDescriptors.empty()) {
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet.dstSet = descriptorSets[1];
+        writeDescriptorSet.dstBinding = 4;
+        writeDescriptorSet.dstArrayElement = 0;
+        writeDescriptorSet.descriptorCount = roughnessTextureDescriptors.size();
+        writeDescriptorSet.descriptorType = vk::DescriptorType::eSampledImage;
+        writeDescriptorSet.pImageInfo = roughnessTextureDescriptors.data();
+        vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    }
+}
+
+void MeshRenderPipeline::UpdateIrraianceCubemapDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[2];
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.pImageInfo = &irradianceCubemapDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdatePrefilteredCubemapDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[2];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.pImageInfo = &prefilteredCubemapDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateBrdfLutDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[2];
+    writeDescriptorSet.dstBinding = 2;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    writeDescriptorSet.pImageInfo = &brdfLutDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+}
+
+void MeshRenderPipeline::UpdateDirLightDescriptor()
+{
+    vk::WriteDescriptorSet writeDescriptorSet;
+    writeDescriptorSet.dstSet = descriptorSets[3];
+    writeDescriptorSet.dstBinding = 1;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &dirLightDescriptor;
+    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

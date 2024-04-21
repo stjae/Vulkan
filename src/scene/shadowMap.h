@@ -5,7 +5,7 @@
 #include "../scene/mesh/meshModel.h"
 #include "../pipeline/shadowMap.h"
 
-inline static uint32_t shadowMapSize = 1024;
+inline static uint32_t shadowMapSize = 4096;
 
 class ShadowMap : public vkn::Image
 {

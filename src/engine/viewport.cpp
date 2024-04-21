@@ -297,15 +297,6 @@ void Viewport::Draw(const Scene& scene)
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                         vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer_,
-                                        scene.shadowMap_.GetBundle().image,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer_.end();
     vkn::Command::Submit(&commandBuffer_, 1);
 }

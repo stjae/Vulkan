@@ -36,6 +36,15 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<MeshModel>& meshes)
 {
     vkn::Command::Begin(commandBuffer);
+    vkn::Command::SetImageMemoryBarrier(commandBuffer,
+                                        imageBundle_.image,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 
     vk::Viewport viewport({}, {}, (float)shadowMapSize, (float)shadowMapSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);

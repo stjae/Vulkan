@@ -7,7 +7,7 @@
 #include "../pipeline/meshRender.h"
 #include "../../imgui/imgui.h"
 
-struct CameraData
+struct CameraUBO
 {
     glm::mat4 view;
     glm::mat4 proj;
@@ -23,7 +23,7 @@ class Camera
     bool isInitial_ = true; // prevent sudden camera move
 
     glm::vec3 pos_ = { 0.0f, 0.0f, 4.0f };
-    glm::vec4 dir_ = { 0.0f, 0.0f, -1.0f, 0.0f };
+    glm::vec3 dir_ = { 0.0f, 0.0f, -1.0f };
     glm::vec3 at_ = { 0.0f, 0.0f, 0.0f };
     glm::vec3 up_ = { 0.0f, 1.0f, 0.0f };
     glm::vec3 right_ = { 0.0f, 0.0f, 0.0f };
@@ -32,7 +32,7 @@ class Camera
 
     float speed_ = 4.0f;
 
-    CameraData cameraData{};
+    CameraUBO cameraUBO_{};
     std::unique_ptr<vkn::Buffer> cameraBuffer_;
 
     void SetCameraControl();
@@ -41,7 +41,7 @@ class Camera
 public:
     Camera();
     bool IsControllable() const { return isControllable_; }
-    const CameraData& GetMatrix() { return cameraData; }
+    const CameraUBO& GetMatrix() { return cameraUBO_; }
     const vk::DescriptorBufferInfo& GetBufferInfo() { return cameraBuffer_->GetBundle().descriptorBufferInfo; }
 };
 

@@ -2,9 +2,8 @@
 
 Camera::Camera()
 {
-    vkn::BufferInput bufferInput = { sizeof(CameraData), sizeof(CameraData), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::BufferInput bufferInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     cameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-    meshRenderPipeline.cameraDescriptor = cameraBuffer_->GetBundle().descriptorBufferInfo;
 }
 
 void Camera::SetCameraControl()
@@ -55,23 +54,21 @@ void Camera::Update()
     if (isInitial_) {
         prevMouseX = mouseX;
         prevMouseY = mouseY;
-
         isInitial_ = false;
     }
 
-    glm::mat4 rotateX =
-        glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), up_);
-    dir_ = rotateX * dir_;
+    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), up_);
+    dir_ = rotateY * glm::vec4(dir_, 0.0f);
     glm::normalize(dir_);
-    right_ = glm::cross(glm::vec3(dir_.x, dir_.y, dir_.z), up_);
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), right_);
-    dir_ = rotateY * dir_;
+    right_ = glm::cross(dir_, up_);
+    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), right_);
+    dir_ = rotateX * glm::vec4(dir_, 0.0f);
 
     if (ImGui::IsKeyDown(ImGuiKey_W)) {
-        pos_ += glm::vec3(dir_.x, dir_.y, dir_.z) * (float)(delta)*speed_;
+        pos_ += dir_ * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        pos_ -= glm::vec3(dir_.x, dir_.y, dir_.z) * (float)(delta)*speed_;
+        pos_ -= dir_ * (float)(delta)*speed_;
     }
     if (ImGui::IsKeyDown(ImGuiKey_A)) {
         pos_ -= right_ * (float)(delta)*speed_;
@@ -86,7 +83,7 @@ void Camera::Update()
         pos_ -= up_ * (float)(delta)*speed_;
     }
 
-    at_ = pos_ + glm::vec3(dir_.x, dir_.y, dir_.z);
+    at_ = pos_ + dir_;
 
     prevMouseX = mouseX;
     prevMouseY = mouseY;

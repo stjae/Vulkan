@@ -5,7 +5,7 @@
 #include "scene.h"
 #include "camera.h"
 #include "mesh/meshModel.h"
-#include "light.h"
+#include "dataType.h"
 #include "shadowMap.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
@@ -20,19 +20,6 @@
 #include "../pipeline/skyboxRender.h"
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
-
-struct Resource
-{
-    std::string filePath;
-    std::string fileName;
-    void* ptr;
-
-    explicit Resource(std::string& path) : ptr(nullptr)
-    {
-        this->filePath = path;
-        this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
-    }
-};
 
 class Scene
 {
@@ -61,7 +48,15 @@ class Scene
     vkn::Image brdfLut_;
     float iblExposure_;
 
-    std::vector<LightData> pointLights_;
+    std::vector<PointLightUBO> pointLights_;
+    DirLightUBO dirLightUBO_;
+    float dirLightNearPlane_ = 1.0f;
+    float dirLightFarPlane_ = 45.0f;
+    float dirLightDistance_ = 40.0f;
+    float dirLightSize_ = 10.0f;
+    glm::mat4 dirLightRot_ = glm::mat4(1.0f);
+    glm::vec3 dirLightPos_ = glm::vec3(0.0f, dirLightDistance_, 0.0f);
+
     std::vector<vkn::Image> albedoTextures_;
     std::vector<vkn::Image> normalTextures_;
     std::vector<vkn::Image> metallicTextures_;
@@ -69,10 +64,10 @@ class Scene
     std::vector<Resource> resources_;
 
     Camera camera_;
-    std::unique_ptr<vkn::Buffer> shadowMapViewProjBuffer_;
-    glm::mat4 shadowMapViewProjData_;
-    std::unique_ptr<vkn::Buffer> shadowCubemapCameraBuffer_;
-    CameraData shadowCubemapCameraData_;
+    std::unique_ptr<vkn::Buffer> shadowMapViewSpaceProjBuffer_;
+    glm::mat4 shadowMapViewProj_;
+    std::unique_ptr<vkn::Buffer> shadowCubemapProjBuffer_;
+    glm::mat4 shadowCubemapProj_;
 
     int32_t selectedMeshID_;
     int32_t selectedMeshInstanceID_;
@@ -81,14 +76,14 @@ class Scene
     bool showLightIcon_;
     bool meshDirtyFlag_;
     bool lightDirtyFlag_;
-    bool shadowMapDirtyFlag_;
+    bool shadowShadowCubemapDirtyFlag_;
     bool resourceDirtyFlag_;
     bool envCubemapDirtyFlag_;
 
     std::string saveFilePath_;
 
     void AddResource(std::string& filePath);
-    void LoadMaterials(const std::string& modelPath, const std::vector<Material>& materials);
+    void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
@@ -100,11 +95,10 @@ class Scene
     void UpdatePointLight();
     void UpdateMesh();
     void UpdateShadowMap();
+    void UpdateShadowCubemaps();
     void UpdateDescriptorSet();
     void UpdateUniformDescriptors();
     void UpdateTextureDescriptors();
-    void UpdateShadowMapDescriptor();
-    void UpdateShadowCubemapDescriptors();
     void UpdateEnvCubemapDescriptors();
     void InitScene();
     void InitHdri();
@@ -115,8 +109,8 @@ public:
     size_t GetInstanceCount();
     size_t GetLightCount() { return pointLights_.size(); }
     const std::vector<MeshModel>& GetMeshes() { return meshes_; }
-    MeshInstance& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
-    MeshInstance& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
+    MeshInstanceUBO& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
+    MeshInstanceUBO& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     ~Scene();
 };

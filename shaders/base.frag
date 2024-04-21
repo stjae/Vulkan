@@ -15,6 +15,12 @@ layout (set = 0, binding = 2) readonly buffer Mesh {
     MeshInstanceData data[];
 } mesh[];
 
+layout (set = 3, binding = 1) uniform DirLight {
+    vec3 dir;
+    float intensity;
+    vec3 color;
+} dirLight;
+
 layout (push_constant) uniform PushConsts
 {
     int meshIndex;
@@ -46,6 +52,8 @@ layout (location = 6) flat in int instanceIndex;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out ivec2 outID;
+
+const float SHADOW_OFFSET = 0.005;
 
 void main() {
 
@@ -101,14 +109,42 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
+    vec3 projCoords = inShadowMapFragPos.xyz / inShadowMapFragPos.w;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float bias = 0.001;
+    if (currentDepth - bias < closestDepth) {
+        vec3 N = normalWorld;
+        vec3 L = dirLight.dir;
+        vec3 radiance = max(0.0, dot(L, N)) * dirLight.color * dirLight.intensity;
+
+        vec3 H = normalize(V + L);
+
+        // brdf
+        float NDF = DistributionGGX(N, H, roughness);
+        float G = GeometrySmith(N, V, L, roughness);
+        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
+
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
+
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+    }
+
     for (int i = 0; i < pushConsts.lightCount; i++) {
 
         vec4 lightPos = light.data[i].model * vec4(light.data[i].pos, 1.0);
         vec3 lightVec = (inModel - lightPos).xyz;
         float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);
-        float offset = 0.005;
-        bool castShadow = distToLight > sampledDist + offset;
+        bool castShadow = distToLight > sampledDist + SHADOW_OFFSET;
         if (castShadow) {
             continue;
         }
@@ -135,7 +171,6 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-
     vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
@@ -153,14 +188,6 @@ void main() {
 
     vec3 color = ambient + Lo;
     outColor.rgb = color;
-
-    vec3 projCoords = inShadowMapFragPos.xyz / inShadowMapFragPos.w;
-    projCoords.xy = projCoords.xy * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    float currentDepth = projCoords.z;
-    float bias = 0.005;
-    if (currentDepth - bias > closestDepth)// cast shadow
-    outColor.rgb *= 0.5;
 
     outID.r = meshInstance.meshID;
     outID.g = meshInstance.instanceID;

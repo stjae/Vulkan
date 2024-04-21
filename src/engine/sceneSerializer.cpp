@@ -81,7 +81,8 @@ void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
         out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.hdriFilePath_;
     }
     out << YAML::Key << "IBLExposure" << YAML::Value << scene.iblExposure_;
-    SerializeLights(out, scene.pointLights_);
+    SerializeDirLight(out, scene);
+    SerializePointLights(out, scene.pointLights_);
     SerializeCamera(out, scene.camera_);
     SerializeResources(out, scene.resources_);
     SerializeMeshes(out, scene.meshes_);
@@ -92,7 +93,20 @@ void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
     fout << out.c_str();
 }
 
-void SceneSerializer::SerializeLights(YAML::Emitter& out, const std::vector<LightData>& pointLights)
+void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
+{
+    out << YAML::Key << "DirectionalLight" << YAML::Value;
+    out << YAML::BeginMap;
+    out << YAML::Key << "NearPlane" << YAML::Value << scene.dirLightNearPlane_;
+    out << YAML::Key << "FarPlane" << YAML::Value << scene.dirLightFarPlane_;
+    out << YAML::Key << "Distance" << YAML::Value << scene.dirLightDistance_;
+    out << YAML::Key << "Rotation" << YAML::Value << scene.dirLightRot_;
+    out << YAML::Key << "Color" << YAML::Value << scene.dirLightUBO_.color;
+    out << YAML::Key << "Intensity" << YAML::Value << scene.dirLightUBO_.intensity;
+    out << YAML::EndMap;
+}
+
+void SceneSerializer::SerializePointLights(YAML::Emitter& out, const std::vector<PointLightUBO>& pointLights)
 {
     if (!pointLights.empty()) {
         out << YAML::Key << "PointLights";
@@ -113,7 +127,7 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
     out << YAML::Key << "Position" << YAML::Value << camera.pos_;
-    out << YAML::Key << "At" << YAML::Value << camera.at_;
+    out << YAML::Key << "Dir" << YAML::Value << camera.dir_;
     out << YAML::EndMap;
 }
 
@@ -178,7 +192,8 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     auto camera = data["Camera"];
     scene.camera_.pos_ = camera["Position"].as<glm::vec3>();
-    scene.camera_.at_ = camera["At"].as<glm::vec3>();
+    scene.camera_.dir_ = camera["Dir"].as<glm::vec3>();
+    scene.camera_.at_ = scene.camera_.pos_ + scene.camera_.dir_;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
@@ -190,6 +205,14 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     if (iblExposure) {
         scene.iblExposure_ = iblExposure.as<float>();
     }
+
+    auto dirLight = data["DirectionalLight"];
+    scene.dirLightNearPlane_ = dirLight["NearPlane"].as<float>();
+    scene.dirLightFarPlane_ = dirLight["FarPlane"].as<float>();
+    scene.dirLightDistance_ = dirLight["Distance"].as<float>();
+    scene.dirLightRot_ = dirLight["Rotation"].as<glm::mat4>();
+    scene.dirLightUBO_.color = dirLight["Color"].as<glm::vec3>();
+    scene.dirLightUBO_.intensity = dirLight["Intensity"].as<float>();
 
     auto pointLights = data["PointLights"];
     if (pointLights) {

@@ -18,11 +18,39 @@ class MeshRenderPipeline : public vkn::Pipeline
 
 public:
     vk::DescriptorBufferInfo cameraDescriptor;
-    vk::DescriptorBufferInfo lightDescriptor;
+    vk::DescriptorBufferInfo pointLightDescriptor;
     std::vector<vk::DescriptorBufferInfo> meshDescriptors;
+
+    vk::DescriptorBufferInfo dirLightDescriptor;
+    vk::DescriptorImageInfo shadowMapImageDescriptor;
+    vk::DescriptorBufferInfo shadowMapSpaceViewProjDescriptor;
+
+    std::vector<vk::DescriptorImageInfo> albeodoTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> normalTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> metallicTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> roughnessTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> shadowCubemapDescriptors;
+
+    vk::DescriptorImageInfo irradianceCubemapDescriptor;
+    vk::DescriptorImageInfo prefilteredCubemapDescriptor;
+    vk::DescriptorImageInfo brdfLutDescriptor;
 
     void CreatePipeline() override;
 
+    void UpdateCameraDescriptor();
+    void UpdatePointLightDescriptor();
+    void UpdateMeshDescriptors();
+    void UpdateDirLightDescriptor();
+    void UpdateShadowMapDescriptor();
+    void UpdateShadowMapSpaceViewProjDescriptor();
+    void UpdateAlbedoTextureWriteDescriptors();
+    void UpdateNormalTextureWriteDescriptors();
+    void UpdateMetallicTextureWriteDescriptors();
+    void UpdateRoughnessTextureWriteDescriptors();
+    void UpdateShadowCubemapDescriptors();
+    void UpdateIrraianceCubemapDescriptor();
+    void UpdateBrdfLutDescriptor();
+    void UpdatePrefilteredCubemapDescriptor();
 } inline meshRenderPipeline;
 
 #endif
