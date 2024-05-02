@@ -101,6 +101,7 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
     out << YAML::Key << "FarPlane" << YAML::Value << scene.dirLightFarPlane_;
     out << YAML::Key << "Distance" << YAML::Value << scene.dirLightDistance_;
     out << YAML::Key << "Rotation" << YAML::Value << scene.dirLightRot_;
+    out << YAML::Key << "Position" << YAML::Value << scene.dirLightPos_;
     out << YAML::Key << "Color" << YAML::Value << scene.dirLightUBO_.color;
     out << YAML::Key << "Intensity" << YAML::Value << scene.dirLightUBO_.intensity;
     out << YAML::EndMap;
@@ -211,6 +212,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     scene.dirLightFarPlane_ = dirLight["FarPlane"].as<float>();
     scene.dirLightDistance_ = dirLight["Distance"].as<float>();
     scene.dirLightRot_ = dirLight["Rotation"].as<glm::mat4>();
+    scene.dirLightPos_ = dirLight["Position"].as<glm::vec3>();
     scene.dirLightUBO_.color = dirLight["Color"].as<glm::vec3>();
     scene.dirLightUBO_.intensity = dirLight["Intensity"].as<float>();
 

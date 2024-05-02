@@ -498,7 +498,6 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             float scale[3];
             float matrix[16];
 
-            // TODO: fix rotation load on light tab open
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene.dirLightRot_), translation, rotation, scale);
             ImGui::SliderFloat("Near Plane", &scene.dirLightNearPlane_, 0.0f, 100.0f);
             ImGui::SliderFloat("Far Plane", &scene.dirLightFarPlane_, 0.0f, 100.0f);
@@ -514,10 +513,11 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             scene.dirLightRot_ = glm::make_mat4(matrix);
             scene.dirLightPos_ = rotMat * glm::vec4(0.0f, scene.dirLightDistance_, 0.0f, 1.0f);
 
+            // TODO: fix glitch on scroll
             // dir light shadow depth map
-            ImGui_ImplVulkan_RemoveTexture(shadowMapDescriptorSet_);
-            shadowMapDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, scene.shadowMap_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            ImGui::Image(shadowMapDescriptorSet_, { 200, 200 });
+            // ImGui_ImplVulkan_RemoveTexture(shadowMapDescriptorSet_);
+            // shadowMapDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, scene.shadowMap_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            // ImGui::Image(shadowMapDescriptorSet_, { 200, 200 });
         }
         ImGui::EndTabItem();
     }
@@ -566,7 +566,7 @@ void UI::DrawResourceWindow(Scene& scene)
         ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Delete")) {
-                // TODO:
+                // TODO: resource deletion
                 // scene.resources_.erase(scene.resources_.begin() + i);
             }
             ImGui::EndPopup();
