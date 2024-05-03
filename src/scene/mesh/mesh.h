@@ -13,6 +13,7 @@ class Mesh : public MeshBase
 {
     friend class Scene;
     friend class SceneSerializer;
+    friend class Physics;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);

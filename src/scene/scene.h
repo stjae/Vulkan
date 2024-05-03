@@ -20,6 +20,7 @@
 #include "../pipeline/skyboxRender.h"
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
+#include "physics.h"
 
 class Scene
 {
@@ -81,6 +82,8 @@ class Scene
     bool envCubemapDirtyFlag_;
 
     std::string saveFilePath_;
+
+    Physics physics_;
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);

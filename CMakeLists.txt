@@ -81,10 +81,15 @@ add_executable(${PROJECT_NAME}
         src/pipeline/shadowMap.h
         src/scene/shadowMap.cpp
         src/scene/shadowMap.h
+        src/scene/physics.cpp
+        src/scene/physics.h
 )
 
 include(Dependency.cmake)
 include(Shader.cmake)
+find_package(Bullet REQUIRED)
+include_directories(${BULLET_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${BULLET_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})

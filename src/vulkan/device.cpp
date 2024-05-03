@@ -55,7 +55,7 @@ void vkn::Device::PickPhysicalDevice()
     if (deviceBundle_.physicalDevice == nullptr) {
         spdlog::error("no suitable device found");
     }
-    Log(debugMode, fmt::terminal_color::white, "physical device: {}", deviceBundle_.physicalDevice.getProperties().deviceName);
+    Log(debugMode, fmt::terminal_color::white, "physical device: {}", std::string(deviceBundle_.physicalDevice.getProperties().deviceName));
 }
 
 bool vkn::Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)

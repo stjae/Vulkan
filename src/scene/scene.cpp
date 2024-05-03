@@ -72,6 +72,15 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         brdfLut_.Draw(brdfLutSquare_, brdfLutPipeline, commandBuffer_);
         meshRenderPipeline.brdfLutDescriptor = brdfLut_.GetBundle().descriptorImageInfo;
         meshRenderPipeline.UpdateBrdfLutDescriptor();
+
+        // TODO: test
+        meshes_.emplace_back(0);
+        meshes_.back().CreateCube();
+        meshes_.back().CreateBuffers();
+        meshes_.back().AddInstance();
+
+        physics_.InitPhysics();
+        physics_.RegisterBox();
     }
 
     InitHdri();
@@ -80,9 +89,8 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
 void Scene::AddResource(std::string& filePath)
 {
     resources_.emplace_back(filePath);
-    meshes_.emplace_back(meshes_.size() - 1, resources_.back().filePath);
+    meshes_.emplace_back(meshes_.size(), resources_.back().filePath);
     meshes_.back().CreateBuffers();
-    meshes_.back().meshID_++;
     resources_.back().ptr = &meshes_.back();
 
     if (!meshes_.back().materials_.empty()) {
@@ -142,6 +150,9 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 
 void Scene::Update()
 {
+    physics_.Simulate(meshes_[0]);
+    meshDirtyFlag_ = true;
+
     HandlePointLightDuplication();
     HandleMeshDuplication();
 
@@ -275,6 +286,7 @@ void Scene::UpdateShadowMap()
 {
     dirLightUBO_.dir = glm::normalize(dirLightPos_);
     dirLightDataBuffer_->Copy(&dirLightUBO_);
+
     glm::mat4 lightProjection = glm::ortho(-1.0f * dirLightSize_, dirLightSize_, -1.0f * dirLightSize_, dirLightSize_, dirLightNearPlane_, dirLightFarPlane_);
     glm::mat4 lightView = glm::lookAt(dirLightPos_, glm::vec3(0.0f), glm::vec3(0.0, 0.0f, 1.0f));
     shadowMapViewProj_ = lightProjection * lightView;
