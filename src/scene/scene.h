@@ -84,6 +84,7 @@ class Scene
     std::string saveFilePath_;
 
     Physics physics_;
+    bool isPlaying_;
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
@@ -115,7 +116,9 @@ public:
     MeshInstanceUBO& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
     MeshInstanceUBO& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
+    void Play();
     ~Scene();
+    void Stop();
 };
 
 #endif

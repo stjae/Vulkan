@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowShadowCubemapDirtyFlag_(true), showLightIcon_(true), envCube_(), brdfLutSquare_(), saveFilePath_(), iblExposure_(1.0f), resourceDirtyFlag_(true), envCubemapDirtyFlag_(true)
+Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLightID_(-1), meshDirtyFlag_(true), lightDirtyFlag_(true), shadowShadowCubemapDirtyFlag_(true), showLightIcon_(true), envCube_(), brdfLutSquare_(), saveFilePath_(), iblExposure_(1.0f), resourceDirtyFlag_(true), envCubemapDirtyFlag_(true), isPlaying_(false)
 {
     vkn::Command::CreateCommandPool(commandPool_);
     vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
@@ -80,7 +80,7 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         meshes_.back().AddInstance();
 
         physics_.InitPhysics();
-        physics_.RegisterBox();
+        physics_.RegisterMeshes(meshes_);
     }
 
     InitHdri();
@@ -150,9 +150,6 @@ void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
 
 void Scene::Update()
 {
-    physics_.Simulate(meshes_[0]);
-    meshDirtyFlag_ = true;
-
     HandlePointLightDuplication();
     HandleMeshDuplication();
 
@@ -424,6 +421,21 @@ void Scene::InitHdri()
     prefilteredCubemap_->DrawPrefilteredCubemap(envCube_, *envCubemap_, prefilteredCubemapPipeline, commandBuffer_);
     iblExposure_ = 1.0f;
     envCubemapDirtyFlag_ = true;
+}
+
+void Scene::Play()
+{
+    if (!isPlaying_) {
+        return;
+    }
+    physics_.Simulate(meshes_[0]);
+    meshDirtyFlag_ = true;
+}
+
+void Scene::Stop()
+{
+    physics_.Stop(meshes_);
+    meshDirtyFlag_ = true;
 }
 
 Scene::~Scene()

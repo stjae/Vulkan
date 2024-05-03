@@ -59,6 +59,12 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     cubeIcon_.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
     vkn::Command::Submit(&commandBuffer_, 1);
     cubeIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, cubeIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    playIcon_.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+    vkn::Command::Submit(&commandBuffer_, 1);
+    playIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, playIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    stopIcon_.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, commandBuffer_);
+    vkn::Command::Submit(&commandBuffer_, 1);
+    stopIconDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::repeatSampler, stopIcon_.GetBundle().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     dragDropped = false;
 }
@@ -121,9 +127,9 @@ void UI::DrawDockSpace(Scene& scene)
 
     if (!opt_padding)
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 10, 10 });
     ImGui::Begin("DockSpace", &p_open, window_flags);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(4);
 
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
@@ -131,6 +137,7 @@ void UI::DrawDockSpace(Scene& scene)
     }
 
     // Top Menu Bar
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 10, 10 });
     if (ImGui::BeginMenuBar()) {
         bool openNewScene = false;
         if (ImGui::BeginMenu("Scene")) {
@@ -168,6 +175,21 @@ void UI::DrawDockSpace(Scene& scene)
             }
             ImGui::EndMenu();
         }
+        const float buttonSize = ImGui::GetCurrentWindow()->MenuBarRect().GetSize().y;
+        const float paddingRatio = 0.2f;
+        ImGui::SetCursorPosX(ImGui::GetCurrentWindow()->MenuBarRect().GetSize().x * 0.5f - GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)));
+        // ImGui::GetForegroundDrawList()->AddRect(ImGui::GetWindowPos(), ImGui::GetCurrentWindow()->MenuBarRect().GetSize() * 0.5f - ImVec2(GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)), 0), IM_COL32(255, 0, 0, 255));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+        vk::DescriptorSet icon = scene.isPlaying_ ? stopIconDescriptorSet_ : playIconDescriptorSet_;
+        if (ImGui::ImageButton(icon, { GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)), GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)) }, { 0, 0 }, { 1, 1 }, GetButtonPadding(buttonSize, paddingRatio))) {
+            scene.isPlaying_ = !scene.isPlaying_;
+            if (!scene.isPlaying_) {
+                scene.Stop();
+            }
+        }
+        ImGui::PopStyleColor(3);
         ImGui::EndMenuBar();
 
         // open new scene popup modal
@@ -196,6 +218,7 @@ void UI::DrawDockSpace(Scene& scene)
             ImGui::EndPopup();
         }
     }
+    ImGui::PopStyleVar();
     ImGui::End();
 }
 
@@ -522,7 +545,8 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("IBL")) {
-        if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+        const float iblButtonSize = 100.0f;
+        if (ImGui::ImageButton(plusIconDescriptorSet_, { GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)), GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(iblButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             std::string hdriFilePath = nfdOpen({ "HDRI", "hdr" });
             if (!hdriFilePath.empty()) {
                 scene.AddEnvironmentMap(hdriFilePath);
@@ -549,11 +573,12 @@ void UI::DrawResourceWindow(Scene& scene)
 {
     ImGui::Begin("Resources");
 
+    const float resourceButtonSize = 100.0f;
     float panelSize = ImGui::GetContentRegionAvail().x;
-    int columnCount = std::max(1, (int)(panelSize / buttonSize));
+    int columnCount = std::max(1, (int)(panelSize / resourceButtonSize));
     // Add Resource
     ImGui::Columns(columnCount, nullptr, false);
-    if (ImGui::ImageButton(plusIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), (int)padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+    if (ImGui::ImageButton(plusIconDescriptorSet_, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
         std::string path = nfdOpen({ "Model", "gltf,fbx" });
         if (!path.empty()) {
             scene.AddResource(path);
@@ -563,7 +588,7 @@ void UI::DrawResourceWindow(Scene& scene)
 
     for (int i = 0; i < scene.resources_.size(); i++) {
         ImGui::PushID(i);
-        ImGui::ImageButton(cubeIconDescriptorSet_, { buttonSizeWithoutPadding, buttonSizeWithoutPadding }, ImVec2(0, 0), ImVec2(1, 1), padding, ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+        ImGui::ImageButton(cubeIconDescriptorSet_, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Delete")) {
                 // TODO: resource deletion

@@ -29,9 +29,13 @@ class UI
     vkn::Image plusIcon_;
     vkn::Image lightIcon_;
     vkn::Image cubeIcon_;
+    vkn::Image playIcon_;
+    vkn::Image stopIcon_;
     vk::DescriptorSet plusIconDescriptorSet_;
     vk::DescriptorSet lightIconDescriptorSet_;
     vk::DescriptorSet cubeIconDescriptorSet_;
+    vk::DescriptorSet playIconDescriptorSet_;
+    vk::DescriptorSet stopIconDescriptorSet_;
     vk::DescriptorSet hdriThumbnailDescriptorSet_;
     vk::DescriptorSet shadowMapDescriptorSet_;
 
@@ -44,15 +48,15 @@ class UI
     void DrawResourceWindow(Scene& scene);
     void ShowInformationOverlay(const Scene& scene);
 
+    static float GetButtonPadding(float desiredButtonSize, float paddingRatio) { return desiredButtonSize * paddingRatio; }
+    static float GetIconSize(float desiredButtonSize, float padding) { return desiredButtonSize - padding * 2.0f; }
+
 public:
     inline static bool dragDropped;
     inline static double dragDropMouseX;
     inline static double dragDropMouseY;
     inline static std::unique_ptr<Resource> dragDropResource;
     inline static ImDrawData* imDrawData;
-    inline static float buttonSize = 100.0f;
-    inline static float padding = buttonSize * 0.4f;
-    inline static float buttonSizeWithoutPadding = buttonSize - padding * 2.0f;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
     void Draw(Scene& scene, Viewport& viewport, size_t frameIndex);

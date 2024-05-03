@@ -23,6 +23,7 @@ void Engine::InitSwapchainImages()
 
 void Engine::Render()
 {
+    scene_->Play();
     scene_->Update();
 
     vkn::CheckResult(vkn::Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX));
