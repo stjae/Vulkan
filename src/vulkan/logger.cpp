@@ -2,7 +2,7 @@
 
 void vkn::Logger::CreateDebugMessenger()
 {
-    if (!debugMode) {
+    if (!DEBUG) {
         return;
     }
 

@@ -13,6 +13,7 @@
 #include "../pipeline/irradianceCubemap.h"
 #include "../pipeline/brdfLut.h"
 #include "../pipeline/skyboxRender.h"
+#include "../pipeline/lineRender.h"
 #include "../scene/mesh/mesh.h"
 
 class Viewport

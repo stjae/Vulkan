@@ -37,7 +37,7 @@ void vkn::Swapchain::CreateSwapchain()
     swapchainCreateInfo.oldSwapchain = nullptr;
 
     swapchainBundle_.swapchain = vkn::Device::GetBundle().device.createSwapchainKHR(swapchainCreateInfo);
-    Log(debugMode, fmt::terminal_color::bright_green, "swapchain created");
+    Log(DEBUG, fmt::terminal_color::bright_green, "swapchain created");
 
     // GetBundle swapchain image handle
     std::vector<vk::Image> swapchainImages = vkn::Device::GetBundle().device.getSwapchainImagesKHR(swapchainBundle_.swapchain);
@@ -66,32 +66,32 @@ void vkn::Swapchain::QuerySwapchainSupport()
     supportedFormats_ = vkn::Device::GetBundle().physicalDevice.getSurfaceFormatsKHR(vkn::Instance::GetBundle().surface);
     supportedPresentModes_ = vkn::Device::GetBundle().physicalDevice.getSurfacePresentModesKHR(vkn::Instance::GetBundle().surface);
 
-    Log(debugMode, fmt::terminal_color::black, "printing queries for surface supports..");
+    Log(DEBUG, fmt::terminal_color::black, "printing queries for surface supports..");
 
-    Log(debugMode, fmt::terminal_color::white, "current surface extent width: {}", surfaceCapabilities.currentExtent.width);
-    Log(debugMode, fmt::terminal_color::white, "current surface extent height: {}", surfaceCapabilities.currentExtent.height);
+    Log(DEBUG, fmt::terminal_color::white, "current surface extent width: {}", surfaceCapabilities.currentExtent.width);
+    Log(DEBUG, fmt::terminal_color::white, "current surface extent height: {}", surfaceCapabilities.currentExtent.height);
 
     for (auto& mode : supportedPresentModes_) {
-        Log(debugMode, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
+        Log(DEBUG, fmt::terminal_color::white, "supported present mode: {}", vk::to_string(mode));
     }
 }
 
 void vkn::Swapchain::ChooseSurfaceFormat()
 {
-    Log(debugMode, fmt::terminal_color::black, "setting swapchain details..");
+    Log(DEBUG, fmt::terminal_color::black, "setting swapchain details..");
 
     for (auto& format : supportedFormats_) {
         if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-            Log(debugMode, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
-            Log(debugMode, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
+            Log(DEBUG, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(format.format));
+            Log(DEBUG, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(format.colorSpace));
 
             swapchainBundle_.surfaceFormat = format;
             return;
         }
     }
 
-    Log(debugMode, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
-    Log(debugMode, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
+    Log(DEBUG, fmt::terminal_color::bright_cyan, "set surface pixel format: {}", vk::to_string(supportedFormats_[0].format));
+    Log(DEBUG, fmt::terminal_color::bright_cyan, "set surface color space: {}", vk::to_string(supportedFormats_[0].colorSpace));
 
     swapchainBundle_.surfaceFormat = supportedFormats_[0].format;
 }
@@ -106,7 +106,7 @@ void vkn::Swapchain::ChoosePresentMode()
         }
     }
 
-    Log(debugMode, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
+    Log(DEBUG, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
 
     swapchainBundle_.presentMode = mode;
 }
@@ -116,7 +116,7 @@ void vkn::Swapchain::ChooseExtent()
     // extent is set
     if (surfaceCapabilities.currentExtent.width != UINT32_MAX) {
 
-        Log(debugMode, fmt::terminal_color::white, "no change in extent range");
+        Log(DEBUG, fmt::terminal_color::white, "no change in extent range");
 
         swapchainBundle_.swapchainImageExtent = surfaceCapabilities.currentExtent;
         return;
@@ -131,12 +131,12 @@ void vkn::Swapchain::ChooseExtent()
         if (extent.width > surfaceCapabilities.maxImageExtent.width) {
 
             extent.width = surfaceCapabilities.maxImageExtent.width;
-            Log(debugMode, fmt::terminal_color::yellow, "extent width is clamped");
+            Log(DEBUG, fmt::terminal_color::yellow, "extent width is clamped");
         }
         if (extent.height > surfaceCapabilities.maxImageExtent.height) {
 
             extent.height = surfaceCapabilities.maxImageExtent.height;
-            Log(debugMode, fmt::terminal_color::yellow, "extent height is clamped");
+            Log(DEBUG, fmt::terminal_color::yellow, "extent height is clamped");
         }
 
         swapchainBundle_.swapchainImageExtent = extent;
@@ -191,7 +191,7 @@ void vkn::Swapchain::CreateFrameBuffer()
         framebufferInfo.layers = 1;
 
         frames[i].framebuffer = vkn::Device::GetBundle().device.createFramebuffer(framebufferInfo);
-        Log(debugMode, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
+        Log(DEBUG, fmt::terminal_color::bright_green, "created framebuffer for frame {}", i);
     }
 }
 

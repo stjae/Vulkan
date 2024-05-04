@@ -83,6 +83,8 @@ add_executable(${PROJECT_NAME}
         src/scene/shadowMap.h
         src/scene/physics.cpp
         src/scene/physics.h
+        src/pipeline/lineRender.cpp
+        src/pipeline/lineRender.h
 )
 
 include(Dependency.cmake)

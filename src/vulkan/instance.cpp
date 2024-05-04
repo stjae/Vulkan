@@ -30,7 +30,7 @@ void vkn::Instance::SetExtensions(std::vector<const char*>& extensions, vk::Inst
         extensions.push_back(glfwExtensions[i]);
     }
 
-    if (debugMode) {
+    if (DEBUG) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
@@ -40,7 +40,7 @@ void vkn::Instance::SetExtensions(std::vector<const char*>& extensions, vk::Inst
 
 void vkn::Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo)
 {
-    if (debugMode) {
+    if (DEBUG) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
         createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
@@ -60,7 +60,7 @@ void vkn::Instance::CreateSurface()
 
 vkn::Instance::~Instance()
 {
-    if (debugMode) {
+    if (DEBUG) {
         logger_.Destroy();
     }
     instanceBundle_.instance.destroySurfaceKHR(instanceBundle_.surface);

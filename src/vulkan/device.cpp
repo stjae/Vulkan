@@ -55,7 +55,7 @@ void vkn::Device::PickPhysicalDevice()
     if (deviceBundle_.physicalDevice == nullptr) {
         spdlog::error("no suitable device found");
     }
-    Log(debugMode, fmt::terminal_color::white, "physical device: {}", std::string(deviceBundle_.physicalDevice.getProperties().deviceName));
+    Log(DEBUG, fmt::terminal_color::white, "physical device: {}", std::string(deviceBundle_.physicalDevice.getProperties().deviceName));
 }
 
 bool vkn::Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
@@ -85,19 +85,19 @@ void vkn::Device::FindQueueFamilies(const VkSurfaceKHR& surface)
         if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
             deviceBundle_.graphicsFamilyIndex = i;
 
-            Log(debugMode, fmt::terminal_color::white, "graphics queue family index: {}", i);
+            Log(DEBUG, fmt::terminal_color::white, "graphics queue family index: {}", i);
         }
 
         if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
             deviceBundle_.computeFamilyIndex = i;
 
-            Log(debugMode, fmt::terminal_color::white, "compute queue family index: {}", i);
+            Log(DEBUG, fmt::terminal_color::white, "compute queue family index: {}", i);
         }
 
         if (deviceBundle_.physicalDevice.getSurfaceSupportKHR(i, surface)) {
             deviceBundle_.presentFamilyIndex = i;
 
-            Log(debugMode, fmt::terminal_color::white, "present queue family index: {}", i);
+            Log(DEBUG, fmt::terminal_color::white, "present queue family index: {}", i);
         }
 
         if (deviceBundle_.graphicsFamilyIndex.has_value() && deviceBundle_.computeFamilyIndex.has_value() && deviceBundle_.presentFamilyIndex.has_value()) {

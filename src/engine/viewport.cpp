@@ -15,6 +15,7 @@ Viewport::Viewport() : panelRatio(0.0f), outDated(false), isMouseHovered(false)
     prefilteredCubemapPipeline.CreatePipeline();
     brdfLutPipeline.CreatePipeline();
     skyboxRenderPipeline.CreatePipeline();
+    lineRenderPipeline.CreatePipeline();
 
     CreateViewportImages();
     CreateViewportFrameBuffer();
@@ -250,8 +251,8 @@ void Viewport::Draw(const Scene& scene)
         commandBuffer_.drawIndexed(scene.envCube_.GetIndicesCount(0), scene.envCube_.GetInstanceCount(), 0, 0, 0);
     }
 
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, meshRenderPipeline.descriptorSets.size(), meshRenderPipeline.descriptorSets.data(), 0, nullptr);
     commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipeline);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.pipelineLayout, 0, meshRenderPipeline.descriptorSets.size(), meshRenderPipeline.descriptorSets.data(), 0, nullptr);
 
     meshRenderPushConsts.iblExposure = scene.iblExposure_;
 
@@ -278,6 +279,13 @@ void Viewport::Draw(const Scene& scene)
         }
         materialOffset += (int)mesh.GetMaterialCount();
     }
+
+    // physics debug
+    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipeline);
+    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipelineLayout, 0, lineRenderPipeline.descriptorSets.size(), lineRenderPipeline.descriptorSets.data(), 0, nullptr);
+    commandBuffer_.bindVertexBuffers(0, 1, &scene.physics_.debugDrawer_.m_vertexBuffer->GetBundle().buffer, vertexOffsets);
+    commandBuffer_.bindIndexBuffer(scene.physics_.debugDrawer_.m_indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+    commandBuffer_.drawIndexed(scene.physics_.debugDrawer_.m_lineIndices.size(), 1, 0, 0, 0);
 
     commandBuffer_.endRenderPass();
 
@@ -315,4 +323,5 @@ Viewport::~Viewport()
     prefilteredCubemapPipeline.Destroy();
     brdfLutPipeline.Destroy();
     skyboxRenderPipeline.Destroy();
+    lineRenderPipeline.Destroy();
 }

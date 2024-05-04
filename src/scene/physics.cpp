@@ -8,6 +8,10 @@ void Physics::InitPhysics()
     solver_ = new btSequentialImpulseConstraintSolver;
     dynamicsWorld_ = new btDiscreteDynamicsWorld(dispatcher_, overlappingPairCache_, solver_, collisionConfiguration_);
     dynamicsWorld_->setGravity(btVector3(0, -10, 0));
+    dynamicsWorld_->setDebugDrawer((btIDebugDraw*)&debugDrawer_);
+    dynamicsWorld_->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+    vkn::Command::CreateCommandPool(debugDrawer_.m_commandPool);
+    vkn::Command::AllocateCommandBuffer(debugDrawer_.m_commandPool, debugDrawer_.m_commandBuffer);
 }
 
 void Physics::RegisterMeshes(std::vector<MeshModel>& meshes)
@@ -38,6 +42,12 @@ void Physics::RegisterMeshes(std::vector<MeshModel>& meshes)
             }
         }
     }
+
+    debugDrawer_.clearLines();
+    dynamicsWorld_->debugDrawWorld();
+
+    debugDrawer_.CreateBuffer();
+    debugDrawer_.CopyBuffer();
 }
 
 void Physics::Simulate(Mesh& mesh)
@@ -53,6 +63,14 @@ void Physics::Simulate(Mesh& mesh)
               << trans.getOrigin().getZ() << '\n';
 
     mesh.meshInstances_[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()));
+
+    debugDrawer_.clearLines();
+    dynamicsWorld_->debugDrawWorld();
+
+    debugDrawer_.CreateBuffer();
+    debugDrawer_.CopyBuffer();
+
+    std::cout << debugDrawer_.m_linePoints.size() << '\n';
 }
 
 void Physics::Stop(std::vector<MeshModel>& meshes)
@@ -62,7 +80,6 @@ void Physics::Stop(std::vector<MeshModel>& meshes)
         auto& uboCopy = meshInstanceCopies_[i];
         for (int j = 0; j < meshes[i].GetInstanceCount(); j++) {
             meshes[i].meshInstances_[j] = uboCopy[j];
-            std::cout << glm::to_string(meshes[i].meshInstances_[j].model) << '\n';
         }
     }
 

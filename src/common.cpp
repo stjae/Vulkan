@@ -43,7 +43,7 @@ std::vector<char> FetchCode(const std::string& filename)
     file.close();
 
     if (!buffer.empty()) {
-        Log(debugMode, fmt::terminal_color::white, "{0} loaded with code length of {1}",
+        Log(DEBUG, fmt::terminal_color::white, "{0} loaded with code length of {1}",
             filename, buffer.size());
     }
 
@@ -122,7 +122,7 @@ void AlignedFree(void* aligned)
 void vkn::CheckResult(vk::Result result)
 {
     if (result != vk::Result::eSuccess) {
-        Log(debugMode, fmt::terminal_color::red, "VkResult: ", vk::to_string(result), __FILE__, __LINE__);
+        Log(DEBUG, fmt::terminal_color::red, "VkResult: ", vk::to_string(result), __FILE__, __LINE__);
         assert(result == vk::Result::eSuccess);
     }
 }

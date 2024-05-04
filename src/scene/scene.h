@@ -18,6 +18,7 @@
 #include "../pipeline/prefilteredCubemap.h"
 #include "../pipeline/brdfLut.h"
 #include "../pipeline/skyboxRender.h"
+#include "../pipeline/lineRender.h"
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 #include "physics.h"

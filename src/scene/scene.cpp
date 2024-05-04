@@ -16,6 +16,8 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         meshRenderPipeline.UpdateCameraDescriptor();
         skyboxRenderPipeline.cameraDescriptor = camera_.cameraBuffer_->GetBundle().descriptorBufferInfo;
         skyboxRenderPipeline.UpdateCameraDescriptor();
+        lineRenderPipeline.cameraDescriptor = camera_.cameraBuffer_->GetBundle().descriptorBufferInfo;
+        lineRenderPipeline.UpdateCameraDescriptor();
     }
 
     meshes_.reserve(1000);

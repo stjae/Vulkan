@@ -2,9 +2,9 @@
 #define COMMON_H
 
 #ifdef NDEBUG
-const bool debugMode = false;
+const bool DEBUG = false;
 #else
-const bool debugMode = true;
+const bool DEBUG = true;
 #endif
 
 // glfw, vulkan library
@@ -36,9 +36,9 @@ const bool debugMode = true;
 #include "path.h"
 
 template <typename... T>
-void Log(bool isDebugMode, fmt::terminal_color color, T... args)
+void Log(bool debugMode, fmt::terminal_color color, T... args)
 {
-    if (!isDebugMode) {
+    if (!debugMode) {
         return;
     }
     spdlog::info(fmt::format(fmt::fg(color), args...));
