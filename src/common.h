@@ -33,7 +33,9 @@ const bool DEBUG = true;
 #include <glm/gtx/string_cast.hpp>
 #include <nfd.h>
 #include <stb/stb_image.h>
+
 #include "path.h"
+#include "struct.h"
 
 template <typename... T>
 void Log(bool debugMode, fmt::terminal_color color, T... args)

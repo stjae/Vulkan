@@ -93,7 +93,7 @@ public:
         vkn::Command::Submit(&m_commandBuffer, 1);
     }
 
-    ~DebugDrawer()
+    ~DebugDrawer() override
     {
         vkn::Device::GetBundle().device.destroyCommandPool(m_commandPool);
     }
@@ -110,16 +110,29 @@ class Physics
     btDiscreteDynamicsWorld* dynamicsWorld_;
 
     btAlignedObjectArray<btCollisionShape*> collisionShapes_;
-    // to restore positions of the instances after simulation
-    std::vector<std::vector<MeshInstanceUBO>> meshInstanceCopies_;
 
     DebugDrawer debugDrawer_;
 
+    void DebugDraw()
+    {
+        debugDrawer_.clearLines();
+        dynamicsWorld_->debugDrawWorld();
+
+        if (!debugDrawer_.m_linePoints.empty()) {
+            debugDrawer_.CreateBuffer();
+            debugDrawer_.CopyBuffer();
+        }
+    }
+
 public:
     void InitPhysics();
-    void RegisterMeshes(std::vector<MeshModel>& meshes);
-    void Simulate(Mesh& mesh);
+    void AddRigidBody(const MeshInstanceUBO& ubo, MeshInstancePhysicsInfo& pInfo, float* matrix, float* scale);
+    void Simulate(std::vector<MeshModel>& meshes);
     void Stop(std::vector<MeshModel>& meshes);
+    void Update(Mesh& mesh);
+    void DeleteRigidBody(MeshInstancePhysicsInfo& pInfo);
+    void UpdateRigidBody(btRigidBody* rigidBody, float* matrix, float* scale);
+    ~Physics();
 };
 
 #endif

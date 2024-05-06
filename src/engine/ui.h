@@ -4,7 +4,6 @@
 #include "../common.h"
 #include "../scene/camera.h"
 #include "../scene/scene.h"
-#include "../scene/dataType.h"
 #include "viewport.h"
 #include "sceneSerializer.h"
 #include "../../imgui/imgui.h"

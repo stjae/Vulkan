@@ -64,10 +64,10 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         // init scene
         envCube_.CreateCube();
         envCube_.CreateBuffers();
-        envCube_.meshInstances_.emplace_back(0, 0);
+        envCube_.meshInstanceUBOs_.emplace_back(0, 0);
         brdfLutSquare_.CreateSquare();
         brdfLutSquare_.CreateBuffers();
-        brdfLutSquare_.meshInstances_.emplace_back(0, 0);
+        brdfLutSquare_.meshInstanceUBOs_.emplace_back(0, 0);
         brdfLut_.CreateImage({ 512, 512, 1 }, vk::Format::eR16G16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::clampSampler);
         brdfLut_.CreateImageView();
         brdfLut_.CreateFramebuffer(brdfLutPipeline);
@@ -75,14 +75,7 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         meshRenderPipeline.brdfLutDescriptor = brdfLut_.GetBundle().descriptorImageInfo;
         meshRenderPipeline.UpdateBrdfLutDescriptor();
 
-        // TODO: test
-        meshes_.emplace_back(0);
-        meshes_.back().CreateCube();
-        meshes_.back().CreateBuffers();
-        meshes_.back().AddInstance();
-
         physics_.InitPhysics();
-        physics_.RegisterMeshes(meshes_);
     }
 
     InitHdri();
@@ -161,6 +154,10 @@ void Scene::Update()
     UpdateShadowMap();
     UpdateShadowCubemaps();
     UpdateDescriptorSet();
+
+    if (!isPlaying_) {
+        // physics_.Update(meshes_[0]);
+    }
 }
 
 void Scene::AddLight()
@@ -188,16 +185,16 @@ void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
     envCubemapDirtyFlag_ = true;
 }
 
-void Scene::DeleteMesh()
+void Scene::DeleteMeshInstance()
 {
     if (selectedMeshID_ < 0 || selectedMeshInstanceID_ < 0)
         return;
-    meshes_[selectedMeshID_].meshInstances_.erase(meshes_[selectedMeshID_].meshInstances_.begin() + selectedMeshInstanceID_);
+    meshes_[selectedMeshID_].meshInstanceUBOs_.erase(meshes_[selectedMeshID_].meshInstanceUBOs_.begin() + selectedMeshInstanceID_);
+    meshes_[selectedMeshID_].meshInstancePhysicsInfos_.erase(meshes_[selectedMeshID_].meshInstancePhysicsInfos_.begin() + selectedMeshInstanceID_);
 
-    for (int32_t i = selectedMeshInstanceID_; i < meshes_[selectedMeshID_].meshInstances_.size(); i++) {
-        meshes_[selectedMeshID_].meshInstances_[i].instanceID--;
+    for (int32_t i = selectedMeshInstanceID_; i < meshes_[selectedMeshID_].meshInstanceUBOs_.size(); i++) {
+        meshes_[selectedMeshID_].meshInstanceUBOs_[i].instanceID--;
     }
-    meshes_[selectedMeshID_].instanceID_--;
 
     selectedMeshID_ = -1;
     selectedMeshInstanceID_ = -1;
@@ -241,12 +238,12 @@ void Scene::HandleMeshDuplication()
 {
     if (selectedMeshID_ > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera_.isControllable_) {
         AddMeshInstance(selectedMeshID_);
-        int newInstanceID = meshes_[selectedMeshID_].meshInstances_.back().instanceID;
+        int newInstanceID = meshes_[selectedMeshID_].meshInstanceUBOs_.back().instanceID;
         // copy data of source instance
-        auto& srcMeshInstance = meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_];
-        meshes_[selectedMeshID_].meshInstances_.back() = srcMeshInstance;
+        auto& srcMeshInstance = meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_];
+        meshes_[selectedMeshID_].meshInstanceUBOs_.back() = srcMeshInstance;
         // except for id
-        meshes_[selectedMeshID_].meshInstances_.back().instanceID = newInstanceID;
+        meshes_[selectedMeshID_].meshInstanceUBOs_.back().instanceID = newInstanceID;
         // select new instance
         selectedMeshInstanceID_ = newInstanceID;
     }
@@ -256,7 +253,7 @@ void Scene::UpdateCamera()
 {
     camera_.Update();
     if (selectedMeshID_ > -1 && selectedMeshInstanceID_ > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
-        camera_.pos_ = glm::translate(meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        camera_.pos_ = glm::translate(meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_].model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
     camera_.cameraUBO_.view = glm::lookAt(camera_.pos_, camera_.at_, camera_.up_);
     camera_.cameraUBO_.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::GetBundle().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::GetBundle().swapchainImageExtent.height), 0.1f, 1024.0f);
@@ -319,7 +316,7 @@ void Scene::UpdateMesh()
             vkn::BufferInput bufferInput = { sizeof(MeshInstanceUBO) * mesh.GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
             mesh.meshInstanceBuffer_.reset();
             mesh.meshInstanceBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
-            mesh.meshInstanceBuffer_->Copy(mesh.meshInstances_.data());
+            mesh.meshInstanceBuffer_->Copy(mesh.meshInstanceUBOs_.data());
 
             bufferInfos.emplace_back(mesh.meshInstanceBuffer_->GetBundle().descriptorBufferInfo);
         }
@@ -430,7 +427,7 @@ void Scene::Play()
     if (!isPlaying_) {
         return;
     }
-    physics_.Simulate(meshes_[0]);
+    physics_.Simulate(meshes_);
     meshDirtyFlag_ = true;
 }
 
@@ -438,6 +435,22 @@ void Scene::Stop()
 {
     physics_.Stop(meshes_);
     meshDirtyFlag_ = true;
+}
+
+void Scene::AddRigidBody(float* matrix, float* scale)
+{
+    physics_.AddRigidBody(GetSelectedMeshInstanceUBO(), GetSelectedMeshInstancePhysicsInfo(), matrix, scale);
+}
+
+void Scene::DeleteRigidBody()
+{
+    physics_.DeleteRigidBody(GetSelectedMeshInstancePhysicsInfo());
+}
+
+void Scene::UpdateRigidBody(float* matrix, float* scale)
+{
+    GetSelectedMeshInstancePhysicsInfo().initialModel = GetSelectedMeshInstanceUBO().model;
+    physics_.UpdateRigidBody(GetSelectedMeshInstancePhysicsInfo().rigidBodyPtr, matrix, scale);
 }
 
 Scene::~Scene()

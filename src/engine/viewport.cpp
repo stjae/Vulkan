@@ -281,11 +281,13 @@ void Viewport::Draw(const Scene& scene)
     }
 
     // physics debug
-    commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipeline);
-    commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipelineLayout, 0, lineRenderPipeline.descriptorSets.size(), lineRenderPipeline.descriptorSets.data(), 0, nullptr);
-    commandBuffer_.bindVertexBuffers(0, 1, &scene.physics_.debugDrawer_.m_vertexBuffer->GetBundle().buffer, vertexOffsets);
-    commandBuffer_.bindIndexBuffer(scene.physics_.debugDrawer_.m_indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
-    commandBuffer_.drawIndexed(scene.physics_.debugDrawer_.m_lineIndices.size(), 1, 0, 0, 0);
+    if (!scene.physics_.debugDrawer_.m_linePoints.empty()) {
+        commandBuffer_.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipeline);
+        commandBuffer_.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.pipelineLayout, 0, lineRenderPipeline.descriptorSets.size(), lineRenderPipeline.descriptorSets.data(), 0, nullptr);
+        commandBuffer_.bindVertexBuffers(0, 1, &scene.physics_.debugDrawer_.m_vertexBuffer->GetBundle().buffer, vertexOffsets);
+        commandBuffer_.bindIndexBuffer(scene.physics_.debugDrawer_.m_indexBuffer->GetBundle().buffer, 0, vk::IndexType::eUint32);
+        commandBuffer_.drawIndexed(scene.physics_.debugDrawer_.m_lineIndices.size(), 1, 0, 0, 0);
+    }
 
     commandBuffer_.endRenderPass();
 

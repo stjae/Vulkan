@@ -156,8 +156,8 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
             out << YAML::Key << "ID" << YAML::Value << mesh.meshID_;
             out << YAML::Key << "Instances";
             out << YAML::Value << YAML::BeginSeq;
-            if (!mesh.meshInstances_.empty()) {
-                for (auto& instance : mesh.meshInstances_) {
+            if (!mesh.meshInstanceUBOs_.empty()) {
+                for (auto& instance : mesh.meshInstanceUBOs_) {
                     out << YAML::BeginMap;
                     out << YAML::Key << "ID" << YAML::Value << instance.instanceID;
                     out << YAML::Key << "MeshID" << YAML::Value << instance.meshID;
@@ -240,7 +240,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             auto instances = mesh["Instances"];
             for (auto instance : instances) {
                 scene.AddMeshInstance(mesh["ID"].as<int>());
-                auto& meshInstance = scene.meshes_[mesh["ID"].as<int>()].meshInstances_.back();
+                auto& meshInstance = scene.meshes_[mesh["ID"].as<int>()].meshInstanceUBOs_.back();
                 meshInstance.model = instance["Transform"].as<glm::mat4>();
                 meshInstance.invTranspose = instance["InvTranspose"].as<glm::mat4>();
                 meshInstance.albedo = instance["Albedo"].as<glm::vec3>();

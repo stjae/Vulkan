@@ -2,7 +2,6 @@
 #define SHADOWCUBEMAP_H
 
 #include "../common.h"
-#include "dataType.h"
 #include "mesh/meshModel.h"
 #include "../vulkan/cubemap.h"
 #include "../pipeline/meshRender.h"

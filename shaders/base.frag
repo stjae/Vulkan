@@ -66,7 +66,7 @@ void main() {
     outColor = vec4(meshInstance.albedo, 1.0);
     vec3 normalWorld = inNormal.xyz;
 
-    if (pushConsts.materialID > -1) {
+    if (pushConsts.materialID > -1 && meshInstance.useTexture > 0) {
         vec4 texColor = texture(sampler2D(albedoTex[pushConsts.materialID], repeatSampler), inTexcoord);
         if (texColor.a < 1.0) {
             discard;

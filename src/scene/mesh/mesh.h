@@ -1,7 +1,6 @@
 #ifndef MESHPRIMITIVE_H
 #define MESHPRIMITIVE_H
 
-#include "../dataType.h"
 #include "meshBase.h"
 #include "../../vulkan/command.h"
 #include "tiny_obj_loader.h"
@@ -23,9 +22,10 @@ protected:
     std::string name_;
 
     int32_t meshID_;
-    int32_t instanceID_;
     std::unique_ptr<vkn::Buffer> meshInstanceBuffer_;
-    std::vector<MeshInstanceUBO> meshInstances_;
+    std::vector<MeshInstanceUBO> meshInstanceUBOs_;
+    // instance data which will be used in physics
+    std::vector<MeshInstancePhysicsInfo> meshInstancePhysicsInfos_;
     std::vector<MeshPart> meshParts_;
     std::vector<MaterialFilePath> materials_;
     inline static vk::CommandBuffer commandBuffer_;
@@ -33,11 +33,11 @@ protected:
 
 public:
     Mesh() = default;
-    explicit Mesh(int meshID) : meshID_(meshID), instanceID_(0) {}
+    explicit Mesh(int meshID) : meshID_(meshID) {}
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     const std::string& GetName() { return name_; }
     int32_t GetMeshID() const { return meshID_; }
-    size_t GetInstanceCount() const { return meshInstances_.size(); }
+    size_t GetInstanceCount() const { return meshInstanceUBOs_.size(); }
     size_t GetMaterialCount() const { return materials_.size(); }
     const std::vector<MeshPart>& GetMeshParts() const { return meshParts_; }
 };

@@ -14,81 +14,135 @@ void Physics::InitPhysics()
     vkn::Command::AllocateCommandBuffer(debugDrawer_.m_commandPool, debugDrawer_.m_commandBuffer);
 }
 
-void Physics::RegisterMeshes(std::vector<MeshModel>& meshes)
+void Physics::AddRigidBody(const MeshInstanceUBO& ubo, MeshInstancePhysicsInfo& pInfo, float* matrix, float* scale)
 {
-    btBoxShape* box = new btBoxShape({ 1.0f, 1.0f, 1.0f });
-    collisionShapes_.push_back(box);
+    btCollisionShape* shape;
+    switch (pInfo.shape) {
+    case (ePhysicsShape::BOX):
+        shape = new btBoxShape({ 1.0f, 1.0f, 1.0f });
+        break;
+    case (ePhysicsShape::SPHERE):
+        shape = new btSphereShape(1.0f);
+        break;
+    case (ePhysicsShape::CAPSULE):
+        shape = new btCapsuleShape({ 1.0f, 1.0f });
+        break;
+    case (ePhysicsShape::CYLINDER):
+        shape = new btCylinderShape({ 1.0f, 1.0f, 1.0f });
+        break;
+    case (ePhysicsShape::CONE):
+        shape = new btConeShape({ 1.0f, 1.0f });
+        break;
+    default:
+        return;
+    }
+
+    shape->setLocalScaling({ scale[0], scale[1], scale[2] });
+    collisionShapes_.push_back(shape);
 
     btTransform startTransform;
     startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(0, 0, 0));
+    startTransform.setOrigin({ ubo.model[3].x, ubo.model[3].y, ubo.model[3].z });
 
-    btScalar mass(1.f);
+    btScalar mass = pInfo.type == ePhysicsType::DYNAMIC ? 1.0f : 0.0f;
     btVector3 localInertia(0, 0, 0);
-    box->calculateLocalInertia(mass, localInertia);
+    shape->calculateLocalInertia(mass, localInertia);
 
-    btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-    btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, box, localInertia);
-    btRigidBody* body = new btRigidBody(cInfo);
+    auto* myMotionState = new btDefaultMotionState(startTransform);
+    btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
+    auto* body = new btRigidBody(cInfo);
+    btTransform t;
+    t.setIdentity();
+    t.setFromOpenGLMatrix(matrix);
+    body->setWorldTransform(t);
+    pInfo.rigidBodyPtr = body;
 
     dynamicsWorld_->addRigidBody(body);
+    pInfo.haveRigidBody = true;
 
-    // TODO: store the initial model matrix of mesh instances
-    for (auto& mesh : meshes) {
-        if (mesh.GetInstanceCount() > 0) {
-            meshInstanceCopies_.emplace_back();
-            for (auto& instanceUBO : mesh.meshInstances_) {
-                meshInstanceCopies_.back().emplace_back(instanceUBO);
-            }
-        }
-    }
+    pInfo.initialModel = ubo.model;
 
-    debugDrawer_.clearLines();
-    dynamicsWorld_->debugDrawWorld();
-
-    debugDrawer_.CreateBuffer();
-    debugDrawer_.CopyBuffer();
+    DebugDraw();
 }
 
-void Physics::Simulate(Mesh& mesh)
+void Physics::DeleteRigidBody(MeshInstancePhysicsInfo& pInfo)
+{
+    dynamicsWorld_->removeRigidBody(pInfo.rigidBodyPtr);
+    delete pInfo.rigidBodyPtr;
+    pInfo.haveRigidBody = false;
+
+    DebugDraw();
+}
+
+void Physics::UpdateRigidBody(btRigidBody* rigidBody, float* matrix, float* scale)
+{
+    rigidBody->getCollisionShape()->setLocalScaling({ scale[0], scale[1], scale[2] });
+    btTransform t;
+    t.setIdentity();
+    t.setFromOpenGLMatrix(matrix);
+    rigidBody->setWorldTransform(t);
+
+    DebugDraw();
+}
+
+void Physics::Simulate(std::vector<MeshModel>& meshes)
 {
     dynamicsWorld_->stepSimulation(1.0f / 60.0f);
 
-    btCollisionObject* obj = dynamicsWorld_->getCollisionObjectArray()[0];
-    btRigidBody* body = btRigidBody::upcast(obj);
-    btTransform trans;
-    body->getMotionState()->getWorldTransform(trans);
-    std::cout << trans.getOrigin().getX() << ' '
-              << trans.getOrigin().getY() << ' '
-              << trans.getOrigin().getZ() << '\n';
-
-    mesh.meshInstances_[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()));
-
-    debugDrawer_.clearLines();
-    dynamicsWorld_->debugDrawWorld();
-
-    debugDrawer_.CreateBuffer();
-    debugDrawer_.CopyBuffer();
-
-    std::cout << debugDrawer_.m_linePoints.size() << '\n';
+    for (auto& mesh : meshes) {
+        for (int i = 0; i < mesh.GetInstanceCount(); i++) {
+            if (!mesh.meshInstancePhysicsInfos_[i].haveRigidBody)
+                continue;
+            auto t = mesh.meshInstancePhysicsInfos_[i].rigidBodyPtr->getWorldTransform();
+            auto& s = mesh.meshInstancePhysicsInfos_[i].rigidBodyPtr->getCollisionShape()->getLocalScaling();
+            btScalar m[16];
+            t.getOpenGLMatrix(m);
+            // mesh.meshInstanceUBOs_[i].model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()));
+            mesh.meshInstanceUBOs_[i].model = glm::make_mat4(m);
+        }
+    }
 }
 
 void Physics::Stop(std::vector<MeshModel>& meshes)
 {
-    // TODO: restore model matrices
-    for (int i = 0; i < meshes.size(); i++) {
-        auto& uboCopy = meshInstanceCopies_[i];
-        for (int j = 0; j < meshes[i].GetInstanceCount(); j++) {
-            meshes[i].meshInstances_[j] = uboCopy[j];
+    for (auto& mesh : meshes) {
+        for (int i = 0; i < mesh.GetInstanceCount(); i++) {
+            if (!mesh.meshInstancePhysicsInfos_[i].haveRigidBody)
+                continue;
+            mesh.meshInstanceUBOs_[i].model = mesh.meshInstancePhysicsInfos_[i].initialModel;
+
+            auto body = mesh.meshInstancePhysicsInfos_[i].rigidBodyPtr;
+            body->clearForces();
+            body->setLinearVelocity({ 0, 0, 0 });
+            body->setAngularVelocity({ 0, 0, 0 });
+            btTransform t;
+            t.setIdentity();
+            t.setFromOpenGLMatrix(glm::value_ptr(mesh.meshInstanceUBOs_[i].model));
+            body->setWorldTransform(t);
         }
     }
+}
 
-    btCollisionObject* obj = dynamicsWorld_->getCollisionObjectArray()[0];
-    btRigidBody* body = btRigidBody::upcast(obj);
-    body->clearForces();
-    body->setLinearVelocity({ 0, 0, 0 });
-    body->setAngularVelocity({ 0, 0, 0 });
-    btTransform t;
-    t.setIdentity();
-    body->setWorldTransform(t);
+Physics::~Physics()
+{
+    for (int i = 0; i < dynamicsWorld_->getNumCollisionObjects(); i++) {
+        auto obj = dynamicsWorld_->getCollisionObjectArray()[i];
+        auto body = btRigidBody::upcast(obj);
+        if (body && body->getMotionState()) {
+            delete body->getMotionState();
+        }
+        dynamicsWorld_->removeCollisionObject(obj);
+        delete obj;
+    }
+
+    for (int i = 0; i < collisionShapes_.size(); i++) {
+        auto shape = collisionShapes_[i];
+        collisionShapes_[i] = 0;
+        delete shape;
+    }
+
+    delete dynamicsWorld_;
+    delete solver_;
+    delete overlappingPairCache_;
+    delete dispatcher_;
 }

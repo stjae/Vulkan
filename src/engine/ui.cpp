@@ -91,7 +91,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-        scene.DeleteMesh();
+        scene.DeleteMeshInstance();
         scene.DeletePointLight();
     }
 
@@ -354,17 +354,24 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float rotation[3];
     float scale[3];
     float matrix[16];
+    float pMatrix[16];
 
-    auto& meshInstance = scene.GetSelectedMeshInstance();
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.model), translation, rotation, scale);
+    auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
+    auto& meshInstancePhysicsInfo = scene.GetSelectedMeshInstancePhysicsInfo();
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
     if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        scene.meshDirtyFlag_ = true;
+        if (meshInstancePhysicsInfo.haveRigidBody) {
+            float s[3] = { 1.0f, 1.0f, 1.0f };
+            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
+            scene.UpdateRigidBody(pMatrix, scale);
+        }
     }
-    meshInstance.model = glm::make_mat4(matrix);
-    meshInstance.invTranspose = glm::make_mat4(matrix);
-    meshInstance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
+    scene.meshDirtyFlag_ = true;
+    meshInstanceUBO.model = glm::make_mat4(matrix);
+    meshInstanceUBO.invTranspose = glm::make_mat4(matrix);
+    meshInstanceUBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    meshInstanceUBO.invTranspose = glm::transpose(glm::inverse(meshInstanceUBO.invTranspose));
 }
 
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
@@ -418,7 +425,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         if (ImGui::MenuItem("Delete")) {
                             scene.selectedMeshID_ = i;
                             scene.selectedMeshInstanceID_ = j;
-                            scene.DeleteMesh();
+                            scene.DeleteMeshInstance();
                         }
                         ImGui::EndPopup();
                     }
@@ -429,42 +436,80 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         }
         // Mesh Attributes
         if (scene.selectedMeshID_ > -1) {
-
-            auto& meshInstance = scene.GetSelectedMeshInstance();
+            auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
+            auto& meshInstancePhysicsInfo = scene.GetSelectedMeshInstancePhysicsInfo();
 
             float translation[3];
             float rotation[3];
             float scale[3];
             float matrix[16];
+            float pMatrix[16];
 
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.model), translation, rotation, scale);
-            std::vector<std::string> labels = { "Move", "Rotate" };
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
+            std::vector<std::string> labels = { "Move", "Rotate", "Scale" };
             ImGui::SeparatorText("Translation");
             if (ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f))
                 scene.meshDirtyFlag_ = true;
             if (ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f))
                 scene.meshDirtyFlag_ = true;
+            if (ImGui::SliderFloat3(labels[2].append("##scale").c_str(), scale, -10.0f, 10.0f))
+                scene.meshDirtyFlag_ = true;
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
-            meshInstance.model = glm::make_mat4(matrix);
-            meshInstance.invTranspose = glm::make_mat4(matrix);
-            meshInstance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            meshInstance.invTranspose = glm::transpose(glm::inverse(meshInstance.invTranspose));
+            meshInstanceUBO.model = glm::make_mat4(matrix);
+            meshInstanceUBO.invTranspose = glm::make_mat4(matrix);
+            meshInstanceUBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            meshInstanceUBO.invTranspose = glm::transpose(glm::inverse(meshInstanceUBO.invTranspose));
 
-            ImGui::SeparatorText("Textures");
-            bool useTexture = meshInstance.useTexture > 0;
+            ImGui::SeparatorText("Texture");
+            bool useTexture = meshInstanceUBO.useTexture > 0;
             if (ImGui::Checkbox("Use Texture", &useTexture)) {
-                meshInstance.useTexture = useTexture ? 1 : -1;
+                meshInstanceUBO.useTexture = useTexture ? 1 : -1;
                 scene.meshDirtyFlag_ = true;
             }
 
-            ImGui::SeparatorText("MaterialFilePath");
-            if (ImGui::SliderFloat3("Albedo", &meshInstance.albedo[0], 0.0f, 1.0f))
+            ImGui::SeparatorText("Material");
+            if (ImGui::SliderFloat3("Albedo", &meshInstanceUBO.albedo[0], 0.0f, 1.0f))
                 scene.meshDirtyFlag_ = true;
-            if (ImGui::SliderFloat("Metallic", &meshInstance.metallic, 0.0f, 1.0f))
+            if (ImGui::SliderFloat("Metallic", &meshInstanceUBO.metallic, 0.0f, 1.0f))
                 scene.meshDirtyFlag_ = true;
-            if (ImGui::SliderFloat("Roughness", &meshInstance.roughness, 0.0f, 1.0f))
+            if (ImGui::SliderFloat("Roughness", &meshInstanceUBO.roughness, 0.0f, 1.0f))
                 scene.meshDirtyFlag_ = true;
+
+            ImGui::SeparatorText("RigidBody");
+            if (!meshInstancePhysicsInfo.haveRigidBody) {
+                const char* types[2] = { "Static", "Dynamic" };
+                if (ImGui::BeginCombo("Type", types[(int)meshInstancePhysicsInfo.type])) {
+                    if (ImGui::MenuItem("Static"))
+                        meshInstancePhysicsInfo.type = ePhysicsType::STATIC;
+                    if (ImGui::MenuItem("Dynamic"))
+                        meshInstancePhysicsInfo.type = ePhysicsType::DYNAMIC;
+                    ImGui::EndCombo();
+                }
+                const char* shapes[5] = { "Box", "Sphere", "Capsule", "Cylinder", "Cone" };
+                if (ImGui::BeginCombo("Collider Shape", shapes[(int)meshInstancePhysicsInfo.shape])) {
+                    if (ImGui::MenuItem("Box"))
+                        meshInstancePhysicsInfo.shape = ePhysicsShape::BOX;
+                    if (ImGui::MenuItem("Sphere"))
+                        meshInstancePhysicsInfo.shape = ePhysicsShape::SPHERE;
+                    if (ImGui::MenuItem("Capsule"))
+                        meshInstancePhysicsInfo.shape = ePhysicsShape::CAPSULE;
+                    if (ImGui::MenuItem("Cylinder"))
+                        meshInstancePhysicsInfo.shape = ePhysicsShape::CYLINDER;
+                    if (ImGui::MenuItem("Cone"))
+                        meshInstancePhysicsInfo.shape = ePhysicsShape::CONE;
+                    ImGui::EndCombo();
+                }
+                if (ImGui::Button("Add")) {
+                    float s[3] = { 1.0f, 1.0f, 1.0f };
+                    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
+                    scene.AddRigidBody(pMatrix, scale);
+                }
+            } else {
+                if (ImGui::Button("Delete")) {
+                    scene.DeleteRigidBody();
+                }
+            }
         }
         ImGui::EndTabItem();
     }

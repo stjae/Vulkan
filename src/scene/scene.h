@@ -5,7 +5,6 @@
 #include "scene.h"
 #include "camera.h"
 #include "mesh/meshModel.h"
-#include "dataType.h"
 #include "shadowMap.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
@@ -92,7 +91,7 @@ class Scene
     void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
-    void DeleteMesh();
+    void DeleteMeshInstance();
     void DeletePointLight();
     void HandlePointLightDuplication();
     void HandleMeshDuplication();
@@ -114,12 +113,16 @@ public:
     size_t GetInstanceCount();
     size_t GetLightCount() { return pointLights_.size(); }
     const std::vector<MeshModel>& GetMeshes() { return meshes_; }
-    MeshInstanceUBO& GetSelectedMeshInstance() { return meshes_[selectedMeshID_].meshInstances_[selectedMeshInstanceID_]; }
-    MeshInstanceUBO& GetMeshInstance(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstances_[instanceID]; }
+    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_]; }
+    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstanceUBOs_[instanceID]; }
+    MeshInstancePhysicsInfo& GetSelectedMeshInstancePhysicsInfo() { return meshes_[selectedMeshID_].meshInstancePhysicsInfos_[selectedMeshInstanceID_]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void Play();
     ~Scene();
     void Stop();
+    void AddRigidBody(float* matrix, float* scale);
+    void DeleteRigidBody();
+    void UpdateRigidBody(float* matrix, float* scale);
 };
 
 #endif
