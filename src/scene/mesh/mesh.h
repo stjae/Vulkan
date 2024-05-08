@@ -24,8 +24,6 @@ protected:
     int32_t meshID_;
     std::unique_ptr<vkn::Buffer> meshInstanceBuffer_;
     std::vector<MeshInstanceUBO> meshInstanceUBOs_;
-    // instance data which will be used in physics
-    std::vector<MeshInstancePhysicsInfo> meshInstancePhysicsInfos_;
     std::vector<MeshPart> meshParts_;
     std::vector<MaterialFilePath> materials_;
     inline static vk::CommandBuffer commandBuffer_;

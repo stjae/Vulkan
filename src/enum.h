@@ -1,12 +1,12 @@
 #ifndef ENUM_H
 #define ENUM_H
 
-enum class ePhysicsType {
+enum class eRigidBodyType {
     STATIC,
     DYNAMIC
 };
 
-enum class ePhysicsShape {
+enum class eRigidBodyShape {
     BOX,
     SPHERE,
     CAPSULE,

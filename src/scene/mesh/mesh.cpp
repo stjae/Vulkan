@@ -3,7 +3,6 @@
 void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
 {
     meshInstanceUBOs_.emplace_back(meshID_, meshInstanceUBOs_.size(), pos, scale);
-    meshInstancePhysicsInfos_.emplace_back();
 }
 
 void Mesh::CreateSquare(float scale, const char* texturePath)

@@ -115,14 +115,10 @@ public:
     const std::vector<MeshModel>& GetMeshes() { return meshes_; }
     MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_]; }
     MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstanceUBOs_[instanceID]; }
-    MeshInstancePhysicsInfo& GetSelectedMeshInstancePhysicsInfo() { return meshes_[selectedMeshID_].meshInstancePhysicsInfos_[selectedMeshInstanceID_]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void Play();
-    ~Scene();
     void Stop();
-    void AddRigidBody(float* matrix, float* scale);
-    void DeleteRigidBody();
-    void UpdateRigidBody(float* matrix, float* scale);
+    ~Scene();
 };
 
 #endif

@@ -16,7 +16,6 @@ struct MeshInstanceData
     vec3 albedo;
     float metallic;
     float roughness;
-    float padding[3];
 };
 
 struct LightData

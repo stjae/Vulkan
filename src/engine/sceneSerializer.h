@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "../scene/scene.h"
+#include "../struct.h"
 #include <yaml-cpp/yaml.h>
 
 class SceneSerializer
@@ -15,7 +16,6 @@ public:
     void SerializeCamera(YAML::Emitter& out, const Camera& camera);
     void SerializePointLights(YAML::Emitter& out, const std::vector<PointLightUBO>& pointLights);
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
-    ;
 };
 
 #endif

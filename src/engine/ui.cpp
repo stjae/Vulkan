@@ -78,12 +78,6 @@ void UI::Draw(Scene& scene, Viewport& viewport, size_t frameIndex)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui::NewFrame();
 
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !ImGui::IsAnyItemHovered()) {
-        scene.selectedMeshID_ = -1;
-        scene.selectedMeshInstanceID_ = -1;
-        scene.selectedLightID_ = -1;
-    }
-
     if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.camera_.IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         scene.selectedMeshID_ = -1;
         scene.selectedMeshInstanceID_ = -1;
@@ -357,14 +351,16 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float pMatrix[16];
 
     auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
-    auto& meshInstancePhysicsInfo = scene.GetSelectedMeshInstancePhysicsInfo();
+
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
     if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        if (meshInstancePhysicsInfo.haveRigidBody) {
+        if (meshInstanceUBO.pInfo) {
             float s[3] = { 1.0f, 1.0f, 1.0f };
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-            scene.UpdateRigidBody(pMatrix, scale);
+            meshInstanceUBO.pInfo->matrix = glm::make_mat4(pMatrix);
+            meshInstanceUBO.pInfo->scale = glm::make_vec3(scale);
+            scene.physics_.UpdateRigidBody(meshInstanceUBO);
         }
     }
     scene.meshDirtyFlag_ = true;
@@ -437,7 +433,6 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         // Mesh Attributes
         if (scene.selectedMeshID_ > -1) {
             auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
-            auto& meshInstancePhysicsInfo = scene.GetSelectedMeshInstancePhysicsInfo();
 
             float translation[3];
             float rotation[3];
@@ -477,37 +472,48 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.meshDirtyFlag_ = true;
 
             ImGui::SeparatorText("RigidBody");
-            if (!meshInstancePhysicsInfo.haveRigidBody) {
+            if (!meshInstanceUBO.pInfo) {
+                static MeshInstancePhysicsInfo previewInfo;
                 const char* types[2] = { "Static", "Dynamic" };
-                if (ImGui::BeginCombo("Type", types[(int)meshInstancePhysicsInfo.type])) {
+                if (ImGui::BeginCombo("Type", types[(int)previewInfo.rigidBodyType])) {
                     if (ImGui::MenuItem("Static"))
-                        meshInstancePhysicsInfo.type = ePhysicsType::STATIC;
+                        previewInfo.rigidBodyType = eRigidBodyType::STATIC;
                     if (ImGui::MenuItem("Dynamic"))
-                        meshInstancePhysicsInfo.type = ePhysicsType::DYNAMIC;
+                        previewInfo.rigidBodyType = eRigidBodyType::DYNAMIC;
                     ImGui::EndCombo();
                 }
                 const char* shapes[5] = { "Box", "Sphere", "Capsule", "Cylinder", "Cone" };
-                if (ImGui::BeginCombo("Collider Shape", shapes[(int)meshInstancePhysicsInfo.shape])) {
+                if (ImGui::BeginCombo("Collider Shape", shapes[(int)previewInfo.rigidBodyShape])) {
                     if (ImGui::MenuItem("Box"))
-                        meshInstancePhysicsInfo.shape = ePhysicsShape::BOX;
+                        previewInfo.rigidBodyShape = eRigidBodyShape::BOX;
                     if (ImGui::MenuItem("Sphere"))
-                        meshInstancePhysicsInfo.shape = ePhysicsShape::SPHERE;
+                        previewInfo.rigidBodyShape = eRigidBodyShape::SPHERE;
                     if (ImGui::MenuItem("Capsule"))
-                        meshInstancePhysicsInfo.shape = ePhysicsShape::CAPSULE;
+                        previewInfo.rigidBodyShape = eRigidBodyShape::CAPSULE;
                     if (ImGui::MenuItem("Cylinder"))
-                        meshInstancePhysicsInfo.shape = ePhysicsShape::CYLINDER;
+                        previewInfo.rigidBodyShape = eRigidBodyShape::CYLINDER;
                     if (ImGui::MenuItem("Cone"))
-                        meshInstancePhysicsInfo.shape = ePhysicsShape::CONE;
+                        previewInfo.rigidBodyShape = eRigidBodyShape::CONE;
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
                     float s[3] = { 1.0f, 1.0f, 1.0f };
                     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-                    scene.AddRigidBody(pMatrix, scale);
+                    previewInfo.matrix = glm::make_mat4(pMatrix);
+                    previewInfo.scale = glm::make_vec3(scale);
+                    scene.physics_.AddRigidBody(meshInstanceUBO, previewInfo);
                 }
             } else {
+                // resize
+                if (ImGui::SliderFloat3("Size", glm::value_ptr(meshInstanceUBO.pInfo->size), 0.0f, 10.0f)) {
+                    float s[3] = { 1.0f, 1.0f, 1.0f };
+                    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
+                    meshInstanceUBO.pInfo->matrix = glm::make_mat4(pMatrix);
+                    meshInstanceUBO.pInfo->scale = glm::make_vec3(scale) * meshInstanceUBO.pInfo->size;
+                    scene.physics_.UpdateRigidBody(meshInstanceUBO);
+                }
                 if (ImGui::Button("Delete")) {
-                    scene.DeleteRigidBody();
+                    scene.physics_.DeleteRigidBody(meshInstanceUBO);
                 }
             }
         }
@@ -679,7 +685,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex)
     if (!dragDropped)
         return;
 
-    const int32_t* pickColor = viewport.PickColor(dragDropMouseX, dragDropMouseY);
+    // const int32_t* pickColor = viewport.PickColor(dragDropMouseX, dragDropMouseY);
     scene.AddMeshInstance(static_cast<Mesh*>(dragDropResource->ptr)->GetMeshID());
     dragDropped = false;
 }

@@ -15,6 +15,18 @@ struct MeshPart
     MeshPart(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
 };
 
+struct MeshInstancePhysicsInfo
+{
+    // model matrix before simulation
+    glm::mat4 initialModel;
+    eRigidBodyType rigidBodyType;
+    eRigidBodyShape rigidBodyShape;
+    btRigidBody* rigidBodyPtr;
+    glm::mat4 matrix;
+    glm::vec3 scale;
+    glm::vec3 size = { 1.0f, 1.0f, 1.0f };
+};
+
 struct MeshInstanceUBO
 {
     glm::mat4 model;
@@ -26,7 +38,8 @@ struct MeshInstanceUBO
     glm::vec3 albedo;
     float metallic;
     float roughness;
-    float padding[3];
+
+    std::unique_ptr<MeshInstancePhysicsInfo> pInfo;
 
     MeshInstanceUBO(int32_t meshID, int32_t instanceID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(true), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
     {
@@ -36,17 +49,27 @@ struct MeshInstanceUBO
         invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         invTranspose = glm::transpose(glm::inverse(invTranspose));
     }
-};
-
-struct MeshInstancePhysicsInfo
-{
-    // model matrix before simulation
-    bool haveRigidBody;
-    glm::mat4 initialModel;
-    ePhysicsType type;
-    ePhysicsShape shape;
-    btRigidBody* rigidBodyPtr;
-    glm::vec3 size;
+    MeshInstanceUBO(MeshInstanceUBO&& other)
+    {
+        *this = other;
+        this->pInfo = std::move(other.pInfo);
+    }
+    MeshInstanceUBO& operator=(const MeshInstanceUBO& other)
+    {
+        if (this != &other) {
+            this->model = other.model;
+            this->invTranspose = other.invTranspose;
+            this->meshID = other.meshID;
+            this->textureID = other.textureID;
+            this->instanceID = other.instanceID;
+            this->useTexture = other.useTexture;
+            this->albedo = other.albedo;
+            this->metallic = other.metallic;
+            this->roughness = other.roughness;
+        }
+        return *this;
+    }
+    // MeshInstanceUBO& operator=(MeshInstanceUBO&& other) {}
 };
 
 struct MaterialFilePath

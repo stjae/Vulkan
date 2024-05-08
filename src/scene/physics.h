@@ -115,7 +115,6 @@ class Physics
 
     void DebugDraw()
     {
-        debugDrawer_.clearLines();
         dynamicsWorld_->debugDrawWorld();
 
         if (!debugDrawer_.m_linePoints.empty()) {
@@ -126,12 +125,12 @@ class Physics
 
 public:
     void InitPhysics();
-    void AddRigidBody(const MeshInstanceUBO& ubo, MeshInstancePhysicsInfo& pInfo, float* matrix, float* scale);
+    void AddRigidBody(MeshInstanceUBO& ubo, const MeshInstancePhysicsInfo& pInfo);
     void Simulate(std::vector<MeshModel>& meshes);
     void Stop(std::vector<MeshModel>& meshes);
     void Update(Mesh& mesh);
-    void DeleteRigidBody(MeshInstancePhysicsInfo& pInfo);
-    void UpdateRigidBody(btRigidBody* rigidBody, float* matrix, float* scale);
+    void DeleteRigidBody(MeshInstanceUBO& ubo);
+    void UpdateRigidBody(const MeshInstanceUBO& ubo);
     ~Physics();
 };
 

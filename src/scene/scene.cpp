@@ -154,10 +154,6 @@ void Scene::Update()
     UpdateShadowMap();
     UpdateShadowCubemaps();
     UpdateDescriptorSet();
-
-    if (!isPlaying_) {
-        // physics_.Update(meshes_[0]);
-    }
 }
 
 void Scene::AddLight()
@@ -189,8 +185,8 @@ void Scene::DeleteMeshInstance()
 {
     if (selectedMeshID_ < 0 || selectedMeshInstanceID_ < 0)
         return;
+    physics_.DeleteRigidBody(GetSelectedMeshInstanceUBO());
     meshes_[selectedMeshID_].meshInstanceUBOs_.erase(meshes_[selectedMeshID_].meshInstanceUBOs_.begin() + selectedMeshInstanceID_);
-    meshes_[selectedMeshID_].meshInstancePhysicsInfos_.erase(meshes_[selectedMeshID_].meshInstancePhysicsInfos_.begin() + selectedMeshInstanceID_);
 
     for (int32_t i = selectedMeshInstanceID_; i < meshes_[selectedMeshID_].meshInstanceUBOs_.size(); i++) {
         meshes_[selectedMeshID_].meshInstanceUBOs_[i].instanceID--;
@@ -238,14 +234,19 @@ void Scene::HandleMeshDuplication()
 {
     if (selectedMeshID_ > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !camera_.isControllable_) {
         AddMeshInstance(selectedMeshID_);
-        int newInstanceID = meshes_[selectedMeshID_].meshInstanceUBOs_.back().instanceID;
+        auto& newMeshInstanceUBO = meshes_[selectedMeshID_].meshInstanceUBOs_.back();
+        int newMeshInstanceID = newMeshInstanceUBO.instanceID;
         // copy data of source instance
-        auto& srcMeshInstance = meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_];
-        meshes_[selectedMeshID_].meshInstanceUBOs_.back() = srcMeshInstance;
+        auto& srcMeshInstanceUBO = meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_];
+        newMeshInstanceUBO = srcMeshInstanceUBO;
         // except for id
-        meshes_[selectedMeshID_].meshInstanceUBOs_.back().instanceID = newInstanceID;
+        newMeshInstanceUBO.instanceID = newMeshInstanceID;
         // select new instance
-        selectedMeshInstanceID_ = newInstanceID;
+        selectedMeshInstanceID_ = newMeshInstanceID;
+
+        if (srcMeshInstanceUBO.pInfo) {
+            physics_.AddRigidBody(newMeshInstanceUBO, *srcMeshInstanceUBO.pInfo);
+        }
     }
 }
 
@@ -435,22 +436,6 @@ void Scene::Stop()
 {
     physics_.Stop(meshes_);
     meshDirtyFlag_ = true;
-}
-
-void Scene::AddRigidBody(float* matrix, float* scale)
-{
-    physics_.AddRigidBody(GetSelectedMeshInstanceUBO(), GetSelectedMeshInstancePhysicsInfo(), matrix, scale);
-}
-
-void Scene::DeleteRigidBody()
-{
-    physics_.DeleteRigidBody(GetSelectedMeshInstancePhysicsInfo());
-}
-
-void Scene::UpdateRigidBody(float* matrix, float* scale)
-{
-    GetSelectedMeshInstancePhysicsInfo().initialModel = GetSelectedMeshInstanceUBO().model;
-    physics_.UpdateRigidBody(GetSelectedMeshInstancePhysicsInfo().rigidBodyPtr, matrix, scale);
 }
 
 Scene::~Scene()
