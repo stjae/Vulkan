@@ -6,12 +6,13 @@ enum class eRigidBodyType {
     DYNAMIC
 };
 
-enum class eRigidBodyShape {
+enum class eColliderShape {
     BOX,
     SPHERE,
     CAPSULE,
     CYLINDER,
-    CONE
+    CONE,
+    MESH
 };
 
 #endif

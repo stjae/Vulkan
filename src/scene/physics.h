@@ -125,7 +125,7 @@ class Physics
 
 public:
     void InitPhysics();
-    void AddRigidBody(MeshInstanceUBO& ubo, const MeshInstancePhysicsInfo& pInfo);
+    void AddRigidBody(MeshModel& mesh, MeshInstanceUBO& ubo, const MeshInstancePhysicsInfo& pInfo);
     void Simulate(std::vector<MeshModel>& meshes);
     void Stop(std::vector<MeshModel>& meshes);
     void Update(Mesh& mesh);

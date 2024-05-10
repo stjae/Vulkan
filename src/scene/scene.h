@@ -36,7 +36,7 @@ class Scene
     std::unique_ptr<vkn::Buffer> pointLightDataBuffer_;
 
     ShadowMap shadowMap_;
-    std::vector<ShadowCubemap> shadowCubemaps_;
+    std::vector<std::unique_ptr<ShadowCubemap>> shadowCubemaps_;
 
     std::vector<MeshModel> meshes_;
     Mesh envCube_;
@@ -58,10 +58,10 @@ class Scene
     glm::mat4 dirLightRot_ = glm::mat4(1.0f);
     glm::vec3 dirLightPos_ = glm::vec3(0.0f, dirLightDistance_, 0.0f);
 
-    std::vector<vkn::Image> albedoTextures_;
-    std::vector<vkn::Image> normalTextures_;
-    std::vector<vkn::Image> metallicTextures_;
-    std::vector<vkn::Image> roughnessTextures_;
+    std::vector<std::unique_ptr<vkn::Image>> albedoTextures_;
+    std::vector<std::unique_ptr<vkn::Image>> normalTextures_;
+    std::vector<std::unique_ptr<vkn::Image>> metallicTextures_;
+    std::vector<std::unique_ptr<vkn::Image>> roughnessTextures_;
     std::vector<Resource> resources_;
 
     Camera camera_;

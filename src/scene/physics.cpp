@@ -14,26 +14,30 @@ void Physics::InitPhysics()
     vkn::Command::AllocateCommandBuffer(debugDrawer_.m_commandPool, debugDrawer_.m_commandBuffer);
 }
 
-void Physics::AddRigidBody(MeshInstanceUBO& ubo, const MeshInstancePhysicsInfo& pInfo)
+void Physics::AddRigidBody(MeshModel& mesh, MeshInstanceUBO& ubo, const MeshInstancePhysicsInfo& pInfo)
 {
     ubo.pInfo = std::make_unique<MeshInstancePhysicsInfo>(pInfo);
 
     btCollisionShape* shape;
-    switch (ubo.pInfo->rigidBodyShape) {
-    case (eRigidBodyShape::BOX):
+
+    switch (ubo.pInfo->colliderShape) {
+    case (eColliderShape::BOX):
         shape = new btBoxShape({ 0.5f, 0.5f, 0.5f });
         break;
-    case (eRigidBodyShape::SPHERE):
+    case (eColliderShape::SPHERE):
         shape = new btSphereShape(1.0f);
         break;
-    case (eRigidBodyShape::CAPSULE):
+    case (eColliderShape::CAPSULE):
         shape = new btCapsuleShape({ 1.0f, 1.0f });
         break;
-    case (eRigidBodyShape::CYLINDER):
+    case (eColliderShape::CYLINDER):
         shape = new btCylinderShape({ 0.5f, 0.5f, 0.5f });
         break;
-    case (eRigidBodyShape::CONE):
+    case (eColliderShape::CONE):
         shape = new btConeShape({ 1.0f, 1.0f });
+        break;
+    case (eColliderShape::MESH):
+        shape = new btBvhTriangleMeshShape(&mesh.m_bulletVertexArray, false);
         break;
     default:
         return;

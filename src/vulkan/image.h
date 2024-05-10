@@ -17,7 +17,7 @@ class Image
 {
 protected:
     vk::Framebuffer framebuffer_;
-    std::shared_ptr<Buffer> stagingBuffer_;
+    std::unique_ptr<Buffer> stagingBuffer_;
     ImageBundle imageBundle_;
 
 public:

@@ -20,20 +20,15 @@ Scene::Scene() : selectedMeshID_(-1), selectedMeshInstanceID_(-1), selectedLight
         lineRenderPipeline.UpdateCameraDescriptor();
     }
 
-    meshes_.reserve(1000);
-    resources_.reserve(1000);
+    // TODO:
+    // meshes_.reserve(10);
 
     {
         // prepare textures
         vkn::Image::CreateSampler();
-        albedoTextures_.reserve(1000);
-        normalTextures_.reserve(1000);
-        metallicTextures_.reserve(1000);
-        roughnessTextures_.reserve(1000);
         shadowMap_.CreateShadowMap(commandBuffer_);
         meshRenderPipeline.shadowMapImageDescriptor = { vkn::Image::repeatSampler, shadowMap_.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal };
         meshRenderPipeline.UpdateShadowMapDescriptor();
-        shadowCubemaps_.reserve(1000);
         vk::DescriptorImageInfo samplerInfo(vkn::Image::repeatSampler);
         vk::WriteDescriptorSet writeDescriptorSet(meshRenderPipeline.descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
         vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
@@ -105,24 +100,28 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
 
     for (auto& material : materials) {
         albedoTextures_.emplace_back();
+        albedoTextures_.back() = std::make_unique<vkn::Image>();
         std::thread t0 = std::thread([&]() {
             vkn::Command::AllocateCommandBuffer(commandPools[0], commandBuffers[0]);
-            albedoTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffers[0]);
+            albedoTextures_.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffers[0]);
         });
         normalTextures_.emplace_back();
+        normalTextures_.back() = std::make_unique<vkn::Image>();
         std::thread t1 = std::thread([&]() {
             vkn::Command::AllocateCommandBuffer(commandPools[1], commandBuffers[1]);
-            normalTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffers[1]);
+            normalTextures_.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffers[1]);
         });
         metallicTextures_.emplace_back();
+        metallicTextures_.back() = std::make_unique<vkn::Image>();
         std::thread t2 = std::thread([&]() {
             vkn::Command::AllocateCommandBuffer(commandPools[2], commandBuffers[2]);
-            metallicTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffers[2]);
+            metallicTextures_.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffers[2]);
         });
         roughnessTextures_.emplace_back();
+        roughnessTextures_.back() = std::make_unique<vkn::Image>();
         std::thread t3 = std::thread([&]() {
             vkn::Command::AllocateCommandBuffer(commandPools[3], commandBuffers[3]);
-            roughnessTextures_.back().InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffers[3]);
+            roughnessTextures_.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffers[3]);
         });
 
         t0.join();
@@ -160,7 +159,8 @@ void Scene::AddLight()
 {
     pointLights_.emplace_back();
     shadowCubemaps_.emplace_back();
-    shadowCubemaps_.back().CreateShadowMap(commandBuffer_);
+    shadowCubemaps_.back() = std::make_unique<ShadowCubemap>();
+    shadowCubemaps_.back()->CreateShadowMap(commandBuffer_);
     lightDirtyFlag_ = true;
 }
 
@@ -245,7 +245,7 @@ void Scene::HandleMeshDuplication()
         selectedMeshInstanceID_ = newMeshInstanceID;
 
         if (srcMeshInstanceUBO.pInfo) {
-            physics_.AddRigidBody(newMeshInstanceUBO, *srcMeshInstanceUBO.pInfo);
+            physics_.AddRigidBody(meshes_[selectedMeshID_], newMeshInstanceUBO, *srcMeshInstanceUBO.pInfo);
         }
     }
 }
@@ -295,11 +295,11 @@ void Scene::UpdateShadowCubemaps()
 {
     if (shadowShadowCubemapDirtyFlag_) {
         for (int i = 0; i < pointLights_.size(); i++) {
-            shadowCubemaps_[i].DrawShadowMap(commandBuffer_, i, pointLights_, meshes_);
+            shadowCubemaps_[i]->DrawShadowMap(commandBuffer_, i, pointLights_, meshes_);
         }
         meshRenderPipeline.shadowCubemapDescriptors.clear();
         for (auto& shadowCubemap : shadowCubemaps_) {
-            meshRenderPipeline.shadowCubemapDescriptors.emplace_back(nullptr, shadowCubemap.GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+            meshRenderPipeline.shadowCubemapDescriptors.emplace_back(nullptr, shadowCubemap->GetBundle().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
         }
         meshRenderPipeline.UpdateShadowCubemapDescriptors();
         shadowShadowCubemapDirtyFlag_ = false;
@@ -342,22 +342,22 @@ void Scene::UpdateTextureDescriptors()
 {
     meshRenderPipeline.albeodoTextureDescriptors.clear();
     for (const auto& albedoTexture : albedoTextures_) {
-        meshRenderPipeline.albeodoTextureDescriptors.emplace_back(albedoTexture.GetBundle().descriptorImageInfo);
+        meshRenderPipeline.albeodoTextureDescriptors.emplace_back(albedoTexture->GetBundle().descriptorImageInfo);
     }
     meshRenderPipeline.UpdateAlbedoTextureWriteDescriptors();
     meshRenderPipeline.normalTextureDescriptors.clear();
     for (const auto& normalTexture : normalTextures_) {
-        meshRenderPipeline.normalTextureDescriptors.emplace_back(normalTexture.GetBundle().descriptorImageInfo);
+        meshRenderPipeline.normalTextureDescriptors.emplace_back(normalTexture->GetBundle().descriptorImageInfo);
     }
     meshRenderPipeline.UpdateNormalTextureWriteDescriptors();
     meshRenderPipeline.metallicTextureDescriptors.clear();
     for (const auto& metallicTexture : metallicTextures_) {
-        meshRenderPipeline.metallicTextureDescriptors.emplace_back(metallicTexture.GetBundle().descriptorImageInfo);
+        meshRenderPipeline.metallicTextureDescriptors.emplace_back(metallicTexture->GetBundle().descriptorImageInfo);
     }
     meshRenderPipeline.UpdateMetallicTextureWriteDescriptors();
     meshRenderPipeline.roughnessTextureDescriptors.clear();
     for (const auto& roughnessTexture : roughnessTextures_) {
-        meshRenderPipeline.roughnessTextureDescriptors.emplace_back(roughnessTexture.GetBundle().descriptorImageInfo);
+        meshRenderPipeline.roughnessTextureDescriptors.emplace_back(roughnessTexture->GetBundle().descriptorImageInfo);
     }
     meshRenderPipeline.UpdateRoughnessTextureWriteDescriptors();
     resourceDirtyFlag_ = false;

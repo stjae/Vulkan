@@ -33,8 +33,8 @@ void LineRenderPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     std::array<vk::PipelineColorBlendAttachmentState, 2> attachmentStates;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/line.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/line.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/line.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/line.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     // attachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;

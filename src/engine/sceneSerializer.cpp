@@ -169,7 +169,7 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
                     out << YAML::Key << "RigidBody";
                     out << YAML::BeginMap;
                     out << YAML::Key << "Type" << YAML::Value << (int)instanceUBO.pInfo->rigidBodyType;
-                    out << YAML::Key << "Shape" << YAML::Value << (int)instanceUBO.pInfo->rigidBodyShape;
+                    out << YAML::Key << "Shape" << YAML::Value << (int)instanceUBO.pInfo->colliderShape;
                     out << YAML::Key << "Matrix" << YAML::Value << instanceUBO.pInfo->matrix;
                     out << YAML::Key << "Scale" << YAML::Value << instanceUBO.pInfo->scale;
                     out << YAML::Key << "Size" << YAML::Value << instanceUBO.pInfo->size;
@@ -259,10 +259,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     MeshInstancePhysicsInfo pInfo;
                     pInfo.matrix = rigidBody["Matrix"].as<glm::mat4>();
                     pInfo.rigidBodyType = (eRigidBodyType)rigidBody["Type"].as<int>();
-                    pInfo.rigidBodyShape = (eRigidBodyShape)rigidBody["Shape"].as<int>();
+                    pInfo.colliderShape = (eColliderShape)rigidBody["Shape"].as<int>();
                     pInfo.scale = rigidBody["Scale"].as<glm::vec3>();
                     pInfo.size = rigidBody["Size"].as<glm::vec3>();
-                    scene.physics_.AddRigidBody(meshInstance, pInfo);
+                    scene.physics_.AddRigidBody(scene.meshes_[meshInstance.meshID], meshInstance, pInfo);
                 }
             }
         }

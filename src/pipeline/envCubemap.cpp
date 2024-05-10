@@ -4,8 +4,8 @@ void EnvCubemapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/environment.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/environment.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/environment.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/environment.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);

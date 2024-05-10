@@ -4,8 +4,8 @@ void SkyboxRenderPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     std::array<vk::PipelineColorBlendAttachmentState, 2> attachmentStates;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/skybox.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/skybox.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/skybox.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/skybox.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentStates[0] = vk::PipelineColorBlendAttachmentState(vk::False);

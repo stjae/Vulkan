@@ -4,8 +4,8 @@ void ShadowMapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/dirlightshadow.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/dirlightshadow.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/dirlightshadow.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/dirlightshadow.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);

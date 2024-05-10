@@ -63,12 +63,16 @@ void MeshModel::ProcessNode(aiNode* node, const aiScene* scene)
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         ProcessNode(node->mChildren[i], scene);
     }
+    for (auto& bulletMesh : m_bulletMeshes) {
+        m_bulletVertexArray.addIndexedMesh(bulletMesh);
+    }
 }
 
 void MeshModel::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
 {
     vertexContainers_.emplace_back();
     indexContainers_.emplace_back();
+    posContainers_.emplace_back();
 
     aiFace* faces = mesh->mFaces;
     for (unsigned int f = 0; f < mesh->mNumFaces; f++) {
@@ -99,7 +103,19 @@ void MeshModel::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
                                               texcoord,
                                               tangent,
                                               biTangent);
+
+        posContainers_.back().push_back(pos.x);
+        posContainers_.back().push_back(pos.y);
+        posContainers_.back().push_back(pos.z);
     }
 
     meshParts_.emplace_back(meshParts_.size(), mesh->mMaterialIndex);
+
+    m_bulletMeshes.emplace_back();
+    m_bulletMeshes.back().m_triangleIndexBase = (unsigned char*)indexContainers_.back().data();
+    m_bulletMeshes.back().m_triangleIndexStride = 3 * sizeof(unsigned int);
+    m_bulletMeshes.back().m_vertexBase = (unsigned char*)posContainers_.back().data();
+    m_bulletMeshes.back().m_vertexStride = 3 * sizeof(float);
+    m_bulletMeshes.back().m_numTriangles = mesh->mNumFaces;
+    m_bulletMeshes.back().m_numVertices = mesh->mNumVertices;
 }

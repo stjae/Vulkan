@@ -20,7 +20,7 @@ struct MeshInstancePhysicsInfo
     // model matrix before simulation
     glm::mat4 initialModel;
     eRigidBodyType rigidBodyType;
-    eRigidBodyShape rigidBodyShape;
+    eColliderShape colliderShape;
     btRigidBody* rigidBodyPtr;
     glm::mat4 matrix;
     glm::vec3 scale;

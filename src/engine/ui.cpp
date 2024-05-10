@@ -44,7 +44,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
     icons_config.GlyphMinAdvanceX = iconFontSize;
-    std::string path(PROJECT_DIR "ttf/");
+    std::string path(PROJECT_DIR "font/");
     path.append(FONT_ICON_FILE_NAME_FAS);
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
@@ -476,24 +476,32 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 static MeshInstancePhysicsInfo previewInfo;
                 const char* types[2] = { "Static", "Dynamic" };
                 if (ImGui::BeginCombo("Type", types[(int)previewInfo.rigidBodyType])) {
-                    if (ImGui::MenuItem("Static"))
+                    if (ImGui::MenuItem("Static")) {
+                        previewInfo = {};
                         previewInfo.rigidBodyType = eRigidBodyType::STATIC;
-                    if (ImGui::MenuItem("Dynamic"))
+                    }
+                    if (ImGui::MenuItem("Dynamic")) {
+                        previewInfo = {};
                         previewInfo.rigidBodyType = eRigidBodyType::DYNAMIC;
+                    }
                     ImGui::EndCombo();
                 }
-                const char* shapes[5] = { "Box", "Sphere", "Capsule", "Cylinder", "Cone" };
-                if (ImGui::BeginCombo("Collider Shape", shapes[(int)previewInfo.rigidBodyShape])) {
+                const char* shapes[6] = { "Box", "Sphere", "Capsule", "Cylinder", "Cone", "Mesh" };
+                if (ImGui::BeginCombo("Collider Shape", shapes[(int)previewInfo.colliderShape])) {
                     if (ImGui::MenuItem("Box"))
-                        previewInfo.rigidBodyShape = eRigidBodyShape::BOX;
+                        previewInfo.colliderShape = eColliderShape::BOX;
                     if (ImGui::MenuItem("Sphere"))
-                        previewInfo.rigidBodyShape = eRigidBodyShape::SPHERE;
+                        previewInfo.colliderShape = eColliderShape::SPHERE;
                     if (ImGui::MenuItem("Capsule"))
-                        previewInfo.rigidBodyShape = eRigidBodyShape::CAPSULE;
+                        previewInfo.colliderShape = eColliderShape::CAPSULE;
                     if (ImGui::MenuItem("Cylinder"))
-                        previewInfo.rigidBodyShape = eRigidBodyShape::CYLINDER;
+                        previewInfo.colliderShape = eColliderShape::CYLINDER;
                     if (ImGui::MenuItem("Cone"))
-                        previewInfo.rigidBodyShape = eRigidBodyShape::CONE;
+                        previewInfo.colliderShape = eColliderShape::CONE;
+                    if (previewInfo.rigidBodyType == eRigidBodyType::STATIC) {
+                        if (ImGui::MenuItem("Mesh"))
+                            previewInfo.colliderShape = eColliderShape::MESH;
+                    }
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
@@ -501,7 +509,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
                     previewInfo.matrix = glm::make_mat4(pMatrix);
                     previewInfo.scale = glm::make_vec3(scale);
-                    scene.physics_.AddRigidBody(meshInstanceUBO, previewInfo);
+                    scene.physics_.AddRigidBody(scene.meshes_[meshInstanceUBO.meshID], meshInstanceUBO, previewInfo);
                 }
             } else {
                 // resize

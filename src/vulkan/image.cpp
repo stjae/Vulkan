@@ -53,7 +53,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     spdlog::info("load texture from [{}]", filePath.c_str());
 
     BufferInput bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    stagingBuffer_ = std::make_shared<Buffer>(bufferInput);
+    stagingBuffer_ = std::make_unique<Buffer>(bufferInput);
     stagingBuffer_->Copy(imageData);
 
     stbi_image_free(imageData);
@@ -94,7 +94,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
 void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
 {
     BufferInput bufferInput = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    stagingBuffer_ = std::make_shared<Buffer>(bufferInput);
+    stagingBuffer_ = std::make_unique<Buffer>(bufferInput);
     stagingBuffer_->Copy(&color);
 
     CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);

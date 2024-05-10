@@ -21,7 +21,12 @@ class MeshBase
 {
 protected:
     std::vector<std::vector<Vertex>> vertexContainers_;
+    std::vector<std::vector<float>> posContainers_;
     std::vector<std::vector<uint32_t>> indexContainers_;
+
+    // Physics
+    std::vector<btIndexedMesh> m_bulletMeshes;
+    btTriangleIndexVertexArray m_bulletVertexArray;
 
 public:
     static vk::VertexInputBindingDescription GetBindingDesc();

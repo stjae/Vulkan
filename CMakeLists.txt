@@ -108,7 +108,7 @@ foreach (DLL ${DLLS})
     )
 endforeach ()
 
-add_dependencies(${PROJECT_NAME} ${DEP_LIST} Shaders)
+add_dependencies(${PROJECT_NAME} ${DEP_LIST} shader)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/"

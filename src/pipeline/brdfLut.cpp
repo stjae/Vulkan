@@ -4,8 +4,8 @@ void BrdfLutPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/brdflut.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/brdflut.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/brdflut.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/brdflut.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);

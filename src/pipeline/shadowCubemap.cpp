@@ -4,8 +4,8 @@ void ShadowCubemapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shaders/pointlightshadow.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shaders/pointlightshadow.frag.spv");
+    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.vert.spv");
+    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
