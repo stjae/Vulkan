@@ -15,15 +15,17 @@ struct MeshPart
     MeshPart(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
 };
 
-struct MeshInstancePhysicsInfo
+struct MeshPhysicsInfo
 {
-    // model matrix before simulation
-    glm::mat4 initialModel;
     eRigidBodyType rigidBodyType;
     eColliderShape colliderShape;
+};
+
+struct MeshInstancePhysicsInfo
+{
     btRigidBody* rigidBodyPtr;
-    glm::mat4 matrix;
-    glm::vec3 scale;
+    // model matrix before simulation
+    glm::mat4 initialModel;
     glm::vec3 size = { 1.0f, 1.0f, 1.0f };
 };
 
@@ -39,7 +41,7 @@ struct MeshInstanceUBO
     float metallic;
     float roughness;
 
-    std::unique_ptr<MeshInstancePhysicsInfo> pInfo;
+    std::unique_ptr<MeshInstancePhysicsInfo> physicsInfo;
 
     MeshInstanceUBO(int32_t meshID, int32_t instanceID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(true), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
     {
@@ -52,7 +54,7 @@ struct MeshInstanceUBO
     MeshInstanceUBO(MeshInstanceUBO&& other)
     {
         *this = other;
-        this->pInfo = std::move(other.pInfo);
+        this->physicsInfo = std::move(other.physicsInfo);
     }
     MeshInstanceUBO& operator=(const MeshInstanceUBO& other)
     {

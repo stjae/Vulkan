@@ -350,19 +350,12 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     float matrix[16];
     float pMatrix[16];
 
+    auto& mesh = scene.GetSelectedMesh();
     auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        if (meshInstanceUBO.pInfo) {
-            float s[3] = { 1.0f, 1.0f, 1.0f };
-            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-            meshInstanceUBO.pInfo->matrix = glm::make_mat4(pMatrix);
-            meshInstanceUBO.pInfo->scale = glm::make_vec3(scale);
-            scene.physics_.UpdateRigidBody(meshInstanceUBO);
-        }
-    }
+    ImGuizmo::Manipulate(glm::value_ptr(scene.camera_.GetMatrix().view), glm::value_ptr(scene.camera_.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix);
     scene.meshDirtyFlag_ = true;
     meshInstanceUBO.model = glm::make_mat4(matrix);
     meshInstanceUBO.invTranspose = glm::make_mat4(matrix);
@@ -410,22 +403,25 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.meshes_.size(); i++) {
                 std::string name(scene.meshes_[i].GetName());
-                for (int j = 0; j < scene.meshes_[i].GetInstanceCount(); j++) {
-                    ImGui::PushID(i * j + j);
-                    if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID_ && j == scene.selectedMeshInstanceID_)) {
-                        scene.selectedMeshID_ = i;
-                        scene.selectedMeshInstanceID_ = j;
-                        scene.selectedLightID_ = -1;
-                    }
-                    if (ImGui::BeginPopupContextItem()) {
-                        if (ImGui::MenuItem("Delete")) {
+                if (ImGui::TreeNode(name.c_str())) {
+                    for (int j = 0; j < scene.meshes_[i].GetInstanceCount(); j++) {
+                        ImGui::PushID(i * j + j);
+                        if (ImGui::Selectable(name.c_str(), i == scene.selectedMeshID_ && j == scene.selectedMeshInstanceID_)) {
                             scene.selectedMeshID_ = i;
                             scene.selectedMeshInstanceID_ = j;
-                            scene.DeleteMeshInstance();
+                            scene.selectedLightID_ = -1;
                         }
-                        ImGui::EndPopup();
+                        if (ImGui::BeginPopupContextItem()) {
+                            if (ImGui::MenuItem("Delete")) {
+                                scene.selectedMeshID_ = i;
+                                scene.selectedMeshInstanceID_ = j;
+                                scene.DeleteMeshInstance();
+                            }
+                            ImGui::EndPopup();
+                        }
+                        ImGui::PopID();
                     }
-                    ImGui::PopID();
+                    ImGui::TreePop();
                 }
             }
             ImGui::EndListBox();
@@ -472,56 +468,52 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.meshDirtyFlag_ = true;
 
             ImGui::SeparatorText("RigidBody");
-            if (!meshInstanceUBO.pInfo) {
-                static MeshInstancePhysicsInfo previewInfo;
+            ImGui::Text("%s", scene.meshes_[scene.selectedMeshID_].GetName().c_str());
+            if (!scene.meshes_[scene.selectedMeshID_].physicsInfo) {
+                static MeshPhysicsInfo physicsInfo;
                 const char* types[2] = { "Static", "Dynamic" };
-                if (ImGui::BeginCombo("Type", types[(int)previewInfo.rigidBodyType])) {
+                if (ImGui::BeginCombo("Type", types[(int)physicsInfo.rigidBodyType])) {
                     if (ImGui::MenuItem("Static")) {
-                        previewInfo = {};
-                        previewInfo.rigidBodyType = eRigidBodyType::STATIC;
+                        physicsInfo = {};
+                        physicsInfo.rigidBodyType = eRigidBodyType::STATIC;
                     }
                     if (ImGui::MenuItem("Dynamic")) {
-                        previewInfo = {};
-                        previewInfo.rigidBodyType = eRigidBodyType::DYNAMIC;
+                        physicsInfo = {};
+                        physicsInfo.rigidBodyType = eRigidBodyType::DYNAMIC;
                     }
                     ImGui::EndCombo();
                 }
                 const char* shapes[6] = { "Box", "Sphere", "Capsule", "Cylinder", "Cone", "Mesh" };
-                if (ImGui::BeginCombo("Collider Shape", shapes[(int)previewInfo.colliderShape])) {
+                if (ImGui::BeginCombo("Collider Shape", shapes[(int)physicsInfo.colliderShape])) {
                     if (ImGui::MenuItem("Box"))
-                        previewInfo.colliderShape = eColliderShape::BOX;
+                        physicsInfo.colliderShape = eColliderShape::BOX;
                     if (ImGui::MenuItem("Sphere"))
-                        previewInfo.colliderShape = eColliderShape::SPHERE;
+                        physicsInfo.colliderShape = eColliderShape::SPHERE;
                     if (ImGui::MenuItem("Capsule"))
-                        previewInfo.colliderShape = eColliderShape::CAPSULE;
+                        physicsInfo.colliderShape = eColliderShape::CAPSULE;
                     if (ImGui::MenuItem("Cylinder"))
-                        previewInfo.colliderShape = eColliderShape::CYLINDER;
+                        physicsInfo.colliderShape = eColliderShape::CYLINDER;
                     if (ImGui::MenuItem("Cone"))
-                        previewInfo.colliderShape = eColliderShape::CONE;
-                    if (previewInfo.rigidBodyType == eRigidBodyType::STATIC) {
+                        physicsInfo.colliderShape = eColliderShape::CONE;
+                    if (physicsInfo.rigidBodyType == eRigidBodyType::STATIC) {
                         if (ImGui::MenuItem("Mesh"))
-                            previewInfo.colliderShape = eColliderShape::MESH;
+                            physicsInfo.colliderShape = eColliderShape::MESH;
                     }
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
-                    float s[3] = { 1.0f, 1.0f, 1.0f };
-                    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-                    previewInfo.matrix = glm::make_mat4(pMatrix);
-                    previewInfo.scale = glm::make_vec3(scale);
-                    scene.physics_.AddRigidBody(scene.meshes_[meshInstanceUBO.meshID], meshInstanceUBO, previewInfo);
+                    scene.meshes_[scene.selectedMeshID_].AddPhysicsInfo(physicsInfo);
                 }
             } else {
                 // resize
-                if (ImGui::SliderFloat3("Size", glm::value_ptr(meshInstanceUBO.pInfo->size), 0.0f, 10.0f)) {
-                    float s[3] = { 1.0f, 1.0f, 1.0f };
-                    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-                    meshInstanceUBO.pInfo->matrix = glm::make_mat4(pMatrix);
-                    meshInstanceUBO.pInfo->scale = glm::make_vec3(scale) * meshInstanceUBO.pInfo->size;
-                    scene.physics_.UpdateRigidBody(meshInstanceUBO);
-                }
+                // if (ImGui::SliderFloat3("Size", glm::value_ptr(meshInstanceUBO.physicsInfo->size), 0.0f, 10.0f)) {
+                // ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
+                // meshInstanceUBO.physicsInfo->matrix = glm::make_mat4(pMatrix);
+                // meshInstanceUBO.physicsInfo->scale = glm::make_vec3(scale) * meshInstanceUBO.physicsInfo->size;
+                // scene.physics_.UpdateRigidBody(meshInstanceUBO);
+                // }
                 if (ImGui::Button("Delete")) {
-                    scene.physics_.DeleteRigidBody(meshInstanceUBO);
+                    scene.meshes_[scene.selectedMeshID_].physicsInfo.reset();
                 }
             }
         }

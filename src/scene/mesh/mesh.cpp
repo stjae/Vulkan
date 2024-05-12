@@ -5,6 +5,12 @@ void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
     meshInstanceUBOs_.emplace_back(meshID_, meshInstanceUBOs_.size(), pos, scale);
 }
 
+void Mesh::AddPhysicsInfo(const MeshPhysicsInfo& physicsInfo)
+{
+    this->physicsInfo = std::make_unique<MeshPhysicsInfo>(physicsInfo);
+    this->physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, indexContainers_, vertexContainers_);
+}
+
 void Mesh::CreateSquare(float scale, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;

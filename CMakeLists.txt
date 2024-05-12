@@ -87,6 +87,7 @@ add_executable(${PROJECT_NAME}
         src/pipeline/lineRender.h
         src/struct.h
         src/enum.h
+        src/scene/physicsDebugDrawer.h
 )
 
 include(Dependency.cmake)

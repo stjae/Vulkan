@@ -185,7 +185,6 @@ void Scene::DeleteMeshInstance()
 {
     if (selectedMeshID_ < 0 || selectedMeshInstanceID_ < 0)
         return;
-    physics_.DeleteRigidBody(GetSelectedMeshInstanceUBO());
     meshes_[selectedMeshID_].meshInstanceUBOs_.erase(meshes_[selectedMeshID_].meshInstanceUBOs_.begin() + selectedMeshInstanceID_);
 
     for (int32_t i = selectedMeshInstanceID_; i < meshes_[selectedMeshID_].meshInstanceUBOs_.size(); i++) {
@@ -244,8 +243,8 @@ void Scene::HandleMeshDuplication()
         // select new instance
         selectedMeshInstanceID_ = newMeshInstanceID;
 
-        if (srcMeshInstanceUBO.pInfo) {
-            physics_.AddRigidBody(meshes_[selectedMeshID_], newMeshInstanceUBO, *srcMeshInstanceUBO.pInfo);
+        if (srcMeshInstanceUBO.physicsInfo) {
+            // physics_.AddRigidBodies(meshes_[selectedMeshID_], newMeshInstanceUBO, *srcMeshInstanceUBO.physicsInfo);
         }
     }
 }
@@ -324,9 +323,11 @@ void Scene::UpdateMesh()
         meshRenderPipeline.meshDescriptors = bufferInfos;
         shadowMapPipeline.meshDescriptors = bufferInfos;
         shadowCubemapPipeline.meshDescriptors = bufferInfos;
+        lineRenderPipeline.meshDescriptors = bufferInfos;
         meshRenderPipeline.UpdateMeshDescriptors();
         shadowMapPipeline.UpdateMeshDescriptors();
         shadowCubemapPipeline.UpdateMeshDescriptors();
+        lineRenderPipeline.UpdateMeshDescriptors();
         meshDirtyFlag_ = false;
         shadowShadowCubemapDirtyFlag_ = true;
     }

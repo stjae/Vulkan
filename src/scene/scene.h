@@ -113,6 +113,8 @@ public:
     size_t GetInstanceCount();
     size_t GetLightCount() { return pointLights_.size(); }
     const std::vector<MeshModel>& GetMeshes() { return meshes_; }
+    // TODO: safety
+    MeshModel& GetSelectedMesh() { return meshes_[selectedMeshID_]; }
     MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_]; }
     MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstanceUBOs_[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);

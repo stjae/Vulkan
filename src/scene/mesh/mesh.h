@@ -7,6 +7,7 @@
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
+#include "../physicsDebugDrawer.h"
 
 class Mesh : public MeshBase
 {
@@ -27,12 +28,17 @@ protected:
     std::vector<MeshPart> meshParts_;
     std::vector<MaterialFilePath> materials_;
     inline static vk::CommandBuffer commandBuffer_;
+
     void CreateBuffers();
 
 public:
+    std::unique_ptr<MeshPhysicsInfo> physicsInfo;
+    std::unique_ptr<PhysicsDebugDrawer> physicsDebugDrawer;
+
     Mesh() = default;
     explicit Mesh(int meshID) : meshID_(meshID) {}
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    void AddPhysicsInfo(const MeshPhysicsInfo& physicsInfo);
     const std::string& GetName() { return name_; }
     int32_t GetMeshID() const { return meshID_; }
     size_t GetInstanceCount() const { return meshInstanceUBOs_.size(); }

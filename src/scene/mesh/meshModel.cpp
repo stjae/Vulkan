@@ -115,6 +115,7 @@ void MeshModel::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
     m_bulletMeshes.back().m_triangleIndexBase = (unsigned char*)indexContainers_.back().data();
     m_bulletMeshes.back().m_triangleIndexStride = 3 * sizeof(unsigned int);
     m_bulletMeshes.back().m_vertexBase = (unsigned char*)posContainers_.back().data();
+    std::cout << posContainers_.back().size() << '\n';
     m_bulletMeshes.back().m_vertexStride = 3 * sizeof(float);
     m_bulletMeshes.back().m_numTriangles = mesh->mNumFaces;
     m_bulletMeshes.back().m_numVertices = mesh->mNumVertices;

@@ -3,13 +3,12 @@
 
 #include <bullet/btBulletCollisionCommon.h>
 #include "../vulkan/pipeline.h"
+#include "../scene/physicsDebugDrawer.h"
 
-struct LinePoint
+struct LineRenderPushConstants
 {
-    glm::vec3 pos;
-    glm::vec3 color;
-    LinePoint(const btVector3& pos, const btVector3& color) : pos(pos.x(), pos.y(), pos.z()), color(color.x(), color.y(), color.z()) {}
-};
+    int meshIndex;
+} inline lineRenderPushConsts;
 
 class LineRenderPipeline : public vkn::Pipeline
 {
@@ -21,10 +20,12 @@ class LineRenderPipeline : public vkn::Pipeline
 
 public:
     vk::DescriptorBufferInfo cameraDescriptor;
+    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
 
     LineRenderPipeline();
     void CreatePipeline() override;
     void UpdateCameraDescriptor();
+    void UpdateMeshDescriptors();
 
 } inline lineRenderPipeline;
 
