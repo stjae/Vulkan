@@ -74,18 +74,18 @@ void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
 
     out << YAML::BeginMap;
 
-    if (!scene.saveFilePath_.empty()) {
+    if (!scene.m_saveFilePath.empty()) {
         out << YAML::Key << "SaveFilePath" << YAML::Value << filePath;
     }
-    if (!scene.hdriFilePath_.empty()) {
-        out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.hdriFilePath_;
+    if (!scene.m_hdriFilePath.empty()) {
+        out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.m_hdriFilePath;
     }
-    out << YAML::Key << "IBLExposure" << YAML::Value << scene.iblExposure_;
+    out << YAML::Key << "IBLExposure" << YAML::Value << scene.m_iblExposure;
     SerializeDirLight(out, scene);
-    SerializePointLights(out, scene.pointLights_);
-    SerializeCamera(out, scene.camera_);
-    SerializeResources(out, scene.resources_);
-    SerializeMeshes(out, scene.meshes_);
+    SerializePointLights(out, scene.m_pointLights);
+    SerializeCamera(out, scene.m_camera);
+    SerializeResources(out, scene.m_resources);
+    SerializeMeshes(out, scene.m_meshes);
 
     out << YAML::EndMap;
 
@@ -97,13 +97,13 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
 {
     out << YAML::Key << "DirectionalLight" << YAML::Value;
     out << YAML::BeginMap;
-    out << YAML::Key << "NearPlane" << YAML::Value << scene.dirLightNearPlane_;
-    out << YAML::Key << "FarPlane" << YAML::Value << scene.dirLightFarPlane_;
-    out << YAML::Key << "Distance" << YAML::Value << scene.dirLightDistance_;
-    out << YAML::Key << "Rotation" << YAML::Value << scene.dirLightRot_;
-    out << YAML::Key << "Position" << YAML::Value << scene.dirLightPos_;
-    out << YAML::Key << "Color" << YAML::Value << scene.dirLightUBO_.color;
-    out << YAML::Key << "Intensity" << YAML::Value << scene.dirLightUBO_.intensity;
+    out << YAML::Key << "NearPlane" << YAML::Value << scene.m_dirLightNearPlane;
+    out << YAML::Key << "FarPlane" << YAML::Value << scene.m_dirLightFarPlane;
+    out << YAML::Key << "Distance" << YAML::Value << scene.m_dirLightDistance;
+    out << YAML::Key << "Rotation" << YAML::Value << scene.m_dirLightRot;
+    out << YAML::Key << "Position" << YAML::Value << scene.m_dirLightPos;
+    out << YAML::Key << "Color" << YAML::Value << scene.m_dirLightUBO.color;
+    out << YAML::Key << "Intensity" << YAML::Value << scene.m_dirLightUBO.intensity;
     out << YAML::EndMap;
 }
 
@@ -196,41 +196,41 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     auto saveFilePath = data["SaveFilePath"];
     if (saveFilePath) {
-        scene.saveFilePath_ = data["SaveFilePath"].as<std::string>();
+        scene.m_saveFilePath = data["SaveFilePath"].as<std::string>();
     }
 
     auto camera = data["Camera"];
-    scene.camera_.pos_ = camera["Position"].as<glm::vec3>();
-    scene.camera_.dir_ = camera["Dir"].as<glm::vec3>();
-    scene.camera_.at_ = scene.camera_.pos_ + scene.camera_.dir_;
+    scene.m_camera.pos_ = camera["Position"].as<glm::vec3>();
+    scene.m_camera.dir_ = camera["Dir"].as<glm::vec3>();
+    scene.m_camera.at_ = scene.m_camera.pos_ + scene.m_camera.dir_;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
         scene.AddEnvironmentMap(hdriFilePath.as<std::string>());
-        scene.hdriFilePath_ = hdriFilePath.as<std::string>();
+        scene.m_hdriFilePath = hdriFilePath.as<std::string>();
     }
 
     auto iblExposure = data["IBLExposure"];
     if (iblExposure) {
-        scene.iblExposure_ = iblExposure.as<float>();
+        scene.m_iblExposure = iblExposure.as<float>();
     }
 
     auto dirLight = data["DirectionalLight"];
-    scene.dirLightNearPlane_ = dirLight["NearPlane"].as<float>();
-    scene.dirLightFarPlane_ = dirLight["FarPlane"].as<float>();
-    scene.dirLightDistance_ = dirLight["Distance"].as<float>();
-    scene.dirLightRot_ = dirLight["Rotation"].as<glm::mat4>();
-    scene.dirLightPos_ = dirLight["Position"].as<glm::vec3>();
-    scene.dirLightUBO_.color = dirLight["Color"].as<glm::vec3>();
-    scene.dirLightUBO_.intensity = dirLight["Intensity"].as<float>();
+    scene.m_dirLightNearPlane = dirLight["NearPlane"].as<float>();
+    scene.m_dirLightFarPlane = dirLight["FarPlane"].as<float>();
+    scene.m_dirLightDistance = dirLight["Distance"].as<float>();
+    scene.m_dirLightRot = dirLight["Rotation"].as<glm::mat4>();
+    scene.m_dirLightPos = dirLight["Position"].as<glm::vec3>();
+    scene.m_dirLightUBO.color = dirLight["Color"].as<glm::vec3>();
+    scene.m_dirLightUBO.intensity = dirLight["Intensity"].as<float>();
 
     auto pointLights = data["PointLights"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
             scene.AddLight();
-            scene.pointLights_.back().model = pointLight["Transform"].as<glm::mat4>();
-            scene.pointLights_.back().pos = pointLight["Position"].as<glm::vec3>();
-            scene.pointLights_.back().color = pointLight["Color"].as<glm::vec3>();
+            scene.m_pointLights.back().model = pointLight["Transform"].as<glm::mat4>();
+            scene.m_pointLights.back().pos = pointLight["Position"].as<glm::vec3>();
+            scene.m_pointLights.back().color = pointLight["Color"].as<glm::vec3>();
         }
     }
 
@@ -248,7 +248,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             auto instances = mesh["Instances"];
             for (auto instance : instances) {
                 scene.AddMeshInstance(mesh["ID"].as<int>());
-                auto& meshInstance = scene.meshes_[mesh["ID"].as<int>()].meshInstanceUBOs_.back();
+                auto& meshInstance = scene.m_meshes[mesh["ID"].as<int>()].meshInstanceUBOs_.back();
                 meshInstance.model = instance["Transform"].as<glm::mat4>();
                 meshInstance.invTranspose = instance["InvTranspose"].as<glm::mat4>();
                 meshInstance.albedo = instance["Albedo"].as<glm::vec3>();
@@ -262,7 +262,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     // physicsInfo.colliderShape = (eColliderShape)rigidBody["Shape"].as<int>();
                     // physicsInfo.scale = rigidBody["Scale"].as<glm::vec3>();
                     pInfo.size = rigidBody["Size"].as<glm::vec3>();
-                    // scene.physics_.AddRigidBodies(scene.meshes_[meshInstance.meshID], meshInstance, physicsInfo);
+                    // scene.m_physics.AddRigidBodies(scene.m_meshes[meshInstance.meshID], meshInstance, physicsInfo);
                 }
             }
         }

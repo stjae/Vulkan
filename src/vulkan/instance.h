@@ -3,33 +3,27 @@
 
 #include "../common.h"
 #include "../window.h"
-#include "logger.h"
+#include "debugMessenger.h"
 
 namespace vkn {
-struct InstanceBundle
-{
-    VkSurfaceKHR surface;
-    vk::Instance instance;
-};
-
 class Instance
 {
     friend class Device;
-
-    Logger logger_;
-    inline static InstanceBundle instanceBundle_;
-
-    std::vector<const char*> instanceExtensions_;
-    std::vector<const char*> instanceLayers_;
+    inline static VkSurfaceKHR s_surface;
+    inline static vk::Instance s_instance;
+    DebugMessenger m_debugMessenger;
+    std::vector<const char*> m_extensions;
+    std::vector<const char*> m_layers;
 
     Instance();
+    ~Instance();
     void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
     void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
     void CreateSurface();
-    ~Instance();
 
 public:
-    static const InstanceBundle& GetBundle() { return instanceBundle_; }
+    static const VkSurfaceKHR& GetSurface() { return s_surface; }
+    static const vk::Instance& GetInstance() { return s_instance; }
 };
 } // namespace vkn
 

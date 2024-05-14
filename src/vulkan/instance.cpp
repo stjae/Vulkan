@@ -1,18 +1,19 @@
 #include "instance.h"
 
-vkn::Instance::Instance() : logger_(instanceBundle_.instance)
+namespace vkn {
+Instance::Instance()
 {
     vk::ApplicationInfo appInfo(nullptr, 1, nullptr, 1, VK_API_VERSION_1_2);
 
     vk::InstanceCreateInfo createInfo({}, &appInfo);
-    SetExtensions(instanceExtensions_, createInfo);
+    SetExtensions(m_extensions, createInfo);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    SetLayers(instanceLayers_, createInfo, debugInfo);
+    SetLayers(m_layers, createInfo, debugInfo);
+    vkn::CheckResult(vk::createInstance(&createInfo, nullptr, &s_instance));
 
-    vkn::CheckResult(vk::createInstance(&createInfo, nullptr, &instanceBundle_.instance));
-
-    logger_.CreateDebugMessenger();
+    m_debugMessenger.SetDebugInfo(debugInfo);
+    m_debugMessenger.Create(s_instance);
 }
 
 void vkn::Instance::SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo)
@@ -46,14 +47,13 @@ void vkn::Instance::SetLayers(std::vector<const char*>& layers, vk::InstanceCrea
         createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
         createInfo.ppEnabledLayerNames = layers.data();
 
-        Logger::SetDebugInfo(debugInfo);
         createInfo.pNext = &debugInfo;
     }
 }
 
 void vkn::Instance::CreateSurface()
 {
-    if (glfwCreateWindowSurface(instanceBundle_.instance, Window::GetWindow(), nullptr, &instanceBundle_.surface)) {
+    if (glfwCreateWindowSurface(s_instance, Window::GetWindow(), nullptr, &s_surface)) {
         spdlog::error("failed to create window surface");
     }
 }
@@ -61,8 +61,9 @@ void vkn::Instance::CreateSurface()
 vkn::Instance::~Instance()
 {
     if (DEBUG) {
-        logger_.Destroy();
+        s_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger.m_messenger, nullptr, m_debugMessenger.m_loader);
     }
-    instanceBundle_.instance.destroySurfaceKHR(instanceBundle_.surface);
-    instanceBundle_.instance.destroy();
+    s_instance.destroySurfaceKHR(s_surface);
+    s_instance.destroy();
 }
+}; // namespace vkn

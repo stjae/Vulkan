@@ -2,63 +2,54 @@
 
 Engine::Engine()
 {
-    InitSwapchainImages();
-    scene_ = std::make_unique<Scene>();
-
-    vkn::Command::CreateCommandPool(commandPool_);
-    vkn::Command::AllocateCommandBuffer(commandPool_, commandBuffer_);
-
-    imgui_.Setup(swapchain_.GetRenderPass(), viewport_, *scene_);
-}
-
-void Engine::InitSwapchainImages()
-{
-    for (auto& frame : swapchain_.frames) {
-        vkn::Command::Begin(frame.commandBuffer);
-        vkn::Command::SetImageMemoryBarrier(frame.commandBuffer, frame.swapchainImage, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
-        frame.commandBuffer.end();
-        vkn::Command::Submit(&frame.commandBuffer, 1);
-    }
+    vkn::Sync::Create();
+    vkn::Command::CreateCommandPool(m_commandPool);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
+    m_scene = std::make_unique<Scene>();
+    m_imGui.Setup(vkn::Swapchain::Get().renderPass, m_viewport, *m_scene);
 }
 
 void Engine::Render()
 {
-    scene_->Play();
-    scene_->Update();
+    vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetInFlightFence(), VK_TRUE, UINT64_MAX));
+    vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetInFlightFence()));
 
-    vkn::CheckResult(vkn::Device::GetBundle().device.waitForFences(1, &swapchain_.frames[frameIndex_].inFlight, VK_TRUE, UINT64_MAX));
+    auto currentImage = vkn::Device::Get().device.acquireNextImageKHR(vkn::Swapchain::Get().swapchain, UINT64_MAX, vkn::Sync::GetImageAvailableSemaphore(), nullptr);
 
-    auto waitFrameImage = vkn::Device::GetBundle().device.acquireNextImageKHR(vkn::Swapchain::GetBundle().swapchain, UINT64_MAX, swapchain_.frames[frameIndex_].imageAvailable, nullptr);
-
-    if (waitFrameImage.result == vk::Result::eErrorOutOfDateKHR || waitFrameImage.result == vk::Result::eSuboptimalKHR || Window::resized) {
-        Window::resized = false;
+    if (currentImage.result == vk::Result::eErrorOutOfDateKHR || currentImage.result == vk::Result::eSuboptimalKHR || Window::s_resized) {
+        Window::s_resized = false;
         UpdateSwapchain();
         return;
     }
 
-    vkn::CheckResult(vkn::Device::GetBundle().device.resetFences(1, &swapchain_.frames[frameIndex_].inFlight));
+    m_scene->Play();
+    m_scene->Update();
 
-    swapchain_.Draw(frameIndex_, UI::imDrawData);
-    viewport_.Draw(*scene_);
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && viewport_.isMouseHovered) {
-        const int32_t* colorID = viewport_.PickColor(Window::GetMousePosX(), Window::GetMousePosY());
-        scene_->SelectByColorID(colorID[0], colorID[1]);
+    DrawUI(currentImage.value);
+    m_viewport.Draw(*m_scene, currentImage.value);
+    m_swapchain.Draw(currentImage.value, UI::s_imDrawData);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered) {
+        // TODO: imageindex
+        // const int32_t* colorID = m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY());
+        // m_scene->SelectByColorID(colorID[0], colorID[1]);
     }
-    imgui_.AcceptDragDrop(viewport_, *scene_, frameIndex_);
-    swapchain_.Submit(frameIndex_);
-    swapchain_.Present(frameIndex_, waitFrameImage);
+    m_imGui.AcceptDragDrop(m_viewport, *m_scene);
+    vk::SubmitInfo submitInfos[] = { m_scene->m_shadowMap.GetSubmitInfo(), m_viewport.GetSubmitInfo(), m_swapchain.GetSubmitInfo() };
+    vkn::Device::Get().graphicsQueue.submit(submitInfos, vkn::Sync::GetInFlightFence());
+    vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);
+    vkn::CheckResult(vkn::Device::Get().presentQueue.presentKHR(presentInfo));
 
-    frameIndex_ = (frameIndex_ + 1) % vkn::Swapchain::GetBundle().frameImageCount;
+    vkn::Sync::SetNextFrameIndex();
 }
 
 void Engine::UpdateSwapchain()
 {
     RecreateSwapchain();
-    InitSwapchainImages();
-    viewport_.outDated = true;
-    viewport_.DestroyViewportImages();
-    viewport_.CreateViewportImages();
-    imgui_.RecreateViewportDescriptorSets(viewport_);
+    m_swapchain.InitSwapchain();
+    m_viewport.m_outDated = true;
+    m_viewport.DestroyImages();
+    m_viewport.CreateImages();
+    m_imGui.RecreateViewportDescriptorSets(m_viewport);
 }
 
 void Engine::RecreateSwapchain()
@@ -70,26 +61,24 @@ void Engine::RecreateSwapchain()
         glfwWaitEvents();
     }
 
-    vkn::Device::GetBundle().device.waitIdle();
-    for (auto& frame : swapchain_.frames) {
-        vkn::Device::GetBundle().device.destroyCommandPool(frame.commandPool);
-    }
-    swapchain_.Destroy();
+    vkn::Device::Get().device.waitIdle();
 
-    swapchain_.CreateSwapchain();
-    swapchain_.CreateFrameBuffer();
-
-    swapchain_.PrepareFrames();
+    m_swapchain.Destroy();
+    m_swapchain.CreateSwapchain();
+    m_swapchain.CreateFrameBuffer();
+    m_swapchain.InitSwapchain();
+    // recreate sync
 }
 
-void Engine::DrawUI()
+void Engine::DrawUI(uint32_t imageIndex)
 {
-    imgui_.Draw(*scene_, viewport_, frameIndex_);
-    UI::imDrawData = ImGui::GetDrawData();
+    m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], imageIndex);
+    UI::s_imDrawData = ImGui::GetDrawData();
 }
 
 Engine::~Engine()
 {
-    vkn::Device::GetBundle().device.destroyCommandPool(commandPool_);
-    vkn::Device::GetBundle().device.waitIdle();
+    vkn::Device::Get().device.waitIdle();
+    vkn::Device::Get().device.destroyCommandPool(m_commandPool);
+    vkn::Sync::Destroy();
 }

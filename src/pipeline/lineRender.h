@@ -5,22 +5,17 @@
 #include "../vulkan/pipeline.h"
 #include "../scene/physicsDebugDrawer.h"
 
-struct LineRenderPushConstants
-{
-    int meshIndex;
-} inline lineRenderPushConsts;
-
 class LineRenderPipeline : public vkn::Pipeline
 {
-    vk::VertexInputBindingDescription bindingDesc_;
-    std::array<vk::VertexInputAttributeDescription, 2> vertexInputAttribDesc_;
+    vk::VertexInputBindingDescription m_bindingDesc;
+    std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribDesc;
 
     void SetUpDescriptors() override;
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo cameraDescriptor;
-    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
+    vk::DescriptorBufferInfo m_cameraDescriptor;
+    std::vector<vk::DescriptorBufferInfo> m_meshDescriptors;
 
     LineRenderPipeline();
     void CreatePipeline() override;

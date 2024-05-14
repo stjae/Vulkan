@@ -38,7 +38,7 @@ add_executable(${PROJECT_NAME}
         # vulkan
         src/window.h src/window.cpp
         src/vulkan/instance.h src/vulkan/instance.cpp
-        src/vulkan/logger.h src/vulkan/logger.cpp
+        src/vulkan/debugMessenger.h src/vulkan/debugMessenger.cpp
         src/vulkan/device.h src/vulkan/device.cpp
         src/vulkan/swapchain.h src/vulkan/swapchain.cpp
         src/vulkan/shader.h src/vulkan/shader.cpp
@@ -88,6 +88,7 @@ add_executable(${PROJECT_NAME}
         src/struct.h
         src/enum.h
         src/scene/physicsDebugDrawer.h
+        src/vulkan/sync.cpp
 )
 
 include(Dependency.cmake)

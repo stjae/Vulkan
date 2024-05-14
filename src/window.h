@@ -5,16 +5,16 @@
 
 class Window
 {
-    inline static GLFWwindow* window_;
+    inline static GLFWwindow* s_glfwWindow;
 
 public:
-    inline static bool resized = false;
+    inline static bool s_resized = false;
 
-    Window(int width, int height, const char* wName);
-    static GLFWwindow* GetWindow() { return window_; }
+    Window(int width, int height, const char* title);
+    static GLFWwindow* GetWindow() { return s_glfwWindow; }
     static double GetMousePosX();
     static double GetMousePosY();
-    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height) { resized = true; }
+    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height) { s_resized = true; }
     ~Window();
 };
 

@@ -193,28 +193,28 @@ void Mesh::CreateSphere(float scale, const char* name, const char* texture)
     meshParts_.emplace_back(0, -1);
 }
 
-void Mesh::CreateBuffers()
+void Mesh::CreateBuffers(const vk::CommandBuffer& commandBuffer)
 {
     for (uint32_t i = 0; i < vertexContainers_.size(); i++) {
 
         CreateVertexBuffers(vertexContainers_[i]);
         CreateIndexBuffers(indexContainers_[i]);
 
-        vkn::Command::Begin(commandBuffer_);
+        vkn::Command::Begin(commandBuffer);
         // Copy vertices from staging buffer
-        vkn::Command::CopyBufferToBuffer(commandBuffer_,
-                                         vertexStagingBuffers.back()->GetBundle().buffer,
-                                         vertexBuffers.back()->GetBundle().buffer,
-                                         vertexStagingBuffers.back()->GetBufferInput().size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer,
+                                         vertexStagingBuffers.back()->Get().buffer,
+                                         vertexBuffers.back()->Get().buffer,
+                                         vertexStagingBuffers.back()->Get().bufferInfo.size);
 
         // Copy indices from staging buffer
-        vkn::Command::CopyBufferToBuffer(commandBuffer_,
-                                         indexStagingBuffers.back()->GetBundle().buffer,
-                                         indexBuffers.back()->GetBundle().buffer,
-                                         indexStagingBuffers.back()->GetBufferInput().size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer,
+                                         indexStagingBuffers.back()->Get().buffer,
+                                         indexBuffers.back()->Get().buffer,
+                                         indexStagingBuffers.back()->Get().bufferInfo.size);
 
-        commandBuffer_.end();
-        vkn::Command::Submit(&commandBuffer_, 1);
+        commandBuffer.end();
+        vkn::Command::Submit(commandBuffer);
 
         vertexStagingBuffers.back()->Destroy();
         indexStagingBuffers.back()->Destroy();

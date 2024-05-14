@@ -4,50 +4,50 @@ namespace vkn {
 
 Cubemap::Cubemap()
 {
-    imageSize_ = 0;
-    imageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    imageCreateInfo.imageType = vk::ImageType::e2D;
-    imageCreateInfo.mipLevels = 1;
-    imageCreateInfo.arrayLayers = 6;
+    m_imageSize = 0;
+    m_imageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    m_imageCreateInfo.imageType = vk::ImageType::e2D;
+    m_imageCreateInfo.mipLevels = 1;
+    m_imageCreateInfo.arrayLayers = 6;
 
     vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
-    imageViewCreateInfo.subresourceRange = subresourceRange;
-    imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
+    m_imageViewCreateInfo.subresourceRange = subresourceRange;
+    m_imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
 }
 
 void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsageFlags usage, vk::CommandBuffer& commandBuffer)
 {
-    imageSize_ = imageSize;
+    m_imageSize = imageSize;
     CreateImage({ imageSize, imageSize, 1 }, format, usage, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        imageBundle_.image,
+                                        m_bundle.image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         vk::PipelineStageFlagBits::eAllCommands,
-                                        imageViewCreateInfo.subresourceRange);
+                                        m_imageViewCreateInfo.subresourceRange);
     commandBuffer.end();
-    vkn::Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(commandBuffer);
 
     CreateImageView();
 
-    imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    m_imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+    m_imageViewCreateInfo.subresourceRange.layerCount = 1;
     for (uint32_t i = 0; i < 6; i++) {
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
-        vkn::CheckResult(vkn::Device::GetBundle().device.createImageView(&imageViewCreateInfo, nullptr, &cubemapFaceImageViews_[i]));
+        m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
+        vkn::CheckResult(vkn::Device::Get().device.createImageView(&m_imageViewCreateInfo, nullptr, &m_cubemapFaceImageViews[i]));
     }
 }
 
 Cubemap::~Cubemap()
 {
-    for (auto& framebuffer : framebuffers_)
-        vkn::Device::GetBundle().device.destroyFramebuffer(framebuffer);
-    for (auto& imageView : cubemapFaceImageViews_)
-        vkn::Device::GetBundle().device.destroyImageView(imageView);
+    for (auto& framebuffer : m_framebuffers)
+        vkn::Device::Get().device.destroyFramebuffer(framebuffer);
+    for (auto& imageView : m_cubemapFaceImageViews)
+        vkn::Device::Get().device.destroyImageView(imageView);
 }
 
 } // namespace vkn

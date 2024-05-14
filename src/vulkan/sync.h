@@ -5,19 +5,29 @@
 #include "device.h"
 
 namespace vkn {
-static vk::Semaphore CreateSemaphore()
+class Sync
 {
-    vk::SemaphoreCreateInfo semaphoreInfo;
+    inline static int s_currentFrameIndex = 0;
+    inline static std::vector<vk::Fence> s_inFlightFences;
+    inline static std::vector<vk::Semaphore> s_imageAvailableSemaphores;
+    inline static std::vector<vk::Semaphore> s_renderFinishedSemaphores;
+    inline static std::vector<vk::Semaphore> s_viewportSemaphores;
+    inline static std::vector<vk::Semaphore> s_shadowMapSemaphores;
 
-    return Device::GetBundle().device.createSemaphore(semaphoreInfo);
-}
-static vk::Fence CreateFence()
-{
-    vk::FenceCreateInfo fenceInfo;
-    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+public:
+    static void SetNextFrameIndex() { s_currentFrameIndex = (s_currentFrameIndex + 1) % MAX_FRAME; }
 
-    return Device::GetBundle().device.createFence(fenceInfo);
-}
+    static void Create();
+    static void Destroy();
+    static vk::Semaphore CreateSemaphore();
+    static vk::Fence CreateFence();
+    static int GetCurrentFrameIndex() { return s_currentFrameIndex; }
+    static const vk::Fence& GetInFlightFence() { return s_inFlightFences[s_currentFrameIndex]; }
+    static const vk::Semaphore& GetImageAvailableSemaphore() { return s_imageAvailableSemaphores[s_currentFrameIndex]; }
+    static const vk::Semaphore& GetRenderFinishedSemaphore() { return s_renderFinishedSemaphores[s_currentFrameIndex]; }
+    static const vk::Semaphore& GetShadowMapSemaphore() { return s_shadowMapSemaphores[s_currentFrameIndex]; }
+    static const vk::Semaphore& GetViewportSemaphore() { return s_viewportSemaphores[s_currentFrameIndex]; }
+};
 } // namespace vkn
 
 #endif

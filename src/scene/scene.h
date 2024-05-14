@@ -24,67 +24,68 @@
 
 class Scene
 {
+    friend class Engine;
     friend class UI;
     friend class Viewport;
     friend class SceneSerializer;
 
-    vk::CommandPool commandPool_;
-    vk::CommandBuffer commandBuffer_;
+    vk::CommandPool m_commandPool;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
-    std::unique_ptr<vkn::Buffer> meshInstanceDataBuffer_;
-    std::unique_ptr<vkn::Buffer> dirLightDataBuffer_;
-    std::unique_ptr<vkn::Buffer> pointLightDataBuffer_;
+    std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
+    std::unique_ptr<vkn::Buffer> m_dirLightDataBuffer;
+    std::unique_ptr<vkn::Buffer> m_pointLightDataBuffer;
 
-    ShadowMap shadowMap_;
-    std::vector<std::unique_ptr<ShadowCubemap>> shadowCubemaps_;
+    ShadowMap m_shadowMap;
+    std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
 
-    std::vector<MeshModel> meshes_;
-    Mesh envCube_;
-    std::string hdriFilePath_;
-    std::unique_ptr<vkn::Image> envMap_;
-    std::unique_ptr<EnvCubemap> envCubemap_;
-    std::unique_ptr<EnvCubemap> irradianceCubemap_;
-    std::unique_ptr<PrefilteredCubemap> prefilteredCubemap_;
-    Mesh brdfLutSquare_;
-    vkn::Image brdfLut_;
-    float iblExposure_;
+    std::vector<MeshModel> m_meshes;
+    Mesh m_envCube;
+    std::string m_hdriFilePath;
+    std::unique_ptr<vkn::Image> m_envMap;
+    std::unique_ptr<EnvCubemap> m_envCubemap;
+    std::unique_ptr<EnvCubemap> m_irradianceCubemap;
+    std::unique_ptr<PrefilteredCubemap> m_prefilteredCubemap;
+    Mesh m_brdfLutSquare;
+    vkn::Image m_brdfLut;
+    float m_iblExposure;
 
-    std::vector<PointLightUBO> pointLights_;
-    DirLightUBO dirLightUBO_;
-    float dirLightNearPlane_ = 1.0f;
-    float dirLightFarPlane_ = 45.0f;
-    float dirLightDistance_ = 40.0f;
-    float dirLightSize_ = 10.0f;
-    glm::mat4 dirLightRot_ = glm::mat4(1.0f);
-    glm::vec3 dirLightPos_ = glm::vec3(0.0f, dirLightDistance_, 0.0f);
+    std::vector<PointLightUBO> m_pointLights;
+    DirLightUBO m_dirLightUBO;
+    float m_dirLightNearPlane = 1.0f;
+    float m_dirLightFarPlane = 45.0f;
+    float m_dirLightDistance = 40.0f;
+    float m_dirLightSize = 10.0f;
+    glm::mat4 m_dirLightRot = glm::mat4(1.0f);
+    glm::vec3 m_dirLightPos = glm::vec3(0.0f, m_dirLightDistance, 0.0f);
 
-    std::vector<std::unique_ptr<vkn::Image>> albedoTextures_;
-    std::vector<std::unique_ptr<vkn::Image>> normalTextures_;
-    std::vector<std::unique_ptr<vkn::Image>> metallicTextures_;
-    std::vector<std::unique_ptr<vkn::Image>> roughnessTextures_;
-    std::vector<Resource> resources_;
+    std::vector<std::unique_ptr<vkn::Image>> m_albedoTextures;
+    std::vector<std::unique_ptr<vkn::Image>> m_normalTextures;
+    std::vector<std::unique_ptr<vkn::Image>> m_metallicTextures;
+    std::vector<std::unique_ptr<vkn::Image>> m_roughnessTextures;
+    std::vector<Resource> m_resources;
 
-    Camera camera_;
-    std::unique_ptr<vkn::Buffer> shadowMapViewSpaceProjBuffer_;
-    glm::mat4 shadowMapViewProj_;
-    std::unique_ptr<vkn::Buffer> shadowCubemapProjBuffer_;
-    glm::mat4 shadowCubemapProj_;
+    Camera m_camera;
+    std::unique_ptr<vkn::Buffer> m_shadowMapViewSpaceProjBuffer;
+    glm::mat4 m_shadowMapViewProj;
+    std::unique_ptr<vkn::Buffer> m_shadowCubemapProjBuffer;
+    glm::mat4 m_shadowCubemapProj;
 
-    int32_t selectedMeshID_;
-    int32_t selectedMeshInstanceID_;
-    int32_t selectedLightID_;
+    int32_t m_selectedMeshID;
+    int32_t m_selectedMeshInstanceID;
+    int32_t m_selectedLightID;
 
-    bool showLightIcon_;
-    bool meshDirtyFlag_;
-    bool lightDirtyFlag_;
-    bool shadowShadowCubemapDirtyFlag_;
-    bool resourceDirtyFlag_;
-    bool envCubemapDirtyFlag_;
+    bool m_showLightIcon;
+    bool m_meshDirtyFlag;
+    bool m_lightDirtyFlag;
+    bool m_shadowShadowCubemapDirtyFlag;
+    bool m_resourceDirtyFlag;
+    bool m_envCubemapDirtyFlag;
 
-    std::string saveFilePath_;
+    std::string m_saveFilePath;
 
-    Physics physics_;
-    bool isPlaying_;
+    Physics m_physics;
+    bool m_isPlaying;
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
@@ -111,12 +112,12 @@ public:
     Scene();
     void Update();
     size_t GetInstanceCount();
-    size_t GetLightCount() { return pointLights_.size(); }
-    const std::vector<MeshModel>& GetMeshes() { return meshes_; }
+    size_t GetLightCount() { return m_pointLights.size(); }
+    const std::vector<MeshModel>& GetMeshes() { return m_meshes; }
     // TODO: safety
-    MeshModel& GetSelectedMesh() { return meshes_[selectedMeshID_]; }
-    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return meshes_[selectedMeshID_].meshInstanceUBOs_[selectedMeshInstanceID_]; }
-    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return meshes_[meshID].meshInstanceUBOs_[instanceID]; }
+    MeshModel& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }
+    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].meshInstanceUBOs_[m_selectedMeshInstanceID]; }
+    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].meshInstanceUBOs_[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void Play();
     void Stop();

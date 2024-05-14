@@ -5,7 +5,7 @@
 #include "../vulkan/descriptor.h"
 #include "../vulkan/device.h"
 #include "../vulkan/instance.h"
-#include "../vulkan/logger.h"
+#include "../vulkan/debugMessenger.h"
 #include "../vulkan/pipeline.h"
 #include "../vulkan/swapchain.h"
 #include "../window.h"
@@ -16,23 +16,21 @@
 
 class Engine
 {
-    vk::CommandPool commandPool_;
-    vk::CommandBuffer commandBuffer_;
+    vk::CommandPool m_commandPool;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
-    size_t frameIndex_ = 0;
-    vkn::Device device_;
-    vkn::Swapchain swapchain_;
-    Viewport viewport_;
-    UI imgui_;
-    std::unique_ptr<Scene> scene_;
+    vkn::Device m_device;
+    vkn::Swapchain m_swapchain;
+    Viewport m_viewport;
+    UI m_imGui;
+    std::unique_ptr<Scene> m_scene;
 
     void UpdateSwapchain();
     void RecreateSwapchain();
 
 public:
     Engine();
-    void InitSwapchainImages();
-    void DrawUI();
+    void DrawUI(uint32_t imageIndex);
     void Render();
     ~Engine();
 };

@@ -1,12 +1,12 @@
 #include "window.h"
 
-Window::Window(int width, int height, const char* wName)
+Window::Window(int width, int height, const char* title)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    window_ = glfwCreateWindow(width, height, wName, nullptr, nullptr);
-    glfwSetFramebufferSizeCallback(window_, FramebufferResizeCallback);
+    s_glfwWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    glfwSetFramebufferSizeCallback(s_glfwWindow, FramebufferResizeCallback);
 }
 
 double Window::GetMousePosX()
@@ -27,6 +27,6 @@ double Window::GetMousePosY()
 
 Window::~Window()
 {
-    glfwDestroyWindow(window_);
+    glfwDestroyWindow(s_glfwWindow);
     glfwTerminate();
 }

@@ -4,7 +4,7 @@ void Application::Run()
 {
     while (!glfwWindowShouldClose(Window::GetWindow())) {
         glfwPollEvents();
-        engine_.DrawUI();
-        engine_.Render();
+        // m_engine.DrawUI();
+        m_engine.Render();
     }
 }

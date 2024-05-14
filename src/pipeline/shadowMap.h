@@ -9,8 +9,8 @@ class ShadowMapPipeline : public vkn::Pipeline
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo shadowMapSpaceViewProjDescriptor;
-    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
+    vk::DescriptorBufferInfo m_shadowMapSpaceViewProjDescriptor;
+    std::vector<vk::DescriptorBufferInfo> m_meshDescriptors;
 
     void CreatePipeline() override;
     void UpdateShadowMapSpaceViewProjDescriptor();

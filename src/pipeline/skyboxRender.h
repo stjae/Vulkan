@@ -3,19 +3,14 @@
 
 #include "../vulkan/pipeline.h"
 
-struct SkyboxRenderPushConstants
-{
-    float exposure;
-} inline skyboxRenderPushConstants;
-
 class SkyboxRenderPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo cameraDescriptor;
-    vk::DescriptorImageInfo irradianceCubemapDescriptor;
+    vk::DescriptorBufferInfo m_cameraDescriptor;
+    vk::DescriptorImageInfo m_irradianceCubemapDescriptor;
 
     void CreatePipeline() override;
     void UpdateCameraDescriptor();

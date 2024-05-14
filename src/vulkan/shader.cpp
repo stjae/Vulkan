@@ -8,5 +8,5 @@ vk::ShaderModule vkn::Shader::CreateModule(const std::string& filepath)
     createInfo.setCodeSize(sourceCode.size());
     createInfo.setPCode(reinterpret_cast<const uint32_t*>(sourceCode.data()));
 
-    return vkn::Device::GetBundle().device.createShaderModule(createInfo);
+    return vkn::Device::Get().device.createShaderModule(createInfo);
 }

@@ -3,40 +3,40 @@
 void CreateRenderPass();
 LineRenderPipeline::LineRenderPipeline()
 {
-    bindingDesc_.setBinding(0);
-    bindingDesc_.setStride(sizeof(LinePoint));
-    bindingDesc_.setInputRate(vk::VertexInputRate::eVertex);
+    m_bindingDesc.setBinding(0);
+    m_bindingDesc.setStride(sizeof(LinePoint));
+    m_bindingDesc.setInputRate(vk::VertexInputRate::eVertex);
 
     uint32_t offset = 0;
     // Pos
-    vertexInputAttribDesc_[0].binding = 0;
-    vertexInputAttribDesc_[0].location = 0;
-    vertexInputAttribDesc_[0].format = vk::Format::eR32G32B32Sfloat;
-    vertexInputAttribDesc_[0].offset = offset;
+    m_vertexInputAttribDesc[0].binding = 0;
+    m_vertexInputAttribDesc[0].location = 0;
+    m_vertexInputAttribDesc[0].format = vk::Format::eR32G32B32Sfloat;
+    m_vertexInputAttribDesc[0].offset = offset;
     offset += sizeof(LinePoint::pos);
     // Color
-    vertexInputAttribDesc_[1].binding = 0;
-    vertexInputAttribDesc_[1].location = 1;
-    vertexInputAttribDesc_[1].format = vk::Format::eR32G32B32Sfloat;
-    vertexInputAttribDesc_[1].offset = offset;
+    m_vertexInputAttribDesc[1].binding = 0;
+    m_vertexInputAttribDesc[1].location = 1;
+    m_vertexInputAttribDesc[1].format = vk::Format::eR32G32B32Sfloat;
+    m_vertexInputAttribDesc[1].offset = offset;
 
-    vertexInputStateCI_ = { {}, 1, &bindingDesc_, (uint32_t)vertexInputAttribDesc_.size(), vertexInputAttribDesc_.data() };
-    inputAssemblyStateCI_ = { {}, vk::PrimitiveTopology::eLineList };
-    rasterizeStateCI_ = { {}, vk::False, vk::False, vk::PolygonMode::eLine, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise, vk::False, {}, {}, {}, 1.0f };
+    m_vertexInputStateCI = { {}, 1, &m_bindingDesc, (uint32_t)m_vertexInputAttribDesc.size(), m_vertexInputAttribDesc.data() };
+    m_inputAssemblyStateCI = { {}, vk::PrimitiveTopology::eLineList };
+    m_rasterizeStateCI = { {}, vk::False, vk::False, vk::PolygonMode::eLine, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise, vk::False, {}, {}, {}, 1.0f };
 
-    pipelineCI_.pVertexInputState = &vertexInputStateCI_;
-    pipelineCI_.pInputAssemblyState = &inputAssemblyStateCI_;
-    pipelineCI_.pRasterizationState = &rasterizeStateCI_;
+    m_pipelineCI.pVertexInputState = &m_vertexInputStateCI;
+    m_pipelineCI.pInputAssemblyState = &m_inputAssemblyStateCI;
+    m_pipelineCI.pRasterizationState = &m_rasterizeStateCI;
 }
 
 void LineRenderPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     std::array<vk::PipelineColorBlendAttachmentState, 2> attachmentStates;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/line.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/line.frag.spv");
-    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
-    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
+    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/line.vert.spv");
+    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/line.frag.spv");
+    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, m_shaderModule.m_vertexShaderModule, "main" };
+    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentStates[0] = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentStates[0].colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     attachmentStates[1] = vk::PipelineColorBlendAttachmentState(vk::False);
@@ -46,17 +46,17 @@ void LineRenderPipeline::CreatePipeline()
     CreateRenderPass();
 
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(LineRenderPushConstants));
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange);
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, m_descriptorSetLayouts.size(), m_descriptorSetLayouts.data(), 1, &pushConstantRange);
 
-    pipelineCI_.stageCount = (uint32_t)shaderStageInfos.size();
-    pipelineCI_.pStages = shaderStageInfos.data();
-    colorBlendStateCI_ = { {}, vk::False, {}, attachmentStates.size(), attachmentStates.data() };
-    pipelineCI_.pColorBlendState = &colorBlendStateCI_;
-    pipelineCI_.layout = vkn::Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfoCI);
-    pipelineCI_.renderPass = renderPass;
+    m_pipelineCI.stageCount = (uint32_t)shaderStageInfos.size();
+    m_pipelineCI.pStages = shaderStageInfos.data();
+    m_colorBlendStateCI = { {}, vk::False, {}, attachmentStates.size(), attachmentStates.data() };
+    m_pipelineCI.pColorBlendState = &m_colorBlendStateCI;
+    m_pipelineCI.layout = vkn::Device::Get().device.createPipelineLayout(pipelineLayoutInfoCI);
+    m_pipelineCI.renderPass = m_renderPass;
 
-    pipelineLayout = pipelineCI_.layout;
-    pipeline = (vkn::Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineCI_)).value;
+    m_pipelineLayout = m_pipelineCI.layout;
+    m_pipeline = (vkn::Device::Get().device.createGraphicsPipeline(nullptr, m_pipelineCI)).value;
 }
 
 void LineRenderPipeline::SetUpDescriptors()
@@ -67,15 +67,15 @@ void LineRenderPipeline::SetUpDescriptors()
     std::vector<vkn::DescriptorBinding> bindings;
     bindings = {
         // camera
-        { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
         // mesh
-        { 1, vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
     };
-    descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
+    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-    vkn::Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
-    vkn::Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts);
+    vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+    vkn::Descriptor::AllocateDescriptorSets(m_descriptorPool, m_descriptorSets, m_descriptorSetLayouts);
 }
 
 void LineRenderPipeline::CreateRenderPass()
@@ -121,7 +121,7 @@ void LineRenderPipeline::CreateRenderPass()
     // renderPassInfo.subpassCount = 1;
     // renderPassInfo.pSubpasses = &subpassDesc;
     //
-    // renderPass = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
+    // m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
     std::array<vk::AttachmentDescription, 3> meshRenderAttachments;
 
     meshRenderAttachments[0].format = vk::Format::eB8G8R8A8Srgb;
@@ -179,29 +179,29 @@ void LineRenderPipeline::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
+    m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
 }
 
 void LineRenderPipeline::UpdateCameraDescriptor()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.dstArrayElement = 0;
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &cameraDescriptor;
-    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    writeDescriptorSet.pBufferInfo = &m_cameraDescriptor;
+    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }
 
 void LineRenderPipeline::UpdateMeshDescriptors()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 1;
     writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = meshDescriptors.size();
+    writeDescriptorSet.descriptorCount = m_meshDescriptors.size();
     writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = meshDescriptors.data();
-    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    writeDescriptorSet.pBufferInfo = m_meshDescriptors.data();
+    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

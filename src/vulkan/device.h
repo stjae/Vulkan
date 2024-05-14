@@ -4,35 +4,33 @@
 #include "instance.h"
 
 namespace vkn {
-struct DeviceBundle
-{
-    vk::Device device;
-    vk::PhysicalDevice physicalDevice;
-    vk::Queue graphicsQueue;
-    vk::Queue computeQueue;
-    vk::Queue presentQueue;
-    std::optional<uint32_t> graphicsFamilyIndex;
-    std::optional<uint32_t> computeFamilyIndex;
-    std::optional<uint32_t> presentFamilyIndex;
-};
 class Device
 {
-    Instance instance_;
-    std::vector<const char*> deviceExtensions_;
-    inline static DeviceBundle deviceBundle_;
+    struct Bundle
+    {
+        vk::Device device;
+        vk::PhysicalDevice physicalDevice;
+        vk::Queue graphicsQueue;
+        vk::Queue computeQueue;
+        vk::Queue presentQueue;
+        std::optional<uint32_t> graphicsFamilyIndex;
+        std::optional<uint32_t> computeFamilyIndex;
+        std::optional<uint32_t> presentFamilyIndex;
+    } inline static s_bundle;
+    Instance m_instance;
+    std::vector<const char*> m_deviceExtensions;
 
     void FindQueueFamilies(const VkSurfaceKHR& surface);
     void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
+    void PickPhysicalDevice();
+    bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
 
 public:
     inline static vk::PhysicalDeviceLimits physicalDeviceLimits;
 
     Device();
-    void PickPhysicalDevice();
-    bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
     ~Device();
-
-    static const DeviceBundle& GetBundle() { return deviceBundle_; }
+    static const Bundle& Get() { return s_bundle; }
 };
 } // namespace vkn
 

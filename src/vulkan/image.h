@@ -7,28 +7,29 @@
 #include "../scene/mesh/mesh.h"
 
 namespace vkn {
-struct ImageBundle
-{
-    vk::Image image;
-    vk::ImageView imageView;
-    vk::DescriptorImageInfo descriptorImageInfo;
-};
 class Image
 {
 protected:
-    vk::Framebuffer framebuffer_;
-    std::unique_ptr<Buffer> stagingBuffer_;
-    ImageBundle imageBundle_;
+    struct Bundle
+    {
+        vk::Image image;
+        vk::ImageView imageView;
+        vk::DescriptorImageInfo descriptorImageInfo;
+    } m_bundle;
+    vk::Framebuffer m_framebuffer;
+    std::unique_ptr<Buffer> m_stagingBuffer;
 
 public:
-    vk::ImageCreateInfo imageCreateInfo;
-    vk::ImageViewCreateInfo imageViewCreateInfo;
-    Memory memory;
-    inline static vk::Sampler repeatSampler;
-    inline static vk::Sampler clampSampler;
+    vk::ImageCreateInfo m_imageCreateInfo;
+    vk::ImageViewCreateInfo m_imageViewCreateInfo;
+    Memory m_memory;
+    inline static vk::Sampler s_repeatSampler;
+    inline static vk::Sampler s_clampSampler;
 
     Image();
-    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = repeatSampler);
+    ~Image();
+    const Bundle& Get() const { return m_bundle; }
+    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = s_repeatSampler);
     void CreateImageView();
     void CreateFramebuffer(const Pipeline& pipeline);
     void Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer);
@@ -38,9 +39,7 @@ public:
     void DestroyImage();
     void DestroyImageView();
     static void CreateSampler();
-    ~Image();
-
-    const ImageBundle& GetBundle() const { return imageBundle_; }
+    Image(Image&& other) { this->m_stagingBuffer = std::move(other.m_stagingBuffer); }
 };
 } // namespace vkn
 

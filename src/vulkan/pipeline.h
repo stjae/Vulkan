@@ -9,6 +9,61 @@
 inline vk::Format shadowMapImageFormat = vk::Format::eR32Sfloat;
 inline vk::Format shadowMapDepthFormat = vk::Format::eD32Sfloat;
 
+namespace vkn {
+
+class Pipeline
+{
+protected:
+    vk::VertexInputBindingDescription m_bindingDesc;
+    std::array<vk::VertexInputAttributeDescription, 5> m_vertexInputAttribDesc;
+    vk::PipelineVertexInputStateCreateInfo m_vertexInputStateCI;
+    vk::PipelineInputAssemblyStateCreateInfo m_inputAssemblyStateCI;
+    std::array<vk::DynamicState, 2> m_dynamicStates;
+    vk::PipelineDynamicStateCreateInfo m_dynamicStateCI;
+    vk::PipelineViewportStateCreateInfo m_viewportStateCI;
+    vk::PipelineRasterizationStateCreateInfo m_rasterizeStateCI;
+    vk::PipelineMultisampleStateCreateInfo m_multisampleStateCI;
+    vk::PipelineDepthStencilStateCreateInfo m_depthStencilStateCI;
+    vk::PipelineColorBlendStateCreateInfo m_colorBlendStateCI;
+    vk::GraphicsPipelineCreateInfo m_pipelineCI;
+
+    virtual void CreatePipeline() = 0;
+    virtual void CreateRenderPass() = 0;
+    virtual void SetUpDescriptors() = 0;
+
+public:
+    vk::Pipeline m_pipeline;
+    vk::PipelineLayout m_pipelineLayout;
+    vk::RenderPass m_renderPass;
+    vkn::Shader m_shaderModule;
+    std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
+    vk::DescriptorPool m_descriptorPool;
+    std::vector<vk::DescriptorSet> m_descriptorSets;
+
+    Pipeline();
+    void Destroy();
+};
+
+} // namespace vkn
+
+struct LineRenderPushConstants
+{
+    int meshIndex;
+} inline lineRenderPushConsts;
+
+struct MeshRenderPushConstants
+{
+    int meshIndex;
+    int materialID;
+    int lightCount;
+    float iblExposure;
+} inline meshRenderPushConsts;
+
+struct SkyboxRenderPushConstants
+{
+    float exposure;
+} inline skyboxRenderPushConstants;
+
 struct ShadowMapPushConstants
 {
     int meshIndex;
@@ -34,43 +89,5 @@ struct PrefilteredCubemapPushConstants
     glm::mat4 proj;
     float roughness;
 };
-
-namespace vkn {
-
-class Pipeline
-{
-protected:
-    vk::VertexInputBindingDescription bindingDesc_;
-    std::array<vk::VertexInputAttributeDescription, 5> vertexInputAttribDesc_;
-    vk::PipelineVertexInputStateCreateInfo vertexInputStateCI_;
-    vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCI_;
-    std::array<vk::DynamicState, 2> dynamicStates_;
-    vk::PipelineDynamicStateCreateInfo dynamicStateCI_;
-    vk::PipelineViewportStateCreateInfo viewportStateCI_;
-    vk::PipelineRasterizationStateCreateInfo rasterizeStateCI_;
-    vk::PipelineMultisampleStateCreateInfo multisampleStateCI_;
-    vk::PipelineDepthStencilStateCreateInfo depthStencilStateCI_;
-    vk::PipelineColorBlendStateCreateInfo colorBlendStateCI_;
-
-    vk::GraphicsPipelineCreateInfo pipelineCI_;
-
-    virtual void CreatePipeline() = 0;
-    virtual void CreateRenderPass() = 0;
-    virtual void SetUpDescriptors() = 0;
-
-public:
-    vk::Pipeline pipeline;
-    vk::PipelineLayout pipelineLayout;
-    vk::RenderPass renderPass;
-    vkn::Shader shader;
-    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-    vk::DescriptorPool descriptorPool;
-    std::vector<vk::DescriptorSet> descriptorSets;
-
-    Pipeline();
-    void Destroy();
-};
-
-} // namespace vkn
 
 #endif

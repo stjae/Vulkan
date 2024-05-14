@@ -1,6 +1,7 @@
-#include "logger.h"
+#include "debugMessenger.h"
 
-void vkn::Logger::CreateDebugMessenger()
+namespace vkn {
+void DebugMessenger::Create(const vk::Instance& instance)
 {
     if (!DEBUG) {
         return;
@@ -16,11 +17,11 @@ void vkn::Logger::CreateDebugMessenger()
 
     vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo({}, severityFlags, messageTypeFlags, DebugCallback);
 
-    dldi_ = vk::DispatchLoaderDynamic(vkInstance_, vkGetInstanceProcAddr);
-    debugMessenger_ = vkInstance_.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, dldi_);
+    m_loader = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
+    m_messenger = instance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, m_loader);
 }
 
-void vkn::Logger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
+void DebugMessenger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo.messageSeverity =
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
@@ -54,8 +55,4 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
 
     return VK_FALSE;
 }
-
-void vkn::Logger::Destroy()
-{
-    vkInstance_.destroyDebugUtilsMessengerEXT(debugMessenger_, nullptr, dldi_);
-}
+}; // namespace vkn

@@ -12,39 +12,33 @@
 #include "../../imgui/imgui_impl_vulkan.h"
 
 namespace vkn {
-struct SwapchainFrame
-{
-    vk::Framebuffer framebuffer;
-
-    vk::Image swapchainImage;
-    vk::ImageView swapchainImageView;
-
-    vk::CommandPool commandPool;
-    vk::CommandBuffer commandBuffer;
-    vk::CommandBuffer renderPassCommandBuffer;
-
-    vk::Fence inFlight;
-    vk::Semaphore imageAvailable;
-    vk::Semaphore renderFinished;
-};
-struct SwapchainBundle
-{
-    uint32_t frameImageCount;
-    vk::SurfaceFormatKHR surfaceFormat;
-    vk::PresentModeKHR presentMode;
-    vk::Extent2D swapchainImageExtent;
-    vk::SwapchainKHR swapchain;
-};
 class Swapchain
 {
-    std::vector<vk::SurfaceFormatKHR> supportedFormats_;
-    std::vector<vk::PresentModeKHR> supportedPresentModes_;
+    friend class Engine;
+    struct Image
+    {
+        vk::Framebuffer framebuffer;
+        vk::Image image;
+        vk::ImageView imageView;
+    };
+    struct Bundle
+    {
+        uint32_t frameImageCount;
+        vk::SurfaceFormatKHR surfaceFormat;
+        vk::PresentModeKHR presentMode;
+        vk::Extent2D swapchainImageExtent;
+        vk::SwapchainKHR swapchain;
+        vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+        vk::RenderPass renderPass;
+    } inline static s_bundle;
+    std::vector<vk::SurfaceFormatKHR> m_supportedFormats;
+    std::vector<vk::PresentModeKHR> m_supportedPresentModes;
+    std::vector<Image> m_swapchainImages;
 
-    inline static SwapchainBundle swapchainBundle_;
-
-    vk::RenderPass renderPass_;
-    std::vector<DescriptorBinding> descriptorSetLayoutData_;
-    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
+    vk::CommandPool m_commandPool;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::SubmitInfo m_submitInfo;
 
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
@@ -53,22 +47,16 @@ class Swapchain
 
 public:
     Swapchain();
-    void CreateSwapchain();
-    void CreateFrameBuffer();
-    void PrepareFrames();
-    void Destroy();
     ~Swapchain();
-
+    void CreateSwapchain();
+    void InitSwapchain();
     void CreateRenderPass();
-    void Draw(size_t frameIndex, ImDrawData* imDrawData);
-    void Submit(size_t frameIndex);
-    vk::PresentInfoKHR Present(size_t frameIndex, const vk::ResultValue<unsigned int>& waitFrameImage);
+    void CreateFrameBuffer();
+    void Draw(uint32_t imageIndex, ImDrawData* imDrawData);
+    void Destroy();
 
-    static const SwapchainBundle& GetBundle() { return swapchainBundle_; }
-    const vk::RenderPass& GetRenderPass() { return renderPass_; }
-
-    inline static vk::SurfaceCapabilitiesKHR surfaceCapabilities;
-    std::vector<SwapchainFrame> frames;
+    static const Bundle& Get() { return s_bundle; }
+    const vk::SubmitInfo& GetSubmitInfo() { return m_submitInfo; }
 };
 } // namespace vkn
 

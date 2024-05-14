@@ -3,37 +3,29 @@
 
 #include "../vulkan/pipeline.h"
 
-struct MeshRenderPushConstants
-{
-    int meshIndex;
-    int materialID;
-    int lightCount;
-    float iblExposure;
-} inline meshRenderPushConsts;
-
 class MeshRenderPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo cameraDescriptor;
-    vk::DescriptorBufferInfo pointLightDescriptor;
-    std::vector<vk::DescriptorBufferInfo> meshDescriptors;
+    vk::DescriptorBufferInfo m_cameraDescriptor;
+    vk::DescriptorBufferInfo m_pointLightDescriptor;
+    std::vector<vk::DescriptorBufferInfo> m_meshDescriptors;
 
-    vk::DescriptorBufferInfo dirLightDescriptor;
-    vk::DescriptorImageInfo shadowMapImageDescriptor;
-    vk::DescriptorBufferInfo shadowMapSpaceViewProjDescriptor;
+    vk::DescriptorBufferInfo m_dirLightDescriptor;
+    vk::DescriptorImageInfo m_shadowMapImageDescriptor;
+    vk::DescriptorBufferInfo m_shadowMapSpaceViewProjDescriptor;
 
-    std::vector<vk::DescriptorImageInfo> albeodoTextureDescriptors;
-    std::vector<vk::DescriptorImageInfo> normalTextureDescriptors;
-    std::vector<vk::DescriptorImageInfo> metallicTextureDescriptors;
-    std::vector<vk::DescriptorImageInfo> roughnessTextureDescriptors;
-    std::vector<vk::DescriptorImageInfo> shadowCubemapDescriptors;
+    std::vector<vk::DescriptorImageInfo> m_albeodoTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> m_normalTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> m_metallicTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> m_roughnessTextureDescriptors;
+    std::vector<vk::DescriptorImageInfo> m_shadowCubemapDescriptors;
 
-    vk::DescriptorImageInfo irradianceCubemapDescriptor;
-    vk::DescriptorImageInfo prefilteredCubemapDescriptor;
-    vk::DescriptorImageInfo brdfLutDescriptor;
+    vk::DescriptorImageInfo m_irradianceCubemapDescriptor;
+    vk::DescriptorImageInfo m_prefilteredCubemapDescriptor;
+    vk::DescriptorImageInfo m_brdfLutDescriptor;
 
     void CreatePipeline() override;
 

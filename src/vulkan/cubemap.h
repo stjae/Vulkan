@@ -7,10 +7,9 @@ namespace vkn {
 class Cubemap : public Image
 {
 protected:
-    std::array<vk::ImageView, 6> cubemapFaceImageViews_;
-    std::array<vk::Framebuffer, 6> framebuffers_;
-
-    uint32_t imageSize_;
+    uint32_t m_imageSize;
+    std::array<vk::ImageView, 6> m_cubemapFaceImageViews;
+    std::array<vk::Framebuffer, 6> m_framebuffers;
 
 public:
     Cubemap();

@@ -17,29 +17,30 @@
 
 class UI
 {
-    inline static vk::CommandPool commandPool_;
-    inline static vk::CommandBuffer commandBuffer_;
+    vk::CommandPool m_commandPool;
+    vk::CommandBuffer m_commandBuffer;
 
-    inline static vk::DescriptorPool descriptorPool_;
-    inline static std::vector<vkn::DescriptorBinding> descriptorBindings_;
-    inline static std::vector<vk::DescriptorSetLayout> descriptorSetLayouts_;
-    inline static vk::DescriptorSet descriptorSet_;
+    vk::DescriptorPool m_descriptorPool;
+    std::vector<vkn::DescriptorBinding> m_descriptorBindings;
+    std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
+    std::vector<vk::DescriptorSet> m_viewportImageDescriptorSets;
 
-    vkn::Image plusIcon_;
-    vkn::Image lightIcon_;
-    vkn::Image cubeIcon_;
-    vkn::Image playIcon_;
-    vkn::Image stopIcon_;
-    vk::DescriptorSet plusIconDescriptorSet_;
-    vk::DescriptorSet lightIconDescriptorSet_;
-    vk::DescriptorSet cubeIconDescriptorSet_;
-    vk::DescriptorSet playIconDescriptorSet_;
-    vk::DescriptorSet stopIconDescriptorSet_;
-    vk::DescriptorSet hdriThumbnailDescriptorSet_;
-    vk::DescriptorSet shadowMapDescriptorSet_;
+    vkn::Image m_plusIcon;
+    vkn::Image m_lightIcon;
+    vkn::Image m_cubeIcon;
+    vkn::Image m_playIcon;
+    vkn::Image m_stopIcon;
+    vk::DescriptorSet m_plusIconDescriptorSet;
+    vk::DescriptorSet m_lightIconDescriptorSet;
+    vk::DescriptorSet m_cubeIconDescriptorSet;
+    vk::DescriptorSet m_playIconDescriptorSet;
+    vk::DescriptorSet m_stopIconDescriptorSet;
+    // TODO:
+    // vk::DescriptorSet m_hdriThumbnailDescriptorSet;
+    // vk::DescriptorSet m_shadowMapDescriptorSet;
 
     void DrawDockSpace(Scene& scene);
-    void DrawViewport(Scene& scene, Viewport& viewport, size_t frameIndex);
+    void DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex);
     void SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
@@ -51,16 +52,16 @@ class UI
     static float GetIconSize(float desiredButtonSize, float padding) { return desiredButtonSize - padding * 2.0f; }
 
 public:
-    inline static bool dragDropped;
-    inline static double dragDropMouseX;
-    inline static double dragDropMouseY;
-    inline static std::unique_ptr<Resource> dragDropResource;
-    inline static ImDrawData* imDrawData;
+    inline static bool s_dragDropped;
+    inline static double s_dragDropMouseX;
+    inline static double s_dragDropMouseY;
+    inline static std::unique_ptr<Resource> s_dragDropResource;
+    inline static ImDrawData* s_imDrawData;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
-    void Draw(Scene& scene, Viewport& viewport, size_t frameIndex);
+    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex);
     void RecreateViewportDescriptorSets(const Viewport& viewport);
-    void AcceptDragDrop(Viewport& viewport, Scene& scene, size_t frameIndex);
+    void AcceptDragDrop(Viewport& viewport, Scene& scene);
     ~UI();
 };
 

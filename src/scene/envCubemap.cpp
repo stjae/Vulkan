@@ -2,24 +2,24 @@
 
 void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    imageSize_ = cubemapSize;
+    m_imageSize = cubemapSize;
 
-    CreateCubemap(imageSize_, format, usage, commandBuffer);
+    CreateCubemap(m_imageSize, format, usage, commandBuffer);
 
     for (int i = 0; i < 6; i++) {
         vkn::Command::Begin(commandBuffer);
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
+        m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                            imageBundle_.image,
+                                            m_bundle.image,
                                             vk::ImageLayout::eShaderReadOnlyOptimal,
                                             vk::ImageLayout::eColorAttachmentOptimal,
                                             vk::AccessFlagBits::eShaderRead,
                                             vk::AccessFlagBits::eColorAttachmentWrite,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
-                                            imageViewCreateInfo.subresourceRange);
+                                            m_imageViewCreateInfo.subresourceRange);
         commandBuffer.end();
-        vkn::Command::Submit(&commandBuffer, 1);
+        vkn::Command::Submit(commandBuffer);
     }
 
     CreateFramebuffer(cubemapPipeline, commandBuffer);
@@ -28,11 +28,11 @@ void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::I
 void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     vk::ImageView attachment;
-    vk::FramebufferCreateInfo frameBufferCI({}, cubemapPipeline.renderPass, 1, &attachment, imageSize_, imageSize_, 1);
+    vk::FramebufferCreateInfo frameBufferCI({}, cubemapPipeline.m_renderPass, 1, &attachment, m_imageSize, m_imageSize, 1);
 
     for (uint32_t i = 0; i < 6; i++) {
-        attachment = cubemapFaceImageViews_[i];
-        vkn::CheckResult(vkn::Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &framebuffers_[i]));
+        attachment = m_cubemapFaceImageViews[i];
+        vkn::CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffers[i]));
     }
 }
 
@@ -42,10 +42,10 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
 
     UpdateDescriptorSets(cubemapPipeline, envMap);
 
-    vk::Viewport viewport({}, {}, (float)imageSize_, (float)imageSize_, 0.0f, 1.0f);
+    vk::Viewport viewport({}, {}, (float)m_imageSize, (float)m_imageSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
-    vk::Rect2D scissor({ 0, 0 }, { imageSize_, imageSize_ });
+    vk::Rect2D scissor({ 0, 0 }, { m_imageSize, m_imageSize });
     commandBuffer.setScissor(0, 1, &scissor);
 
     for (uint32_t face = 0; face < 6; face++) {
@@ -53,40 +53,40 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
     }
 
     commandBuffer.end();
-    vkn::Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(commandBuffer);
 
     for (int i = 0; i < 6; i++) {
         vkn::Command::Begin(commandBuffer);
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
+        m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                            imageBundle_.image,
+                                            m_bundle.image,
                                             vk::ImageLayout::eColorAttachmentOptimal,
                                             vk::ImageLayout::eShaderReadOnlyOptimal,
                                             vk::AccessFlagBits::eColorAttachmentWrite,
                                             vk::AccessFlagBits::eShaderRead,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
-                                            imageViewCreateInfo.subresourceRange);
+                                            m_imageViewCreateInfo.subresourceRange);
         commandBuffer.end();
-        vkn::Command::Submit(&commandBuffer, 1);
+        vkn::Command::Submit(commandBuffer);
     }
-    imageBundle_.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 }
 
 void EnvCubemap::UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap)
 {
     std::vector<vk::WriteDescriptorSet> writes = {
-        { cubemapPipeline.descriptorSets[0], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &envMap.GetBundle().descriptorImageInfo }
+        { cubemapPipeline.m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &envMap.Get().descriptorImageInfo }
     };
 
-    vkn::Device::GetBundle().device.updateDescriptorSets(writes, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(writes, nullptr);
 }
 
 void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     vk::ClearValue clearValues = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
-    vk::RenderPassBeginInfo renderPassBI(cubemapPipeline.renderPass, framebuffers_[faceIndex], { { 0, 0 }, { imageSize_, imageSize_ } }, 2, &clearValues);
+    vk::RenderPassBeginInfo renderPassBI(cubemapPipeline.m_renderPass, m_framebuffers[faceIndex], { { 0, 0 }, { m_imageSize, m_imageSize } }, 2, &clearValues);
 
     glm::mat4 viewMatrix;
     glm::mat4 projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -112,20 +112,20 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
     }
 
     commandBuffer.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cubemapPipeline.pipeline);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.pipelineLayout, 0, 1, &cubemapPipeline.descriptorSets[0], 0, nullptr);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cubemapPipeline.m_pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.m_pipelineLayout, 0, 1, &cubemapPipeline.m_descriptorSets[0], 0, nullptr);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
     pushConstants_.view = viewMatrix;
     pushConstants_.proj = projMatrix;
     commandBuffer.pushConstants(
-        cubemapPipeline.pipelineLayout,
+        cubemapPipeline.m_pipelineLayout,
         vk::ShaderStageFlagBits::eVertex,
         0,
         sizeof(CubemapPushConstants),
         &pushConstants_);
-    commandBuffer.bindVertexBuffers(0, 1, &envCube.vertexBuffers[0]->GetBundle().buffer, vertexOffsets);
-    commandBuffer.bindIndexBuffer(envCube.indexBuffers[0]->GetBundle().buffer, 0, vk::IndexType::eUint32);
+    commandBuffer.bindVertexBuffers(0, 1, &envCube.vertexBuffers[0]->Get().buffer, vertexOffsets);
+    commandBuffer.bindIndexBuffer(envCube.indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
     commandBuffer.drawIndexed(envCube.GetIndicesCount(0), envCube.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();

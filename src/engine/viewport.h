@@ -18,33 +18,38 @@
 
 class Viewport
 {
-    vk::CommandPool commandPool_;
-    vk::CommandBuffer commandBuffer_;
+    struct Image
+    {
+        vk::Framebuffer framebuffer;
+        vkn::Image image;
+        vkn::Image depth;
+        vkn::Image colorID;
+    };
 
-    vkn::Image colorPicked_;
+    vk::CommandPool m_commandPool;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::SubmitInfo m_submitInfo;
+
+    vkn::Image m_colorPicked;
 
 public:
-    vk::Framebuffer framebuffer;
-
-    vkn::Image viewportImage;
-    vkn::Image depthImage;
-    vkn::Image colorID;
-
-    vk::Extent2D extent;
-    ImVec2 panelPos;
-    ImVec2 panelSize;
-    float panelRatio;
-    bool outDated;
-
-    bool isMouseHovered;
+    std::vector<Image> m_images;
+    vk::Extent2D m_extent;
+    ImVec2 m_panelPos;
+    ImVec2 m_panelSize;
+    float m_panelRatio;
+    bool m_outDated;
+    bool m_isMouseHovered;
 
     Viewport();
-    void CreateViewportImages();
-    void DestroyViewportImages();
-    void CreateViewportFrameBuffer();
+    void CreateImages();
+    void DestroyImages();
     const int32_t* PickColor(double mouseX, double mouseY);
-    void Draw(const Scene& scene);
+    void Draw(const Scene& scene, uint32_t imageIndex);
+    const vk::SubmitInfo& GetSubmitInfo() { return m_submitInfo; }
     ~Viewport();
+    void UpdateImages();
 };
 
 #endif

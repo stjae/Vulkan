@@ -2,37 +2,37 @@
 #include "device.h"
 #include "memory.h"
 
-vkn::Buffer::Buffer(BufferInput bufferInput) : bufferInput_(bufferInput)
+vkn::Buffer::Buffer(BufferInfo bufferInfo)
 {
-    vk::BufferCreateInfo bufferInfo({}, bufferInput.size, bufferInput.usage,
-                                    vk::SharingMode::eExclusive);
+    vk::BufferCreateInfo bufferCreateInfo({}, bufferInfo.size, bufferInfo.usage,
+                                          vk::SharingMode::eExclusive);
 
-    bufferBundle_.buffer = vkn::Device::GetBundle().device.createBuffer(bufferInfo);
-    bufferBundle_.descriptorBufferInfo.buffer = bufferBundle_.buffer;
-    bufferBundle_.descriptorBufferInfo.offset = 0;
-    bufferBundle_.descriptorBufferInfo.range = bufferInput.range;
+    m_bundle.buffer = vkn::Device::Get().device.createBuffer(bufferCreateInfo);
+    m_bundle.bufferInfo = bufferInfo;
+    m_bundle.descriptorBufferInfo.buffer = m_bundle.buffer;
+    m_bundle.descriptorBufferInfo.offset = 0;
+    m_bundle.descriptorBufferInfo.range = bufferInfo.range;
 
-    AllocateMemory(bufferBundle_.buffer, bufferInput.properties);
-    if (bufferInput.properties & vk::MemoryPropertyFlagBits::eHostVisible)
+    AllocateMemory(m_bundle.buffer, bufferInfo.properties);
+    if (bufferInfo.properties & vk::MemoryPropertyFlagBits::eHostVisible)
         MapMemory();
 }
 
 void vkn::Buffer::MapMemory()
 {
-    void* bufferMemoryAddress = vkn::Device::GetBundle().device.mapMemory(vkn::Memory::GetMemory(), 0, bufferInput_.size);
+    void* bufferMemoryAddress = vkn::Device::Get().device.mapMemory(vkn::Memory::GetMemory(), 0, m_bundle.bufferInfo.size);
     Memory::SetAddress(bufferMemoryAddress);
-    bufferBundle_.bufferMemory = Memory::GetMemory();
 }
 
 void vkn::Buffer::Destroy()
 {
-    vkn::Device::GetBundle().device.waitIdle();
-    if (bufferBundle_.buffer != VK_NULL_HANDLE) {
-        vkn::Device::GetBundle().device.destroyBuffer(bufferBundle_.buffer);
-        bufferBundle_.buffer = nullptr;
+    vkn::Device::Get().device.waitIdle();
+    if (m_bundle.buffer != VK_NULL_HANDLE) {
+        vkn::Device::Get().device.destroyBuffer(m_bundle.buffer);
+        m_bundle.buffer = nullptr;
     }
     if (Memory::GetMemory() != VK_NULL_HANDLE) {
-        vkn::Device::GetBundle().device.freeMemory(Memory::GetMemory());
+        vkn::Device::Get().device.freeMemory(Memory::GetMemory());
         Memory::Set(nullptr);
     }
 }

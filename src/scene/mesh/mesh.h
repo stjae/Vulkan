@@ -27,9 +27,8 @@ protected:
     std::vector<MeshInstanceUBO> meshInstanceUBOs_;
     std::vector<MeshPart> meshParts_;
     std::vector<MaterialFilePath> materials_;
-    inline static vk::CommandBuffer commandBuffer_;
 
-    void CreateBuffers();
+    void CreateBuffers(const vk::CommandBuffer& commandBuffer);
 
 public:
     std::unique_ptr<MeshPhysicsInfo> physicsInfo;

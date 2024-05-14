@@ -58,7 +58,7 @@ void MeshBase::CreateVertexBuffers(std::vector<Vertex>& vertices)
     vertexStagingBuffers.emplace_back();
     vertexBuffers.emplace_back();
 
-    vkn::BufferInput bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::BufferInfo bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     vertexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
     vertexStagingBuffers.back()->Copy(vertices.data());
 
@@ -72,7 +72,7 @@ void MeshBase::CreateIndexBuffers(std::vector<uint32_t>& indices)
     indexStagingBuffers.emplace_back();
     indexBuffers.emplace_back();
 
-    vkn::BufferInput bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    vkn::BufferInfo bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     indexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
     indexStagingBuffers.back()->Copy(indices.data());
 

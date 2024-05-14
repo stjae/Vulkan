@@ -1,22 +1,22 @@
 #include "shadowMap.h"
 
-void ShadowMap::CreateFramebuffer(vk::CommandBuffer& commandBuffer)
+void ShadowMap::CreateFramebuffer()
 {
     vk::ImageView attachment;
-    attachment = imageBundle_.imageView;
+    attachment = m_bundle.imageView;
 
-    vk::FramebufferCreateInfo frameBufferCI({}, shadowMapPipeline.renderPass, 1, &attachment, shadowMapSize, shadowMapSize, 1);
+    vk::FramebufferCreateInfo frameBufferCI({}, shadowMapPipeline.m_renderPass, 1, &attachment, shadowMapSize, shadowMapSize, 1);
 
-    vkn::CheckResult(vkn::Device::GetBundle().device.createFramebuffer(&frameBufferCI, nullptr, &framebuffer_));
+    vkn::CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }
 
 void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 {
-    CreateImage({ shadowMapSize, shadowMapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::clampSampler);
+    CreateImage({ shadowMapSize, shadowMapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
 
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        imageBundle_.image,
+                                        m_bundle.image,
                                         {},
                                         vk::ImageLayout::eDepthStencilAttachmentOptimal,
                                         {},
@@ -25,19 +25,19 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
-    vkn::Command::Submit(&commandBuffer, 1);
+    vkn::Command::Submit(commandBuffer);
 
-    imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
     CreateImageView();
 
-    CreateFramebuffer(commandBuffer);
+    CreateFramebuffer();
 }
 
 void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<MeshModel>& meshes)
 {
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        imageBundle_.image,
+                                        m_bundle.image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eDepthStencilAttachmentOptimal,
                                         {},
@@ -55,27 +55,27 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
     vk::ClearValue clearValue;
     clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
-    vk::RenderPassBeginInfo renderPassBI(shadowMapPipeline.renderPass, framebuffer_, { { 0, 0 }, { shadowMapSize, shadowMapSize } }, 1, &clearValue);
+    vk::RenderPassBeginInfo renderPassBI(shadowMapPipeline.m_renderPass, m_framebuffer, { { 0, 0 }, { shadowMapSize, shadowMapSize } }, 1, &clearValue);
     commandBuffer.beginRenderPass(&renderPassBI, vk::SubpassContents::eInline);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.m_pipeline);
     int meshIndex = 0;
     vk::DeviceSize vertexOffsets[]{ 0 };
     for (auto& mesh : meshes) {
         if (mesh.GetInstanceCount() < 1)
             continue;
-        pushConstants_.meshIndex = meshIndex;
+        m_pushConstants.meshIndex = meshIndex;
         meshIndex++;
         commandBuffer.pushConstants(
-            shadowMapPipeline.pipelineLayout,
+            shadowMapPipeline.m_pipelineLayout,
             vk::ShaderStageFlagBits::eVertex,
             0,
             sizeof(ShadowMapPushConstants),
-            &pushConstants_);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.pipelineLayout, 0, 1, &shadowMapPipeline.descriptorSets[0], 0, nullptr);
+            &m_pushConstants);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.m_pipelineLayout, 0, 1, &shadowMapPipeline.m_descriptorSets[0], 0, nullptr);
         for (auto& part : mesh.GetMeshParts()) {
-            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->GetBundle().buffer, vertexOffsets);
-            commandBuffer.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->GetBundle().buffer, 0, vk::IndexType::eUint32);
+            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+            commandBuffer.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
             commandBuffer.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
         }
     }
@@ -83,5 +83,5 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    vkn::Command::Submit(&commandBuffer, 1);
+    m_submitInfo = vk::SubmitInfo(1, &vkn::Sync::GetImageAvailableSemaphore(), &m_waitStage, 1, &commandBuffer, 1, &vkn::Sync::GetShadowMapSemaphore());
 }

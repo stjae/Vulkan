@@ -8,8 +8,8 @@ namespace vkn {
 class Shader
 {
 public:
-    vk::ShaderModule vertexShaderModule;
-    vk::ShaderModule fragmentShaderModule;
+    vk::ShaderModule m_vertexShaderModule;
+    vk::ShaderModule m_fragmentShaderModule;
 
     static vk::ShaderModule CreateModule(const std::string& filepath);
 };

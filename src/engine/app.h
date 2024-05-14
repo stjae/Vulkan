@@ -6,11 +6,11 @@
 
 class Application
 {
-    Window window_;
-    Engine engine_;
+    Window m_window;
+    Engine m_engine;
 
 public:
-    Application(int width, int height, const char* wName) : window_(width, height, wName) {}
+    Application(int width, int height, const char* title) : m_window(width, height, title) {}
 
     void Run();
 };

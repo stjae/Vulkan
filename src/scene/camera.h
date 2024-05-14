@@ -42,7 +42,7 @@ public:
     Camera();
     bool IsControllable() const { return isControllable_; }
     const CameraUBO& GetMatrix() { return cameraUBO_; }
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return cameraBuffer_->GetBundle().descriptorBufferInfo; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return cameraBuffer_->Get().descriptorBufferInfo; }
 };
 
 #endif

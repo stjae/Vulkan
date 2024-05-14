@@ -4,10 +4,10 @@ void ShadowCubemapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.frag.spv");
-    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
-    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
+    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.vert.spv");
+    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/pointlightshadow.frag.spv");
+    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, m_shaderModule.m_vertexShaderModule, "main" };
+    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
@@ -15,19 +15,19 @@ void ShadowCubemapPipeline::CreatePipeline()
     CreateRenderPass();
 
     vk::PushConstantRange pushConstantRange = { vk::ShaderStageFlagBits::eVertex, 0, sizeof(ShadowCubemapPushConstants) };
-    vk::PipelineLayoutCreateInfo pipelineLayoutCI = { {}, (uint32_t)descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange };
+    vk::PipelineLayoutCreateInfo pipelineLayoutCI = { {}, (uint32_t)m_descriptorSetLayouts.size(), m_descriptorSetLayouts.data(), 1, &pushConstantRange };
 
-    rasterizeStateCI_.cullMode = vk::CullModeFlagBits::eFront;
-    pipelineCI_.stageCount = (uint32_t)shaderStageInfos.size();
-    pipelineCI_.pStages = shaderStageInfos.data();
-    pipelineCI_.renderPass = renderPass;
-    colorBlendStateCI_ = { {}, vk::False, {}, 1, &attachmentState };
-    pipelineCI_.pColorBlendState = &colorBlendStateCI_;
-    pipelineCI_.layout = vkn::Device::GetBundle().device.createPipelineLayout(pipelineLayoutCI);
-    pipelineCI_.renderPass = renderPass;
+    m_rasterizeStateCI.cullMode = vk::CullModeFlagBits::eFront;
+    m_pipelineCI.stageCount = (uint32_t)shaderStageInfos.size();
+    m_pipelineCI.pStages = shaderStageInfos.data();
+    m_pipelineCI.renderPass = m_renderPass;
+    m_colorBlendStateCI = { {}, vk::False, {}, 1, &attachmentState };
+    m_pipelineCI.pColorBlendState = &m_colorBlendStateCI;
+    m_pipelineCI.layout = vkn::Device::Get().device.createPipelineLayout(pipelineLayoutCI);
+    m_pipelineCI.renderPass = m_renderPass;
 
-    pipelineLayout = pipelineCI_.layout;
-    pipeline = (vkn::Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineCI_)).value;
+    m_pipelineLayout = m_pipelineCI.layout;
+    m_pipeline = (vkn::Device::Get().device.createGraphicsPipeline(nullptr, m_pipelineCI)).value;
 }
 
 void ShadowCubemapPipeline::SetUpDescriptors()
@@ -38,17 +38,17 @@ void ShadowCubemapPipeline::SetUpDescriptors()
     std::vector<vkn::DescriptorBinding> bindings;
     bindings = {
         // camera
-        { 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
         // lights
-        { 1, vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eStorageBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
         // meshes
-        { 2, vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound }
+        { vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound }
     };
-    descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
+    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-    vkn::Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
-    vkn::Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts);
+    vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+    vkn::Descriptor::AllocateDescriptorSets(m_descriptorPool, m_descriptorSets, m_descriptorSetLayouts);
 }
 
 void ShadowCubemapPipeline::CreateRenderPass()
@@ -94,41 +94,41 @@ void ShadowCubemapPipeline::CreateRenderPass()
     renderPassCI.subpassCount = 1;
     renderPassCI.pSubpasses = &subpassDesc;
 
-    vkn::CheckResult(vkn::Device::GetBundle().device.createRenderPass(&renderPassCI, nullptr, &renderPass));
+    vkn::CheckResult(vkn::Device::Get().device.createRenderPass(&renderPassCI, nullptr, &m_renderPass));
 }
 
 void ShadowCubemapPipeline::UpdateProjDescriptor()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 0;
     writeDescriptorSet.dstArrayElement = 0;
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &projDescriptor;
-    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    writeDescriptorSet.pBufferInfo = &m_projDescriptor;
+    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }
 
 void ShadowCubemapPipeline::UpdatePointLightDescriptor()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 1;
     writeDescriptorSet.dstArrayElement = 0;
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = &pointLightDescriptor;
-    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    writeDescriptorSet.pBufferInfo = &m_pointLightDescriptor;
+    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }
 
 void ShadowCubemapPipeline::UpdateMeshDescriptors()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = descriptorSets[0];
+    writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 2;
     writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = meshDescriptors.size();
+    writeDescriptorSet.descriptorCount = m_meshDescriptors.size();
     writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = meshDescriptors.data();
-    vkn::Device::GetBundle().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    writeDescriptorSet.pBufferInfo = m_meshDescriptors.data();
+    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

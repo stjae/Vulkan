@@ -37,6 +37,8 @@ const bool DEBUG = true;
 #include "path.h"
 #include "struct.h"
 
+const int MAX_FRAME = 2;
+
 template <typename... T>
 void Log(bool debugMode, fmt::terminal_color color, T... args)
 {

@@ -14,7 +14,7 @@ vk::DescriptorSetLayout vkn::Descriptor::CreateDescriptorSetLayout(const std::ve
     vk::DescriptorSetLayoutBindingFlagsCreateInfo layoutBindingFlagsCreateInfo(bindingFlags.size(), bindingFlags.data());
 
     vk::DescriptorSetLayoutCreateInfo layoutCreateInfo(layoutCreateFlags, descriptorBindings.size(), layoutBindings.data(), &layoutBindingFlagsCreateInfo);
-    return vkn::Device::GetBundle().device.createDescriptorSetLayout(layoutCreateInfo);
+    return vkn::Device::Get().device.createDescriptorSetLayout(layoutCreateInfo);
 }
 
 void vkn::Descriptor::SetPoolSizes(std::vector<vk::DescriptorPoolSize>& poolSizes, const std::vector<vkn::DescriptorBinding>& descriptorBindings, uint32_t& maxSets)
@@ -28,11 +28,11 @@ void vkn::Descriptor::SetPoolSizes(std::vector<vk::DescriptorPoolSize>& poolSize
 void vkn::Descriptor::CreateDescriptorPool(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets, const vk::DescriptorPoolCreateFlags& descriptorPoolCreateFlags)
 {
     vk::DescriptorPoolCreateInfo poolInfo(descriptorPoolCreateFlags, maxSets, uint32_t(poolSizes.size()), poolSizes.data());
-    descriptorPool = vkn::Device::GetBundle().device.createDescriptorPool(poolInfo);
+    descriptorPool = vkn::Device::Get().device.createDescriptorPool(poolInfo);
 }
 
 void vkn::Descriptor::AllocateDescriptorSets(vk::DescriptorPool& descriptorPool, std::vector<vk::DescriptorSet>& descriptorSets, const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts)
 {
     vk::DescriptorSetAllocateInfo allocateInfo(descriptorPool, descriptorSetLayouts.size(), descriptorSetLayouts.data());
-    descriptorSets = vkn::Device::GetBundle().device.allocateDescriptorSets(allocateInfo);
+    descriptorSets = vkn::Device::Get().device.allocateDescriptorSets(allocateInfo);
 }

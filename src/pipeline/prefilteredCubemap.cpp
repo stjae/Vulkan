@@ -4,10 +4,10 @@ void PrefilteredCubemapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    shader.vertexShaderModule = vkn::Shader::CreateModule("shader/prefilter.vert.spv");
-    shader.fragmentShaderModule = vkn::Shader::CreateModule("shader/prefilter.frag.spv");
-    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, shader.vertexShaderModule, "main" };
-    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, shader.fragmentShaderModule, "main" };
+    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/prefilter.vert.spv");
+    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/prefilter.frag.spv");
+    shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, m_shaderModule.m_vertexShaderModule, "main" };
+    shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
@@ -15,19 +15,19 @@ void PrefilteredCubemapPipeline::CreatePipeline()
     CreateRenderPass();
 
     vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, sizeof(PrefilteredCubemapPushConstants));
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, descriptorSetLayouts.size(), descriptorSetLayouts.data(), 1, &pushConstantRange);
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, m_descriptorSetLayouts.size(), m_descriptorSetLayouts.data(), 1, &pushConstantRange);
 
-    rasterizeStateCI_.cullMode = vk::CullModeFlagBits::eNone;
+    m_rasterizeStateCI.cullMode = vk::CullModeFlagBits::eNone;
 
-    pipelineCI_.stageCount = (uint32_t)shaderStageInfos.size();
-    pipelineCI_.pStages = shaderStageInfos.data();
-    colorBlendStateCI_ = { {}, vk::False, {}, 1, &attachmentState };
-    pipelineCI_.pColorBlendState = &colorBlendStateCI_;
-    pipelineCI_.layout = vkn::Device::GetBundle().device.createPipelineLayout(pipelineLayoutInfoCI);
-    pipelineCI_.renderPass = renderPass;
+    m_pipelineCI.stageCount = (uint32_t)shaderStageInfos.size();
+    m_pipelineCI.pStages = shaderStageInfos.data();
+    m_colorBlendStateCI = { {}, vk::False, {}, 1, &attachmentState };
+    m_pipelineCI.pColorBlendState = &m_colorBlendStateCI;
+    m_pipelineCI.layout = vkn::Device::Get().device.createPipelineLayout(pipelineLayoutInfoCI);
+    m_pipelineCI.renderPass = m_renderPass;
 
-    pipelineLayout = pipelineCI_.layout;
-    pipeline = (vkn::Device::GetBundle().device.createGraphicsPipeline(nullptr, pipelineCI_)).value;
+    m_pipelineLayout = m_pipelineCI.layout;
+    m_pipeline = (vkn::Device::Get().device.createGraphicsPipeline(nullptr, m_pipelineCI)).value;
 }
 
 void PrefilteredCubemapPipeline::SetUpDescriptors()
@@ -38,13 +38,13 @@ void PrefilteredCubemapPipeline::SetUpDescriptors()
     std::vector<vkn::DescriptorBinding> bindings;
     bindings = {
         // env cubemap
-        { 0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
+        { vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
     };
-    descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
+    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-    vkn::Descriptor::CreateDescriptorPool(descriptorPool, poolSizes, maxSets);
-    vkn::Descriptor::AllocateDescriptorSets(descriptorPool, descriptorSets, descriptorSetLayouts);
+    vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets);
+    vkn::Descriptor::AllocateDescriptorSets(m_descriptorPool, m_descriptorSets, m_descriptorSetLayouts);
 }
 
 void PrefilteredCubemapPipeline::CreateRenderPass()
@@ -75,5 +75,5 @@ void PrefilteredCubemapPipeline::CreateRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDesc;
 
-    renderPass = vkn::Device::GetBundle().device.createRenderPass(renderPassInfo);
+    m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
 }

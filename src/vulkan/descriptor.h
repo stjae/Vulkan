@@ -7,10 +7,9 @@
 namespace vkn {
 struct DescriptorBinding
 {
-    DescriptorBinding(uint32_t index, vk::DescriptorType type, uint32_t count, vk::ShaderStageFlags sFlags = {}, vk::DescriptorBindingFlags bFlags = {})
-        : bindingIndex(index), descriptorType(type), descriptorCount(count), stageFlags(sFlags), bindingFlags(bFlags) {}
+    DescriptorBinding(vk::DescriptorType type, uint32_t count, vk::ShaderStageFlags sFlags = {}, vk::DescriptorBindingFlags bFlags = {})
+        : descriptorType(type), descriptorCount(count), stageFlags(sFlags), bindingFlags(bFlags) {}
 
-    uint32_t bindingIndex;
     vk::DescriptorType descriptorType;
     uint32_t descriptorCount;
     vk::ShaderStageFlags stageFlags;

@@ -119,7 +119,7 @@ public:
 
     void CreateBuffer()
     {
-        vkn::BufferInput bufferInput = { sizeof(LinePoint) * m_linePoints.size(), sizeof(LinePoint), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        vkn::BufferInfo bufferInput = { sizeof(LinePoint) * m_linePoints.size(), sizeof(LinePoint), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         m_vertexStagingBuffer = std::make_unique<vkn::Buffer>(bufferInput);
         m_vertexStagingBuffer->Copy(m_linePoints.data());
 
@@ -136,24 +136,24 @@ public:
         m_indexBuffer = std::make_unique<vkn::Buffer>(bufferInput);
     }
 
-    void CopyBuffer()
+    void CopyBuffer() const
     {
         vkn::Command::Begin(m_commandBuffer);
         vkn::Command::CopyBufferToBuffer(m_commandBuffer,
-                                         m_vertexStagingBuffer->GetBundle().buffer,
-                                         m_vertexBuffer->GetBundle().buffer,
-                                         m_vertexStagingBuffer->GetBufferInput().size);
+                                         m_vertexStagingBuffer->Get().buffer,
+                                         m_vertexBuffer->Get().buffer,
+                                         m_vertexStagingBuffer->Get().bufferInfo.size);
         vkn::Command::CopyBufferToBuffer(m_commandBuffer,
-                                         m_indexStagingBuffer->GetBundle().buffer,
-                                         m_indexBuffer->GetBundle().buffer,
-                                         m_indexStagingBuffer->GetBufferInput().size);
+                                         m_indexStagingBuffer->Get().buffer,
+                                         m_indexBuffer->Get().buffer,
+                                         m_indexStagingBuffer->Get().bufferInfo.size);
         m_commandBuffer.end();
-        vkn::Command::Submit(&m_commandBuffer, 1);
+        vkn::Command::Submit(m_commandBuffer);
     }
 
     ~PhysicsDebugDrawer() override
     {
-        vkn::Device::GetBundle().device.destroyCommandPool(m_commandPool);
+        vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     }
 };
 
