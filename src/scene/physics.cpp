@@ -2,25 +2,25 @@
 
 void Physics::InitPhysics()
 {
-    collisionConfiguration_ = new btDefaultCollisionConfiguration();
-    dispatcher_ = new btCollisionDispatcher(collisionConfiguration_);
-    overlappingPairCache_ = new btDbvtBroadphase();
-    solver_ = new btSequentialImpulseConstraintSolver;
-    dynamicsWorld_ = new btDiscreteDynamicsWorld(dispatcher_, overlappingPairCache_, solver_, collisionConfiguration_);
-    dynamicsWorld_->setGravity(btVector3(0, -10, 0));
-    firstStep = true;
+    m_collisionConfiguration = new btDefaultCollisionConfiguration();
+    m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+    m_overlappingPairCache = new btDbvtBroadphase();
+    m_solver = new btSequentialImpulseConstraintSolver;
+    m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
+    m_dynamicsWorld->setGravity(btVector3(0, -10, 0));
+    m_isFirstStep = true;
 }
 
 void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
 {
     for (auto& mesh : meshes) {
-        if (!mesh.physicsInfo)
+        if (!mesh.m_physicsInfo)
             continue;
-        for (auto& instance : mesh.meshInstanceUBOs_) {
+        for (auto& instance : mesh.m_meshInstanceUBOs) {
             instance.physicsInfo = std::make_unique<MeshInstancePhysicsInfo>();
             btCollisionShape* shape;
 
-            switch (mesh.physicsInfo->colliderShape) {
+            switch (mesh.m_physicsInfo->colliderShape) {
             case (eColliderShape::BOX):
                 shape = new btBoxShape({ 0.5f, 0.5f, 0.5f });
                 break;
@@ -53,13 +53,13 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
             ImGuizmo::RecomposeMatrixFromComponents(instanceT, instanceR, unitScale, colliderM);
 
             shape->setLocalScaling({ instanceS[0], instanceS[1], instanceS[2] });
-            collisionShapes_.push_back(shape);
+            m_collisionShapes.push_back(shape);
 
             btTransform startTransform;
             startTransform.setIdentity();
             startTransform.setOrigin({ instanceT[0], instanceT[1], instanceT[2] });
 
-            btScalar mass = mesh.physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
+            btScalar mass = mesh.m_physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
             btVector3 localInertia(0, 0, 0);
             shape->calculateLocalInertia(mass, localInertia);
 
@@ -71,7 +71,7 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
             t.setFromOpenGLMatrix(colliderM);
             body->setWorldTransform(t);
 
-            dynamicsWorld_->addRigidBody(body);
+            m_dynamicsWorld->addRigidBody(body);
 
             instance.physicsInfo->initialModel = instance.model;
             instance.physicsInfo->rigidBodyPtr = body;
@@ -81,18 +81,17 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
 
 void Physics::Simulate(std::vector<MeshModel>& meshes)
 {
-    std::cout << dynamicsWorld_->getNumCollisionObjects() << '\n';
-    if (firstStep) {
+    if (m_isFirstStep) {
         AddRigidBodies(meshes);
-        firstStep = false;
+        m_isFirstStep = false;
     }
 
-    dynamicsWorld_->stepSimulation(1.0f / 60.0f);
+    m_dynamicsWorld->stepSimulation(1.0f / 60.0f);
 
     for (auto& mesh : meshes) {
-        if (!mesh.physicsInfo)
+        if (!mesh.m_physicsInfo)
             continue;
-        for (auto& instance : mesh.meshInstanceUBOs_) {
+        for (auto& instance : mesh.m_meshInstanceUBOs) {
             auto body = instance.physicsInfo->rigidBodyPtr;
             auto t = body->getWorldTransform();
             auto& s = body->getCollisionShape()->getLocalScaling();
@@ -112,12 +111,12 @@ void Physics::Simulate(std::vector<MeshModel>& meshes)
 
 void Physics::Stop(std::vector<MeshModel>& meshes)
 {
-    firstStep = true;
+    m_isFirstStep = true;
 
     for (auto& mesh : meshes) {
-        if (!mesh.physicsInfo)
+        if (!mesh.m_physicsInfo)
             continue;
-        for (auto& instance : mesh.meshInstanceUBOs_) {
+        for (auto& instance : mesh.m_meshInstanceUBOs) {
             instance.model = instance.physicsInfo->initialModel;
 
             instance.invTranspose = instance.model;
@@ -128,46 +127,44 @@ void Physics::Stop(std::vector<MeshModel>& meshes)
 
     // cleanup all rigidbody
     std::vector<btCollisionObject*> objs;
-    for (int i = 0; i < dynamicsWorld_->getNumCollisionObjects(); i++) {
-        objs.push_back(dynamicsWorld_->getCollisionObjectArray()[i]);
+    for (int i = 0; i < m_dynamicsWorld->getNumCollisionObjects(); i++) {
+        objs.push_back(m_dynamicsWorld->getCollisionObjectArray()[i]);
     }
     for (auto obj : objs) {
         auto body = btRigidBody::upcast(obj);
         if (body && body->getMotionState()) {
             delete body->getMotionState();
         }
-        dynamicsWorld_->removeCollisionObject(body);
+        m_dynamicsWorld->removeCollisionObject(body);
         delete body;
     }
-    for (int i = 0; i < collisionShapes_.size(); i++) {
-        auto shape = collisionShapes_[i];
-        collisionShapes_[i] = 0;
+    for (int i = 0; i < m_collisionShapes.size(); i++) {
+        auto shape = m_collisionShapes[i];
+        m_collisionShapes[i] = 0;
         delete shape;
     }
-
-    std::cout << dynamicsWorld_->getNumCollisionObjects() << '\n';
 }
 
 Physics::~Physics()
 {
-    for (int i = 0; i < dynamicsWorld_->getNumCollisionObjects(); i++) {
-        auto obj = dynamicsWorld_->getCollisionObjectArray()[i];
+    for (int i = 0; i < m_dynamicsWorld->getNumCollisionObjects(); i++) {
+        auto obj = m_dynamicsWorld->getCollisionObjectArray()[i];
         auto body = btRigidBody::upcast(obj);
         if (body && body->getMotionState()) {
             delete body->getMotionState();
         }
-        dynamicsWorld_->removeCollisionObject(obj);
+        m_dynamicsWorld->removeCollisionObject(obj);
         delete obj;
     }
 
-    for (int i = 0; i < collisionShapes_.size(); i++) {
-        auto shape = collisionShapes_[i];
-        collisionShapes_[i] = 0;
+    for (int i = 0; i < m_collisionShapes.size(); i++) {
+        auto shape = m_collisionShapes[i];
+        m_collisionShapes[i] = 0;
         delete shape;
     }
 
-    delete dynamicsWorld_;
-    delete solver_;
-    delete overlappingPairCache_;
-    delete dispatcher_;
+    delete m_dynamicsWorld;
+    delete m_solver;
+    delete m_overlappingPairCache;
+    delete m_dispatcher;
 }

@@ -2,7 +2,6 @@
 
 Engine::Engine()
 {
-    vkn::Sync::Create();
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
     m_scene = std::make_unique<Scene>();
@@ -21,28 +20,22 @@ void Engine::Render()
         UpdateSwapchain();
         return;
     }
-    m_scene->ClearSubmitInfos();
-    m_viewport.ClearSubmitInfos();
 
-    DrawUI(currentImage.value);
+    vkn::Device::s_submitInfos.clear();
+
+    DrawUI();
 
     m_scene->Play();
     m_scene->Update();
 
-    m_viewport.Draw(*m_scene, currentImage.value);
+    m_viewport.Draw(*m_scene);
     m_swapchain.Draw(currentImage.value, UI::s_imDrawData);
-    // TODO
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered) {
-        m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), 0);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene->IsPlaying()) {
+        m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), *m_scene);
     }
     m_imGui.AcceptDragDrop(m_viewport, *m_scene);
 
-    std::vector<vk::SubmitInfo> submitInfos;
-    submitInfos.insert(submitInfos.end(), m_scene->GetSubmitInfos().begin(), m_scene->GetSubmitInfos().end());
-    submitInfos.insert(submitInfos.end(), m_viewport.GetSubmitInfos().begin(), m_viewport.GetSubmitInfos().end());
-    submitInfos.push_back(m_swapchain.GetSubmitInfo());
-
-    vkn::Device::Get().graphicsQueue.submit(submitInfos, vkn::Sync::GetInFlightFence());
+    vkn::Device::Get().graphicsQueue.submit(vkn::Device::s_submitInfos, vkn::Sync::GetInFlightFence());
     vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);
     vkn::CheckResult(vkn::Device::Get().presentQueue.presentKHR(presentInfo));
 
@@ -54,9 +47,9 @@ void Engine::UpdateSwapchain()
     RecreateSwapchain();
     m_swapchain.InitSwapchain();
     m_viewport.m_outDated = true;
-    m_viewport.DestroyImages();
-    m_viewport.CreateImages();
-    m_imGui.RecreateViewportDescriptorSets(m_viewport);
+    m_viewport.DestroyImage();
+    m_viewport.CreateImage();
+    m_imGui.RecreateViewportDescriptorSet(m_viewport);
 }
 
 void Engine::RecreateSwapchain()
@@ -80,9 +73,9 @@ void Engine::RecreateSwapchain()
     vkn::Sync::Create();
 }
 
-void Engine::DrawUI(uint32_t imageIndex)
+void Engine::DrawUI()
 {
-    m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], imageIndex);
+    m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     UI::s_imDrawData = ImGui::GetDrawData();
 }
 

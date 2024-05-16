@@ -2,17 +2,17 @@
 
 Camera::Camera()
 {
-    vkn::BufferInfo bufferInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    cameraBuffer_ = std::make_unique<vkn::Buffer>(bufferInput);
+    vkn::BufferInfo bufferInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal };
+    m_cameraBuffer = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
 void Camera::SetCameraControl()
 {
     if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        isControllable_ = !isControllable_;
+        m_isControllable = !m_isControllable;
         ImGuiIO& io = ImGui::GetIO();
 
-        if (isControllable_) {
+        if (m_isControllable) {
             glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
         } else {
@@ -20,7 +20,7 @@ void Camera::SetCameraControl()
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        isInitial_ = true;
+        m_isInitial = true;
     }
 }
 
@@ -28,7 +28,7 @@ void Camera::Update()
 {
     SetCameraControl();
 
-    if (!isControllable_)
+    if (!m_isControllable)
         return;
 
     static double delta, currentTime, lastTime = 0.0;
@@ -51,39 +51,39 @@ void Camera::Update()
     mouseX -= 0.5f;
     mouseY -= 0.5f;
 
-    if (isInitial_) {
+    if (m_isInitial) {
         prevMouseX = mouseX;
         prevMouseY = mouseY;
-        isInitial_ = false;
+        m_isInitial = false;
     }
 
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), up_);
-    dir_ = rotateY * glm::vec4(dir_, 0.0f);
-    glm::normalize(dir_);
-    right_ = glm::cross(dir_, up_);
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), right_);
-    dir_ = rotateX * glm::vec4(dir_, 0.0f);
+    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), m_up);
+    m_dir = rotateY * glm::vec4(m_dir, 0.0f);
+    glm::normalize(m_dir);
+    m_right = glm::cross(m_dir, m_up);
+    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), m_right);
+    m_dir = rotateX * glm::vec4(m_dir, 0.0f);
 
     if (ImGui::IsKeyDown(ImGuiKey_W)) {
-        pos_ += dir_ * (float)(delta)*speed_;
+        m_pos += m_dir * (float)delta * m_speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        pos_ -= dir_ * (float)(delta)*speed_;
+        m_pos -= m_dir * (float)delta * m_speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_A)) {
-        pos_ -= right_ * (float)(delta)*speed_;
+        m_pos -= m_right * (float)delta * m_speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_D)) {
-        pos_ += right_ * (float)(delta)*speed_;
+        m_pos += m_right * (float)delta * m_speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_E)) {
-        pos_ += up_ * (float)(delta)*speed_;
+        m_pos += m_up * (float)delta * m_speed;
     }
     if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-        pos_ -= up_ * (float)(delta)*speed_;
+        m_pos -= m_up * (float)delta * m_speed;
     }
 
-    at_ = pos_ + dir_;
+    m_at = m_pos + m_dir;
 
     prevMouseX = mouseX;
     prevMouseY = mouseY;

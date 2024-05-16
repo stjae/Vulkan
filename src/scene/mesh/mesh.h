@@ -2,6 +2,7 @@
 #define MESHPRIMITIVE_H
 
 #include "meshBase.h"
+#include "../../vulkan/sync.h"
 #include "../../vulkan/command.h"
 #include "tiny_obj_loader.h"
 #include "assimp/Importer.hpp"
@@ -20,29 +21,29 @@ class Mesh : public MeshBase
     void CreateSphere(float scale = 1.0f, const char* name = nullptr, const char* texturePath = nullptr);
 
 protected:
-    std::string name_;
+    std::string m_name;
 
-    int32_t meshID_;
-    std::unique_ptr<vkn::Buffer> meshInstanceBuffer_;
-    std::vector<MeshInstanceUBO> meshInstanceUBOs_;
-    std::vector<MeshPart> meshParts_;
-    std::vector<MaterialFilePath> materials_;
+    int32_t m_meshID;
+    std::unique_ptr<vkn::Buffer> m_meshInstanceBuffer;
+    std::vector<MeshInstanceUBO> m_meshInstanceUBOs;
+    std::vector<MeshPart> m_meshParts;
+    std::vector<MaterialFilePath> m_materials;
 
     void CreateBuffers(const vk::CommandBuffer& commandBuffer);
 
 public:
-    std::unique_ptr<MeshPhysicsInfo> physicsInfo;
-    std::unique_ptr<PhysicsDebugDrawer> physicsDebugDrawer;
+    std::unique_ptr<MeshPhysicsInfo> m_physicsInfo;
+    std::unique_ptr<PhysicsDebugDrawer> m_physicsDebugDrawer;
 
     Mesh() = default;
-    explicit Mesh(int meshID) : meshID_(meshID) {}
+    explicit Mesh(int meshID) : m_meshID(meshID) {}
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddPhysicsInfo(const MeshPhysicsInfo& physicsInfo);
-    const std::string& GetName() { return name_; }
-    int32_t GetMeshID() const { return meshID_; }
-    size_t GetInstanceCount() const { return meshInstanceUBOs_.size(); }
-    size_t GetMaterialCount() const { return materials_.size(); }
-    const std::vector<MeshPart>& GetMeshParts() const { return meshParts_; }
+    const std::string& GetName() { return m_name; }
+    int32_t GetMeshID() const { return m_meshID; }
+    size_t GetInstanceCount() const { return m_meshInstanceUBOs.size(); }
+    size_t GetMaterialCount() const { return m_materials.size(); }
+    const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
 };
 
 #endif

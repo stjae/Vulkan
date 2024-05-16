@@ -55,28 +55,28 @@ std::array<vk::VertexInputAttributeDescription, 5> MeshBase::GetAttributeDescs()
 
 void MeshBase::CreateVertexBuffers(std::vector<Vertex>& vertices)
 {
-    vertexStagingBuffers.emplace_back();
-    vertexBuffers.emplace_back();
+    m_vertexStagingBuffers.emplace_back();
+    m_vertexBuffers.emplace_back();
 
     vkn::BufferInfo bufferInput = { sizeof(Vertex) * vertices.size(), sizeof(Vertex), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    vertexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
-    vertexStagingBuffers.back()->Copy(vertices.data());
+    m_vertexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
+    m_vertexStagingBuffers.back()->Copy(vertices.data());
 
     bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    vertexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
+    m_vertexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
 void MeshBase::CreateIndexBuffers(std::vector<uint32_t>& indices)
 {
-    indexStagingBuffers.emplace_back();
-    indexBuffers.emplace_back();
+    m_indexStagingBuffers.emplace_back();
+    m_indexBuffers.emplace_back();
 
     vkn::BufferInfo bufferInput = { sizeof(uint32_t) * indices.size(), sizeof(uint32_t), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    indexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
-    indexStagingBuffers.back()->Copy(indices.data());
+    m_indexStagingBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
+    m_indexStagingBuffers.back()->Copy(indices.data());
 
     bufferInput.usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     bufferInput.properties = vk::MemoryPropertyFlagBits::eDeviceLocal;
-    indexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
+    m_indexBuffers.back() = std::make_unique<vkn::Buffer>(bufferInput);
 }

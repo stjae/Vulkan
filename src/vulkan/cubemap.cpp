@@ -19,6 +19,7 @@ void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsag
 {
     m_imageSize = imageSize;
     CreateImage({ imageSize, imageSize, 1 }, format, usage, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                         m_bundle.image,
@@ -30,7 +31,7 @@ void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsag
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         m_imageViewCreateInfo.subresourceRange);
     commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
+    vkn::Command::SubmitAndWait(commandBuffer);
 
     CreateImageView();
 

@@ -3,7 +3,7 @@
 MeshModel::MeshModel(int meshID, const std::string& filePath) : Mesh(meshID)
 {
     if (!filePath.empty()) {
-        filepath_ = filePath;
+        m_filepath = filePath;
         LoadModel(filePath);
     }
 }
@@ -28,23 +28,23 @@ void MeshModel::LoadModel(const std::string& filepath)
     ProcessNode(node, scene);
 
     if (scene->HasMaterials()) {
-        materials_.reserve(scene->mNumMaterials);
+        m_materials.reserve(scene->mNumMaterials);
         for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
             aiString path;
-            materials_.emplace_back();
+            m_materials.emplace_back();
             scene->mMaterials[m]->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &path);
-            materials_.back().albedo = path.C_Str();
+            m_materials.back().albedo = path.C_Str();
             scene->mMaterials[m]->GetTexture(aiTextureType_NORMALS, 0, &path);
-            materials_.back().normal = path.C_Str();
+            m_materials.back().normal = path.C_Str();
             scene->mMaterials[m]->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path);
-            materials_.back().metallic = path.C_Str();
+            m_materials.back().metallic = path.C_Str();
             scene->mMaterials[m]->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &path);
-            materials_.back().roughness = path.C_Str();
+            m_materials.back().roughness = path.C_Str();
         }
     }
 
     // TODO:
-    name_ = filepath.substr(filepath.find_last_of("/\\") + 1, filepath.rfind('.') - filepath.find_last_of("/\\") - 1);
+    m_name = filepath.substr(filepath.find_last_of("/\\") + 1, filepath.rfind('.') - filepath.find_last_of("/\\") - 1);
 }
 
 void MeshModel::ProcessNode(aiNode* node, const aiScene* scene)
@@ -70,16 +70,16 @@ void MeshModel::ProcessNode(aiNode* node, const aiScene* scene)
 
 void MeshModel::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
 {
-    vertexContainers_.emplace_back();
-    indexContainers_.emplace_back();
-    posContainers_.emplace_back();
+    m_vertexContainers.emplace_back();
+    m_indexContainers.emplace_back();
+    m_posContainers.emplace_back();
 
     aiFace* faces = mesh->mFaces;
     for (unsigned int f = 0; f < mesh->mNumFaces; f++) {
         unsigned int* indices = faces[f].mIndices;
-        indexContainers_.back().push_back(indices[0]);
-        indexContainers_.back().push_back(indices[1]);
-        indexContainers_.back().push_back(indices[2]);
+        m_indexContainers.back().push_back(indices[0]);
+        m_indexContainers.back().push_back(indices[1]);
+        m_indexContainers.back().push_back(indices[2]);
     }
 
     for (unsigned int v = 0; v < mesh->mNumVertices; v++) {
@@ -98,24 +98,24 @@ void MeshModel::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
             tangent = { mesh->mTangents[v].x, mesh->mTangents[v].y, mesh->mTangents[v].z };
             biTangent = { mesh->mBitangents[v].x, mesh->mBitangents[v].y, mesh->mBitangents[v].z };
         }
-        vertexContainers_.back().emplace_back(glm::vec3(pos.x, pos.y, pos.z),
-                                              normal,
-                                              texcoord,
-                                              tangent,
-                                              biTangent);
+        m_vertexContainers.back().emplace_back(glm::vec3(pos.x, pos.y, pos.z),
+                                               normal,
+                                               texcoord,
+                                               tangent,
+                                               biTangent);
 
-        posContainers_.back().push_back(pos.x);
-        posContainers_.back().push_back(pos.y);
-        posContainers_.back().push_back(pos.z);
+        m_posContainers.back().push_back(pos.x);
+        m_posContainers.back().push_back(pos.y);
+        m_posContainers.back().push_back(pos.z);
     }
 
-    meshParts_.emplace_back(meshParts_.size(), mesh->mMaterialIndex);
+    m_meshParts.emplace_back(m_meshParts.size(), mesh->mMaterialIndex);
 
     m_bulletMeshes.emplace_back();
-    m_bulletMeshes.back().m_triangleIndexBase = (unsigned char*)indexContainers_.back().data();
+    m_bulletMeshes.back().m_triangleIndexBase = (unsigned char*)m_indexContainers.back().data();
     m_bulletMeshes.back().m_triangleIndexStride = 3 * sizeof(unsigned int);
-    m_bulletMeshes.back().m_vertexBase = (unsigned char*)posContainers_.back().data();
+    m_bulletMeshes.back().m_vertexBase = (unsigned char*)m_posContainers.back().data();
     m_bulletMeshes.back().m_vertexStride = 3 * sizeof(float);
-    m_bulletMeshes.back().m_numTriangles = mesh->mNumFaces;
-    m_bulletMeshes.back().m_numVertices = mesh->mNumVertices;
+    m_bulletMeshes.back().m_numTriangles = (int)mesh->mNumFaces;
+    m_bulletMeshes.back().m_numVertices = (int)mesh->mNumVertices;
 }

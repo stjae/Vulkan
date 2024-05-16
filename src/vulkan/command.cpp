@@ -94,22 +94,18 @@ void vkn::Command::SetImageMemoryBarrier(const vk::CommandBuffer& commandBuffer,
     commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void vkn::Command::Submit(const vk::CommandBuffer& commandBuffer)
+void vkn::Command::SubmitAndWait(const vk::CommandBuffer& commandBuffer)
 {
-    vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkn::Device::Get().graphicsQueue.submit(submitInfo);
-    vkn::Device::Get().graphicsQueue.waitIdle();
+    vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &commandBuffer);
+    vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
+    vkn::CheckResult(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
+    vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
 }
 
-void vkn::Command::Submit(const std::vector<vk::CommandBuffer>& commandBuffers)
+void vkn::Command::SubmitAndWait(uint32_t count, vk::CommandBuffer* commandBuffers)
 {
-    vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = commandBuffers.size();
-    submitInfo.pCommandBuffers = commandBuffers.data();
-
-    vkn::Device::Get().graphicsQueue.submit(submitInfo);
-    vkn::Device::Get().graphicsQueue.waitIdle();
+    vk::SubmitInfo submitInfo(0, nullptr, nullptr, count, commandBuffers);
+    vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
+    vkn::CheckResult(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
+    vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
 }

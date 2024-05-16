@@ -6,8 +6,8 @@ void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::I
 
     CreateCubemap(m_imageSize, format, usage, commandBuffer);
 
+    vkn::Command::Begin(commandBuffer);
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -18,9 +18,10 @@ void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::I
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
+
+    commandBuffer.end();
+    vkn::Command::SubmitAndWait(commandBuffer);
 
     CreateFramebuffer(cubemapPipeline, commandBuffer);
 }
@@ -52,11 +53,7 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
         DrawEnvCubemapFace(face, envCube, cubemapPipeline, commandBuffer);
     }
 
-    commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
-
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -67,10 +64,11 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
     m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    commandBuffer.end();
+    vkn::Command::SubmitAndWait(commandBuffer);
 }
 
 void EnvCubemap::UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap)
@@ -116,16 +114,16 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.m_pipelineLayout, 0, 1, &cubemapPipeline.m_descriptorSets[0], 0, nullptr);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    pushConstants_.view = viewMatrix;
-    pushConstants_.proj = projMatrix;
+    m_pushConstants.view = viewMatrix;
+    m_pushConstants.proj = projMatrix;
     commandBuffer.pushConstants(
         cubemapPipeline.m_pipelineLayout,
         vk::ShaderStageFlagBits::eVertex,
         0,
         sizeof(CubemapPushConstants),
-        &pushConstants_);
-    commandBuffer.bindVertexBuffers(0, 1, &envCube.vertexBuffers[0]->Get().buffer, vertexOffsets);
-    commandBuffer.bindIndexBuffer(envCube.indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
+        &m_pushConstants);
+    commandBuffer.bindVertexBuffers(0, 1, &envCube.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
+    commandBuffer.bindIndexBuffer(envCube.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
     commandBuffer.drawIndexed(envCube.GetIndicesCount(0), envCube.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();

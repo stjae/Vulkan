@@ -25,11 +25,11 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
+    vkn::Command::SubmitAndWait(commandBuffer);
 
     m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    CreateImageView();
 
+    CreateImageView();
     CreateFramebuffer();
 }
 
@@ -74,8 +74,8 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
             &m_pushConstants);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.m_pipelineLayout, 0, 1, &shadowMapPipeline.m_descriptorSets[0], 0, nullptr);
         for (auto& part : mesh.GetMeshParts()) {
-            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-            commandBuffer.bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+            commandBuffer.bindVertexBuffers(0, 1, &mesh.m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+            commandBuffer.bindIndexBuffer(mesh.m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
             commandBuffer.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
         }
     }
@@ -83,5 +83,5 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    m_submitInfo = vk::SubmitInfo(0, nullptr, nullptr, 1, &commandBuffer);
+    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &commandBuffer);
 }

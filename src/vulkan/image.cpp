@@ -61,7 +61,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
 
-    Command::Begin(commandBuffer);
+    // Command::Begin(commandBuffer);
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,
@@ -84,7 +84,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
                                    vk::AccessFlagBits::eShaderRead,
                                    vk::PipelineStageFlagBits::eTransfer,
                                    vk::PipelineStageFlagBits::eFragmentShader);
-    commandBuffer.end();
+    // commandBuffer.end();
 }
 
 // TODO: reuse dummy
@@ -97,7 +97,7 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
     CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
 
-    Command::Begin(commandBuffer);
+    // Command::Begin(commandBuffer);
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,
@@ -121,7 +121,7 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
                                    vk::AccessFlagBits::eShaderRead,
                                    vk::PipelineStageFlagBits::eTransfer,
                                    vk::PipelineStageFlagBits::eFragmentShader);
-    commandBuffer.end();
+    // commandBuffer.end();
 }
 
 void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
@@ -178,7 +178,7 @@ void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::C
                                    vk::PipelineStageFlagBits::eTransfer,
                                    vk::PipelineStageFlagBits::eFragmentShader);
     commandBuffer.end();
-    Command::Submit(commandBuffer);
+    Command::SubmitAndWait(commandBuffer);
 }
 
 void Image::CreateSampler()
@@ -190,7 +190,7 @@ void Image::CreateSampler()
     samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable = vk::True;
-    samplerInfo.maxAnisotropy = Device::physicalDeviceLimits.maxSamplerAnisotropy;
+    samplerInfo.maxAnisotropy = Device::Get().physicalDevice.getProperties().limits.maxSamplerAnisotropy;
     samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = vk::False;
     samplerInfo.compareEnable = vk::False;
@@ -239,10 +239,7 @@ void Image::Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eAllCommands,
                                    m_imageViewCreateInfo.subresourceRange);
-    commandBuffer.end();
-    Command::Submit(commandBuffer);
 
-    Command::Begin(commandBuffer);
     vk::Viewport viewport({}, {}, (float)m_imageCreateInfo.extent.width, (float)m_imageCreateInfo.extent.height, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
@@ -257,16 +254,12 @@ void Image::Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.m_pipeline);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    commandBuffer.bindVertexBuffers(0, 1, &square.vertexBuffers[0]->Get().buffer, vertexOffsets);
-    commandBuffer.bindIndexBuffer(square.indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
+    commandBuffer.bindVertexBuffers(0, 1, &square.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
+    commandBuffer.bindIndexBuffer(square.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
     commandBuffer.drawIndexed(square.GetIndicesCount(0), square.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();
 
-    commandBuffer.end();
-    Command::Submit(commandBuffer);
-
-    Command::Begin(commandBuffer);
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    vk::ImageLayout::eColorAttachmentOptimal,
@@ -277,7 +270,7 @@ void Image::Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer
                                    vk::PipelineStageFlagBits::eAllCommands,
                                    m_imageViewCreateInfo.subresourceRange);
     commandBuffer.end();
-    Command::Submit(commandBuffer);
+    Command::SubmitAndWait(commandBuffer);
 
     m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 }

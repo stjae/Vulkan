@@ -20,17 +20,18 @@ class Engine
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
     vkn::Device m_device;
+    vkn::Sync m_sync;
     vkn::Swapchain m_swapchain;
     Viewport m_viewport;
     UI m_imGui;
     std::unique_ptr<Scene> m_scene;
 
+    void DrawUI();
     void UpdateSwapchain();
     void RecreateSwapchain();
 
 public:
     Engine();
-    void DrawUI(uint32_t imageIndex);
     void Render();
     ~Engine();
 };

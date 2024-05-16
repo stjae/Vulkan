@@ -26,7 +26,7 @@ public:
     vk::CommandPool m_commandPool;
     vk::CommandBuffer m_commandBuffer;
 
-    void DrawMesh(const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers)
+    void DrawMesh(const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers, const btVector3& color)
     {
         for (int i = 0; i < indexContainers.size(); i++) {
             auto& indexContainer = indexContainers[i];
@@ -40,7 +40,7 @@ public:
                 btVector3 v1(pos1.x, pos1.y, pos1.z);
                 btVector3 v2(pos2.x, pos2.y, pos2.z);
 
-                drawTriangle(v0, v1, v2, btVector3(1.0f, 1.0f, 1.0f), 1.0f);
+                drawTriangle(v0, v1, v2, color, 1.0f);
             }
         }
     }
@@ -50,7 +50,7 @@ public:
         vkn::Command::CreateCommandPool(m_commandPool);
         vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
 
-        btVector3 color = btVector3(1.0f, 1.0f, 1.0f);
+        btVector3 color = physicsInfo.rigidBodyType == eRigidBodyType::STATIC ? btVector3(0.5f, 0.0f, 0.0f) : btVector3(0.0f, 0.5f, 0.0f);
         btTransform transform;
         transform.setIdentity();
         switch (physicsInfo.colliderShape) {
@@ -58,7 +58,7 @@ public:
             drawBox(btVector3(-0.5f, -0.5f, -0.5f), btVector3(0.5f, 0.5f, 0.5f), color);
             break;
         case (eColliderShape::SPHERE):
-            drawSphere(btVector3(0.0f, 0.0f, 0.0f), 1.0f, color);
+            drawSphere(btVector3(0.0f, 0.0f, 0.0f), 1.03f, color);
             break;
         case (eColliderShape::CAPSULE):
             drawCapsule(1.0f, 1.0f, 1, transform, color);
@@ -70,7 +70,7 @@ public:
             drawCone(1.0f, 1.0f, 1, transform, color);
             break;
         case (eColliderShape::MESH):
-            DrawMesh(indexContainers, vertexContainers);
+            DrawMesh(indexContainers, vertexContainers, color);
             break;
         default:
             return;
@@ -148,7 +148,8 @@ public:
                                          m_indexBuffer->Get().buffer,
                                          m_indexStagingBuffer->Get().bufferInfo.size);
         m_commandBuffer.end();
-        vkn::Command::Submit(m_commandBuffer);
+
+        vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffer);
     }
 
     ~PhysicsDebugDrawer() override

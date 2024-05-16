@@ -6,7 +6,7 @@ Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(f
 
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
-    vkn::Command::AllocateCommandBuffer(m_commandPool, m_pickColorCommandBuffer);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_pickColorCommandBuffers);
 
     meshRenderPipeline.CreatePipeline();
     shadowMapPipeline.CreatePipeline();
@@ -18,82 +18,77 @@ Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(f
     skyboxRenderPipeline.CreatePipeline();
     lineRenderPipeline.CreatePipeline();
 
-    m_images.resize(vkn::Swapchain::Get().frameImageCount);
-    CreateImages();
+    CreateImage();
 
-    m_colorPicked.CreateImage({ 1, 1, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_pickedColor.CreateImage({ 1, 1, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 }
 
-void Viewport::CreateImages()
+void Viewport::CreateImage()
 {
-    for (int i = 0; i < m_images.size(); i++) {
-        m_images[i].image.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        m_images[i].image.CreateImageView();
+    m_image.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_image.CreateImageView();
 
-        m_images[i].colorID.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        m_images[i].colorID.CreateImageView();
+    m_colorID.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_colorID.CreateImageView();
 
-        m_images[i].depth.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        m_images[i].depth.m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        m_images[i].depth.CreateImageView();
+    m_depth.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_depth.m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    m_depth.CreateImageView();
 
-        vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-        vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                            m_images[i].image.Get().image,
-                                            {},
-                                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                                            {},
-                                            vk::AccessFlagBits::eShaderRead,
-                                            vk::PipelineStageFlagBits::eTopOfPipe,
-                                            vk::PipelineStageFlagBits::eFragmentShader);
-        vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                            m_images[i].colorID.Get().image,
-                                            {},
-                                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                                            {},
-                                            vk::AccessFlagBits::eShaderRead,
-                                            vk::PipelineStageFlagBits::eTopOfPipe,
-                                            vk::PipelineStageFlagBits::eFragmentShader);
-        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-        vkn::Command::Submit(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_image.Get().image,
+                                        {},
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_colorID.Get().image,
+                                        {},
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTopOfPipe,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
+    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
+    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 
-        std::vector<vk::ImageView> attachments = {
-            m_images[i].image.Get().imageView,
-            m_images[i].colorID.Get().imageView,
-            m_images[i].depth.Get().imageView,
-        };
-        vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.renderPass = meshRenderPipeline.m_renderPass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = m_extent.width;
-        framebufferInfo.height = m_extent.height;
-        framebufferInfo.layers = 1;
+    std::vector<vk::ImageView> attachments = {
+        m_image.Get().imageView,
+        m_colorID.Get().imageView,
+        m_depth.Get().imageView,
+    };
+    vk::FramebufferCreateInfo framebufferInfo;
+    framebufferInfo.renderPass = meshRenderPipeline.m_renderPass;
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.width = m_extent.width;
+    framebufferInfo.height = m_extent.height;
+    framebufferInfo.layers = 1;
 
-        m_images[i].framebuffer = vkn::Device::Get().device.createFramebuffer(framebufferInfo);
-    }
+    m_framebuffer = vkn::Device::Get().device.createFramebuffer(framebufferInfo);
 }
 
-void Viewport::DestroyImages()
+void Viewport::DestroyImage()
 {
-    for (int i = 0; i < m_images.size(); i++) {
-        vkn::Device::Get().device.destroyFramebuffer(m_images[i].framebuffer);
+    vkn::Device::Get().device.destroyFramebuffer(m_framebuffer);
 
-        m_images[i].image.DestroyImage();
-        m_images[i].image.DestroyImageView();
-        m_images[i].image.m_memory.Free();
+    m_image.DestroyImage();
+    m_image.DestroyImageView();
+    m_image.m_memory.Free();
 
-        m_images[i].colorID.DestroyImage();
-        m_images[i].colorID.DestroyImageView();
-        m_images[i].colorID.m_memory.Free();
+    m_colorID.DestroyImage();
+    m_colorID.DestroyImageView();
+    m_colorID.m_memory.Free();
 
-        m_images[i].depth.DestroyImage();
-        m_images[i].depth.DestroyImageView();
-        m_images[i].depth.m_memory.Free();
-    }
+    m_depth.DestroyImage();
+    m_depth.DestroyImageView();
+    m_depth.m_memory.Free();
 }
 
-void Viewport::UpdateImages()
+void Viewport::UpdateImage()
 {
     m_panelRatio = m_panelSize.x / m_panelSize.y;
 
@@ -107,33 +102,31 @@ void Viewport::UpdateImages()
     if (m_extent.width == 0 || m_extent.height == 0)
         m_extent = vkn::Swapchain::Get().swapchainImageExtent;
 
-    DestroyImages();
-    CreateImages();
+    DestroyImage();
+    CreateImage();
 
     m_outDated = false;
 }
 
-void Viewport::PickColor(double mouseX, double mouseY, uint32_t imageIndex)
+const int32_t* Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 {
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].colorID.Get().image,
+    vkn::Command::Begin(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::SetImageMemoryBarrier(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_colorID.Get().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eTransferSrcOptimal,
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::AccessFlagBits::eTransferRead,
                                         vk::PipelineStageFlagBits::eFragmentShader,
                                         vk::PipelineStageFlagBits::eTransfer);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_colorPicked.Get().image,
+    vkn::Command::SetImageMemoryBarrier(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_pickedColor.Get().image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eTransferDstOptimal,
                                         {},
                                         vk::AccessFlagBits::eTransferWrite,
                                         vk::PipelineStageFlagBits::eTransfer,
                                         vk::PipelineStageFlagBits::eTransfer);
-    // m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    // vkn::Command::Submit(m_pickColorCommandBuffer);
 
     vk::ImageCopy region;
     region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -160,46 +153,40 @@ void Viewport::PickColor(double mouseX, double mouseY, uint32_t imageIndex)
     region.extent.height = 1;
     region.extent.depth = 1;
 
-    // vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].copyImage(m_images[imageIndex].colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_colorPicked.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
+    m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()].copyImage(m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
 
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].colorID.Get().image,
+    vkn::Command::SetImageMemoryBarrier(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_colorID.Get().image,
                                         vk::ImageLayout::eTransferSrcOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eTransferRead,
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eTransfer,
                                         vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_colorPicked.Get().image,
+    vkn::Command::SetImageMemoryBarrier(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_pickedColor.Get().image,
                                         vk::ImageLayout::eTransferDstOptimal,
                                         vk::ImageLayout::eGeneral,
                                         vk::AccessFlagBits::eTransferRead,
                                         vk::AccessFlagBits::eMemoryRead,
                                         vk::PipelineStageFlagBits::eTransfer,
                                         vk::PipelineStageFlagBits::eTransfer);
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    // vkn::Command::Submit(m_pickColorCommandBuffer);
+    m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
 
-    // vk::ImageSubresource subResource{ vk::ImageAspectFlagBits::eColor, 0, 0 };
-    // vk::SubresourceLayout subResourceLayout;
-    // vkn::Device::Get().device.getImageSubresourceLayout(m_colorPicked.Get().image, &subResource, &subResourceLayout);
+    vkn::Command::SubmitAndWait(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 
-    // const int32_t* data;
-    // vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_colorPicked.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
-    // std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
-    // vkn::Device::Get().device.unmapMemory(m_colorPicked.m_memory.GetMemory());
-    //
-    // return data;
-    // m_scene->SelectByColorID(colorID[0], colorID[1]);
+    const int32_t* data;
+    vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_pickedColor.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
+    std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
+    scene.SelectByColorID(data[0], data[1]);
+    vkn::Device::Get().device.unmapMemory(m_pickedColor.m_memory.GetMemory());
 }
 
-void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
+void Viewport::Draw(const Scene& scene)
 {
     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].image.Get().image,
+                                        m_image.Get().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::AccessFlagBits::eShaderRead,
@@ -207,7 +194,7 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
                                         vk::PipelineStageFlagBits::eFragmentShader,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].colorID.Get().image,
+                                        m_colorID.Get().image,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::AccessFlagBits::eShaderRead,
@@ -226,7 +213,7 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = meshRenderPipeline.m_renderPass;
-    renderPassInfo.framebuffer = m_images[imageIndex].framebuffer;
+    renderPassInfo.framebuffer = m_framebuffer;
     vk::Rect2D renderArea(0, 0);
     renderArea.extent = m_extent;
     renderPassInfo.renderArea = renderArea;
@@ -270,8 +257,8 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
             0,
             sizeof(SkyboxRenderPushConstants),
             &skyboxRenderPushConstants);
-        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &scene.m_envCube.vertexBuffers[0]->Get().buffer, vertexOffsets);
-        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(scene.m_envCube.indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
+        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &scene.m_envCube.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
+        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(scene.m_envCube.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
         m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(scene.m_envCube.GetIndicesCount(0), scene.m_envCube.GetInstanceCount(), 0, 0, 0);
     }
 
@@ -289,8 +276,8 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
             meshRenderPushConsts.lightCount = (int)scene.m_pointLights.size();
             meshIndex++;
             for (const auto& part : mesh.GetMeshParts()) {
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
                 meshRenderPushConsts.materialID = materialOffset + part.materialID;
                 m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].pushConstants(
                     meshRenderPipeline.m_pipelineLayout,
@@ -303,7 +290,6 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
         }
         materialOffset += (int)mesh.GetMaterialCount();
     }
-    // && mesh.GetMeshID() == scene.m_selectedMeshID
     // physics debug
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
@@ -318,10 +304,10 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
                 0,
                 sizeof(lineRenderPushConsts),
                 &lineRenderPushConsts);
-            if (mesh.physicsDebugDrawer && mesh.GetMeshID() == scene.m_selectedMeshID) {
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(mesh.physicsDebugDrawer->m_lineIndices.size(), mesh.GetInstanceCount(), 0, 0, 0);
+            if (mesh.m_physicsInfo && mesh.GetMeshID() == scene.m_selectedMeshID) {
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.m_physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.m_physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(mesh.m_physicsDebugDrawer->m_lineIndices.size(), mesh.GetInstanceCount(), 0, 0, 0);
             }
         }
     }
@@ -329,7 +315,7 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].endRenderPass();
 
     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].image.Get().image,
+                                        m_image.Get().image,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eColorAttachmentRead,
@@ -337,7 +323,7 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                         vk::PipelineStageFlagBits::eFragmentShader);
     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        m_images[imageIndex].colorID.Get().image,
+                                        m_colorID.Get().image,
                                         vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eColorAttachmentRead,
@@ -346,13 +332,12 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
                                         vk::PipelineStageFlagBits::eFragmentShader);
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
 
-    m_submitInfos.emplace_back(1, &vkn::Sync::GetImageAvailableSemaphore(), &m_waitStage, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], 1, &vkn::Sync::GetViewportSemaphore());
+    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
 Viewport::~Viewport()
 {
-    for (auto& viewportImage : m_images)
-        vkn::Device::Get().device.destroyFramebuffer(viewportImage.framebuffer);
+    vkn::Device::Get().device.destroyFramebuffer(m_framebuffer);
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     vkn::Device::Get().device.destroySampler(vkn::Image::s_repeatSampler);
     vkn::Device::Get().device.destroySampler(vkn::Image::s_clampSampler);

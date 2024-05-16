@@ -7,9 +7,9 @@
 
 class PrefilteredCubemap : public vkn::Cubemap
 {
-    int numMips_;
-    PrefilteredCubemapPushConstants pushConstants_;
-    vk::Sampler mipmapSampler_;
+    int m_numMips;
+    PrefilteredCubemapPushConstants m_pushConstants;
+    vk::Sampler m_mipmapSampler;
 
     void CreateMipmap(vk::CommandBuffer& commandBuffer);
     void CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
@@ -18,8 +18,8 @@ class PrefilteredCubemap : public vkn::Cubemap
     void Draw(uint32_t mipSize, float roughness, const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
 
 public:
-    vkn::Image mipmap;
-    vk::DescriptorImageInfo mipmapDescriptorImageInfo;
+    vkn::Image m_mipmap;
+    vk::DescriptorImageInfo m_mipmapDescriptorImageInfo;
 
     void CreatePrefilteredCubemap(int numMips, uint32_t cubemapSize, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
     void DrawPrefilteredCubemap(const Mesh& envCube, const Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);

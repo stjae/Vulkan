@@ -19,30 +19,30 @@ class Camera
     friend class Scene;
     friend class SceneSerializer;
 
-    bool isControllable_ = false;
-    bool isInitial_ = true; // prevent sudden camera move
+    bool m_isControllable = false;
+    bool m_isInitial = true; // prevent sudden camera move
 
-    glm::vec3 pos_ = { 0.0f, 0.0f, 4.0f };
-    glm::vec3 dir_ = { 0.0f, 0.0f, -1.0f };
-    glm::vec3 at_ = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 up_ = { 0.0f, 1.0f, 0.0f };
-    glm::vec3 right_ = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_pos = { 0.0f, 0.0f, 4.0f };
+    glm::vec3 m_dir = { 0.0f, 0.0f, -1.0f };
+    glm::vec3 m_at = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_up = { 0.0f, 1.0f, 0.0f };
+    glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
 
-    glm::mat4 invProj_{};
+    glm::mat4 m_invProj;
 
-    float speed_ = 4.0f;
+    float m_speed = 4.0f;
 
-    CameraUBO cameraUBO_{};
-    std::unique_ptr<vkn::Buffer> cameraBuffer_;
+    CameraUBO m_cameraUBO;
+    std::unique_ptr<vkn::Buffer> m_cameraBuffer;
 
     void SetCameraControl();
     void Update();
 
 public:
     Camera();
-    bool IsControllable() const { return isControllable_; }
-    const CameraUBO& GetMatrix() { return cameraUBO_; }
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return cameraBuffer_->Get().descriptorBufferInfo; }
+    bool IsControllable() const { return m_isControllable; }
+    const CameraUBO& GetMatrix() { return m_cameraUBO; }
+    const vk::DescriptorBufferInfo& GetBufferInfo() { return m_cameraBuffer->Get().descriptorBufferInfo; }
 };
 
 #endif

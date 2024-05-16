@@ -4,48 +4,45 @@ void PrefilteredCubemap::CreateMipmap(vk::CommandBuffer& commandBuffer)
 {
     uint32_t mipMapSize = 64;
 
-    mipmap.m_imageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    mipmap.m_imageCreateInfo.imageType = vk::ImageType::e2D;
-    mipmap.m_imageCreateInfo.mipLevels = numMips_;
-    mipmap.m_imageCreateInfo.arrayLayers = 6;
-    mipmap.CreateImage({ mipMapSize, mipMapSize, 1 }, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_mipmap.m_imageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    m_mipmap.m_imageCreateInfo.imageType = vk::ImageType::e2D;
+    m_mipmap.m_imageCreateInfo.mipLevels = m_numMips;
+    m_mipmap.m_imageCreateInfo.arrayLayers = 6;
+    m_mipmap.CreateImage({ mipMapSize, mipMapSize, 1 }, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, numMips_, 0, 6);
-    mipmap.m_imageViewCreateInfo.subresourceRange = subresourceRange;
-    mipmap.m_imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
-    mipmap.CreateImageView();
+    vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, m_numMips, 0, 6);
+    m_mipmap.m_imageViewCreateInfo.subresourceRange = subresourceRange;
+    m_mipmap.m_imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
+    m_mipmap.CreateImageView();
 
-    vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        mipmap.Get().image,
+                                        m_mipmap.Get().image,
                                         vk::ImageLayout::eUndefined,
                                         vk::ImageLayout::eTransferDstOptimal,
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         vk::PipelineStageFlagBits::eAllCommands,
-                                        mipmap.m_imageViewCreateInfo.subresourceRange);
-    commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
+                                        m_mipmap.m_imageViewCreateInfo.subresourceRange);
 
     CreateMipmapSampler();
 
-    mipmapDescriptorImageInfo.imageView = mipmap.Get().imageView;
-    mipmapDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-    mipmapDescriptorImageInfo.sampler = mipmapSampler_;
+    m_mipmapDescriptorImageInfo.imageView = m_mipmap.Get().imageView;
+    m_mipmapDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    m_mipmapDescriptorImageInfo.sampler = m_mipmapSampler;
 }
 
 void PrefilteredCubemap::CreatePrefilteredCubemap(int numMips, uint32_t cubemapSize, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    numMips_ = numMips;
-    CreateMipmap(commandBuffer);
-
     m_imageSize = cubemapSize;
     m_imageCreateInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc;
     CreateCubemap(m_imageSize, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, commandBuffer);
 
+    m_numMips = numMips;
+    vkn::Command::Begin(commandBuffer);
+    CreateMipmap(commandBuffer);
+
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -56,9 +53,9 @@ void PrefilteredCubemap::CreatePrefilteredCubemap(int numMips, uint32_t cubemapS
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
+    commandBuffer.end();
+    vkn::Command::SubmitAndWait(commandBuffer);
 
     CreateFramebuffer(cubemapPipeline, commandBuffer);
 }
@@ -76,16 +73,21 @@ void PrefilteredCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline,
 
 void PrefilteredCubemap::DrawPrefilteredCubemap(const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    for (int mipLevel = 0; mipLevel < numMips_; mipLevel++) {
+    for (int mipLevel = 0; mipLevel < m_numMips; mipLevel++) {
         int mipSize = 64 * std::pow(0.5, mipLevel);
-        float roughness = (float)mipLevel / (float)(numMips_ - 1);
+        float roughness = (float)mipLevel / (float)(m_numMips - 1);
+
+        vkn::Command::Begin(commandBuffer);
 
         Draw(mipSize, roughness, envCube, envMap, cubemapPipeline, commandBuffer);
         CopyToMipmap(mipSize, mipLevel, commandBuffer);
+
+        commandBuffer.end();
+        vkn::Command::SubmitAndWait(commandBuffer);
     }
 
+    vkn::Command::Begin(commandBuffer);
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -96,28 +98,23 @@ void PrefilteredCubemap::DrawPrefilteredCubemap(const Mesh& envCube, const vkn::
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
 
-    vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        mipmap.Get().image,
+                                        m_mipmap.Get().image,
                                         vk::ImageLayout::eTransferDstOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::AccessFlagBits::eTransferWrite | vk::AccessFlagBits::eHostWrite,
                                         vk::AccessFlagBits::eShaderRead,
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         vk::PipelineStageFlagBits::eAllCommands,
-                                        mipmap.m_imageViewCreateInfo.subresourceRange);
+                                        m_mipmap.m_imageViewCreateInfo.subresourceRange);
     commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
+    vkn::Command::SubmitAndWait(commandBuffer);
 }
 
 void PrefilteredCubemap::Draw(uint32_t mipSize, float roughness, const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::Begin(commandBuffer);
-
     UpdateDescriptorSets(cubemapPipeline, envMap);
 
     vk::Viewport viewport({}, {}, (float)mipSize, (float)mipSize, 0.0f, 1.0f);
@@ -130,11 +127,7 @@ void PrefilteredCubemap::Draw(uint32_t mipSize, float roughness, const Mesh& env
         DrawPrefilteredCubemapFace(roughness, face, envCube, cubemapPipeline, commandBuffer);
     }
 
-    commandBuffer.end();
-    vkn::Command::Submit(commandBuffer);
-
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -145,17 +138,14 @@ void PrefilteredCubemap::Draw(uint32_t mipSize, float roughness, const Mesh& env
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             vk::PipelineStageFlagBits::eTransfer,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
+
     m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 }
 
 void PrefilteredCubemap::CopyToMipmap(uint32_t mipSize, int mipLevel, vk::CommandBuffer& commandBuffer)
 {
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
-
         vk::ImageCopy copyRegion = {};
 
         copyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -174,17 +164,13 @@ void PrefilteredCubemap::CopyToMipmap(uint32_t mipSize, int mipLevel, vk::Comman
 
         commandBuffer.copyImage(m_bundle.image,
                                 vk::ImageLayout::eTransferSrcOptimal,
-                                mipmap.Get().image,
+                                m_mipmap.Get().image,
                                 vk::ImageLayout::eTransferDstOptimal,
                                 1,
                                 &copyRegion);
-
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
 
     for (int i = 0; i < 6; i++) {
-        vkn::Command::Begin(commandBuffer);
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
         vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                             m_bundle.image,
@@ -195,8 +181,6 @@ void PrefilteredCubemap::CopyToMipmap(uint32_t mipSize, int mipLevel, vk::Comman
                                             vk::PipelineStageFlagBits::eTransfer,
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
-        commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
     }
 }
 
@@ -243,17 +227,17 @@ void PrefilteredCubemap::DrawPrefilteredCubemapFace(float roughness, uint32_t fa
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.m_pipelineLayout, 0, 1, &cubemapPipeline.m_descriptorSets[0], 0, nullptr);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    pushConstants_.view = viewMatrix;
-    pushConstants_.proj = projMatrix;
-    pushConstants_.roughness = roughness;
+    m_pushConstants.view = viewMatrix;
+    m_pushConstants.proj = projMatrix;
+    m_pushConstants.roughness = roughness;
     commandBuffer.pushConstants(
         cubemapPipeline.m_pipelineLayout,
         vk::ShaderStageFlagBits::eVertex,
         0,
         sizeof(PrefilteredCubemapPushConstants),
-        &pushConstants_);
-    commandBuffer.bindVertexBuffers(0, 1, &envCube.vertexBuffers[0]->Get().buffer, vertexOffsets);
-    commandBuffer.bindIndexBuffer(envCube.indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
+        &m_pushConstants);
+    commandBuffer.bindVertexBuffers(0, 1, &envCube.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
+    commandBuffer.bindIndexBuffer(envCube.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
     commandBuffer.drawIndexed(envCube.GetIndicesCount(0), envCube.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();
@@ -269,13 +253,13 @@ void PrefilteredCubemap::CreateMipmapSampler()
     samplerCI.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     samplerCI.addressModeW = vk::SamplerAddressMode::eClampToEdge;
     samplerCI.minLod = 0.0f;
-    samplerCI.maxLod = static_cast<float>(numMips_);
+    samplerCI.maxLod = static_cast<float>(m_numMips);
     samplerCI.borderColor = vk::BorderColor::eFloatOpaqueWhite;
 
-    vkn::CheckResult(vkn::Device::Get().device.createSampler(&samplerCI, nullptr, &mipmapSampler_));
+    vkn::CheckResult(vkn::Device::Get().device.createSampler(&samplerCI, nullptr, &m_mipmapSampler));
 }
 
 PrefilteredCubemap::~PrefilteredCubemap()
 {
-    vkn::Device::Get().device.destroySampler(mipmapSampler_);
+    vkn::Device::Get().device.destroySampler(m_mipmapSampler);
 }

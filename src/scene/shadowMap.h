@@ -12,14 +12,12 @@ class ShadowMap : public vkn::Image
 {
     ShadowMapPushConstants m_pushConstants;
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-    vk::SubmitInfo m_submitInfo;
 
     void CreateFramebuffer();
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
     void DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<MeshModel>& meshes);
-    const vk::SubmitInfo& GetSubmitInfo() { return m_submitInfo; }
 };
 
 #endif

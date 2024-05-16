@@ -28,10 +28,13 @@ class Scene
     friend class Viewport;
     friend class SceneSerializer;
 
+    std::unique_ptr<vkn::Buffer> m_cameraStagingBuffer;
+
     vk::CommandPool m_commandPool;
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
-    std::vector<vk::CommandBuffer> m_imageCommandBuffers;
-    std::vector<vk::SubmitInfo> m_submitInfos;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_cameraCommandBuffers;
+    std::array<vk::CommandPool, 4> m_imageLoadCommandPools;
+    std::array<vk::CommandBuffer, 4> m_imageLoadCommandBuffers;
 
     std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
     std::unique_ptr<vkn::Buffer> m_dirLightDataBuffer;
@@ -114,14 +117,15 @@ public:
     void Update();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
-    const std::vector<vk::SubmitInfo>& GetSubmitInfos() { return m_submitInfos; }
-    void ClearSubmitInfos() { m_submitInfos.clear(); }
     const std::vector<MeshModel>& GetMeshes() { return m_meshes; }
     // TODO: safety
     MeshModel& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }
-    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].meshInstanceUBOs_[m_selectedMeshInstanceID]; }
-    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].meshInstanceUBOs_[instanceID]; }
+    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].m_meshInstanceUBOs[m_selectedMeshInstanceID]; }
+    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].m_meshInstanceUBOs[instanceID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
+    void Unselect();
+    bool IsPlaying() { return m_isPlaying; }
+
     void Play();
     void Stop();
     ~Scene();

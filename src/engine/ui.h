@@ -23,7 +23,7 @@ class UI
     vk::DescriptorPool m_descriptorPool;
     std::vector<vkn::DescriptorBinding> m_descriptorBindings;
     std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
-    std::vector<vk::DescriptorSet> m_viewportImageDescriptorSets;
+    vk::DescriptorSet m_viewportImageDescriptorSet;
 
     vkn::Image m_plusIcon;
     vkn::Image m_lightIcon;
@@ -40,8 +40,7 @@ class UI
     // vk::DescriptorSet m_shadowMapDescriptorSet;
 
     void DrawDockSpace(Scene& scene);
-    void DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex);
-    void SetViewportUpToDate(Viewport& viewport, const ImVec2& viewportPanelSize);
+    void DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawSceneAttribWindow(Scene& scene);
@@ -59,8 +58,8 @@ public:
     inline static ImDrawData* s_imDrawData;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
-    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex);
-    void RecreateViewportDescriptorSets(const Viewport& viewport);
+    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer);
+    void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Viewport& viewport, Scene& scene);
     ~UI();
 };

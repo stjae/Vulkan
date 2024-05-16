@@ -48,31 +48,27 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     path.append(FONT_ICON_FILE_NAME_FAS);
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
-    m_viewportImageDescriptorSets.resize(vkn::Swapchain::Get().frameImageCount);
-    for (int i = 0; i < vkn::Swapchain::Get().frameImageCount; i++) {
-        m_viewportImageDescriptorSets[i] = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_images[i].image.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
+    m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_image.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
+    vkn::Command::Begin(m_commandBuffer);
     m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
-    vkn::Command::Submit(m_commandBuffer);
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_lightIcon.InsertImage(PROJECT_DIR "image/icon/light.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
-    vkn::Command::Submit(m_commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
-    vkn::Command::Submit(m_commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
-    vkn::Command::Submit(m_commandBuffer);
     m_playIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_playIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
-    vkn::Command::Submit(m_commandBuffer);
     m_stopIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_stopIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    m_commandBuffer.end();
+
+    vkn::Command::SubmitAndWait(m_commandBuffer);
 
     s_dragDropped = false;
 }
 
-void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex)
+void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -82,9 +78,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
     ImGui::NewFrame();
 
     if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_camera.IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-        scene.m_selectedMeshID = -1;
-        scene.m_selectedMeshInstanceID = -1;
-        scene.m_selectedLightID = -1;
+        scene.Unselect();
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
@@ -92,11 +86,13 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
         scene.DeletePointLight();
     }
 
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
     DrawDockSpace(scene);
-    DrawViewport(scene, viewport, commandBuffer, imageIndex);
+    DrawViewport(scene, viewport, commandBuffer);
     DrawSceneAttribWindow(scene);
     DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
+    ImGui::PopItemFlag();
 
     ImGui::EndFrame();
     ImGui::Render();
@@ -180,12 +176,14 @@ void UI::DrawDockSpace(Scene& scene)
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
         vk::DescriptorSet icon = scene.m_isPlaying ? m_stopIconDescriptorSet : m_playIconDescriptorSet;
+        ImGui::PopItemFlag();
         if (ImGui::ImageButton(icon, { GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)), GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)) }, { 0, 0 }, { 1, 1 }, GetButtonPadding(buttonSize, paddingRatio))) {
             scene.m_isPlaying = !scene.m_isPlaying;
             if (!scene.m_isPlaying) {
                 scene.Stop();
             }
         }
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
         ImGui::PopStyleColor(3);
         ImGui::EndMenuBar();
 
@@ -219,7 +217,7 @@ void UI::DrawDockSpace(Scene& scene)
     ImGui::End();
 }
 
-void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, uint32_t imageIndex)
+void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer)
 {
     int width = 0, height = 0;
     glfwGetWindowSize(Window::GetWindow(), &width, &height);
@@ -256,12 +254,12 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
 
     if (viewport.m_panelRatio != viewportPanelRatio || viewport.m_outDated) {
         vkn::Device::Get().device.waitIdle();
-        viewport.UpdateImages();
-        RecreateViewportDescriptorSets(viewport);
+        viewport.UpdateImage();
+        RecreateViewportDescriptorSet(viewport);
     }
 
     // Set Drag Drop Mouse Position
-    ImGui::Image(m_viewportImageDescriptorSets[imageIndex], ImVec2{ viewport.m_panelSize.x, viewport.m_panelSize.y });
+    ImGui::Image(m_viewportImageDescriptorSet, ImVec2{ viewport.m_panelSize.x, viewport.m_panelSize.y });
     viewport.m_isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
 
@@ -389,10 +387,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 if (ImGui::TreeNode(name.c_str())) {
                     for (int j = 0; j < scene.m_meshes[i].GetInstanceCount(); j++) {
                         ImGui::PushID(i * j + j);
-                        if (ImGui::Selectable(name.c_str(), i == scene.m_selectedMeshID && j == scene.m_selectedMeshInstanceID)) {
+                        if (ImGui::Selectable((std::string("instance ") + std::to_string(j)).c_str(), i == scene.m_selectedMeshID && j == scene.m_selectedMeshInstanceID)) {
+                            scene.Unselect();
                             scene.m_selectedMeshID = i;
                             scene.m_selectedMeshInstanceID = j;
-                            scene.m_selectedLightID = -1;
                         }
                         if (ImGui::BeginPopupContextItem()) {
                             if (ImGui::MenuItem("Delete")) {
@@ -453,7 +451,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             ImGui::SeparatorText("RigidBody");
             ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID].GetName().c_str());
-            if (!scene.m_meshes[scene.m_selectedMeshID].physicsInfo) {
+            if (!scene.m_meshes[scene.m_selectedMeshID].m_physicsInfo) {
                 static MeshPhysicsInfo physicsInfo;
                 const char* types[2] = { "Static", "Dynamic" };
                 if (ImGui::BeginCombo("Type", types[(int)physicsInfo.rigidBodyType])) {
@@ -479,16 +477,15 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         physicsInfo.colliderShape = eColliderShape::CYLINDER;
                     if (ImGui::MenuItem("Cone"))
                         physicsInfo.colliderShape = eColliderShape::CONE;
-                    if (physicsInfo.rigidBodyType == eRigidBodyType::STATIC) {
-                        if (ImGui::MenuItem("Mesh"))
-                            physicsInfo.colliderShape = eColliderShape::MESH;
-                    }
+                    if (ImGui::MenuItem("Mesh"))
+                        physicsInfo.colliderShape = eColliderShape::MESH;
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
                     scene.m_meshes[scene.m_selectedMeshID].AddPhysicsInfo(physicsInfo);
                 }
             } else {
+                // TODO: resize rigidbody
                 // resize
                 // if (ImGui::SliderFloat3("Size", glm::value_ptr(meshInstanceUBO.physicsInfo->size), 0.0f, 10.0f)) {
                 // ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
@@ -497,7 +494,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 // scene.m_physics.UpdateRigidBody(meshInstanceUBO);
                 // }
                 if (ImGui::Button("Delete")) {
-                    scene.m_meshes[scene.m_selectedMeshID].physicsInfo.reset();
+                    scene.m_meshes[scene.m_selectedMeshID].m_physicsInfo.reset();
                 }
             }
         }
@@ -510,8 +507,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 std::string name("light");
                 ImGui::PushID(i);
                 if (ImGui::Selectable(name.c_str(), i == scene.m_selectedLightID)) {
-                    scene.m_selectedLightID = i;
-                    scene.m_selectedMeshID = -1;
+                    scene.Unselect();
                 }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
@@ -573,9 +569,9 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             // TODO: fix glitch on scroll
             // dir light shadow depth map
-            // ImGui_ImplVulkan_RemoveTexture(shadowMapDescriptorSet_);
-            // shadowMapDescriptorSet_ = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, scene.m_shadowMap.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            // ImGui::Image(shadowMapDescriptorSet_, { 200, 200 });
+            // ImGui_ImplVulkan_RemoveTexture(m_shadowMapDescriptorSet);
+            // m_shadowMapDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, scene.m_shadowMap.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            // ImGui::Image(m_shadowMapDescriptorSet, { 200, 200 });
         }
         ImGui::EndTabItem();
     }
@@ -658,12 +654,10 @@ void UI::ShowInformationOverlay(const Scene& scene)
     ImGui::End();
 }
 
-void UI::RecreateViewportDescriptorSets(const Viewport& viewport)
+void UI::RecreateViewportDescriptorSet(const Viewport& viewport)
 {
-    for (int i = 0; i < vkn::Swapchain::Get().frameImageCount; i++) {
-        ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSets[i]);
-        m_viewportImageDescriptorSets[i] = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_images[i].image.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
+    ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSet);
+    m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_image.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
@@ -681,8 +675,7 @@ UI::~UI()
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& layout : m_descriptorSetLayouts)
         vkn::Device::Get().device.destroyDescriptorSetLayout(layout);
-    for (auto& viewportImageDescriptorSet : m_viewportImageDescriptorSets)
-        ImGui_ImplVulkan_RemoveTexture(viewportImageDescriptorSet);
+    ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSet);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

@@ -127,8 +127,8 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
 {
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
-    out << YAML::Key << "Position" << YAML::Value << camera.pos_;
-    out << YAML::Key << "Dir" << YAML::Value << camera.dir_;
+    out << YAML::Key << "Position" << YAML::Value << camera.m_pos;
+    out << YAML::Key << "Dir" << YAML::Value << camera.m_dir;
     out << YAML::EndMap;
 }
 
@@ -153,10 +153,17 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
         out << YAML::Value << YAML::BeginSeq;
         for (auto& mesh : meshes) {
             out << YAML::BeginMap;
-            out << YAML::Key << "ID" << YAML::Value << mesh.meshID_;
+            out << YAML::Key << "ID" << YAML::Value << mesh.m_meshID;
+            if (mesh.m_physicsInfo) {
+                out << YAML::Key << "RigidBody" << YAML::Value;
+                out << YAML::BeginMap;
+                out << YAML::Key << "Type" << YAML::Value << (int)mesh.m_physicsInfo->rigidBodyType;
+                out << YAML::Key << "Shape" << YAML::Value << (int)mesh.m_physicsInfo->colliderShape;
+                out << YAML::EndMap;
+            }
             out << YAML::Key << "Instances";
             out << YAML::Value << YAML::BeginSeq;
-            for (auto& instanceUBO : mesh.meshInstanceUBOs_) {
+            for (auto& instanceUBO : mesh.m_meshInstanceUBOs) {
                 out << YAML::BeginMap;
                 out << YAML::Key << "ID" << YAML::Value << instanceUBO.instanceID;
                 out << YAML::Key << "MeshID" << YAML::Value << instanceUBO.meshID;
@@ -165,16 +172,7 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
                 out << YAML::Key << "Albedo" << YAML::Value << instanceUBO.albedo;
                 out << YAML::Key << "Metallic" << YAML::Value << instanceUBO.metallic;
                 out << YAML::Key << "Roughness" << YAML::Value << instanceUBO.roughness;
-                if (instanceUBO.physicsInfo) {
-                    out << YAML::Key << "RigidBody";
-                    out << YAML::BeginMap;
-                    // out << YAML::Key << "Type" << YAML::Value << (int)instanceUBO.physicsInfo->rigidBodyType;
-                    // out << YAML::Key << "Shape" << YAML::Value << (int)instanceUBO.physicsInfo->colliderShape;
-                    // out << YAML::Key << "Matrix" << YAML::Value << instanceUBO.physicsInfo->matrix;
-                    // out << YAML::Key << "Scale" << YAML::Value << instanceUBO.physicsInfo->scale;
-                    out << YAML::Key << "Size" << YAML::Value << instanceUBO.physicsInfo->size;
-                    out << YAML::EndMap;
-                }
+                out << YAML::Key << "RigidBodySize" << YAML::Value << instanceUBO.physicsInfo->size;
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
@@ -200,9 +198,9 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     }
 
     auto camera = data["Camera"];
-    scene.m_camera.pos_ = camera["Position"].as<glm::vec3>();
-    scene.m_camera.dir_ = camera["Dir"].as<glm::vec3>();
-    scene.m_camera.at_ = scene.m_camera.pos_ + scene.m_camera.dir_;
+    scene.m_camera.m_pos = camera["Position"].as<glm::vec3>();
+    scene.m_camera.m_dir = camera["Dir"].as<glm::vec3>();
+    scene.m_camera.m_at = scene.m_camera.m_pos + scene.m_camera.m_dir;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
@@ -245,25 +243,23 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto meshes = data["Meshes"];
     if (meshes) {
         for (auto mesh : meshes) {
+            auto rigidBody = mesh["RigidBody"];
+            if (rigidBody) {
+                MeshPhysicsInfo pInfo;
+                pInfo.rigidBodyType = (eRigidBodyType)rigidBody["Type"].as<int>();
+                pInfo.colliderShape = (eColliderShape)rigidBody["Shape"].as<int>();
+                scene.m_meshes[mesh["ID"].as<int>()].AddPhysicsInfo(pInfo);
+            }
             auto instances = mesh["Instances"];
             for (auto instance : instances) {
                 scene.AddMeshInstance(mesh["ID"].as<int>());
-                auto& meshInstance = scene.m_meshes[mesh["ID"].as<int>()].meshInstanceUBOs_.back();
+                auto& meshInstance = scene.m_meshes[mesh["ID"].as<int>()].m_meshInstanceUBOs.back();
                 meshInstance.model = instance["Transform"].as<glm::mat4>();
                 meshInstance.invTranspose = instance["InvTranspose"].as<glm::mat4>();
                 meshInstance.albedo = instance["Albedo"].as<glm::vec3>();
                 meshInstance.metallic = instance["Metallic"].as<float>();
                 meshInstance.roughness = instance["Roughness"].as<float>();
-                auto rigidBody = instance["RigidBody"];
-                if (rigidBody) {
-                    MeshInstancePhysicsInfo pInfo;
-                    // physicsInfo.matrix = rigidBody["Matrix"].as<glm::mat4>();
-                    // physicsInfo.rigidBodyType = (eRigidBodyType)rigidBody["Type"].as<int>();
-                    // physicsInfo.colliderShape = (eColliderShape)rigidBody["Shape"].as<int>();
-                    // physicsInfo.scale = rigidBody["Scale"].as<glm::vec3>();
-                    pInfo.size = rigidBody["Size"].as<glm::vec3>();
-                    // scene.m_physics.AddRigidBodies(scene.m_meshes[meshInstance.meshID], meshInstance, physicsInfo);
-                }
+                meshInstance.physicsInfo->size = instance["RigidBodySize"].as<glm::vec3>();
             }
         }
     }

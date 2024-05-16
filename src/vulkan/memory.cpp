@@ -26,8 +26,8 @@ void vkn::Memory::AllocateMemory(const vk::Buffer& buffer, vk::MemoryPropertyFla
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    memory_ = vkn::Device::Get().device.allocateMemory(allocateInfo);
-    vkn::Device::Get().device.bindBufferMemory(buffer, memory_, 0);
+    m_memory = vkn::Device::Get().device.allocateMemory(allocateInfo);
+    vkn::Device::Get().device.bindBufferMemory(buffer, m_memory, 0);
 }
 void vkn::Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties)
 {
@@ -38,13 +38,13 @@ void vkn::Memory::AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFla
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = FindMemoryTypeIndex(memoryRequirements.memoryTypeBits, properties);
 
-    memory_ = vkn::Device::Get().device.allocateMemory(allocateInfo);
-    vkn::Device::Get().device.bindImageMemory(vkImage, memory_, 0);
+    m_memory = vkn::Device::Get().device.allocateMemory(allocateInfo);
+    vkn::Device::Get().device.bindImageMemory(vkImage, m_memory, 0);
 }
 void vkn::Memory::Free()
 {
-    if (memory_ != VK_NULL_HANDLE) {
-        vkn::Device::Get().device.freeMemory(memory_);
-        memory_ = nullptr;
+    if (m_memory != VK_NULL_HANDLE) {
+        vkn::Device::Get().device.freeMemory(m_memory);
+        m_memory = nullptr;
     }
 }

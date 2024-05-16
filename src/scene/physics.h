@@ -18,15 +18,15 @@ class Physics
 {
     friend class Viewport;
 
-    btDefaultCollisionConfiguration* collisionConfiguration_;
-    btCollisionDispatcher* dispatcher_;
-    btBroadphaseInterface* overlappingPairCache_;
-    btSequentialImpulseConstraintSolver* solver_;
-    btDiscreteDynamicsWorld* dynamicsWorld_;
+    btDefaultCollisionConfiguration* m_collisionConfiguration;
+    btCollisionDispatcher* m_dispatcher;
+    btBroadphaseInterface* m_overlappingPairCache;
+    btSequentialImpulseConstraintSolver* m_solver;
+    btDiscreteDynamicsWorld* m_dynamicsWorld;
 
-    btAlignedObjectArray<btCollisionShape*> collisionShapes_;
+    btAlignedObjectArray<btCollisionShape*> m_collisionShapes;
 
-    bool firstStep;
+    bool m_isFirstStep;
 
 public:
     void InitPhysics();

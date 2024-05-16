@@ -38,7 +38,6 @@ class Swapchain
     vk::CommandPool m_commandPool;
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-    vk::SubmitInfo m_submitInfo;
 
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
@@ -56,7 +55,6 @@ public:
     void Destroy();
 
     static const Bundle& Get() { return s_bundle; }
-    const vk::SubmitInfo& GetSubmitInfo() { return m_submitInfo; }
 };
 } // namespace vkn
 

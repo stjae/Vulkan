@@ -30,7 +30,6 @@ Device::Device()
 
     vk::PhysicalDeviceFeatures supportedFeatures;
     s_bundle.physicalDevice.getFeatures(&supportedFeatures);
-    Device::physicalDeviceLimits = s_bundle.physicalDevice.getProperties().limits;
     vk::DeviceCreateInfo deviceCreateInfo({}, static_cast<uint32_t>(deviceQueueCreateInfos.size()), deviceQueueCreateInfos.data(), static_cast<uint32_t>(m_instance.m_layers.size()), m_instance.m_layers.data(), static_cast<uint32_t>(m_deviceExtensions.size()), m_deviceExtensions.data(), &supportedFeatures, &features12);
 
     s_bundle.device = s_bundle.physicalDevice.createDevice(deviceCreateInfo);

@@ -7,12 +7,12 @@
 namespace vkn {
 class Memory
 {
-    vk::DeviceMemory memory_;
-    void* address_{};
+    vk::DeviceMemory m_memory;
+    void* m_address;
 
 protected:
-    void Set(vk::DeviceMemory memory) { memory_ = memory; }
-    void SetAddress(void* const address) { address_ = address; }
+    void Set(vk::DeviceMemory memory) { m_memory = memory; }
+    void SetAddress(void* const address) { m_address = address; }
 
 public:
     uint32_t FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::MemoryPropertyFlags requestedProperties);
@@ -20,8 +20,8 @@ public:
     void AllocateMemory(const vk::Image& vkImage, vk::MemoryPropertyFlags properties);
     void Free();
 
-    const vk::DeviceMemory& GetMemory() { return memory_; }
-    void* GetMemoryAddress() { return address_; }
+    const vk::DeviceMemory& GetMemory() { return m_memory; }
+    void* GetMemoryAddress() { return m_address; }
 };
 } // namespace vkn
 

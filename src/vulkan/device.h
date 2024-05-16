@@ -26,7 +26,7 @@ class Device
     bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
 
 public:
-    inline static vk::PhysicalDeviceLimits physicalDeviceLimits;
+    inline static std::vector<vk::SubmitInfo> s_submitInfos;
 
     Device();
     ~Device();

@@ -2,13 +2,13 @@
 
 void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
 {
-    meshInstanceUBOs_.emplace_back(meshID_, meshInstanceUBOs_.size(), pos, scale);
+    m_meshInstanceUBOs.emplace_back(m_meshID, m_meshInstanceUBOs.size(), pos, scale);
 }
 
-void Mesh::AddPhysicsInfo(const MeshPhysicsInfo& physicsInfo)
+void Mesh::AddPhysicsInfo(const MeshPhysicsInfo& pInfo)
 {
-    this->physicsInfo = std::make_unique<MeshPhysicsInfo>(physicsInfo);
-    this->physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, indexContainers_, vertexContainers_);
+    m_physicsInfo = std::make_unique<MeshPhysicsInfo>(pInfo);
+    m_physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(pInfo, m_indexContainers, m_vertexContainers);
 }
 
 void Mesh::CreateSquare(float scale, const char* texturePath)
@@ -34,21 +34,21 @@ void Mesh::CreateSquare(float scale, const char* texturePath)
                                         { 1.0f, 1.0f },
                                         { 1.0f, 0.0f } };
 
-    vertexContainers_.reserve(1);
-    vertexContainers_.emplace_back();
+    m_vertexContainers.reserve(1);
+    m_vertexContainers.emplace_back();
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
-        vertexContainers_.back().emplace_back(position[i] * scale, normal[i], texcoord[i]);
+        m_vertexContainers.back().emplace_back(position[i] * scale, normal[i], texcoord[i]);
     }
 
-    indexContainers_.reserve(1);
-    indexContainers_.emplace_back();
-    indexContainers_.back() = { 0, 1, 2, 2, 3, 0 };
+    m_indexContainers.reserve(1);
+    m_indexContainers.emplace_back();
+    m_indexContainers.back() = { 0, 1, 2, 2, 3, 0 };
 
-    name_ = "square";
+    m_name = "square";
 
-    meshParts_.reserve(1);
-    meshParts_.emplace_back(0, -1);
+    m_meshParts.reserve(1);
+    m_meshParts.emplace_back(0, -1);
 }
 
 void Mesh::CreateCube(float scale, const char* texturePath)
@@ -117,28 +117,28 @@ void Mesh::CreateCube(float scale, const char* texturePath)
 
     std::vector<glm::vec2> texcoord = { { 0.0f, 0.0f }, { 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f } };
 
-    vertexContainers_.reserve(1);
-    vertexContainers_.emplace_back();
+    m_vertexContainers.reserve(1);
+    m_vertexContainers.emplace_back();
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
-        vertexContainers_.back().emplace_back(position[i] * scale, normal[i], texcoord[i % 4]);
+        m_vertexContainers.back().emplace_back(position[i] * scale, normal[i], texcoord[i % 4]);
     }
 
-    indexContainers_.reserve(1);
-    indexContainers_.emplace_back();
-    indexContainers_.back() = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
-                                12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
+    m_indexContainers.reserve(1);
+    m_indexContainers.emplace_back();
+    m_indexContainers.back() = { 0, 1, 2, 2, 3, 0, 5, 4, 7, 7, 6, 5, 8, 9, 10, 10, 11, 8,
+                                 12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20 };
 
-    name_ = "cube";
+    m_name = "cube";
 
-    meshParts_.reserve(1);
-    meshParts_.emplace_back(0, -1);
+    m_meshParts.reserve(1);
+    m_meshParts.emplace_back(0, -1);
 }
 
 void Mesh::CreateSphere(float scale, const char* name, const char* texture)
 {
-    vertexContainers_.reserve(1);
-    vertexContainers_.emplace_back();
+    m_vertexContainers.reserve(1);
+    m_vertexContainers.emplace_back();
 
     int division = 128;
     float degree = 360.0f / (float)division;
@@ -162,58 +162,59 @@ void Mesh::CreateSphere(float scale, const char* name, const char* texture)
             glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(degree * j), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec3 rotatePosY = glm::vec4(basePosZ, 1.0f) * rotateY;
             texU = 1.0f - 1.0f / ((float)division) * (float)j;
-            vertexContainers_.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), glm::vec2(texU, texV));
+            m_vertexContainers.back().emplace_back(rotatePosY, glm::normalize(glm::vec3(rotatePosY) - center), glm::vec2(texU, texV));
         }
     }
 
-    indexContainers_.reserve(1);
-    indexContainers_.emplace_back();
+    m_indexContainers.reserve(1);
+    m_indexContainers.emplace_back();
 
     for (int j = 0; j < division / 2; j++) {
         for (int i = division * j; i < division * (j + 1); i++) {
-            indexContainers_.back().push_back(i + j);
-            indexContainers_.back().push_back(i + j + 2 + division);
-            indexContainers_.back().push_back(i + j + 1);
+            m_indexContainers.back().push_back(i + j);
+            m_indexContainers.back().push_back(i + j + 2 + division);
+            m_indexContainers.back().push_back(i + j + 1);
 
-            indexContainers_.back().push_back(i + j + 2 + division);
-            indexContainers_.back().push_back(i + j);
-            indexContainers_.back().push_back(i + j + 1 + division);
+            m_indexContainers.back().push_back(i + j + 2 + division);
+            m_indexContainers.back().push_back(i + j);
+            m_indexContainers.back().push_back(i + j + 1 + division);
         }
     }
 
     if (name)
-        name_ = name;
+        m_name = name;
     else
-        name_ = "sphere";
+        m_name = "sphere";
 
-    meshParts_.reserve(1);
-    meshParts_.emplace_back(0, -1);
+    m_meshParts.reserve(1);
+    m_meshParts.emplace_back(0, -1);
 }
 
 void Mesh::CreateBuffers(const vk::CommandBuffer& commandBuffer)
 {
-    for (uint32_t i = 0; i < vertexContainers_.size(); i++) {
+    for (uint32_t i = 0; i < m_vertexContainers.size(); i++) {
 
-        CreateVertexBuffers(vertexContainers_[i]);
-        CreateIndexBuffers(indexContainers_[i]);
+        CreateVertexBuffers(m_vertexContainers[i]);
+        CreateIndexBuffers(m_indexContainers[i]);
 
         vkn::Command::Begin(commandBuffer);
         // Copy vertices from staging buffer
         vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         vertexStagingBuffers.back()->Get().buffer,
-                                         vertexBuffers.back()->Get().buffer,
-                                         vertexStagingBuffers.back()->Get().bufferInfo.size);
+                                         m_vertexStagingBuffers.back()->Get().buffer,
+                                         m_vertexBuffers.back()->Get().buffer,
+                                         m_vertexStagingBuffers.back()->Get().bufferInfo.size);
 
         // Copy indices from staging buffer
         vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         indexStagingBuffers.back()->Get().buffer,
-                                         indexBuffers.back()->Get().buffer,
-                                         indexStagingBuffers.back()->Get().bufferInfo.size);
+                                         m_indexStagingBuffers.back()->Get().buffer,
+                                         m_indexBuffers.back()->Get().buffer,
+                                         m_indexStagingBuffers.back()->Get().bufferInfo.size);
 
         commandBuffer.end();
-        vkn::Command::Submit(commandBuffer);
 
-        vertexStagingBuffers.back()->Destroy();
-        indexStagingBuffers.back()->Destroy();
+        vkn::Command::SubmitAndWait(commandBuffer);
+
+        m_vertexStagingBuffers.back()->Destroy();
+        m_indexStagingBuffers.back()->Destroy();
     }
 }

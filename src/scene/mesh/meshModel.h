@@ -5,7 +5,7 @@
 
 class MeshModel : public Mesh
 {
-    std::string filepath_;
+    std::string m_filepath;
 
     void LoadModel(const std::string& filepath);
     void ProcessNode(aiNode* node, const aiScene* scene);

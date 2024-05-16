@@ -10,7 +10,7 @@
 
 class EnvCubemap : public vkn::Cubemap
 {
-    CubemapPushConstants pushConstants_;
+    CubemapPushConstants m_pushConstants;
 
     void CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
     void UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap);

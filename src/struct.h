@@ -50,6 +50,7 @@ struct MeshInstanceUBO
         invTranspose = model;
         invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         invTranspose = glm::transpose(glm::inverse(invTranspose));
+        this->physicsInfo = std::make_unique<MeshInstancePhysicsInfo>();
     }
     MeshInstanceUBO(MeshInstanceUBO&& other)
     {
