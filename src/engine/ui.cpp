@@ -226,24 +226,24 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
     if (width == 0 || height == 0)
         return;
 
-    vkn::Command::Begin(commandBuffer);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        viewport.m_images[imageIndex].image.Get().image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        viewport.m_images[imageIndex].colorID.Get().image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    commandBuffer.end();
+    // vkn::Command::Begin(commandBuffer);
+    // vkn::Command::SetImageMemoryBarrier(commandBuffer,
+    //                                     viewport.m_images[imageIndex].image.Get().image,
+    //                                     vk::ImageLayout::eUndefined,
+    //                                     vk::ImageLayout::eShaderReadOnlyOptimal,
+    //                                     {},
+    //                                     vk::AccessFlagBits::eShaderRead,
+    //                                     vk::PipelineStageFlagBits::eTopOfPipe,
+    //                                     vk::PipelineStageFlagBits::eFragmentShader);
+    // vkn::Command::SetImageMemoryBarrier(commandBuffer,
+    //                                     viewport.m_images[imageIndex].colorID.Get().image,
+    //                                     vk::ImageLayout::eUndefined,
+    //                                     vk::ImageLayout::eShaderReadOnlyOptimal,
+    //                                     {},
+    //                                     vk::AccessFlagBits::eShaderRead,
+    //                                     vk::PipelineStageFlagBits::eTopOfPipe,
+    //                                     vk::PipelineStageFlagBits::eFragmentShader);
+    // commandBuffer.end();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
@@ -385,6 +385,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_meshes.size(); i++) {
                 std::string name(scene.m_meshes[i].GetName());
+                ImGui::PushID(i);
                 if (ImGui::TreeNode(name.c_str())) {
                     for (int j = 0; j < scene.m_meshes[i].GetInstanceCount(); j++) {
                         ImGui::PushID(i * j + j);
@@ -405,6 +406,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     }
                     ImGui::TreePop();
                 }
+                ImGui::PopID();
             }
             ImGui::EndListBox();
         }

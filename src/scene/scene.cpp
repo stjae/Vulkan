@@ -73,7 +73,12 @@ Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedL
     }
 
     // m_meshes.emplace_back(0);
-    // m_meshes.back().CreateCube();
+    // m_meshes.back().CreateCube(0.5f);
+    // m_meshes.back().CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    // m_meshes.back().AddInstance();
+    //
+    // m_meshes.emplace_back(1);
+    // m_meshes.back().CreateCube(0.5f);
     // m_meshes.back().CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     // m_meshes.back().AddInstance();
 
@@ -95,42 +100,37 @@ void Scene::AddResource(std::string& filePath)
 
 void Scene::LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials)
 {
-    // TODO: Fix
-    // std::array<vk::CommandBuffer, 4> commandBuffers;
-    // vkn::Command::AllocateCommandBuffer(m_commandPool, commandBuffers);
-    //
-    // for (auto& material : materials) {
-    //     m_albedoTextures.emplace_back();
-    //     m_albedoTextures.back() = std::make_unique<vkn::Image>();
-    //     std::thread t0 = std::thread([&]() {
-    //         m_albedoTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, commandBuffers[0]);
-    //     });
-    //     m_normalTextures.emplace_back();
-    //     m_normalTextures.back() = std::make_unique<vkn::Image>();
-    //     std::thread t1 = std::thread([&]() {
-    //         m_normalTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, commandBuffers[1]);
-    //     });
-    //     m_metallicTextures.emplace_back();
-    //     m_metallicTextures.back() = std::make_unique<vkn::Image>();
-    //     std::thread t2 = std::thread([&]() {
-    //         m_metallicTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, commandBuffers[2]);
-    //     });
-    //     m_roughnessTextures.emplace_back();
-    //     m_roughnessTextures.back() = std::make_unique<vkn::Image>();
-    //     std::thread t3 = std::thread([&]() {
-    //         m_roughnessTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, commandBuffers[3]);
-    //     });
-    //
-    //     t0.join();
-    //     t1.join();
-    //     t2.join();
-    //     t3.join();
-    //
-    //     vkn::Command::Submit(commandBuffers);
-    // }
-    //
-    // for (auto& commandPool : commandPools)
-    //     vkn::Device::Get().device.destroyCommandPool(commandPool);
+    m_imageCommandBuffers.reserve(1000);
+    // TODO: multi thread
+    for (auto& material : materials) {
+        m_imageCommandBuffers.emplace_back();
+        vkn::Command::AllocateCommandBuffer(m_commandPool, m_imageCommandBuffers.back());
+        m_albedoTextures.emplace_back();
+        m_albedoTextures.back() = std::make_unique<vkn::Image>();
+        m_albedoTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, m_imageCommandBuffers.back());
+        m_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_imageCommandBuffers.back());
+
+        m_imageCommandBuffers.emplace_back();
+        vkn::Command::AllocateCommandBuffer(m_commandPool, m_imageCommandBuffers.back());
+        m_normalTextures.emplace_back();
+        m_normalTextures.back() = std::make_unique<vkn::Image>();
+        m_normalTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, m_imageCommandBuffers.back());
+        m_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_imageCommandBuffers.back());
+
+        m_imageCommandBuffers.emplace_back();
+        vkn::Command::AllocateCommandBuffer(m_commandPool, m_imageCommandBuffers.back());
+        m_metallicTextures.emplace_back();
+        m_metallicTextures.back() = std::make_unique<vkn::Image>();
+        m_metallicTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, m_imageCommandBuffers.back());
+        m_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_imageCommandBuffers.back());
+
+        m_imageCommandBuffers.emplace_back();
+        vkn::Command::AllocateCommandBuffer(m_commandPool, m_imageCommandBuffers.back());
+        m_roughnessTextures.emplace_back();
+        m_roughnessTextures.back() = std::make_unique<vkn::Image>();
+        m_roughnessTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, m_imageCommandBuffers.back());
+        m_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_imageCommandBuffers.back());
+    }
 }
 
 void Scene::AddMeshInstance(uint32_t id, glm::vec3 pos, glm::vec3 scale)
@@ -148,7 +148,7 @@ void Scene::Update()
     UpdatePointLight();
     UpdateMesh();
     UpdateShadowMap();
-    UpdateShadowCubemaps();
+    // UpdateShadowCubemaps();
     UpdateDescriptorSet();
 }
 
@@ -285,6 +285,8 @@ void Scene::UpdateShadowMap()
     m_shadowMapViewProj = lightProjection * lightView;
     m_shadowMapViewSpaceProjBuffer->Copy(&m_shadowMapViewProj);
     m_shadowMap.DrawShadowMap(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_meshes);
+
+    m_submitInfos.push_back(m_shadowMap.GetSubmitInfo());
 }
 
 void Scene::UpdateShadowCubemaps()

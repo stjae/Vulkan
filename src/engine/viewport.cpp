@@ -6,6 +6,7 @@ Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(f
 
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_pickColorCommandBuffer);
 
     meshRenderPipeline.CreatePipeline();
     shadowMapPipeline.CreatePipeline();
@@ -112,86 +113,86 @@ void Viewport::UpdateImages()
     m_outDated = false;
 }
 
-const int32_t* Viewport::PickColor(double mouseX, double mouseY)
+void Viewport::PickColor(double mouseX, double mouseY, uint32_t imageIndex)
 {
-    //     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    //     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-    //                                         m_colorID.Get().image,
-    //                                         vk::ImageLayout::eShaderReadOnlyOptimal,
-    //                                         vk::ImageLayout::eTransferSrcOptimal,
-    //                                         vk::AccessFlagBits::eShaderRead,
-    //                                         vk::AccessFlagBits::eTransferRead,
-    //                                         vk::PipelineStageFlagBits::eFragmentShader,
-    //                                         vk::PipelineStageFlagBits::eTransfer);
-    //     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-    //                                         m_colorPicked.Get().image,
-    //                                         vk::ImageLayout::eUndefined,
-    //                                         vk::ImageLayout::eTransferDstOptimal,
-    //                                         {},
-    //                                         vk::AccessFlagBits::eTransferWrite,
-    //                                         vk::PipelineStageFlagBits::eTransfer,
-    //                                         vk::PipelineStageFlagBits::eTransfer);
-    //     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    //     vkn::Command::Submit(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_images[imageIndex].colorID.Get().image,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::ImageLayout::eTransferSrcOptimal,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::AccessFlagBits::eTransferRead,
+                                        vk::PipelineStageFlagBits::eFragmentShader,
+                                        vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_colorPicked.Get().image,
+                                        vk::ImageLayout::eUndefined,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        {},
+                                        vk::AccessFlagBits::eTransferWrite,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eTransfer);
+    // m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
+    // vkn::Command::Submit(m_pickColorCommandBuffer);
+
+    vk::ImageCopy region;
+    region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.srcSubresource.layerCount = 1;
+    region.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.dstSubresource.layerCount = 1;
+    float scaleX, scaleY;
+    glfwGetWindowContentScale(Window::GetWindow(), &scaleX, &scaleY);
+    int32_t offsetX = 0, offsetY = 0;
+    if (mouseX > m_panelPos.x)
+        offsetX = (int32_t)((mouseX - m_panelPos.x));
+    if (mouseY > m_panelPos.y)
+        offsetY = (int32_t)((mouseY - m_panelPos.y));
+        // TODO:
+#if defined(__APPLE__)
+    if (mouseX > m_panelPos.x)
+        offsetX = (int32_t)((mouseX - m_panelPos.x) * scaleX);
+    if (mouseY > m_panelPos.y)
+        offsetY = (int32_t)((mouseY - m_panelPos.y) * scaleY);
+#endif
+    region.srcOffset.x = offsetX;
+    region.srcOffset.y = offsetY;
+    region.extent.width = 1;
+    region.extent.height = 1;
+    region.extent.depth = 1;
+
+    // vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].copyImage(m_images[imageIndex].colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_colorPicked.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
+
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_images[imageIndex].colorID.Get().image,
+                                        vk::ImageLayout::eTransferSrcOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eTransferRead,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
+                                        m_colorPicked.Get().image,
+                                        vk::ImageLayout::eTransferDstOptimal,
+                                        vk::ImageLayout::eGeneral,
+                                        vk::AccessFlagBits::eTransferRead,
+                                        vk::AccessFlagBits::eMemoryRead,
+                                        vk::PipelineStageFlagBits::eTransfer,
+                                        vk::PipelineStageFlagBits::eTransfer);
+    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
+    // vkn::Command::Submit(m_pickColorCommandBuffer);
+
+    // vk::ImageSubresource subResource{ vk::ImageAspectFlagBits::eColor, 0, 0 };
+    // vk::SubresourceLayout subResourceLayout;
+    // vkn::Device::Get().device.getImageSubresourceLayout(m_colorPicked.Get().image, &subResource, &subResourceLayout);
+
+    // const int32_t* data;
+    // vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_colorPicked.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
+    // std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
+    // vkn::Device::Get().device.unmapMemory(m_colorPicked.m_memory.GetMemory());
     //
-    //     vk::ImageCopy region;
-    //     region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-    //     region.srcSubresource.layerCount = 1;
-    //     region.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-    //     region.dstSubresource.layerCount = 1;
-    //     float scaleX, scaleY;
-    //     glfwGetWindowContentScale(Window::GetWindow(), &scaleX, &scaleY);
-    //     int32_t offsetX = 0, offsetY = 0;
-    //     if (mouseX > m_panelPos.x)
-    //         offsetX = (int32_t)((mouseX - m_panelPos.x));
-    //     if (mouseY > m_panelPos.y)
-    //         offsetY = (int32_t)((mouseY - m_panelPos.y));
-    //         // TODO:
-    // #if defined(__APPLE__)
-    //     if (mouseX > m_panelPos.x)
-    //         offsetX = (int32_t)((mouseX - m_panelPos.x) * scaleX);
-    //     if (mouseY > m_panelPos.y)
-    //         offsetY = (int32_t)((mouseY - m_panelPos.y) * scaleY);
-    // #endif
-    //     region.srcOffset.x = offsetX;
-    //     region.srcOffset.y = offsetY;
-    //     region.extent.width = 1;
-    //     region.extent.height = 1;
-    //     region.extent.depth = 1;
-    //
-    //     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    //     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].copyImage(m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_colorPicked.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
-    //
-    //     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-    //                                         m_colorID.Get().image,
-    //                                         vk::ImageLayout::eTransferSrcOptimal,
-    //                                         vk::ImageLayout::eShaderReadOnlyOptimal,
-    //                                         vk::AccessFlagBits::eTransferRead,
-    //                                         vk::AccessFlagBits::eShaderRead,
-    //                                         vk::PipelineStageFlagBits::eTransfer,
-    //                                         vk::PipelineStageFlagBits::eFragmentShader);
-    //     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-    //                                         m_colorPicked.Get().image,
-    //                                         vk::ImageLayout::eTransferDstOptimal,
-    //                                         vk::ImageLayout::eGeneral,
-    //                                         vk::AccessFlagBits::eTransferRead,
-    //                                         vk::AccessFlagBits::eMemoryRead,
-    //                                         vk::PipelineStageFlagBits::eTransfer,
-    //                                         vk::PipelineStageFlagBits::eTransfer);
-    //     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    //     vkn::Command::Submit(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    //
-    //     vk::ImageSubresource subResource{ vk::ImageAspectFlagBits::eColor, 0, 0 };
-    //     vk::SubresourceLayout subResourceLayout;
-    //     vkn::Device::Get().device.getImageSubresourceLayout(m_colorPicked.Get().image, &subResource, &subResourceLayout);
-    //
-    //     const int32_t* data;
-    //     vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_colorPicked.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
-    //     std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
-    //     vkn::Device::Get().device.unmapMemory(m_colorPicked.m_memory.GetMemory());
-    //
-    //     return data;
-    return nullptr;
+    // return data;
+    // m_scene->SelectByColorID(colorID[0], colorID[1]);
 }
 
 void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
@@ -309,14 +310,14 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
     meshIndex = 0;
     for (auto& mesh : scene.m_meshes) {
         if (mesh.GetInstanceCount() > 0) {
-            meshRenderPushConsts.meshIndex = meshIndex;
+            lineRenderPushConsts.meshIndex = meshIndex;
             meshIndex++;
             m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].pushConstants(
                 lineRenderPipeline.m_pipelineLayout,
                 vk::ShaderStageFlagBits::eVertex,
                 0,
-                sizeof(LineRenderPushConstants),
-                &meshRenderPushConsts);
+                sizeof(lineRenderPushConsts),
+                &lineRenderPushConsts);
             if (mesh.physicsDebugDrawer && mesh.GetMeshID() == scene.m_selectedMeshID) {
                 m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
                 m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
@@ -344,7 +345,8 @@ void Viewport::Draw(const Scene& scene, uint32_t imageIndex)
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                         vk::PipelineStageFlagBits::eFragmentShader);
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    m_submitInfo = vk::SubmitInfo(1, &vkn::Sync::GetShadowMapSemaphore(), &m_waitStage, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], 1, &vkn::Sync::GetViewportSemaphore());
+
+    m_submitInfos.emplace_back(1, &vkn::Sync::GetImageAvailableSemaphore(), &m_waitStage, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], 1, &vkn::Sync::GetViewportSemaphore());
 }
 
 Viewport::~Viewport()

@@ -62,7 +62,6 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     CreateImageView();
 
     Command::Begin(commandBuffer);
-    // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,
@@ -72,12 +71,10 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
                                    vk::AccessFlagBits::eTransferWrite,
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eTransfer);
-    // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer,
                                m_stagingBuffer->Get().buffer,
                                m_bundle.image, width,
                                height);
-    // Set texture image layout to m_shaderModule read only
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,
@@ -101,7 +98,6 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
     CreateImageView();
 
     Command::Begin(commandBuffer);
-    // Set texture image layout to transfer dst optimal
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,
@@ -111,13 +107,11 @@ void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_
                                    vk::AccessFlagBits::eTransferWrite,
                                    vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eTransfer);
-    // Copy texture image from staging buffer
     Command::CopyBufferToImage(commandBuffer,
                                m_stagingBuffer->Get().buffer,
                                m_bundle.image,
                                1,
                                1);
-    // Set texture image layout to m_shaderModule read only
     Command::SetImageMemoryBarrier(commandBuffer,
                                    m_bundle.image,
                                    m_bundle.descriptorImageInfo,

@@ -121,7 +121,7 @@ void Swapchain::CreateFrameBuffer()
         framebufferInfo.layers = 1;
 
         m_swapchainImages[i].framebuffer = Device::Get().device.createFramebuffer(framebufferInfo);
-        Log(DEBUG, fmt::terminal_color::bright_green, "created m_framebuffer for frame {}", i);
+        Log(DEBUG, fmt::terminal_color::bright_green, "created framebuffer {}", i);
     }
 }
 
@@ -181,7 +181,7 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
                                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                    vk::PipelineStageFlagBits::eBottomOfPipe);
     commandBuffer.end();
-    m_submitInfo = vk::SubmitInfo(1, &Sync::GetViewportSemaphore(), &m_waitStage, 1, &commandBuffer, 1, &Sync::GetRenderFinishedSemaphore());
+    m_submitInfo = vk::SubmitInfo(1, &vkn::Sync::GetViewportSemaphore(), &m_waitStage, 1, &commandBuffer, 1, &vkn::Sync::GetRenderFinishedSemaphore());
 }
 
 void Swapchain::Destroy()
@@ -256,7 +256,7 @@ void Swapchain::ChooseExtent()
     // m_extent is set
     if (s_bundle.surfaceCapabilities.currentExtent.width != UINT32_MAX) {
 
-        Log(DEBUG, fmt::terminal_color::white, "no change in m_extent range");
+        Log(DEBUG, fmt::terminal_color::white, "no change in extent range");
 
         s_bundle.swapchainImageExtent = s_bundle.surfaceCapabilities.currentExtent;
         return;

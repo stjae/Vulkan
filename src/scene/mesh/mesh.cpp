@@ -38,9 +38,7 @@ void Mesh::CreateSquare(float scale, const char* texturePath)
     vertexContainers_.emplace_back();
 
     for (int i = 0; i < SQUARE_VERTEX_COUNT; i++) {
-
-        position[i] *= scale;
-        vertexContainers_.back().emplace_back(position[i], normal[i], texcoord[i]);
+        vertexContainers_.back().emplace_back(position[i] * scale, normal[i], texcoord[i]);
     }
 
     indexContainers_.reserve(1);
@@ -123,8 +121,7 @@ void Mesh::CreateCube(float scale, const char* texturePath)
     vertexContainers_.emplace_back();
 
     for (int i = 0; i < CUBE_VERTEX_COUNT; i++) {
-
-        vertexContainers_.back().emplace_back(position[i], normal[i], texcoord[i % 4]);
+        vertexContainers_.back().emplace_back(position[i] * scale, normal[i], texcoord[i % 4]);
     }
 
     indexContainers_.reserve(1);

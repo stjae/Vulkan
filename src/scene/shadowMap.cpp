@@ -83,5 +83,5 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    m_submitInfo = vk::SubmitInfo(1, &vkn::Sync::GetImageAvailableSemaphore(), &m_waitStage, 1, &commandBuffer, 1, &vkn::Sync::GetShadowMapSemaphore());
+    m_submitInfo = vk::SubmitInfo(0, nullptr, nullptr, 1, &commandBuffer);
 }

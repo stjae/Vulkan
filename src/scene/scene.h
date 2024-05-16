@@ -24,13 +24,14 @@
 
 class Scene
 {
-    friend class Engine;
     friend class UI;
     friend class Viewport;
     friend class SceneSerializer;
 
     vk::CommandPool m_commandPool;
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    std::vector<vk::CommandBuffer> m_imageCommandBuffers;
+    std::vector<vk::SubmitInfo> m_submitInfos;
 
     std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
     std::unique_ptr<vkn::Buffer> m_dirLightDataBuffer;
@@ -113,6 +114,8 @@ public:
     void Update();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
+    const std::vector<vk::SubmitInfo>& GetSubmitInfos() { return m_submitInfos; }
+    void ClearSubmitInfos() { m_submitInfos.clear(); }
     const std::vector<MeshModel>& GetMeshes() { return m_meshes; }
     // TODO: safety
     MeshModel& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }

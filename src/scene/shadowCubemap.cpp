@@ -70,7 +70,7 @@ void ShadowCubemap::DrawShadowMap(vk::CommandBuffer& commandBuffer, int lightInd
     }
 
     commandBuffer.end();
-    // vkn::Command::Submit(commandBuffer);
+    // TODO:
 }
 
 void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes)

@@ -21,20 +21,27 @@ void Engine::Render()
         UpdateSwapchain();
         return;
     }
+    m_scene->ClearSubmitInfos();
+    m_viewport.ClearSubmitInfos();
+
+    DrawUI(currentImage.value);
 
     m_scene->Play();
     m_scene->Update();
 
-    DrawUI(currentImage.value);
     m_viewport.Draw(*m_scene, currentImage.value);
     m_swapchain.Draw(currentImage.value, UI::s_imDrawData);
+    // TODO
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered) {
-        // TODO: imageindex
-        // const int32_t* colorID = m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY());
-        // m_scene->SelectByColorID(colorID[0], colorID[1]);
+        m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), 0);
     }
     m_imGui.AcceptDragDrop(m_viewport, *m_scene);
-    vk::SubmitInfo submitInfos[] = { m_scene->m_shadowMap.GetSubmitInfo(), m_viewport.GetSubmitInfo(), m_swapchain.GetSubmitInfo() };
+
+    std::vector<vk::SubmitInfo> submitInfos;
+    submitInfos.insert(submitInfos.end(), m_scene->GetSubmitInfos().begin(), m_scene->GetSubmitInfos().end());
+    submitInfos.insert(submitInfos.end(), m_viewport.GetSubmitInfos().begin(), m_viewport.GetSubmitInfos().end());
+    submitInfos.push_back(m_swapchain.GetSubmitInfo());
+
     vkn::Device::Get().graphicsQueue.submit(submitInfos, vkn::Sync::GetInFlightFence());
     vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);
     vkn::CheckResult(vkn::Device::Get().presentQueue.presentKHR(presentInfo));
@@ -54,6 +61,7 @@ void Engine::UpdateSwapchain()
 
 void Engine::RecreateSwapchain()
 {
+    // TODO: increase speed
     int width = 0;
     int height = 0;
     while (width == 0 || height == 0) {
@@ -67,7 +75,9 @@ void Engine::RecreateSwapchain()
     m_swapchain.CreateSwapchain();
     m_swapchain.CreateFrameBuffer();
     m_swapchain.InitSwapchain();
-    // recreate sync
+
+    vkn::Sync::Destroy();
+    vkn::Sync::Create();
 }
 
 void Engine::DrawUI(uint32_t imageIndex)
