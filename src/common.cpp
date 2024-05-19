@@ -53,14 +53,14 @@ std::vector<char> FetchCode(const std::string& filename)
 std::string nfdOpen(nfdfilteritem_t filterItem)
 {
     NFD_Init();
-    std::string filePath;
+    std::string pathStr;
 
     nfdchar_t* openPath;
     nfdresult_t result = NFD_OpenDialog(&openPath, &filterItem, 1, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts(openPath);
-        filePath = openPath;
+        pathStr = openPath;
         NFD_FreePath(openPath);
     } else if (result == NFD_CANCEL) {
         puts("User pressed cancel.");
@@ -69,25 +69,20 @@ std::string nfdOpen(nfdfilteritem_t filterItem)
     }
 
     NFD_Quit();
-    return filePath;
+    return pathStr;
 }
-// NFD_API nfdresult_t NFD_SaveDialogU8(nfdu8char_t** outPath,
-//                                      const nfdu8filteritem_t* filterList,
-//                                      nfdfiltersize_t count,
-//                                      const nfdu8char_t* defaultPath,
-//                                      const nfdu8char_t* defaultName);
 
 std::string nfdSave(nfdu8filteritem_t filterItem)
 {
     NFD_Init();
-    std::string filePath;
+    std::string pathStr;
     nfdu8char_t* savePath;
 
-    nfdresult_t result = NFD_SaveDialog(&savePath, &filterItem, 1, PROJECT_DIR "scene", nullptr);
+    nfdresult_t result = NFD_SaveDialog(&savePath, &filterItem, 1, nullptr, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts(savePath);
-        filePath = savePath;
+        pathStr = savePath;
         NFD_FreePath(savePath);
     } else if (result == NFD_CANCEL) {
         puts("User pressed cancel.");
@@ -96,7 +91,29 @@ std::string nfdSave(nfdu8filteritem_t filterItem)
     }
 
     NFD_Quit();
-    return filePath;
+    return pathStr;
+}
+
+std::string nfdPickFolder()
+{
+    NFD_Init();
+    std::string pathStr;
+    nfdu8char_t* folderPath;
+
+    nfdresult_t result = NFD_PickFolderN(&folderPath, nullptr);
+    if (result == NFD_OKAY) {
+        puts("Success!");
+        puts(folderPath);
+        pathStr = folderPath;
+        NFD_FreePathN(folderPath);
+    } else if (result == NFD_CANCEL) {
+        puts("User pressed cancel.");
+    } else {
+        printf("Error: %s\n", NFD_GetError());
+    }
+
+    NFD_Quit();
+    return pathStr;
 }
 
 void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)

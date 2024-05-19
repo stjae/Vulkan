@@ -68,19 +68,19 @@ YAML::Emitter& operator<<(YAML::Emitter& out, const glm::mat4& mat)
     return out;
 }
 
-void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
+void SceneSerializer::Serialize(const Scene& scene)
 {
     YAML::Emitter out;
 
     out << YAML::BeginMap;
 
-    if (!scene.m_saveFilePath.empty()) {
-        out << YAML::Key << "SaveFilePath" << YAML::Value << filePath;
-    }
+    out << YAML::Key << "SceneFolderPath" << YAML::Value << scene.m_sceneFolderPath;
+    out << YAML::Key << "SceneFilePath" << YAML::Value << scene.m_sceneFilePath;
     if (!scene.m_hdriFilePath.empty()) {
         out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.m_hdriFilePath;
     }
     out << YAML::Key << "IBLExposure" << YAML::Value << scene.m_iblExposure;
+
     SerializeDirLight(out, scene);
     SerializePointLights(out, scene.m_pointLights);
     SerializeCamera(out, scene.m_camera);
@@ -89,7 +89,7 @@ void SceneSerializer::Serialize(const Scene& scene, const std::string& filePath)
 
     out << YAML::EndMap;
 
-    std::ofstream fout(filePath);
+    std::ofstream fout(scene.m_sceneFilePath);
     fout << out.c_str();
 }
 
@@ -192,10 +192,8 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     YAML::Node data = YAML::Load(strStream.str());
 
-    auto saveFilePath = data["SaveFilePath"];
-    if (saveFilePath) {
-        scene.m_saveFilePath = data["SaveFilePath"].as<std::string>();
-    }
+    scene.m_sceneFolderPath = data["SceneFolderPath"].as<std::string>();
+    scene.m_sceneFilePath = data["SceneFilePath"].as<std::string>();
 
     auto camera = data["Camera"];
     scene.m_camera.m_pos = camera["Position"].as<glm::vec3>();

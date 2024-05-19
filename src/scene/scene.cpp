@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedLightID(-1), m_meshDirtyFlag(true), m_lightDirtyFlag(true), m_shadowShadowCubemapDirtyFlag(true), m_showLightIcon(true), m_envCube(), m_brdfLutSquare(), m_saveFilePath(), m_iblExposure(1.0f), m_resourceDirtyFlag(true), m_envCubemapDirtyFlag(true), m_isPlaying(false)
+Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedLightID(-1), m_meshDirtyFlag(true), m_lightDirtyFlag(true), m_shadowShadowCubemapDirtyFlag(true), m_showLightIcon(true), m_envCube(), m_brdfLutSquare(), m_sceneFilePath(), m_iblExposure(1.0f), m_resourceDirtyFlag(true), m_envCubemapDirtyFlag(true), m_isPlaying(false)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::CreateCommandPool(ShadowCubemap::s_commandPool);
@@ -393,7 +393,7 @@ void Scene::InitScene()
     m_physics.Stop(m_meshes);
     Unselect();
 
-    m_saveFilePath.clear();
+    m_sceneFilePath.clear();
     m_hdriFilePath.clear();
     m_envMap.reset();
     m_envCubemap.reset();

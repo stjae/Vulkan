@@ -86,7 +86,8 @@ class Scene
     bool m_resourceDirtyFlag;
     bool m_envCubemapDirtyFlag;
 
-    std::string m_saveFilePath;
+    std::string m_sceneFolderPath;
+    std::string m_sceneFilePath;
 
     Physics m_physics;
     bool m_isPlaying;

@@ -1,6 +1,6 @@
 #include "engine.h"
 
-Engine::Engine()
+Engine::Engine() : m_init(true)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
@@ -23,13 +23,13 @@ void Engine::Render()
 
     vkn::Device::s_submitInfos.clear();
 
-    DrawUI();
+    m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_init);
 
     m_scene->Play();
     m_scene->Update();
 
     m_viewport.Draw(*m_scene);
-    m_swapchain.Draw(currentImage.value, UI::s_imDrawData);
+    m_swapchain.Draw(currentImage.value, ImGui::GetDrawData());
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene->IsPlaying()) {
         m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), *m_scene);
     }
@@ -71,12 +71,6 @@ void Engine::RecreateSwapchain()
 
     vkn::Sync::Destroy();
     vkn::Sync::Create();
-}
-
-void Engine::DrawUI()
-{
-    m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    UI::s_imDrawData = ImGui::GetDrawData();
 }
 
 Engine::~Engine()

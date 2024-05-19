@@ -68,7 +68,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     s_dragDropped = false;
 }
 
-void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer)
+void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, bool& init)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -87,7 +87,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
     }
 
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
-    DrawDockSpace(scene);
+    DrawDockSpace(scene, init);
     DrawViewport(scene, viewport, commandBuffer);
     DrawSceneAttribWindow(scene);
     DrawResourceWindow(scene);
@@ -98,7 +98,36 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
     ImGui::Render();
 }
 
-void UI::DrawDockSpace(Scene& scene)
+void UI::DrawInitPopup(bool& init, Scene& scene)
+{
+    ImGui::OpenPopup("Welcome");
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal("Welcome", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::Button("New Scene", ImVec2(120, 0))) {
+            std::string saveFolderPath = nfdPickFolder();
+            scene.m_sceneFolderPath = saveFolderPath;
+            if (!saveFolderPath.empty()) {
+                init = false;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (ImGui::Button("Open Scene", ImVec2(120, 0))) {
+            std::string openFilePath = nfdOpen({ "Scene", "scn" });
+            if (!openFilePath.empty()) {
+                SceneSerializer serializer;
+                serializer.Deserialize(scene, openFilePath);
+                init = false;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void UI::DrawDockSpace(Scene& scene, bool& init)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -138,27 +167,30 @@ void UI::DrawDockSpace(Scene& scene)
                 openNewScene = true;
             }
             if (ImGui::MenuItem("Open")) {
-                std::string openFilePath = nfdOpen({ "Scene", "scn" });
-                if (!openFilePath.empty()) {
-                    scene.m_saveFilePath = openFilePath;
+                std::string sceneFilePath = nfdOpen({ "Scene", "scn" });
+                if (!sceneFilePath.empty()) {
+                    scene.m_sceneFilePath = sceneFilePath;
                     SceneSerializer serializer;
-                    serializer.Deserialize(scene, openFilePath);
+                    serializer.Deserialize(scene, sceneFilePath);
                 }
             }
             if (ImGui::MenuItem("Save")) {
                 SceneSerializer serializer;
-                if (!scene.m_saveFilePath.empty()) {
-                    serializer.Serialize(scene, scene.m_saveFilePath);
+                if (!scene.m_sceneFilePath.empty()) {
+                    serializer.Serialize(scene);
                 } else {
-                    std::string saveFilePath = nfdSave({ "Scene", "scn" });
-                    scene.m_saveFilePath = saveFilePath;
-                    serializer.Serialize(scene, saveFilePath);
+                    std::string sceneFilePath = nfdSave({ "Scene", "scn" });
+                    scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.find_last_of("/\\"));
+                    scene.m_sceneFilePath = sceneFilePath;
+                    serializer.Serialize(scene);
                 }
             }
             if (ImGui::MenuItem("Save as")) {
-                std::string saveFilePath = nfdSave({ "Scene", "scn" });
+                std::string sceneFilePath = nfdSave({ "Scene", "scn" });
+                scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.find_last_of("/\\"));
+                scene.m_sceneFilePath = sceneFilePath;
                 SceneSerializer serializer;
-                serializer.Serialize(scene, saveFilePath);
+                serializer.Serialize(scene);
             }
             ImGui::EndMenu();
         }
@@ -189,12 +221,12 @@ void UI::DrawDockSpace(Scene& scene)
 
         // open new scene popup modal
         if (openNewScene)
-            ImGui::OpenPopup("NewScene");
+            ImGui::OpenPopup("New Scene");
 
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-        if (ImGui::BeginPopupModal("NewScene", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginPopupModal("New Scene", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Are you sure to open a new scene?\nUnsaved work will be lost.");
             ImGui::Separator();
 
@@ -212,6 +244,9 @@ void UI::DrawDockSpace(Scene& scene)
             }
             ImGui::EndPopup();
         }
+        if (init) {
+            DrawInitPopup(init, scene);
+        }
     }
     ImGui::PopStyleVar();
     ImGui::End();
@@ -223,25 +258,6 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
     glfwGetWindowSize(Window::GetWindow(), &width, &height);
     if (width == 0 || height == 0)
         return;
-
-    // vkn::Command::Begin(commandBuffer);
-    // vkn::Command::SetImageMemoryBarrier(commandBuffer,
-    //                                     viewport.m_images[imageIndex].image.Get().image,
-    //                                     vk::ImageLayout::eUndefined,
-    //                                     vk::ImageLayout::eShaderReadOnlyOptimal,
-    //                                     {},
-    //                                     vk::AccessFlagBits::eShaderRead,
-    //                                     vk::PipelineStageFlagBits::eTopOfPipe,
-    //                                     vk::PipelineStageFlagBits::eFragmentShader);
-    // vkn::Command::SetImageMemoryBarrier(commandBuffer,
-    //                                     viewport.m_images[imageIndex].colorID.Get().image,
-    //                                     vk::ImageLayout::eUndefined,
-    //                                     vk::ImageLayout::eShaderReadOnlyOptimal,
-    //                                     {},
-    //                                     vk::AccessFlagBits::eShaderRead,
-    //                                     vk::PipelineStageFlagBits::eTopOfPipe,
-    //                                     vk::PipelineStageFlagBits::eFragmentShader);
-    // commandBuffer.end();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");

@@ -110,23 +110,6 @@ ExternalProject_Add(
 )
 set(DEP_LIST ${DEP_LIST} dep-stb)
 
-# tinyobjloader
-ExternalProject_Add(
-        dep-tinyobjloader
-        GIT_REPOSITORY "https://github.com/tinyobjloader/tinyobjloader.git"
-        GIT_TAG "v2.0-rc1"
-        GIT_SHALLOW 1
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        TEST_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
-        ${PROJECT_BINARY_DIR}/dep-tinyobjloader-prefix/src/dep-tinyobjloader/tiny_obj_loader.h
-        ${DEP_INCLUDE_DIR}/tiny_obj_loader.h
-)
-set(DEP_LIST ${DEP_LIST} dep-tinyobjloader)
-
 # assimp
 ExternalProject_Add(
         dep-assimp
@@ -172,3 +155,17 @@ ExternalProject_Add(
         -DYAML_BUILD_SHARED_LIBS=ON
 )
 set(DEP_LIST ${DEP_LIST} dep-yaml)
+
+# lua
+ExternalProject_Add(
+        dep-lua
+        GIT_REPOSITORY "https://github.com/walterschell/Lua.git"
+        GIT_TAG "master"
+        GIT_SHALLOW 1
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
+)
+set(DEP_LIST ${DEP_LIST} dep-lua)

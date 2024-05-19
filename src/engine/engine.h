@@ -25,8 +25,8 @@ class Engine
     Viewport m_viewport;
     UI m_imGui;
     std::unique_ptr<Scene> m_scene;
+    bool m_init;
 
-    void DrawUI();
     void UpdateSwapchain();
     void RecreateSwapchain();
 

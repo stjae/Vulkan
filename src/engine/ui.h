@@ -39,7 +39,7 @@ class UI
     // vk::DescriptorSet m_hdriThumbnailDescriptorSet;
     // vk::DescriptorSet m_shadowMapDescriptorSet;
 
-    void DrawDockSpace(Scene& scene);
+    void DrawDockSpace(Scene& scene, bool& init);
     void DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
@@ -55,13 +55,13 @@ public:
     inline static double s_dragDropMouseX;
     inline static double s_dragDropMouseY;
     inline static std::unique_ptr<Resource> s_dragDropResource;
-    inline static ImDrawData* s_imDrawData;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
-    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer);
+    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Viewport& viewport, Scene& scene);
     ~UI();
+    void DrawInitPopup(bool& init, Scene& scene);
 };
 
 #endif
