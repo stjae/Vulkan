@@ -271,13 +271,13 @@ void Viewport::Draw(const Scene& scene)
     int meshIndex = 0;
     int materialOffset = 0;
     for (const auto& mesh : scene.m_meshes) {
-        if (mesh.GetInstanceCount() > 0) {
+        if (mesh->GetInstanceCount() > 0) {
             meshRenderPushConsts.meshIndex = meshIndex;
             meshRenderPushConsts.lightCount = (int)scene.m_pointLights.size();
             meshIndex++;
-            for (const auto& part : mesh.GetMeshParts()) {
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+            for (const auto& part : mesh->GetMeshParts()) {
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
                 meshRenderPushConsts.materialID = materialOffset + part.materialID;
                 m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].pushConstants(
                     meshRenderPipeline.m_pipelineLayout,
@@ -285,10 +285,10 @@ void Viewport::Draw(const Scene& scene)
                     0,
                     sizeof(MeshRenderPushConstants),
                     &meshRenderPushConsts);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
             }
         }
-        materialOffset += (int)mesh.GetMaterialCount();
+        materialOffset += (int)mesh->GetMaterialCount();
     }
     // physics debug
     if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {

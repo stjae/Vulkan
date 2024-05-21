@@ -10,7 +10,7 @@ class SceneSerializer
 {
 public:
     void Serialize(const Scene& scene);
-    void SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh>& meshes);
+    void SerializeMeshes(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes);
     void SerializeResources(YAML::Emitter& out, const std::vector<Resource>& resources);
     void Deserialize(Scene& scene, const std::string& filePath);
     void SerializeCamera(YAML::Emitter& out, const Camera& camera);

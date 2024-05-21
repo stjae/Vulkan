@@ -11,10 +11,10 @@ void Physics::InitPhysics()
     m_isFirstStep = true;
 }
 
-void Physics::AddRigidBodies(std::vector<Mesh>& meshes)
+void Physics::AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh.m_meshInstances) {
+        for (auto& instance : mesh->m_meshInstances) {
             if (!instance->physicsInfo)
                 continue;
             btCollisionShape* shape;
@@ -36,7 +36,7 @@ void Physics::AddRigidBodies(std::vector<Mesh>& meshes)
                 shape = new btConeShape({ 1.0f, 1.0f });
                 break;
             case (eColliderShape::MESH):
-                shape = new btBvhTriangleMeshShape(&mesh.m_bulletVertexArray, true);
+                shape = new btBvhTriangleMeshShape(&mesh->m_bulletVertexArray, true);
                 break;
             default:
                 return;
@@ -78,7 +78,7 @@ void Physics::AddRigidBodies(std::vector<Mesh>& meshes)
     }
 }
 
-void Physics::Simulate(std::vector<Mesh>& meshes)
+void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     if (m_isFirstStep) {
         AddRigidBodies(meshes);
@@ -88,7 +88,7 @@ void Physics::Simulate(std::vector<Mesh>& meshes)
     m_dynamicsWorld->stepSimulation(1.0f / 60.0f);
 
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh.m_meshInstances) {
+        for (auto& instance : mesh->m_meshInstances) {
             if (!instance->physicsInfo)
                 continue;
             auto body = instance->physicsInfo->rigidBodyPtr;
@@ -108,12 +108,12 @@ void Physics::Simulate(std::vector<Mesh>& meshes)
     }
 }
 
-void Physics::Stop(std::vector<Mesh>& meshes)
+void Physics::Stop(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     m_isFirstStep = true;
 
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh.m_meshInstances) {
+        for (auto& instance : mesh->m_meshInstances) {
             if (!instance->physicsInfo)
                 continue;
             instance->UBO.model = instance->physicsInfo->initialModel;

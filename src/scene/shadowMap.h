@@ -17,7 +17,7 @@ class ShadowMap : public vkn::Image
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh>& meshes);
+    void DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std::shared_ptr<Mesh>>& meshes);
 };
 
 #endif

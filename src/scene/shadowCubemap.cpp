@@ -43,7 +43,7 @@ void ShadowCubemap::CreateFramebuffer()
     }
 }
 
-void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes)
+void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
@@ -61,7 +61,7 @@ void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& li
     vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
-void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes)
+void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     std::array<vk::ClearValue, 2> clearValues;
     clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -101,7 +101,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& com
     int meshIndex = 0;
     vk::DeviceSize vertexOffsets[]{ 0 };
     for (auto& mesh : meshes) {
-        if (mesh.GetInstanceCount() < 1)
+        if (mesh->GetInstanceCount() < 1)
             continue;
         m_pushConstants.meshIndex = meshIndex;
         meshIndex++;
@@ -112,10 +112,10 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& com
             sizeof(ShadowCubemapPushConstants),
             &m_pushConstants);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowCubemapPipeline.m_pipelineLayout, 0, 1, &shadowCubemapPipeline.m_descriptorSets[0], 0, nullptr);
-        for (auto& part : mesh.GetMeshParts()) {
-            commandBuffer.bindVertexBuffers(0, 1, &mesh.m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-            commandBuffer.bindIndexBuffer(mesh.m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
-            commandBuffer.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+        for (auto& part : mesh->GetMeshParts()) {
+            commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+            commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+            commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
         }
     }
 

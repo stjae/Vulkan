@@ -146,7 +146,7 @@ void SceneSerializer::SerializeResources(YAML::Emitter& out, const std::vector<R
     }
 }
 
-void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh>& meshes)
+void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     if (!meshes.empty()) {
         out << YAML::Key << "Meshes";
@@ -155,7 +155,7 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh
             out << YAML::BeginMap;
             out << YAML::Key << "Instances";
             out << YAML::Value << YAML::BeginSeq;
-            for (auto& instance : mesh.m_meshInstances) {
+            for (auto& instance : mesh->m_meshInstances) {
                 out << YAML::BeginMap;
                 out << YAML::Key << "UUID" << YAML::Value << instance->UUID;
                 out << YAML::Key << "Transform" << YAML::Value << instance->UBO.model;
@@ -242,7 +242,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             auto instances = meshes[i]["Instances"];
             for (auto instance : instances) {
                 scene.AddMeshInstance(i, instance["UUID"].as<uint64_t>());
-                auto& meshInstance = scene.m_meshes[i].m_meshInstances.back();
+                auto& meshInstance = scene.m_meshes[i]->m_meshInstances.back();
                 meshInstance->UBO.model = instance["Transform"].as<glm::mat4>();
                 meshInstance->UBO.invTranspose = instance["InvTranspose"].as<glm::mat4>();
                 meshInstance->UBO.albedo = instance["Albedo"].as<glm::vec3>();
@@ -253,7 +253,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     PhysicsInfo pInfo;
                     pInfo.rigidBodyType = (eRigidBodyType)physicsInfo["Type"].as<int>();
                     pInfo.colliderShape = (eColliderShape)physicsInfo["Shape"].as<int>();
-                    scene.m_meshes[i].AddPhysicsInfo(pInfo, *meshInstance);
+                    scene.m_meshes[i]->AddPhysicsInfo(pInfo, *meshInstance);
                     meshInstance->physicsInfo->scale = physicsInfo["RigidBodyScale"].as<glm::vec3>();
                 }
             }

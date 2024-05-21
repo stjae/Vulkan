@@ -95,9 +95,9 @@ struct Resource
 {
     std::string filePath;
     std::string fileName;
-    void* ptr;
+    std::weak_ptr<void> ptr;
 
-    explicit Resource(std::string& path) : ptr(nullptr)
+    explicit Resource(std::string& path)
     {
         this->filePath = path;
         this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);

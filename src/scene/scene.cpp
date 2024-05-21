@@ -85,12 +85,12 @@ Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedL
 void Scene::AddResource(std::string& filePath)
 {
     m_resources.emplace_back(filePath);
-    m_meshes.emplace_back(m_meshes.size(), m_resources.back().filePath);
-    m_meshes.back().CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_resources.back().ptr = &m_meshes.back();
+    m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), m_resources.back().filePath));
+    m_meshes.back()->CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_resources.back().ptr = m_meshes.back();
 
-    if (!m_meshes.back().m_materials.empty()) {
-        LoadMaterials(filePath, m_meshes.back().m_materials);
+    if (!m_meshes.back()->m_materials.empty()) {
+        LoadMaterials(filePath, m_meshes.back()->m_materials);
         m_resourceDirtyFlag = true;
     }
 }
@@ -142,13 +142,13 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
 
 void Scene::AddMeshInstance(uint32_t meshID, glm::vec3 pos, glm::vec3 scale)
 {
-    m_meshes[meshID].AddInstance(pos, scale);
+    m_meshes[meshID]->AddInstance(pos, scale);
     m_meshDirtyFlag = true;
 }
 
 void Scene::AddMeshInstance(uint32_t meshID, const uint64_t UUID)
 {
-    m_meshes[meshID].AddInstance(UUID);
+    m_meshes[meshID]->AddInstance(UUID);
     m_meshDirtyFlag = true;
 }
 
@@ -196,10 +196,10 @@ void Scene::DeleteMeshInstance()
 {
     if (m_selectedMeshID < 0 || m_selectedMeshInstanceID < 0)
         return;
-    m_meshes[m_selectedMeshID].m_meshInstances.erase(m_meshes[m_selectedMeshID].m_meshInstances.begin() + m_selectedMeshInstanceID);
+    m_meshes[m_selectedMeshID]->m_meshInstances.erase(m_meshes[m_selectedMeshID]->m_meshInstances.begin() + m_selectedMeshInstanceID);
 
-    for (int32_t i = m_selectedMeshInstanceID; i < m_meshes[m_selectedMeshID].m_meshInstances.size(); i++) {
-        m_meshes[m_selectedMeshID].m_meshInstances[i]->UBO.instanceColorID--;
+    for (int32_t i = m_selectedMeshInstanceID; i < m_meshes[m_selectedMeshID]->m_meshInstances.size(); i++) {
+        m_meshes[m_selectedMeshID]->m_meshInstances[i]->UBO.instanceColorID--;
     }
 
     Unselect();
@@ -220,7 +220,7 @@ size_t Scene::GetInstanceCount()
 {
     size_t instanceCount = 0;
     for (auto& mesh : m_meshes) {
-        instanceCount += mesh.GetInstanceCount();
+        instanceCount += mesh->GetInstanceCount();
     }
     return instanceCount;
 }
@@ -243,15 +243,15 @@ void Scene::HandleMeshDuplication()
 {
     if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_camera.m_isControllable) {
         AddMeshInstance(m_selectedMeshID);
-        auto& newInstance = m_meshes[m_selectedMeshID].m_meshInstances.back();
+        auto& newInstance = m_meshes[m_selectedMeshID]->m_meshInstances.back();
         int newInstanceID = newInstance->UBO.instanceColorID;
         // copy data of source instance
-        auto& srcMeshInstance = m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID];
+        auto& srcMeshInstance = m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID];
         newInstance->UBO = srcMeshInstance->UBO;
         // except for id
         newInstance->UBO.instanceColorID = newInstanceID;
         if (srcMeshInstance->physicsInfo) {
-            m_meshes[m_selectedMeshID].AddPhysicsInfo(*srcMeshInstance->physicsInfo, *newInstance);
+            m_meshes[m_selectedMeshID]->AddPhysicsInfo(*srcMeshInstance->physicsInfo, *newInstance);
         }
         // select new instance
         m_selectedMeshInstanceID = newInstance->UBO.instanceColorID;
@@ -262,7 +262,7 @@ void Scene::UpdateCamera()
 {
     m_camera.Update();
     if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
-        m_camera.m_pos = glm::translate(m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID]->UBO.model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        m_camera.m_pos = glm::translate(m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO.model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
     m_camera.m_cameraUBO.view = glm::lookAt(m_camera.m_pos, m_camera.m_at, m_camera.m_up);
     m_camera.m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), 0.1f, 1024.0f);
@@ -325,19 +325,19 @@ void Scene::UpdateMesh()
         std::vector<vk::DescriptorBufferInfo> bufferInfos;
         bufferInfos.reserve(m_meshes.size());
         for (auto& mesh : m_meshes) {
-            if (mesh.GetInstanceCount() < 1)
+            if (mesh->GetInstanceCount() < 1)
                 continue;
-            vkn::BufferInfo bufferInfo = { sizeof(MeshInstanceUBO) * mesh.GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-            mesh.m_meshInstanceUBOBuffer.reset();
-            mesh.m_meshInstanceUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
+            vkn::BufferInfo bufferInfo = { sizeof(MeshInstanceUBO) * mesh->GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+            mesh->m_meshInstanceUBOBuffer.reset();
+            mesh->m_meshInstanceUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
             std::vector<MeshInstanceUBO> UBOs;
-            UBOs.reserve(mesh.m_meshInstances.size());
-            for (auto& instance : mesh.m_meshInstances) {
+            UBOs.reserve(mesh->m_meshInstances.size());
+            for (auto& instance : mesh->m_meshInstances) {
                 UBOs.push_back(instance->UBO);
                 instance->physicsDebugUBO.model = instance->UBO.model;
             }
-            mesh.m_meshInstanceUBOBuffer->Copy(UBOs.data());
-            bufferInfos.emplace_back(mesh.m_meshInstanceUBOBuffer->Get().descriptorBufferInfo);
+            mesh->m_meshInstanceUBOBuffer->Copy(UBOs.data());
+            bufferInfos.emplace_back(mesh->m_meshInstanceUBOBuffer->Get().descriptorBufferInfo);
         }
         meshRenderPipeline.m_meshDescriptors = bufferInfos;
         shadowMapPipeline.m_meshDescriptors = bufferInfos;
@@ -455,8 +455,7 @@ void Scene::Play()
     if (!m_isPlaying) {
         return;
     }
-    m_selectedMeshID = -1;
-    m_selectedMeshInstanceID = -1;
+    Unselect();
 
     m_physics.Simulate(m_meshes);
     m_meshDirtyFlag = true;

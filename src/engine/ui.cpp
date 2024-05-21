@@ -398,10 +398,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     if (ImGui::BeginTabItem("Meshes")) {
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_meshes.size(); i++) {
-                std::string name(scene.m_meshes[i].GetName());
+                std::string name(scene.m_meshes[i]->GetName());
                 ImGui::PushID(i);
                 if (ImGui::TreeNode(name.c_str())) {
-                    for (int j = 0; j < scene.m_meshes[i].GetInstanceCount(); j++) {
+                    for (int j = 0; j < scene.m_meshes[i]->GetInstanceCount(); j++) {
                         ImGui::PushID(i * j + j);
                         if (ImGui::Selectable((std::string("instance ") + std::to_string(j)).c_str(), i == scene.m_selectedMeshID && j == scene.m_selectedMeshInstanceID)) {
                             scene.Unselect();
@@ -469,7 +469,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 scene.m_meshDirtyFlag = true;
 
             ImGui::SeparatorText("RigidBody");
-            ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID].GetName().c_str());
+            ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID]->GetName().c_str());
             if (!meshInstance.physicsInfo) {
                 static PhysicsInfo physicsInfo;
                 const char* types[2] = { "Static", "Dynamic" };
@@ -501,7 +501,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
-                    scene.m_meshes[scene.m_selectedMeshID].AddPhysicsInfo(physicsInfo, meshInstance);
+                    scene.m_meshes[scene.m_selectedMeshID]->AddPhysicsInfo(physicsInfo, meshInstance);
                     meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
                 }
             } else {
@@ -688,7 +688,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
         return;
 
     // const int32_t* pickColor = viewport.PickColor(s_dragDropMouseX, s_dragDropMouseY);
-    scene.AddMeshInstance(static_cast<Mesh*>(s_dragDropResource->ptr)->GetMeshColorID());
+    scene.AddMeshInstance(std::static_pointer_cast<Mesh>(s_dragDropResource->ptr.lock())->GetMeshColorID());
     s_dragDropped = false;
 }
 

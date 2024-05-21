@@ -33,7 +33,7 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
     CreateFramebuffer();
 }
 
-void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh>& meshes)
+void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
@@ -62,7 +62,7 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
     int meshIndex = 0;
     vk::DeviceSize vertexOffsets[]{ 0 };
     for (auto& mesh : meshes) {
-        if (mesh.GetInstanceCount() < 1)
+        if (mesh->GetInstanceCount() < 1)
             continue;
         m_pushConstants.meshIndex = meshIndex;
         meshIndex++;
@@ -73,10 +73,10 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh
             sizeof(ShadowMapPushConstants),
             &m_pushConstants);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowMapPipeline.m_pipelineLayout, 0, 1, &shadowMapPipeline.m_descriptorSets[0], 0, nullptr);
-        for (auto& part : mesh.GetMeshParts()) {
-            commandBuffer.bindVertexBuffers(0, 1, &mesh.m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-            commandBuffer.bindIndexBuffer(mesh.m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
-            commandBuffer.drawIndexed(mesh.GetIndicesCount(part.bufferIndex), mesh.GetInstanceCount(), 0, 0, 0);
+        for (auto& part : mesh->GetMeshParts()) {
+            commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+            commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+            commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
         }
     }
 

@@ -30,9 +30,9 @@ class Physics
 
 public:
     void InitPhysics();
-    void AddRigidBodies(std::vector<Mesh>& meshes);
-    void Simulate(std::vector<Mesh>& meshes);
-    void Stop(std::vector<Mesh>& meshes);
+    void AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
+    void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
+    void Stop(std::vector<std::shared_ptr<Mesh>>& meshes);
     ~Physics();
 };
 

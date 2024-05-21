@@ -43,7 +43,7 @@ class Scene
     ShadowMap m_shadowMap;
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
 
-    std::vector<Mesh> m_meshes;
+    std::vector<std::shared_ptr<Mesh>> m_meshes;
     Mesh m_envCube;
     std::string m_hdriFilePath;
     std::unique_ptr<vkn::Image> m_envMap;
@@ -119,12 +119,12 @@ public:
     void Update();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
-    const std::vector<Mesh>& GetMeshes() { return m_meshes; }
+    const std::vector<std::shared_ptr<Mesh>>& GetMeshes() { return m_meshes; }
     // TODO: safety
-    Mesh& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }
-    MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID]; }
-    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID]->UBO; }
-    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].m_meshInstances[instanceID]->UBO; }
+    Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
+    MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
+    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO; }
+    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID]->m_meshInstances[instanceID]->UBO; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void Unselect();
     bool IsPlaying() { return m_isPlaying; }

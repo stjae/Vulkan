@@ -21,13 +21,13 @@ class ShadowCubemap : public vkn::Cubemap
     inline static vk::CommandPool s_commandPool;
     inline static std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
-    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes);
+    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
     void CreateFramebuffer();
     void CreateDepthImage(vk::CommandBuffer& commandBuffer);
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes);
+    void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
 };
 
 #endif
