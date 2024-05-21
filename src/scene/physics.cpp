@@ -11,16 +11,15 @@ void Physics::InitPhysics()
     m_isFirstStep = true;
 }
 
-void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
+void Physics::AddRigidBodies(std::vector<Mesh>& meshes)
 {
     for (auto& mesh : meshes) {
-        if (!mesh.m_physicsInfo)
-            continue;
-        for (auto& instance : mesh.m_meshInstanceUBOs) {
-            instance.physicsInfo = std::make_unique<MeshInstancePhysicsInfo>();
+        for (auto& instance : mesh.m_meshInstances) {
+            if (!instance->physicsInfo)
+                continue;
             btCollisionShape* shape;
 
-            switch (mesh.m_physicsInfo->colliderShape) {
+            switch (instance->physicsInfo->colliderShape) {
             case (eColliderShape::BOX):
                 shape = new btBoxShape({ 0.5f, 0.5f, 0.5f });
                 break;
@@ -43,7 +42,7 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
                 return;
             }
 
-            float* instanceM = glm::value_ptr(instance.model);
+            float* instanceM = glm::value_ptr(instance->UBO.model);
             float instanceT[3];
             float instanceR[3];
             float instanceS[3];
@@ -52,14 +51,14 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
             float unitScale[3] = { 1.0f, 1.0f, 1.0f };
             ImGuizmo::RecomposeMatrixFromComponents(instanceT, instanceR, unitScale, colliderM);
 
-            shape->setLocalScaling({ instanceS[0], instanceS[1], instanceS[2] });
+            shape->setLocalScaling({ instanceS[0] * instance->physicsInfo->scale.x, instanceS[1] * instance->physicsInfo->scale.y, instanceS[2] * instance->physicsInfo->scale.z });
             m_collisionShapes.push_back(shape);
 
             btTransform startTransform;
             startTransform.setIdentity();
             startTransform.setOrigin({ instanceT[0], instanceT[1], instanceT[2] });
 
-            btScalar mass = mesh.m_physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
+            btScalar mass = instance->physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
             btVector3 localInertia(0, 0, 0);
             shape->calculateLocalInertia(mass, localInertia);
 
@@ -73,13 +72,13 @@ void Physics::AddRigidBodies(std::vector<MeshModel>& meshes)
 
             m_dynamicsWorld->addRigidBody(body);
 
-            instance.physicsInfo->initialModel = instance.model;
-            instance.physicsInfo->rigidBodyPtr = body;
+            instance->physicsInfo->initialModel = instance->UBO.model;
+            instance->physicsInfo->rigidBodyPtr = body;
         }
     }
 }
 
-void Physics::Simulate(std::vector<MeshModel>& meshes)
+void Physics::Simulate(std::vector<Mesh>& meshes)
 {
     if (m_isFirstStep) {
         AddRigidBodies(meshes);
@@ -89,39 +88,38 @@ void Physics::Simulate(std::vector<MeshModel>& meshes)
     m_dynamicsWorld->stepSimulation(1.0f / 60.0f);
 
     for (auto& mesh : meshes) {
-        if (!mesh.m_physicsInfo)
-            continue;
-        for (auto& instance : mesh.m_meshInstanceUBOs) {
-            auto body = instance.physicsInfo->rigidBodyPtr;
+        for (auto& instance : mesh.m_meshInstances) {
+            if (!instance->physicsInfo)
+                continue;
+            auto body = instance->physicsInfo->rigidBodyPtr;
             auto t = body->getWorldTransform();
             auto& s = body->getCollisionShape()->getLocalScaling();
             btScalar m[16];
             t.getOpenGLMatrix(m);
-            instance.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance.physicsInfo->size);
+            instance->UBO.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance->physicsInfo->scale);
 
             int f = body->getCollisionFlags();
             body->setCollisionFlags(f | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
 
-            instance.invTranspose = instance.model;
-            instance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            instance.invTranspose = glm::transpose(glm::inverse(instance.invTranspose));
+            instance->UBO.invTranspose = instance->UBO.model;
+            instance->UBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            instance->UBO.invTranspose = glm::transpose(glm::inverse(instance->UBO.invTranspose));
         }
     }
 }
 
-void Physics::Stop(std::vector<MeshModel>& meshes)
+void Physics::Stop(std::vector<Mesh>& meshes)
 {
     m_isFirstStep = true;
 
     for (auto& mesh : meshes) {
-        if (!mesh.m_physicsInfo)
-            continue;
-        for (auto& instance : mesh.m_meshInstanceUBOs) {
-            instance.model = instance.physicsInfo->initialModel;
-
-            instance.invTranspose = instance.model;
-            instance.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            instance.invTranspose = glm::transpose(glm::inverse(instance.invTranspose));
+        for (auto& instance : mesh.m_meshInstances) {
+            if (!instance->physicsInfo)
+                continue;
+            instance->UBO.model = instance->physicsInfo->initialModel;
+            instance->UBO.invTranspose = instance->UBO.model;
+            instance->UBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            instance->UBO.invTranspose = glm::transpose(glm::inverse(instance->UBO.invTranspose));
         }
     }
 

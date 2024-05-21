@@ -6,6 +6,8 @@
 #include <string>
 #include "enum.h"
 #include <bullet/btBulletCollisionCommon.h>
+#include "vulkan/buffer.h"
+#include "scene/physicsDebugDrawer.h"
 
 struct MeshPart
 {
@@ -15,64 +17,51 @@ struct MeshPart
     MeshPart(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
 };
 
-struct MeshPhysicsInfo
-{
-    eRigidBodyType rigidBodyType;
-    eColliderShape colliderShape;
-};
-
-struct MeshInstancePhysicsInfo
-{
-    btRigidBody* rigidBodyPtr;
-    // model matrix before simulation
-    glm::mat4 initialModel;
-    glm::vec3 size = { 1.0f, 1.0f, 1.0f };
-};
-
 struct MeshInstanceUBO
 {
     glm::mat4 model;
     glm::mat4 invTranspose;
-    int32_t meshID;
+    // Color ID for mouse picking
+    int32_t meshColorID;
     int32_t textureID;
-    int32_t instanceID;
+    int32_t instanceColorID;
     int32_t useTexture;
     glm::vec3 albedo;
     float metallic;
     float roughness;
+    float padding[3];
 
-    std::unique_ptr<MeshInstancePhysicsInfo> physicsInfo;
+    MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+};
 
-    MeshInstanceUBO(int32_t meshID, int32_t instanceID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : model(1.0f), invTranspose(1.0f), meshID(meshID), textureID(0), useTexture(true), instanceID(instanceID), albedo({ 0.5, 0.5, 0.5 }), metallic(0.0f), roughness(1.0f)
+struct PhysicsDebugUBO
+{
+    glm::mat4 model;
+    glm::vec3 scale;
+    int32_t havePhysicsInfo;
+
+    PhysicsDebugUBO() : model(1.0f), scale(1.0f), havePhysicsInfo(false) {}
+};
+
+struct MeshInstance
+{
+    const uint64_t UUID;
+    MeshInstanceUBO UBO;
+    std::unique_ptr<PhysicsDebugDrawer> physicsDebugDrawer;
+    std::unique_ptr<PhysicsInfo> physicsInfo;
+    PhysicsDebugUBO physicsDebugUBO;
+    std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
+
+    MeshInstance(uint64_t UUID, MeshInstanceUBO&& UBO) : UBO(UBO), UUID(UUID)
     {
-        model = glm::translate(model, pos);
-        model = glm::scale(model, scale);
-        invTranspose = model;
-        invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        invTranspose = glm::transpose(glm::inverse(invTranspose));
-        this->physicsInfo = std::make_unique<MeshInstancePhysicsInfo>();
+        vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
     }
-    MeshInstanceUBO(MeshInstanceUBO&& other)
+    MeshInstance& operator=(const MeshInstance& other)
     {
-        *this = other;
-        this->physicsInfo = std::move(other.physicsInfo);
-    }
-    MeshInstanceUBO& operator=(const MeshInstanceUBO& other)
-    {
-        if (this != &other) {
-            this->model = other.model;
-            this->invTranspose = other.invTranspose;
-            this->meshID = other.meshID;
-            this->textureID = other.textureID;
-            this->instanceID = other.instanceID;
-            this->useTexture = other.useTexture;
-            this->albedo = other.albedo;
-            this->metallic = other.metallic;
-            this->roughness = other.roughness;
-        }
+        this->UBO = other.UBO;
         return *this;
     }
-    // MeshInstanceUBO& operator=(MeshInstanceUBO&& other) {}
 };
 
 struct MaterialFilePath

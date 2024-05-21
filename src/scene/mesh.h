@@ -2,45 +2,50 @@
 #define MESHPRIMITIVE_H
 
 #include "meshBase.h"
-#include "../../vulkan/sync.h"
-#include "../../vulkan/command.h"
+#include "../vulkan/sync.h"
+#include "../vulkan/command.h"
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "../physicsDebugDrawer.h"
+#include "physicsDebugDrawer.h"
+#include "id.h"
+#include "../struct.h"
 
 class Mesh : public MeshBase
 {
     friend class Scene;
     friend class SceneSerializer;
     friend class Physics;
+    friend class Viewport;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateSphere(float scale = 1.0f, const char* name = nullptr, const char* texturePath = nullptr);
 
-protected:
+    std::string m_filepath;
     std::string m_name;
 
-    int32_t m_meshID;
-    std::unique_ptr<vkn::Buffer> m_meshInstanceBuffer;
-    std::vector<MeshInstanceUBO> m_meshInstanceUBOs;
+    // id used for mouse picking
+    int32_t m_meshColorID;
+    std::unique_ptr<vkn::Buffer> m_meshInstanceUBOBuffer;
+    std::vector<std::unique_ptr<MeshInstance>> m_meshInstances;
     std::vector<MeshPart> m_meshParts;
     std::vector<MaterialFilePath> m_materials;
 
+    void LoadModel(const std::string& filepath);
+    void ProcessNode(aiNode* node, const aiScene* scene);
+    void ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat);
     void CreateBuffers(const vk::CommandBuffer& commandBuffer);
 
 public:
-    std::unique_ptr<MeshPhysicsInfo> m_physicsInfo;
-    std::unique_ptr<PhysicsDebugDrawer> m_physicsDebugDrawer;
-
-    Mesh() = default;
-    explicit Mesh(int meshID) : m_meshID(meshID) {}
+    Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
+    Mesh(int meshColorID, const std::string& filePath);
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void AddPhysicsInfo(const MeshPhysicsInfo& physicsInfo);
+    void AddInstance(const uint64_t UUID);
+    void AddPhysicsInfo(const PhysicsInfo& physicsInfo, MeshInstance& meshInstance);
     const std::string& GetName() { return m_name; }
-    int32_t GetMeshID() const { return m_meshID; }
-    size_t GetInstanceCount() const { return m_meshInstanceUBOs.size(); }
+    int32_t GetMeshColorID() const { return m_meshColorID; }
+    size_t GetInstanceCount() const { return m_meshInstances.size(); }
     size_t GetMaterialCount() const { return m_materials.size(); }
     const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
 };

@@ -3,6 +3,21 @@
 
 #include <bullet/btBulletCollisionCommon.h>
 #include "../vulkan/command.h"
+// #include "../struct.h"
+#include "../enum.h"
+#include "meshBase.h"
+
+struct PhysicsInfo
+{
+    eRigidBodyType rigidBodyType;
+    eColliderShape colliderShape;
+    btRigidBody* rigidBodyPtr;
+    // model matrix before simulation
+    glm::mat4 initialModel;
+    glm::vec3 scale;
+
+    PhysicsInfo() : scale(1.0f) {}
+};
 
 struct LinePoint
 {
@@ -45,7 +60,7 @@ public:
         }
     }
 
-    PhysicsDebugDrawer(const MeshPhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers)
+    PhysicsDebugDrawer(const PhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers)
     {
         vkn::Command::CreateCommandPool(m_commandPool);
         vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);

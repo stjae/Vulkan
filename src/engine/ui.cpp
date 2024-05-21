@@ -426,6 +426,9 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         }
         // Mesh Attributes
         if (scene.m_selectedMeshID > -1) {
+            auto& meshInstance = scene.GetSelectedMeshInstance();
+            ImGui::SeparatorText((std::string("ID: ") + std::to_string(meshInstance.UUID)).c_str());
+
             auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
 
             float translation[3];
@@ -467,8 +470,8 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             ImGui::SeparatorText("RigidBody");
             ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID].GetName().c_str());
-            if (!scene.m_meshes[scene.m_selectedMeshID].m_physicsInfo) {
-                static MeshPhysicsInfo physicsInfo;
+            if (!meshInstance.physicsInfo) {
+                static PhysicsInfo physicsInfo;
                 const char* types[2] = { "Static", "Dynamic" };
                 if (ImGui::BeginCombo("Type", types[(int)physicsInfo.rigidBodyType])) {
                     if (ImGui::MenuItem("Static")) {
@@ -498,20 +501,23 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
-                    scene.m_meshes[scene.m_selectedMeshID].AddPhysicsInfo(physicsInfo);
+                    scene.m_meshes[scene.m_selectedMeshID].AddPhysicsInfo(physicsInfo, meshInstance);
+                    meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
                 }
             } else {
-                // TODO: resize rigidbody
-                // resize
-                // if (ImGui::SliderFloat3("Size", glm::value_ptr(meshInstanceUBO.physicsInfo->size), 0.0f, 10.0f)) {
-                // ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, s, pMatrix);
-                // meshInstanceUBO.physicsInfo->matrix = glm::make_mat4(pMatrix);
-                // meshInstanceUBO.physicsInfo->scale = glm::make_vec3(scale) * meshInstanceUBO.physicsInfo->size;
-                // scene.m_physics.UpdateRigidBody(meshInstanceUBO);
-                // }
-                if (ImGui::Button("Delete")) {
-                    scene.m_meshes[scene.m_selectedMeshID].m_physicsInfo.reset();
+                if (ImGui::SliderFloat3("Scale", glm::value_ptr(meshInstance.physicsInfo->scale), 0.0f, 10.0f)) {
+                    meshInstance.physicsDebugUBO.scale = meshInstance.physicsInfo->scale;
                 }
+                if (ImGui::Button("Delete")) {
+                    meshInstance.physicsInfo.reset();
+                    meshInstance.physicsDebugUBO.havePhysicsInfo = 0;
+                }
+            }
+
+            ImGui::SeparatorText("Script");
+            if (ImGui::Button("Add")) {
+                // TODO:
+                // scene.AddScript();
             }
         }
         ImGui::EndTabItem();
@@ -682,7 +688,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
         return;
 
     // const int32_t* pickColor = viewport.PickColor(s_dragDropMouseX, s_dragDropMouseY);
-    scene.AddMeshInstance(static_cast<Mesh*>(s_dragDropResource->ptr)->GetMeshID());
+    scene.AddMeshInstance(static_cast<Mesh*>(s_dragDropResource->ptr)->GetMeshColorID());
     s_dragDropped = false;
 }
 

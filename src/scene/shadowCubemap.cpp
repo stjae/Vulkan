@@ -43,7 +43,7 @@ void ShadowCubemap::CreateFramebuffer()
     }
 }
 
-void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes)
+void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes)
 {
     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
@@ -61,7 +61,7 @@ void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& li
     vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
-void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes)
+void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes)
 {
     std::array<vk::ClearValue, 2> clearValues;
     clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };

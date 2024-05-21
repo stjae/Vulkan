@@ -267,7 +267,7 @@ void Viewport::Draw(const Scene& scene)
 
     meshRenderPushConsts.iblExposure = scene.m_iblExposure;
 
-    // not the actual index; doing this because I can't bind instance ubo in case there is no instance
+    // not the actual index; doing this being unable to bind instance UBO in case there is no instance
     int meshIndex = 0;
     int materialOffset = 0;
     for (const auto& mesh : scene.m_meshes) {
@@ -291,24 +291,13 @@ void Viewport::Draw(const Scene& scene)
         materialOffset += (int)mesh.GetMaterialCount();
     }
     // physics debug
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
-    meshIndex = 0;
-    for (auto& mesh : scene.m_meshes) {
-        if (mesh.GetInstanceCount() > 0) {
-            lineRenderPushConsts.meshIndex = meshIndex;
-            meshIndex++;
-            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].pushConstants(
-                lineRenderPipeline.m_pipelineLayout,
-                vk::ShaderStageFlagBits::eVertex,
-                0,
-                sizeof(lineRenderPushConsts),
-                &lineRenderPushConsts);
-            if (mesh.m_physicsInfo && mesh.GetMeshID() == scene.m_selectedMeshID) {
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh.m_physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(mesh.m_physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
-                m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(mesh.m_physicsDebugDrawer->m_lineIndices.size(), mesh.GetInstanceCount(), 0, 0, 0);
-            }
+    if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {
+        if (scene.GetSelectedMeshInstance().physicsInfo) {
+            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
+            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
+            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &scene.GetSelectedMeshInstance().physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
+            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindIndexBuffer(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
+            m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].drawIndexed(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_lineIndices.size(), 1, 0, 0, 0);
         }
     }
 

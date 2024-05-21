@@ -1,7 +1,8 @@
 #ifndef MESHDATA_H
 #define MESHDATA_H
 
-#include "../../vulkan/buffer.h"
+#include "../vulkan/buffer.h"
+#include <bullet/btBulletCollisionCommon.h>
 
 struct Vertex
 {

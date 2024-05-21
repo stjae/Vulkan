@@ -2,7 +2,7 @@
 #define SHADOWCUBEMAP_H
 
 #include "../common.h"
-#include "mesh/meshModel.h"
+#include "mesh.h"
 #include "../vulkan/cubemap.h"
 #include "../pipeline/meshRender.h"
 #include "../pipeline/shadowCubemap.h"
@@ -21,13 +21,13 @@ class ShadowCubemap : public vkn::Cubemap
     inline static vk::CommandPool s_commandPool;
     inline static std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
-    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes);
+    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes);
     void CreateFramebuffer();
     void CreateDepthImage(vk::CommandBuffer& commandBuffer);
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<MeshModel>& meshes);
+    void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<Mesh>& meshes);
 };
 
 #endif

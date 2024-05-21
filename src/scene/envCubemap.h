@@ -2,7 +2,7 @@
 #define ENVCUBEMAP_H
 
 #include "../common.h"
-#include "mesh/mesh.h"
+#include "mesh.h"
 #include "../vulkan/device.h"
 #include "../vulkan/cubemap.h"
 #include "../vulkan/pipeline.h"

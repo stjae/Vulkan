@@ -15,12 +15,12 @@ class LineRenderPipeline : public vkn::Pipeline
 
 public:
     vk::DescriptorBufferInfo m_cameraDescriptor;
-    std::vector<vk::DescriptorBufferInfo> m_meshDescriptors;
+    vk::DescriptorBufferInfo m_UBODescriptor;
 
     LineRenderPipeline();
     void CreatePipeline() override;
     void UpdateCameraDescriptor();
-    void UpdateMeshDescriptors();
+    void UpdateUBODescriptor();
 
 } inline lineRenderPipeline;
 

@@ -4,7 +4,7 @@
 #include "../common.h"
 #include "scene.h"
 #include "camera.h"
-#include "mesh/meshModel.h"
+#include "mesh.h"
 #include "shadowMap.h"
 #include "shadowCubemap.h"
 #include "envCubemap.h"
@@ -43,7 +43,7 @@ class Scene
     ShadowMap m_shadowMap;
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
 
-    std::vector<MeshModel> m_meshes;
+    std::vector<Mesh> m_meshes;
     Mesh m_envCube;
     std::string m_hdriFilePath;
     std::unique_ptr<vkn::Image> m_envMap;
@@ -94,7 +94,8 @@ class Scene
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
-    void AddMeshInstance(uint32_t id, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    void AddMeshInstance(uint32_t meshID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    void AddMeshInstance(uint32_t meshID, uint64_t UUID);
     void AddLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
     void DeleteMeshInstance();
@@ -118,11 +119,12 @@ public:
     void Update();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
-    const std::vector<MeshModel>& GetMeshes() { return m_meshes; }
+    const std::vector<Mesh>& GetMeshes() { return m_meshes; }
     // TODO: safety
-    MeshModel& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }
-    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].m_meshInstanceUBOs[m_selectedMeshInstanceID]; }
-    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].m_meshInstanceUBOs[instanceID]; }
+    Mesh& GetSelectedMesh() { return m_meshes[m_selectedMeshID]; }
+    MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID]; }
+    MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID].m_meshInstances[m_selectedMeshInstanceID]->UBO; }
+    MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID].m_meshInstances[instanceID]->UBO; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void Unselect();
     bool IsPlaying() { return m_isPlaying; }
@@ -130,6 +132,7 @@ public:
     void Play();
     void Stop();
     ~Scene();
+    void UpdatePhysicsDebug();
 };
 
 #endif

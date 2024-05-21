@@ -1,6 +1,5 @@
 #include "lineRender.h"
 
-void CreateRenderPass();
 LineRenderPipeline::LineRenderPipeline()
 {
     m_bindingDesc.setBinding(0);
@@ -67,61 +66,19 @@ void LineRenderPipeline::SetUpDescriptors()
     std::vector<vkn::DescriptorBinding> bindings;
     bindings = {
         // camera
-        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
         // mesh
-        { vk::DescriptorType::eStorageBuffer, 1000, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::ePartiallyBound },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
     };
-    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
+    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
-    vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+    vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets);
     vkn::Descriptor::AllocateDescriptorSets(m_descriptorPool, m_descriptorSets, m_descriptorSetLayouts);
 }
 
 void LineRenderPipeline::CreateRenderPass()
 {
-    // std::array<vk::AttachmentDescription, 2> meshRenderAttachments;
-    //
-    // meshRenderAttachments[0].format = vk::Format::eB8G8R8A8Srgb;
-    // meshRenderAttachments[0].samples = vk::SampleCountFlagBits::e1;
-    // meshRenderAttachments[0].loadOp = vk::AttachmentLoadOp::eClear;
-    // meshRenderAttachments[0].storeOp = vk::AttachmentStoreOp::eStore;
-    // meshRenderAttachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    // meshRenderAttachments[0].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    // meshRenderAttachments[0].initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    // meshRenderAttachments[0].finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    //
-    // // Depth
-    // meshRenderAttachments[1].format = vk::Format::eD32Sfloat;
-    // meshRenderAttachments[1].samples = vk::SampleCountFlagBits::e1;
-    // meshRenderAttachments[1].loadOp = vk::AttachmentLoadOp::eClear;
-    // meshRenderAttachments[1].storeOp = vk::AttachmentStoreOp::eStore;
-    // meshRenderAttachments[1].stencilLoadOp = vk::AttachmentLoadOp::eClear;
-    // meshRenderAttachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    // meshRenderAttachments[1].initialLayout = vk::ImageLayout::eUndefined;
-    // meshRenderAttachments[1].finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    //
-    // vk::AttachmentReference colorAttachmentRef;
-    // colorAttachmentRef.attachment = 0;
-    // colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    //
-    // vk::AttachmentReference depthAttachmentRef;
-    // depthAttachmentRef.attachment = 1;
-    // depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    //
-    // vk::SubpassDescription subpassDesc;
-    // subpassDesc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    // subpassDesc.colorAttachmentCount = 1;
-    // subpassDesc.pColorAttachments = &colorAttachmentRef;
-    // subpassDesc.pDepthStencilAttachment = &depthAttachmentRef;
-    //
-    // vk::RenderPassCreateInfo renderPassInfo;
-    // renderPassInfo.attachmentCount = (uint32_t)(meshRenderAttachments.size());
-    // renderPassInfo.pAttachments = meshRenderAttachments.data();
-    // renderPassInfo.subpassCount = 1;
-    // renderPassInfo.pSubpasses = &subpassDesc;
-    //
-    // m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
     std::array<vk::AttachmentDescription, 3> meshRenderAttachments;
 
     meshRenderAttachments[0].format = vk::Format::eB8G8R8A8Srgb;
@@ -194,14 +151,14 @@ void LineRenderPipeline::UpdateCameraDescriptor()
     vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }
 
-void LineRenderPipeline::UpdateMeshDescriptors()
+void LineRenderPipeline::UpdateUBODescriptor()
 {
     vk::WriteDescriptorSet writeDescriptorSet;
     writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 1;
     writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = m_meshDescriptors.size();
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = m_meshDescriptors.data();
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+    writeDescriptorSet.pBufferInfo = &m_UBODescriptor;
     vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

@@ -30,8 +30,8 @@ add_executable(${PROJECT_NAME}
         src/engine/engine.h src/engine/engine.cpp
 
         src/scene/scene.h src/scene/scene.cpp
-        src/scene/mesh/meshBase.h src/scene/mesh/meshBase.cpp
-        src/scene/mesh/mesh.h src/scene/mesh/mesh.cpp
+        src/scene/meshBase.h src/scene/meshBase.cpp
+        src/scene/mesh.h src/scene/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
         src/engine/ui.h src/engine/ui.cpp
 
@@ -73,8 +73,6 @@ add_executable(${PROJECT_NAME}
         src/scene/prefilteredCubemap.h
         src/pipeline/brdfLut.cpp
         src/pipeline/brdfLut.h
-        src/scene/mesh/meshModel.cpp
-        src/scene/mesh/meshModel.h
         src/engine/sceneSerializer.cpp
         src/engine/sceneSerializer.h
         src/pipeline/shadowMap.cpp
@@ -89,6 +87,9 @@ add_executable(${PROJECT_NAME}
         src/enum.h
         src/scene/physicsDebugDrawer.h
         src/vulkan/sync.cpp
+        src/scene/id.h
+        src/scene/id.cpp
+        src/struct.cpp
 )
 
 include(Dependency.cmake)

@@ -13,7 +13,7 @@ struct BufferInfo
     vk::BufferUsageFlags usage;
     vk::MemoryPropertyFlags properties;
 };
-class Buffer : public vkn::Memory
+class Buffer : public Memory
 {
     struct Bundle
     {

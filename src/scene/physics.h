@@ -4,7 +4,7 @@
 #include <bullet/btBulletCollisionCommon.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-#include "../scene/mesh/meshModel.h"
+#include "../scene/mesh.h"
 #include "../../imgui/imgui.h"
 #include "../../imgui/imgui_impl_glfw.h"
 #include "../../imgui/imgui_impl_vulkan.h"
@@ -30,9 +30,9 @@ class Physics
 
 public:
     void InitPhysics();
-    void AddRigidBodies(std::vector<MeshModel>& meshes);
-    void Simulate(std::vector<MeshModel>& meshes);
-    void Stop(std::vector<MeshModel>& meshes);
+    void AddRigidBodies(std::vector<Mesh>& meshes);
+    void Simulate(std::vector<Mesh>& meshes);
+    void Stop(std::vector<Mesh>& meshes);
     ~Physics();
 };
 

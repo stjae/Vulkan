@@ -14,7 +14,7 @@
 #include "../pipeline/brdfLut.h"
 #include "../pipeline/skyboxRender.h"
 #include "../pipeline/lineRender.h"
-#include "../scene/mesh/mesh.h"
+#include "../scene/mesh.h"
 
 class Viewport
 {

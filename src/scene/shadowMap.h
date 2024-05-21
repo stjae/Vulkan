@@ -3,7 +3,7 @@
 
 #include "../vulkan/sync.h"
 #include "../vulkan/image.h"
-#include "../scene/mesh/meshModel.h"
+#include "../scene/mesh.h"
 #include "../pipeline/shadowMap.h"
 
 inline static uint32_t shadowMapSize = 2048;
@@ -17,7 +17,7 @@ class ShadowMap : public vkn::Image
 
 public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<MeshModel>& meshes);
+    void DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh>& meshes);
 };
 
 #endif

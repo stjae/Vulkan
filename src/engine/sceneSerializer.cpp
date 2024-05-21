@@ -146,33 +146,31 @@ void SceneSerializer::SerializeResources(YAML::Emitter& out, const std::vector<R
     }
 }
 
-void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<MeshModel>& meshes)
+void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<Mesh>& meshes)
 {
     if (!meshes.empty()) {
         out << YAML::Key << "Meshes";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& mesh : meshes) {
             out << YAML::BeginMap;
-            out << YAML::Key << "ID" << YAML::Value << mesh.m_meshID;
-            if (mesh.m_physicsInfo) {
-                out << YAML::Key << "RigidBody" << YAML::Value;
-                out << YAML::BeginMap;
-                out << YAML::Key << "Type" << YAML::Value << (int)mesh.m_physicsInfo->rigidBodyType;
-                out << YAML::Key << "Shape" << YAML::Value << (int)mesh.m_physicsInfo->colliderShape;
-                out << YAML::EndMap;
-            }
             out << YAML::Key << "Instances";
             out << YAML::Value << YAML::BeginSeq;
-            for (auto& instanceUBO : mesh.m_meshInstanceUBOs) {
+            for (auto& instance : mesh.m_meshInstances) {
                 out << YAML::BeginMap;
-                out << YAML::Key << "ID" << YAML::Value << instanceUBO.instanceID;
-                out << YAML::Key << "MeshID" << YAML::Value << instanceUBO.meshID;
-                out << YAML::Key << "Transform" << YAML::Value << instanceUBO.model;
-                out << YAML::Key << "InvTranspose" << YAML::Value << instanceUBO.invTranspose;
-                out << YAML::Key << "Albedo" << YAML::Value << instanceUBO.albedo;
-                out << YAML::Key << "Metallic" << YAML::Value << instanceUBO.metallic;
-                out << YAML::Key << "Roughness" << YAML::Value << instanceUBO.roughness;
-                out << YAML::Key << "RigidBodySize" << YAML::Value << instanceUBO.physicsInfo->size;
+                out << YAML::Key << "UUID" << YAML::Value << instance->UUID;
+                out << YAML::Key << "Transform" << YAML::Value << instance->UBO.model;
+                out << YAML::Key << "InvTranspose" << YAML::Value << instance->UBO.invTranspose;
+                out << YAML::Key << "Albedo" << YAML::Value << instance->UBO.albedo;
+                out << YAML::Key << "Metallic" << YAML::Value << instance->UBO.metallic;
+                out << YAML::Key << "Roughness" << YAML::Value << instance->UBO.roughness;
+                if (instance->physicsInfo) {
+                    out << YAML::Key << "PhysicsInfo" << YAML::Value;
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "Type" << YAML::Value << (int)instance->physicsInfo->rigidBodyType;
+                    out << YAML::Key << "Shape" << YAML::Value << (int)instance->physicsInfo->colliderShape;
+                    out << YAML::Key << "RigidBodyScale" << YAML::Value << instance->physicsInfo->scale;
+                    out << YAML::EndMap;
+                }
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
@@ -240,24 +238,24 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     auto meshes = data["Meshes"];
     if (meshes) {
-        for (auto mesh : meshes) {
-            auto rigidBody = mesh["RigidBody"];
-            if (rigidBody) {
-                MeshPhysicsInfo pInfo;
-                pInfo.rigidBodyType = (eRigidBodyType)rigidBody["Type"].as<int>();
-                pInfo.colliderShape = (eColliderShape)rigidBody["Shape"].as<int>();
-                scene.m_meshes[mesh["ID"].as<int>()].AddPhysicsInfo(pInfo);
-            }
-            auto instances = mesh["Instances"];
+        for (size_t i = 0; i < meshes.size(); i++) {
+            auto instances = meshes[i]["Instances"];
             for (auto instance : instances) {
-                scene.AddMeshInstance(mesh["ID"].as<int>());
-                auto& meshInstance = scene.m_meshes[mesh["ID"].as<int>()].m_meshInstanceUBOs.back();
-                meshInstance.model = instance["Transform"].as<glm::mat4>();
-                meshInstance.invTranspose = instance["InvTranspose"].as<glm::mat4>();
-                meshInstance.albedo = instance["Albedo"].as<glm::vec3>();
-                meshInstance.metallic = instance["Metallic"].as<float>();
-                meshInstance.roughness = instance["Roughness"].as<float>();
-                meshInstance.physicsInfo->size = instance["RigidBodySize"].as<glm::vec3>();
+                scene.AddMeshInstance(i, instance["UUID"].as<uint64_t>());
+                auto& meshInstance = scene.m_meshes[i].m_meshInstances.back();
+                meshInstance->UBO.model = instance["Transform"].as<glm::mat4>();
+                meshInstance->UBO.invTranspose = instance["InvTranspose"].as<glm::mat4>();
+                meshInstance->UBO.albedo = instance["Albedo"].as<glm::vec3>();
+                meshInstance->UBO.metallic = instance["Metallic"].as<float>();
+                meshInstance->UBO.roughness = instance["Roughness"].as<float>();
+                auto physicsInfo = instance["PhysicsInfo"];
+                if (physicsInfo) {
+                    PhysicsInfo pInfo;
+                    pInfo.rigidBodyType = (eRigidBodyType)physicsInfo["Type"].as<int>();
+                    pInfo.colliderShape = (eColliderShape)physicsInfo["Shape"].as<int>();
+                    scene.m_meshes[i].AddPhysicsInfo(pInfo, *meshInstance);
+                    meshInstance->physicsInfo->scale = physicsInfo["RigidBodyScale"].as<glm::vec3>();
+                }
             }
         }
     }

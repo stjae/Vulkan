@@ -35,7 +35,6 @@ const bool DEBUG = true;
 #include <stb/stb_image.h>
 
 #include "path.h"
-#include "struct.h"
 
 const int MAX_FRAME = 2;
 
@@ -53,8 +52,6 @@ std::vector<char> FetchCode(const std::string& filename);
 std::string nfdOpen(nfdfilteritem_t filterItem);
 std::string nfdSave(nfdu8filteritem_t filterItem);
 std::string nfdPickFolder();
-void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize);
-void AlignedFree(void* aligned);
 
 namespace vkn {
 void CheckResult(vk::Result result);

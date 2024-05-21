@@ -4,7 +4,7 @@
 #include "buffer.h"
 #include "command.h"
 #include "pipeline.h"
-#include "../scene/mesh/mesh.h"
+#include "../scene/mesh.h"
 
 namespace vkn {
 class Image

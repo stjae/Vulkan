@@ -33,7 +33,7 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
     CreateFramebuffer();
 }
 
-void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<MeshModel>& meshes)
+void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<Mesh>& meshes)
 {
     vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
