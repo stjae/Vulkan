@@ -19,19 +19,22 @@ struct MeshPart
 
 struct MeshInstanceUBO
 {
-    glm::mat4 model;
-    glm::mat4 invTranspose;
+    glm::mat4 model = glm::mat4(1.0f);
     // Color ID for mouse picking
     int32_t meshColorID;
-    int32_t textureID;
+    int32_t textureID = 0;
     int32_t instanceColorID;
-    int32_t useTexture;
-    glm::vec3 albedo;
-    float metallic;
-    float roughness;
+    int32_t useTexture = true;
+    glm::vec3 albedo = glm::vec3(0.5f);
+    float metallic = 0.0f;
+    float roughness = 1.0f;
     float padding[3];
 
-    MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : meshColorID(meshColorID), instanceColorID(instanceColorID)
+    {
+        model = glm::translate(model, pos);
+        model = glm::scale(model, scale);
+    }
 };
 
 struct PhysicsDebugUBO

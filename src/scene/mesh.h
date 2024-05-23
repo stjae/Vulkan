@@ -14,9 +14,6 @@
 class Mesh : public MeshBase
 {
     friend class Scene;
-    friend class SceneSerializer;
-    friend class Physics;
-    friend class Viewport;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
@@ -36,18 +33,19 @@ class Mesh : public MeshBase
     void ProcessNode(aiNode* node, const aiScene* scene);
     void ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat);
     void CreateBuffers(const vk::CommandBuffer& commandBuffer);
+    void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    void AddInstance(uint64_t UUID);
 
 public:
-    Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
+    explicit Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
     Mesh(int meshColorID, const std::string& filePath);
-    void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void AddInstance(const uint64_t UUID);
-    void AddPhysicsInfo(const PhysicsInfo& physicsInfo, MeshInstance& meshInstance);
     const std::string& GetName() { return m_name; }
     int32_t GetMeshColorID() const { return m_meshColorID; }
     size_t GetInstanceCount() const { return m_meshInstances.size(); }
     size_t GetMaterialCount() const { return m_materials.size(); }
+    const std::vector<std::unique_ptr<MeshInstance>>& GetInstances() const { return m_meshInstances; }
     const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
+    btTriangleIndexVertexArray* GetBulletVertexArray() { return &m_bulletVertexArray; }
 };
 
 #endif

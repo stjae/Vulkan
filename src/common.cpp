@@ -1,6 +1,7 @@
 #include "common.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+#include <fstream>
 
 std::string& GetFrameRate()
 {
@@ -114,26 +115,6 @@ std::string nfdPickFolder()
 
     NFD_Quit();
     return pathStr;
-}
-
-void* AlignedAlloc(size_t dynamicBufferAlignment, size_t bufferSize)
-{
-#ifdef __APPLE__
-    return aligned_alloc(dynamicBufferAlignment, bufferSize);
-#elif _WIN32
-    return _aligned_malloc(bufferSize, dynamicBufferAlignment);
-#else
-    return nullptr;
-#endif
-}
-
-void AlignedFree(void* aligned)
-{
-#ifdef __APPLE__
-    free(aligned);
-#elif _WIN32
-    _aligned_free(aligned);
-#endif
 }
 
 void vkn::CheckResult(vk::Result result)

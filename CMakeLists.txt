@@ -89,7 +89,6 @@ add_executable(${PROJECT_NAME}
         src/vulkan/sync.cpp
         src/scene/id.h
         src/scene/id.cpp
-        src/struct.cpp
 )
 
 include(Dependency.cmake)

@@ -12,11 +12,10 @@ struct PhysicsInfo
     eRigidBodyType rigidBodyType;
     eColliderShape colliderShape;
     btRigidBody* rigidBodyPtr;
+    btCollisionShape* collisionShapePtr;
     // model matrix before simulation
     glm::mat4 initialModel;
-    glm::vec3 scale;
-
-    PhysicsInfo() : scale(1.0f) {}
+    glm::vec3 scale = glm::vec3(1.0f);
 };
 
 struct LinePoint

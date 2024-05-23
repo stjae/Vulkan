@@ -2,93 +2,102 @@
 
 void Physics::InitPhysics()
 {
-    m_collisionConfiguration = new btDefaultCollisionConfiguration();
-    m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
-    m_overlappingPairCache = new btDbvtBroadphase();
-    m_solver = new btSequentialImpulseConstraintSolver;
-    m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
-    m_dynamicsWorld->setGravity(btVector3(0, -10, 0));
-    m_isFirstStep = true;
+    s_collisionConfiguration = new btDefaultCollisionConfiguration();
+    s_dispatcher = new btCollisionDispatcher(s_collisionConfiguration);
+    s_overlappingPairCache = new btDbvtBroadphase();
+    s_solver = new btSequentialImpulseConstraintSolver;
+    s_dynamicsWorld = new btDiscreteDynamicsWorld(s_dispatcher, s_overlappingPairCache, s_solver, s_collisionConfiguration);
+    s_dynamicsWorld->setGravity(btVector3(0, -10, 0));
 }
 
-void Physics::AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes)
+void Physics::AddRigidBody(Mesh& mesh, MeshInstance& instance)
+{
+    switch (instance.physicsInfo->colliderShape) {
+    case (eColliderShape::BOX):
+        instance.physicsInfo->collisionShapePtr = new btBoxShape({ 0.5f, 0.5f, 0.5f });
+        break;
+    case (eColliderShape::SPHERE):
+        instance.physicsInfo->collisionShapePtr = new btSphereShape(1.0f);
+        break;
+    case (eColliderShape::CAPSULE):
+        instance.physicsInfo->collisionShapePtr = new btCapsuleShape({ 1.0f, 1.0f });
+        break;
+    case (eColliderShape::CYLINDER):
+        instance.physicsInfo->collisionShapePtr = new btCylinderShape({ 0.5f, 0.5f, 0.5f });
+        break;
+    case (eColliderShape::CONE):
+        instance.physicsInfo->collisionShapePtr = new btConeShape({ 1.0f, 1.0f });
+        break;
+    case (eColliderShape::MESH):
+        instance.physicsInfo->collisionShapePtr = new btBvhTriangleMeshShape(mesh.GetBulletVertexArray(), true);
+        break;
+    default:
+        return;
+    }
+
+    float* instanceM = glm::value_ptr(instance.UBO.model);
+    float instanceT[3];
+    float instanceR[3];
+    float instanceS[3];
+    ImGuizmo::DecomposeMatrixToComponents(instanceM, instanceT, instanceR, instanceS);
+
+    instance.physicsInfo->collisionShapePtr->setLocalScaling({ instanceS[0] * instance.physicsInfo->scale.x, instanceS[1] * instance.physicsInfo->scale.y, instanceS[2] * instance.physicsInfo->scale.z });
+    s_collisionShapes.push_back(instance.physicsInfo->collisionShapePtr);
+
+    btTransform startTransform;
+    startTransform.setIdentity();
+    startTransform.setOrigin({ instanceT[0], instanceT[1], instanceT[2] });
+
+    btScalar mass = instance.physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
+    btVector3 localInertia(0, 0, 0);
+    instance.physicsInfo->collisionShapePtr->calculateLocalInertia(mass, localInertia);
+
+    auto* myMotionState = new btDefaultMotionState(startTransform);
+    btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, instance.physicsInfo->collisionShapePtr, localInertia);
+    auto* body = new btRigidBody(cInfo);
+    body->setWorldTransform(startTransform);
+    s_dynamicsWorld->addRigidBody(body);
+
+    instance.physicsInfo->initialModel = instance.UBO.model;
+    instance.physicsInfo->rigidBodyPtr = body;
+}
+
+void Physics::UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh->m_meshInstances) {
+        for (auto& instance : mesh->GetInstances()) {
             if (!instance->physicsInfo)
                 continue;
-            btCollisionShape* shape;
-
-            switch (instance->physicsInfo->colliderShape) {
-            case (eColliderShape::BOX):
-                shape = new btBoxShape({ 0.5f, 0.5f, 0.5f });
-                break;
-            case (eColliderShape::SPHERE):
-                shape = new btSphereShape(1.0f);
-                break;
-            case (eColliderShape::CAPSULE):
-                shape = new btCapsuleShape({ 1.0f, 1.0f });
-                break;
-            case (eColliderShape::CYLINDER):
-                shape = new btCylinderShape({ 0.5f, 0.5f, 0.5f });
-                break;
-            case (eColliderShape::CONE):
-                shape = new btConeShape({ 1.0f, 1.0f });
-                break;
-            case (eColliderShape::MESH):
-                shape = new btBvhTriangleMeshShape(&mesh->m_bulletVertexArray, true);
-                break;
-            default:
-                return;
-            }
 
             float* instanceM = glm::value_ptr(instance->UBO.model);
             float instanceT[3];
             float instanceR[3];
             float instanceS[3];
-            float colliderM[16];
             ImGuizmo::DecomposeMatrixToComponents(instanceM, instanceT, instanceR, instanceS);
-            float unitScale[3] = { 1.0f, 1.0f, 1.0f };
-            ImGuizmo::RecomposeMatrixFromComponents(instanceT, instanceR, unitScale, colliderM);
 
-            shape->setLocalScaling({ instanceS[0] * instance->physicsInfo->scale.x, instanceS[1] * instance->physicsInfo->scale.y, instanceS[2] * instance->physicsInfo->scale.z });
-            m_collisionShapes.push_back(shape);
+            instance->physicsInfo->rigidBodyPtr->getCollisionShape()->setLocalScaling({ instanceS[0] * instance->physicsInfo->scale.x, instanceS[1] * instance->physicsInfo->scale.y, instanceS[2] * instance->physicsInfo->scale.z });
 
             btTransform startTransform;
             startTransform.setIdentity();
             startTransform.setOrigin({ instanceT[0], instanceT[1], instanceT[2] });
 
-            btScalar mass = instance->physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
-            btVector3 localInertia(0, 0, 0);
-            shape->calculateLocalInertia(mass, localInertia);
-
-            auto* myMotionState = new btDefaultMotionState(startTransform);
-            btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
-            auto* body = new btRigidBody(cInfo);
-            btTransform t;
-            t.setIdentity();
-            t.setFromOpenGLMatrix(colliderM);
-            body->setWorldTransform(t);
-
-            m_dynamicsWorld->addRigidBody(body);
-
+            instance->physicsInfo->rigidBodyPtr->setWorldTransform(startTransform);
             instance->physicsInfo->initialModel = instance->UBO.model;
-            instance->physicsInfo->rigidBodyPtr = body;
         }
     }
 }
 
 void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
-    if (m_isFirstStep) {
-        AddRigidBodies(meshes);
-        m_isFirstStep = false;
+    if (s_isFirstStep) {
+        UpdateRigidBodies(meshes);
+        s_isFirstStep = false;
     }
 
-    m_dynamicsWorld->stepSimulation(1.0f / 60.0f);
+    s_dynamicsWorld->stepSimulation(1.0f / 60.0f);
 
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh->m_meshInstances) {
+        for (auto& instance : mesh->GetInstances()) {
             if (!instance->physicsInfo)
                 continue;
             auto body = instance->physicsInfo->rigidBodyPtr;
@@ -97,72 +106,59 @@ void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
             btScalar m[16];
             t.getOpenGLMatrix(m);
             instance->UBO.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance->physicsInfo->scale);
-
-            int f = body->getCollisionFlags();
-            body->setCollisionFlags(f | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
-
-            instance->UBO.invTranspose = instance->UBO.model;
-            instance->UBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            instance->UBO.invTranspose = glm::transpose(glm::inverse(instance->UBO.invTranspose));
         }
     }
 }
 
 void Physics::Stop(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
-    m_isFirstStep = true;
+    s_isFirstStep = true;
 
     for (auto& mesh : meshes) {
-        for (auto& instance : mesh->m_meshInstances) {
+        for (auto& instance : mesh->GetInstances()) {
             if (!instance->physicsInfo)
                 continue;
             instance->UBO.model = instance->physicsInfo->initialModel;
-            instance->UBO.invTranspose = instance->UBO.model;
-            instance->UBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            instance->UBO.invTranspose = glm::transpose(glm::inverse(instance->UBO.invTranspose));
+            instance->physicsInfo->rigidBodyPtr->clearForces();
+            btVector3 zeroVector(0, 0, 0);
+            instance->physicsInfo->rigidBodyPtr->setLinearVelocity(zeroVector);
+            instance->physicsInfo->rigidBodyPtr->setAngularVelocity(zeroVector);
+            instance->physicsInfo->rigidBodyPtr->setActivationState(DISABLE_DEACTIVATION);
         }
-    }
-
-    // cleanup all rigidbody
-    std::vector<btCollisionObject*> objs;
-    for (int i = 0; i < m_dynamicsWorld->getNumCollisionObjects(); i++) {
-        objs.push_back(m_dynamicsWorld->getCollisionObjectArray()[i]);
-    }
-    for (auto obj : objs) {
-        auto body = btRigidBody::upcast(obj);
-        if (body && body->getMotionState()) {
-            delete body->getMotionState();
-        }
-        m_dynamicsWorld->removeCollisionObject(body);
-        delete body;
-    }
-    for (int i = 0; i < m_collisionShapes.size(); i++) {
-        auto shape = m_collisionShapes[i];
-        m_collisionShapes[i] = 0;
-        delete shape;
     }
 }
 
 Physics::~Physics()
 {
-    for (int i = 0; i < m_dynamicsWorld->getNumCollisionObjects(); i++) {
-        auto obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+    for (int i = 0; i < s_dynamicsWorld->getNumCollisionObjects(); i++) {
+        auto obj = s_dynamicsWorld->getCollisionObjectArray()[i];
         auto body = btRigidBody::upcast(obj);
         if (body && body->getMotionState()) {
             delete body->getMotionState();
         }
-        m_dynamicsWorld->removeCollisionObject(obj);
+        s_dynamicsWorld->removeCollisionObject(obj);
         delete obj;
     }
 
-    for (int i = 0; i < m_collisionShapes.size(); i++) {
-        auto shape = m_collisionShapes[i];
-        m_collisionShapes[i] = 0;
+    for (int i = 0; i < s_collisionShapes.size(); i++) {
+        auto shape = s_collisionShapes[i];
+        s_collisionShapes[i] = 0;
         delete shape;
     }
 
-    delete m_dynamicsWorld;
-    delete m_solver;
-    delete m_overlappingPairCache;
-    delete m_dispatcher;
+    delete s_dynamicsWorld;
+    delete s_solver;
+    delete s_overlappingPairCache;
+    delete s_dispatcher;
+}
+
+// TODO: move to destructor?
+void Physics::DeleteRigidBody(MeshInstance& instance)
+{
+    if (instance.physicsInfo->rigidBodyPtr->getMotionState())
+        delete instance.physicsInfo->rigidBodyPtr->getMotionState();
+    s_dynamicsWorld->removeCollisionObject(instance.physicsInfo->rigidBodyPtr);
+    delete instance.physicsInfo->rigidBodyPtr;
+    s_collisionShapes.remove(instance.physicsInfo->collisionShapePtr);
+    delete instance.physicsInfo->collisionShapePtr;
 }

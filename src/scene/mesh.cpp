@@ -11,13 +11,6 @@ void Mesh::AddInstance(const uint64_t UUID)
     m_meshInstances.push_back(std::make_unique<MeshInstance>(UUID, MeshInstanceUBO(m_meshColorID, (int32_t)m_meshInstances.size())));
 }
 
-void Mesh::AddPhysicsInfo(const PhysicsInfo& physicsInfo, MeshInstance& meshInstance)
-{
-    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, m_indexContainers, m_vertexContainers);
-    meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
-    meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
-}
-
 void Mesh::CreateSquare(float scale, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;

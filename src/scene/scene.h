@@ -2,7 +2,6 @@
 #define SCENE_H
 
 #include "../common.h"
-#include "scene.h"
 #include "camera.h"
 #include "mesh.h"
 #include "shadowMap.h"
@@ -91,11 +90,14 @@ class Scene
 
     Physics m_physics;
     bool m_isPlaying;
+    bool m_isStartUp;
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
-    void AddMeshInstance(uint32_t meshID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
-    void AddMeshInstance(uint32_t meshID, uint64_t UUID);
+    void AddMeshInstance(Mesh& mesh, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+    void AddMeshInstance(Mesh& mesh, uint64_t UUID);
+    void AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo);
+    void DeletePhysics(MeshInstance& meshInstance);
     void AddLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
     void DeleteMeshInstance();
@@ -117,10 +119,11 @@ class Scene
 public:
     Scene();
     void Update();
+    void UpdatePhysicsDebug();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
     const std::vector<std::shared_ptr<Mesh>>& GetMeshes() { return m_meshes; }
-    // TODO: safety
+    // TODO: std::optional
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
     MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
     MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO; }
@@ -132,7 +135,6 @@ public:
     void Play();
     void Stop();
     ~Scene();
-    void UpdatePhysicsDebug();
 };
 
 #endif

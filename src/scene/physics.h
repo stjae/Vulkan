@@ -18,22 +18,24 @@ class Physics
 {
     friend class Viewport;
 
-    btDefaultCollisionConfiguration* m_collisionConfiguration;
-    btCollisionDispatcher* m_dispatcher;
-    btBroadphaseInterface* m_overlappingPairCache;
-    btSequentialImpulseConstraintSolver* m_solver;
-    btDiscreteDynamicsWorld* m_dynamicsWorld;
+    inline static btDefaultCollisionConfiguration* s_collisionConfiguration;
+    inline static btCollisionDispatcher* s_dispatcher;
+    inline static btBroadphaseInterface* s_overlappingPairCache;
+    inline static btSequentialImpulseConstraintSolver* s_solver;
+    inline static btDiscreteDynamicsWorld* s_dynamicsWorld;
+    inline static btAlignedObjectArray<btCollisionShape*> s_collisionShapes;
 
-    btAlignedObjectArray<btCollisionShape*> m_collisionShapes;
-
-    bool m_isFirstStep;
+    inline static bool s_isFirstStep = true;
 
 public:
-    void InitPhysics();
-    void AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
-    void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
-    void Stop(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static void InitPhysics();
+    static void AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static void AddRigidBody(Mesh& mesh, MeshInstance& meshInstance);
+    static void UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static void Stop(std::vector<std::shared_ptr<Mesh>>& meshes);
     ~Physics();
+    static void DeleteRigidBody(MeshInstance& instance);
 };
 
 #endif

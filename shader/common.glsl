@@ -8,7 +8,6 @@ struct CameraData
 struct MeshInstanceData
 {
     mat4 model;
-    mat4 invTranspose;
     int meshID;
     int textureID;
     int instanceID;

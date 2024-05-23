@@ -5,6 +5,7 @@
 #include "command.h"
 #include "pipeline.h"
 #include "../scene/mesh.h"
+#include <stb/stb_image.h>
 
 namespace vkn {
 class Image

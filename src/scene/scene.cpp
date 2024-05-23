@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedLightID(-1), m_meshDirtyFlag(true), m_lightDirtyFlag(true), m_shadowShadowCubemapDirtyFlag(true), m_showLightIcon(true), m_envCube(0), m_brdfLutSquare(0), m_sceneFilePath(), m_iblExposure(1.0f), m_resourceDirtyFlag(true), m_envCubemapDirtyFlag(true), m_isPlaying(false)
+Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedLightID(-1), m_meshDirtyFlag(true), m_lightDirtyFlag(true), m_shadowShadowCubemapDirtyFlag(true), m_showLightIcon(true), m_envCube(0), m_brdfLutSquare(0), m_sceneFilePath(), m_iblExposure(1.0f), m_resourceDirtyFlag(true), m_envCubemapDirtyFlag(true), m_isPlaying(false), m_isStartUp(true)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::CreateCommandPool(ShadowCubemap::s_commandPool);
@@ -76,7 +76,7 @@ Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedL
         meshRenderPipeline.m_brdfLutDescriptor = m_brdfLut.Get().descriptorImageInfo;
         meshRenderPipeline.UpdateBrdfLutDescriptor();
 
-        m_physics.InitPhysics();
+        Physics::InitPhysics();
     }
 
     InitHdri();
@@ -140,16 +140,34 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
     vkn::Command::SubmitAndWait(m_imageLoadCommandBuffers.size(), m_imageLoadCommandBuffers.data());
 }
 
-void Scene::AddMeshInstance(uint32_t meshID, glm::vec3 pos, glm::vec3 scale)
+void Scene::AddMeshInstance(Mesh& mesh, glm::vec3 pos, glm::vec3 scale)
 {
-    m_meshes[meshID]->AddInstance(pos, scale);
+    mesh.AddInstance(pos, scale);
     m_meshDirtyFlag = true;
 }
 
-void Scene::AddMeshInstance(uint32_t meshID, const uint64_t UUID)
+void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
 {
-    m_meshes[meshID]->AddInstance(UUID);
+    mesh.AddInstance(UUID);
     m_meshDirtyFlag = true;
+}
+
+void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo)
+{
+    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers);
+    meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
+    meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
+    Physics::AddRigidBody(mesh, meshInstance);
+}
+
+void Scene::DeletePhysics(MeshInstance& meshInstance)
+{
+    if (!meshInstance.physicsInfo)
+        return;
+    Physics::DeleteRigidBody(meshInstance);
+    meshInstance.physicsDebugDrawer.reset();
+    meshInstance.physicsInfo.reset();
+    meshInstance.physicsDebugUBO.havePhysicsInfo = 0;
 }
 
 void Scene::Update()
@@ -196,6 +214,7 @@ void Scene::DeleteMeshInstance()
 {
     if (m_selectedMeshID < 0 || m_selectedMeshInstanceID < 0)
         return;
+    DeletePhysics(GetSelectedMeshInstance());
     m_meshes[m_selectedMeshID]->m_meshInstances.erase(m_meshes[m_selectedMeshID]->m_meshInstances.begin() + m_selectedMeshInstanceID);
 
     for (int32_t i = m_selectedMeshInstanceID; i < m_meshes[m_selectedMeshID]->m_meshInstances.size(); i++) {
@@ -242,7 +261,7 @@ void Scene::HandlePointLightDuplication()
 void Scene::HandleMeshDuplication()
 {
     if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_camera.m_isControllable) {
-        AddMeshInstance(m_selectedMeshID);
+        AddMeshInstance(*m_meshes[m_selectedMeshID]);
         auto& newInstance = m_meshes[m_selectedMeshID]->m_meshInstances.back();
         int newInstanceID = newInstance->UBO.instanceColorID;
         // copy data of source instance
@@ -251,7 +270,7 @@ void Scene::HandleMeshDuplication()
         // except for id
         newInstance->UBO.instanceColorID = newInstanceID;
         if (srcMeshInstance->physicsInfo) {
-            m_meshes[m_selectedMeshID]->AddPhysicsInfo(*srcMeshInstance->physicsInfo, *newInstance);
+            AddPhysics(*m_meshes[m_selectedMeshID], *newInstance, *srcMeshInstance->physicsInfo);
         }
         // select new instance
         m_selectedMeshInstanceID = newInstance->UBO.instanceColorID;
@@ -350,6 +369,15 @@ void Scene::UpdateMesh()
     }
 }
 
+void Scene::UpdatePhysicsDebug()
+{
+    if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1) {
+        GetSelectedMeshInstance().physicsDebugUBOBuffer->Copy(&GetSelectedMeshInstance().physicsDebugUBO);
+        lineRenderPipeline.m_UBODescriptor = GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo;
+        lineRenderPipeline.UpdateUBODescriptor();
+    }
+}
+
 void Scene::UpdateUniformDescriptors()
 {
     meshRenderPipeline.UpdateShadowMapSpaceViewProjDescriptor();
@@ -403,7 +431,7 @@ void Scene::UpdateDescriptorSet()
 
 void Scene::InitScene()
 {
-    m_physics.Stop(m_meshes);
+    Physics::Stop(m_meshes);
     Unselect();
 
     m_sceneFilePath.clear();
@@ -455,16 +483,22 @@ void Scene::Play()
     if (!m_isPlaying) {
         return;
     }
-    Unselect();
+    // Unselect();
 
-    m_physics.Simulate(m_meshes);
+    if (m_isStartUp) {
+        m_isStartUp = false;
+    }
+
+    Physics::Simulate(m_meshes);
+
     m_meshDirtyFlag = true;
 }
 
 void Scene::Stop()
 {
-    m_physics.Stop(m_meshes);
+    Physics::Stop(m_meshes);
     m_meshDirtyFlag = true;
+    m_isStartUp = true;
 }
 
 void Scene::Unselect()
@@ -480,13 +514,4 @@ Scene::~Scene()
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& imageLoadCommandPool : m_imageLoadCommandPools)
         vkn::Device::Get().device.destroyCommandPool(imageLoadCommandPool);
-}
-
-void Scene::UpdatePhysicsDebug()
-{
-    if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1) {
-        GetSelectedMeshInstance().physicsDebugUBOBuffer->Copy(&GetSelectedMeshInstance().physicsDebugUBO);
-        lineRenderPipeline.m_UBODescriptor = GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo;
-        lineRenderPipeline.UpdateUBODescriptor();
-    }
 }

@@ -30,7 +30,7 @@ layout (location = 2) in vec2 inTexcoord;
 layout (location = 3) in vec3 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
-layout (location = 0) out vec4 outModel;
+layout (location = 0) out vec4 outWorldPos;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec2 outTexcoord;
 layout (location = 3) out vec3 outTangent;
@@ -41,13 +41,19 @@ layout (location = 6) out int outInstanceIndex;
 
 void main() {
 
-    outModel = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(inPos, 1.0);
-    gl_Position = camera.data.proj * camera.data.view * outModel;
-    outNormal = normalize(mesh[pushConsts.meshIndex].data[gl_InstanceIndex].invTranspose * vec4(inNormal, 0.0));
+    mat4 modelMat = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model;
+    outWorldPos = modelMat * vec4(inPos, 1.0);
+    gl_Position = camera.data.proj * camera.data.view * outWorldPos;
+
+    mat4 invTranspose = modelMat;
+    invTranspose[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    invTranspose = transpose(inverse(invTranspose));
+
+    outNormal = normalize(invTranspose * vec4(inNormal, 0.0));
     outTexcoord = inTexcoord;
     outTangent = inTangent;
     outBitangent = inBitangent;
-    outShadowMapFragPos = shadowMap.viewProj * outModel;
+    outShadowMapFragPos = shadowMap.viewProj * outWorldPos;
 
     outInstanceIndex = gl_InstanceIndex;
 }

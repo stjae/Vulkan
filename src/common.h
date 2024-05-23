@@ -16,13 +16,7 @@ const bool DEBUG = true;
 #endif
 
 // std library
-#include <cstdlib>
-#include <fstream>
 #include <iostream>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <string>
 
 // external library
 #include <spdlog/spdlog.h>
@@ -32,7 +26,6 @@ const bool DEBUG = true;
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <nfd.h>
-#include <stb/stb_image.h>
 
 #include "path.h"
 

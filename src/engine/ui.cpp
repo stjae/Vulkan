@@ -354,9 +354,6 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::Manipulate(glm::value_ptr(scene.m_camera.GetMatrix().view), glm::value_ptr(scene.m_camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix);
     scene.m_meshDirtyFlag = true;
     meshInstanceUBO.model = glm::make_mat4(matrix);
-    meshInstanceUBO.invTranspose = glm::make_mat4(matrix);
-    meshInstanceUBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    meshInstanceUBO.invTranspose = glm::transpose(glm::inverse(meshInstanceUBO.invTranspose));
 }
 
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
@@ -449,9 +446,6 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
             meshInstanceUBO.model = glm::make_mat4(matrix);
-            meshInstanceUBO.invTranspose = glm::make_mat4(matrix);
-            meshInstanceUBO.invTranspose[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-            meshInstanceUBO.invTranspose = glm::transpose(glm::inverse(meshInstanceUBO.invTranspose));
 
             ImGui::SeparatorText("Texture");
             bool useTexture = meshInstanceUBO.useTexture > 0;
@@ -501,24 +495,17 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add")) {
-                    scene.m_meshes[scene.m_selectedMeshID]->AddPhysicsInfo(physicsInfo, meshInstance);
-                    meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
+                    scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo);
                 }
             } else {
                 if (ImGui::SliderFloat3("Scale", glm::value_ptr(meshInstance.physicsInfo->scale), 0.0f, 10.0f)) {
                     meshInstance.physicsDebugUBO.scale = meshInstance.physicsInfo->scale;
                 }
                 if (ImGui::Button("Delete")) {
-                    meshInstance.physicsInfo.reset();
-                    meshInstance.physicsDebugUBO.havePhysicsInfo = 0;
+                    scene.DeletePhysics(meshInstance);
                 }
             }
-
-            ImGui::SeparatorText("Script");
-            if (ImGui::Button("Add")) {
-                // TODO:
-                // scene.AddScript();
-            }
+            // Add Script
         }
         ImGui::EndTabItem();
     }
@@ -688,7 +675,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
         return;
 
     // const int32_t* pickColor = viewport.PickColor(s_dragDropMouseX, s_dragDropMouseY);
-    scene.AddMeshInstance(std::static_pointer_cast<Mesh>(s_dragDropResource->ptr.lock())->GetMeshColorID());
+    scene.AddMeshInstance(*std::static_pointer_cast<Mesh>(s_dragDropResource->ptr.lock()));
     s_dragDropped = false;
 }
 
