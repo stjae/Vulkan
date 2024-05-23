@@ -89,11 +89,6 @@ void Physics::UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes)
 
 void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
 {
-    if (s_isFirstStep) {
-        UpdateRigidBodies(meshes);
-        s_isFirstStep = false;
-    }
-
     s_dynamicsWorld->stepSimulation(1.0f / 60.0f);
 
     for (auto& mesh : meshes) {
@@ -106,24 +101,6 @@ void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
             btScalar m[16];
             t.getOpenGLMatrix(m);
             instance->UBO.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance->physicsInfo->scale);
-        }
-    }
-}
-
-void Physics::Stop(std::vector<std::shared_ptr<Mesh>>& meshes)
-{
-    s_isFirstStep = true;
-
-    for (auto& mesh : meshes) {
-        for (auto& instance : mesh->GetInstances()) {
-            if (!instance->physicsInfo)
-                continue;
-            instance->UBO.model = instance->physicsInfo->initialModel;
-            instance->physicsInfo->rigidBodyPtr->clearForces();
-            btVector3 zeroVector(0, 0, 0);
-            instance->physicsInfo->rigidBodyPtr->setLinearVelocity(zeroVector);
-            instance->physicsInfo->rigidBodyPtr->setAngularVelocity(zeroVector);
-            instance->physicsInfo->rigidBodyPtr->setActivationState(DISABLE_DEACTIVATION);
         }
     }
 }

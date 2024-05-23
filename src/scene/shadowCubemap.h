@@ -9,6 +9,7 @@
 #include "../vulkan/command.h"
 
 inline static uint32_t shadowCubemapSize = 1024;
+typedef struct PointLightUBO_ PointLightUBO;
 
 class ShadowCubemap : public vkn::Cubemap
 {
@@ -29,5 +30,17 @@ public:
     void CreateShadowMap(vk::CommandBuffer& commandBuffer);
     void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
 };
+
+typedef struct PointLightUBO_
+{
+    glm::mat4 model;
+    glm::vec3 pos;
+    float padding0;
+    glm::vec3 color;
+    float padding1;
+
+    PointLightUBO_() : model(glm::mat4(1.0f)), pos(glm::vec3(0.0f)), color(1.0f), padding0(0.0f), padding1(0.0f) {}
+    explicit PointLightUBO_(glm::vec3&& pos) : model(glm::mat4(1.0f)), pos(pos), color(1.0f), padding0(0.0f), padding1(0.0f) {}
+} PointLightUBO_;
 
 #endif

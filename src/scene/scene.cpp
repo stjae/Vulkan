@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene() : m_selectedMeshID(-1), m_selectedMeshInstanceID(-1), m_selectedLightID(-1), m_meshDirtyFlag(true), m_lightDirtyFlag(true), m_shadowShadowCubemapDirtyFlag(true), m_showLightIcon(true), m_envCube(0), m_brdfLutSquare(0), m_sceneFilePath(), m_iblExposure(1.0f), m_resourceDirtyFlag(true), m_envCubemapDirtyFlag(true), m_isPlaying(false), m_isStartUp(true)
+Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::CreateCommandPool(ShadowCubemap::s_commandPool);
@@ -221,7 +221,7 @@ void Scene::DeleteMeshInstance()
         m_meshes[m_selectedMeshID]->m_meshInstances[i]->UBO.instanceColorID--;
     }
 
-    Unselect();
+    UnselectAll();
     m_meshDirtyFlag = true;
 }
 
@@ -263,12 +263,8 @@ void Scene::HandleMeshDuplication()
     if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_camera.m_isControllable) {
         AddMeshInstance(*m_meshes[m_selectedMeshID]);
         auto& newInstance = m_meshes[m_selectedMeshID]->m_meshInstances.back();
-        int newInstanceID = newInstance->UBO.instanceColorID;
-        // copy data of source instance
         auto& srcMeshInstance = m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID];
-        newInstance->UBO = srcMeshInstance->UBO;
-        // except for id
-        newInstance->UBO.instanceColorID = newInstanceID;
+        *newInstance = *srcMeshInstance;
         if (srcMeshInstance->physicsInfo) {
             AddPhysics(*m_meshes[m_selectedMeshID], *newInstance, *srcMeshInstance->physicsInfo);
         }
@@ -431,8 +427,7 @@ void Scene::UpdateDescriptorSet()
 
 void Scene::InitScene()
 {
-    Physics::Stop(m_meshes);
-    Unselect();
+    UnselectAll();
 
     m_sceneFilePath.clear();
     m_hdriFilePath.clear();
@@ -478,15 +473,46 @@ void Scene::InitHdri()
     m_envCubemapDirtyFlag = true;
 }
 
+void Scene::CopyMeshInstances()
+{
+    m_meshCopies.reserve(m_meshes.size());
+    for (auto& mesh : m_meshes) {
+        m_meshCopies.emplace_back(mesh->m_meshColorID);
+        m_meshCopies.back().m_meshInstances.reserve(mesh->m_meshInstances.size());
+        for (auto& instance : mesh->m_meshInstances) {
+            m_meshCopies.back().AddInstance(instance->UUID);
+            *m_meshCopies.back().m_meshInstances.back() = *instance;
+            if (instance->physicsInfo)
+                m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
+        }
+    }
+}
+
+void Scene::RevertMeshInstances()
+{
+    for (int i = 0; i < m_meshes.size(); i++) {
+        m_meshes[i]->m_meshInstances.clear();
+        for (int j = 0; j < m_meshCopies[i].m_meshInstances.size(); j++) {
+            AddMeshInstance(*m_meshes[i], m_meshCopies[i].m_meshInstances[j]->UUID);
+            *m_meshes[i]->m_meshInstances.back() = *m_meshCopies[i].m_meshInstances[j];
+            if (m_meshCopies[i].m_meshInstances[j]->physicsInfo)
+                AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo);
+        }
+    }
+    m_meshCopies.clear();
+}
+
 void Scene::Play()
 {
     if (!m_isPlaying) {
         return;
     }
-    // Unselect();
 
     if (m_isStartUp) {
+        UnselectAll();
         m_isStartUp = false;
+        Physics::UpdateRigidBodies(m_meshes);
+        CopyMeshInstances();
     }
 
     Physics::Simulate(m_meshes);
@@ -496,12 +522,18 @@ void Scene::Play()
 
 void Scene::Stop()
 {
-    Physics::Stop(m_meshes);
+    for (auto& mesh : m_meshes) {
+        for (auto& instance : mesh->m_meshInstances) {
+            if (instance->physicsInfo)
+                DeletePhysics(*instance);
+        }
+    }
     m_meshDirtyFlag = true;
     m_isStartUp = true;
+    RevertMeshInstances();
 }
 
-void Scene::Unselect()
+void Scene::UnselectAll()
 {
     m_selectedMeshID = -1;
     m_selectedMeshInstanceID = -1;

@@ -21,6 +21,15 @@
 #include "../../imgui/imgui_impl_vulkan.h"
 #include "physics.h"
 
+typedef struct DirLightUBO_ DirLightUBO;
+typedef struct DirLightUBO_
+{
+    glm::vec3 dir;
+    float intensity = 1.0f;
+    glm::vec3 color = glm::vec3(1.0f);
+} DirLightUBO_;
+typedef struct Resource_ Resource;
+
 class Scene
 {
     friend class UI;
@@ -43,6 +52,7 @@ class Scene
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
 
     std::vector<std::shared_ptr<Mesh>> m_meshes;
+    std::vector<Mesh> m_meshCopies;
     Mesh m_envCube;
     std::string m_hdriFilePath;
     std::unique_ptr<vkn::Image> m_envMap;
@@ -51,7 +61,7 @@ class Scene
     std::unique_ptr<PrefilteredCubemap> m_prefilteredCubemap;
     Mesh m_brdfLutSquare;
     vkn::Image m_brdfLut;
-    float m_iblExposure;
+    float m_iblExposure = 1.0f;
 
     std::vector<PointLightUBO> m_pointLights;
     DirLightUBO m_dirLightUBO;
@@ -74,23 +84,23 @@ class Scene
     std::unique_ptr<vkn::Buffer> m_shadowCubemapProjBuffer;
     glm::mat4 m_shadowCubemapProj;
 
-    int32_t m_selectedMeshID;
-    int32_t m_selectedMeshInstanceID;
-    int32_t m_selectedLightID;
+    int32_t m_selectedMeshID = -1;
+    int32_t m_selectedMeshInstanceID = -1;
+    int32_t m_selectedLightID = -1;
 
-    bool m_showLightIcon;
-    bool m_meshDirtyFlag;
-    bool m_lightDirtyFlag;
-    bool m_shadowShadowCubemapDirtyFlag;
-    bool m_resourceDirtyFlag;
-    bool m_envCubemapDirtyFlag;
+    bool m_showLightIcon = true;
+    bool m_meshDirtyFlag = true;
+    bool m_lightDirtyFlag = true;
+    bool m_shadowShadowCubemapDirtyFlag = true;
+    bool m_resourceDirtyFlag = true;
+    bool m_envCubemapDirtyFlag = true;
 
     std::string m_sceneFolderPath;
     std::string m_sceneFilePath;
 
     Physics m_physics;
-    bool m_isPlaying;
-    bool m_isStartUp;
+    bool m_isPlaying = false;
+    bool m_isStartUp = true;
 
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
@@ -129,12 +139,27 @@ public:
     MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO; }
     MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID]->m_meshInstances[instanceID]->UBO; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
-    void Unselect();
+    void UnselectAll();
     bool IsPlaying() { return m_isPlaying; }
 
     void Play();
     void Stop();
     ~Scene();
+    void CopyMeshInstances();
+    void RevertMeshInstances();
 };
+
+typedef struct Resource_
+{
+    std::string filePath;
+    std::string fileName;
+    std::weak_ptr<void> ptr;
+
+    explicit Resource_(std::string& path)
+    {
+        this->filePath = path;
+        this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
+    }
+} Resource_;
 
 #endif

@@ -9,7 +9,12 @@
 #include "assimp/postprocess.h"
 #include "physicsDebugDrawer.h"
 #include "id.h"
-#include "../struct.h"
+
+typedef struct MeshPart_ MeshPart;
+typedef struct MeshInstanceUBO_ MeshInstanceUBO;
+typedef struct MeshInstance_ MeshInstance;
+typedef struct PhysicsDebugUBO_ PhysicsDebugUBO;
+typedef struct MaterialFilePath_ MaterialFilePath;
 
 class Mesh : public MeshBase
 {
@@ -47,5 +52,71 @@ public:
     const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
     btTriangleIndexVertexArray* GetBulletVertexArray() { return &m_bulletVertexArray; }
 };
+
+typedef struct MeshPart_
+{
+    int32_t bufferIndex;
+    int32_t materialID;
+
+    MeshPart_(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
+} MeshPart_;
+
+typedef struct MeshInstanceUBO_
+{
+    glm::mat4 model = glm::mat4(1.0f);
+    // Color ID for mouse picking
+    int32_t meshColorID;
+    int32_t textureID = 0;
+    int32_t instanceColorID;
+    int32_t useTexture = true;
+    glm::vec3 albedo = glm::vec3(0.5f);
+    float metallic = 0.0f;
+    float roughness = 1.0f;
+    float padding[3];
+
+    MeshInstanceUBO_(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : meshColorID(meshColorID), instanceColorID(instanceColorID)
+    {
+        model = glm::translate(model, pos);
+        model = glm::scale(model, scale);
+    }
+} MeshInstanceUBO_;
+
+typedef struct PhysicsDebugUBO_
+{
+    glm::mat4 model;
+    glm::vec3 scale;
+    int32_t havePhysicsInfo;
+
+    PhysicsDebugUBO_() : model(1.0f), scale(1.0f), havePhysicsInfo(false) {}
+} PhysicsDebugUBO_;
+
+typedef struct MeshInstance_
+{
+    const uint64_t UUID;
+    MeshInstanceUBO UBO;
+    std::unique_ptr<PhysicsDebugDrawer> physicsDebugDrawer;
+    std::unique_ptr<PhysicsInfo> physicsInfo;
+    PhysicsDebugUBO physicsDebugUBO;
+    std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
+
+    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO) : UBO(UBO), UUID(UUID)
+    {
+        vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+        physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
+    }
+    MeshInstance_& operator=(const MeshInstance& other)
+    {
+        this->UBO = other.UBO;
+        return *this;
+    }
+} MeshInstance_;
+
+typedef struct MaterialFilePath_
+{
+    std::string albedo;
+    std::string normal;
+    std::string metallic;
+    std::string roughness;
+} MaterialFilePath_;
 
 #endif

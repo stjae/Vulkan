@@ -3,7 +3,6 @@
 
 #include "../common.h"
 #include "../scene/scene.h"
-#include "../struct.h"
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 

@@ -83,7 +83,6 @@ add_executable(${PROJECT_NAME}
         src/scene/physics.h
         src/pipeline/lineRender.cpp
         src/pipeline/lineRender.h
-        src/struct.h
         src/enum.h
         src/scene/physicsDebugDrawer.h
         src/vulkan/sync.cpp

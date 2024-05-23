@@ -78,7 +78,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
     ImGui::NewFrame();
 
     if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_camera.IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-        scene.Unselect();
+        scene.UnselectAll();
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
@@ -401,7 +401,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     for (int j = 0; j < scene.m_meshes[i]->GetInstanceCount(); j++) {
                         ImGui::PushID(i * j + j);
                         if (ImGui::Selectable((std::string("instance ") + std::to_string(j)).c_str(), i == scene.m_selectedMeshID && j == scene.m_selectedMeshInstanceID)) {
-                            scene.Unselect();
+                            scene.UnselectAll();
                             scene.m_selectedMeshID = i;
                             scene.m_selectedMeshInstanceID = j;
                         }
@@ -516,7 +516,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 std::string name("light");
                 ImGui::PushID(i);
                 if (ImGui::Selectable(name.c_str(), i == scene.m_selectedLightID)) {
-                    scene.Unselect();
+                    scene.UnselectAll();
                 }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {

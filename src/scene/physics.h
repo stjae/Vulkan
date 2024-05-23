@@ -29,13 +29,11 @@ class Physics
 
 public:
     static void InitPhysics();
-    static void AddRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
     static void AddRigidBody(Mesh& mesh, MeshInstance& meshInstance);
+    static void DeleteRigidBody(MeshInstance& instance);
     static void UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
     static void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
-    static void Stop(std::vector<std::shared_ptr<Mesh>>& meshes);
     ~Physics();
-    static void DeleteRigidBody(MeshInstance& instance);
 };
 
 #endif
