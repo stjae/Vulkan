@@ -36,11 +36,8 @@ class Scene
     friend class Viewport;
     friend class SceneSerializer;
 
-    std::unique_ptr<vkn::Buffer> m_cameraStagingBuffer;
-
     vk::CommandPool m_commandPool;
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_cameraCommandBuffers;
     std::array<vk::CommandPool, 4> m_imageLoadCommandPools;
     std::array<vk::CommandBuffer, 4> m_imageLoadCommandBuffers;
 
@@ -52,7 +49,10 @@ class Scene
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
 
     std::vector<std::shared_ptr<Mesh>> m_meshes;
+    // store meshes for scene resetting
     std::vector<Mesh> m_meshCopies;
+    std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap;
+
     Mesh m_envCube;
     std::string m_hdriFilePath;
     std::unique_ptr<vkn::Image> m_envMap;
@@ -78,7 +78,11 @@ class Scene
     std::vector<std::unique_ptr<vkn::Image>> m_roughnessTextures;
     std::vector<Resource> m_resources;
 
-    Camera m_camera;
+    std::unique_ptr<MainCamera> m_mainCamera;
+    MeshInstance* m_selectedCameraMeshInstance;
+    // meshInstance UUID of selected camera
+    uint64_t m_selectedCameraUUID;
+
     std::unique_ptr<vkn::Buffer> m_shadowMapViewSpaceProjBuffer;
     glm::mat4 m_shadowMapViewProj;
     std::unique_ptr<vkn::Buffer> m_shadowCubemapProjBuffer;
@@ -114,7 +118,10 @@ class Scene
     void DeletePointLight();
     void HandlePointLightDuplication();
     void HandleMeshDuplication();
-    void UpdateCamera();
+    void CopyMeshInstances();
+    void RevertMeshInstances();
+    void UpdateMainCamera();
+    void UpdateCameraDescriptorSet(Camera* camera);
     void UpdatePointLight();
     void UpdateMesh();
     void UpdateShadowMap();
@@ -145,8 +152,8 @@ public:
     void Play();
     void Stop();
     ~Scene();
-    void CopyMeshInstances();
-    void RevertMeshInstances();
+    void AddCamera(MeshInstance& instance);
+    void SelectCamera(Camera* camera);
 };
 
 typedef struct Resource_

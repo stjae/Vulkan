@@ -5,7 +5,7 @@ Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::CreateCommandPool(ShadowCubemap::s_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
-    vkn::Command::AllocateCommandBuffer(m_commandPool, m_cameraCommandBuffers);
+    m_mainCamera = std::make_unique<MainCamera>(m_commandPool);
     vkn::Command::AllocateCommandBuffer(ShadowCubemap::s_commandPool, ShadowCubemap::m_commandBuffers);
 
     for (int i = 0; i < 4; i++) {
@@ -13,20 +13,13 @@ Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
         vkn::Command::AllocateCommandBuffer(m_imageLoadCommandPools[i], m_imageLoadCommandBuffers[i]);
     }
 
-    vkn::BufferInfo bInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_cameraStagingBuffer = std::make_unique<vkn::Buffer>(bInput);
     {
         // init camera pos
-        m_camera.m_dir = { 0.5, -0.3, -0.7 };
-        m_camera.m_pos = { -3.0, 3.3, 8.0 };
-        m_camera.m_at = { -2.5, 3.0, 7.3 };
+        m_mainCamera->m_dir = { 0.5, -0.3, -0.7 };
+        m_mainCamera->m_pos = { -3.0, 3.3, 8.0 };
+        m_mainCamera->m_at = { -2.5, 3.0, 7.3 };
 
-        meshRenderPipeline.m_cameraDescriptor = m_camera.m_cameraBuffer->Get().descriptorBufferInfo;
-        meshRenderPipeline.UpdateCameraDescriptor();
-        skyboxRenderPipeline.m_cameraDescriptor = m_camera.m_cameraBuffer->Get().descriptorBufferInfo;
-        skyboxRenderPipeline.UpdateCameraDescriptor();
-        lineRenderPipeline.m_cameraDescriptor = m_camera.m_cameraBuffer->Get().descriptorBufferInfo;
-        lineRenderPipeline.UpdateCameraDescriptor();
+        UpdateCameraDescriptorSet(m_mainCamera.get());
     }
 
     {
@@ -80,6 +73,17 @@ Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
     }
 
     InitHdri();
+}
+
+void Scene::UpdateCameraDescriptorSet(Camera* camera)
+{
+    assert(camera != nullptr);
+    meshRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
+    meshRenderPipeline.UpdateCameraDescriptor();
+    skyboxRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
+    skyboxRenderPipeline.UpdateCameraDescriptor();
+    lineRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
+    lineRenderPipeline.UpdateCameraDescriptor();
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -143,12 +147,14 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
 void Scene::AddMeshInstance(Mesh& mesh, glm::vec3 pos, glm::vec3 scale)
 {
     mesh.AddInstance(pos, scale);
+    m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
     m_meshDirtyFlag = true;
 }
 
 void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
 {
     mesh.AddInstance(UUID);
+    m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
     m_meshDirtyFlag = true;
 }
 
@@ -175,7 +181,7 @@ void Scene::Update()
     HandlePointLightDuplication();
     HandleMeshDuplication();
 
-    UpdateCamera();
+    UpdateMainCamera();
     UpdatePointLight();
     UpdateMesh();
     UpdatePhysicsDebug();
@@ -215,6 +221,7 @@ void Scene::DeleteMeshInstance()
     if (m_selectedMeshID < 0 || m_selectedMeshInstanceID < 0)
         return;
     DeletePhysics(GetSelectedMeshInstance());
+    m_meshInstanceMap.erase(GetSelectedMeshInstance().UUID);
     m_meshes[m_selectedMeshID]->m_meshInstances.erase(m_meshes[m_selectedMeshID]->m_meshInstances.begin() + m_selectedMeshInstanceID);
 
     for (int32_t i = m_selectedMeshInstanceID; i < m_meshes[m_selectedMeshID]->m_meshInstances.size(); i++) {
@@ -252,7 +259,7 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 
 void Scene::HandlePointLightDuplication()
 {
-    if (m_selectedLightID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_camera.m_isControllable) {
+    if (m_selectedLightID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
         AddLight();
         m_pointLights.back() = m_pointLights[m_selectedLightID];
     }
@@ -260,11 +267,14 @@ void Scene::HandlePointLightDuplication()
 
 void Scene::HandleMeshDuplication()
 {
-    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_camera.m_isControllable) {
+    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
         AddMeshInstance(*m_meshes[m_selectedMeshID]);
         auto& newInstance = m_meshes[m_selectedMeshID]->m_meshInstances.back();
+        int32_t newColorID = newInstance->UBO.instanceColorID;
         auto& srcMeshInstance = m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID];
         *newInstance = *srcMeshInstance;
+        // copy except for color id
+        newInstance->UBO.instanceColorID = newColorID;
         if (srcMeshInstance->physicsInfo) {
             AddPhysics(*m_meshes[m_selectedMeshID], *newInstance, *srcMeshInstance->physicsInfo);
         }
@@ -273,21 +283,12 @@ void Scene::HandleMeshDuplication()
     }
 }
 
-void Scene::UpdateCamera()
+void Scene::UpdateMainCamera()
 {
-    m_camera.Update();
-    if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1 && ImGui::IsKeyDown(ImGuiKey_F)) {
-        m_camera.m_pos = glm::translate(m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO.model, glm::vec3(0.0f, 0.0f, 2.0f)) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    }
-    m_camera.m_cameraUBO.view = glm::lookAt(m_camera.m_pos, m_camera.m_at, m_camera.m_up);
-    m_camera.m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), 0.1f, 1024.0f);
-    m_camera.m_cameraUBO.pos = m_camera.m_pos;
-    m_cameraStagingBuffer->Copy(&m_camera.m_cameraUBO);
-
-    vkn::Command::Begin(m_cameraCommandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    vkn::Command::CopyBufferToBuffer(m_cameraCommandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_cameraStagingBuffer->Get().buffer, m_camera.m_cameraBuffer->Get().buffer, m_cameraStagingBuffer->Get().bufferInfo.size);
-    m_cameraCommandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_cameraCommandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    if (m_isPlaying && m_selectedCameraUUID != 0)
+        return;
+    m_mainCamera->Control();
+    m_mainCamera->Update();
 }
 
 void Scene::UpdatePointLight()
@@ -309,6 +310,7 @@ void Scene::UpdatePointLight()
 
 void Scene::UpdateShadowMap()
 {
+    // TODO: follow camera
     m_dirLightUBO.dir = glm::normalize(m_dirLightPos);
     m_dirLightDataBuffer->Copy(&m_dirLightUBO);
 
@@ -428,6 +430,7 @@ void Scene::UpdateDescriptorSet()
 void Scene::InitScene()
 {
     UnselectAll();
+    Stop();
 
     m_sceneFilePath.clear();
     m_hdriFilePath.clear();
@@ -482,8 +485,12 @@ void Scene::CopyMeshInstances()
         for (auto& instance : mesh->m_meshInstances) {
             m_meshCopies.back().AddInstance(instance->UUID);
             *m_meshCopies.back().m_meshInstances.back() = *instance;
+            m_meshInstanceMap[instance->UUID] = instance.get();
             if (instance->physicsInfo)
                 m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
+            // TODO: separate commandPool?
+            if (instance->camera)
+                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_commandPool);
         }
     }
 }
@@ -495,8 +502,11 @@ void Scene::RevertMeshInstances()
         for (int j = 0; j < m_meshCopies[i].m_meshInstances.size(); j++) {
             AddMeshInstance(*m_meshes[i], m_meshCopies[i].m_meshInstances[j]->UUID);
             *m_meshes[i]->m_meshInstances.back() = *m_meshCopies[i].m_meshInstances[j];
+            m_meshInstanceMap[m_meshCopies[i].m_meshInstances[j]->UUID] = m_meshCopies[i].m_meshInstances[j].get();
             if (m_meshCopies[i].m_meshInstances[j]->physicsInfo)
                 AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo);
+            if (m_meshCopies[i].m_meshInstances[j]->camera)
+                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_commandPool);
         }
     }
     m_meshCopies.clear();
@@ -513,6 +523,18 @@ void Scene::Play()
         m_isStartUp = false;
         Physics::UpdateRigidBodies(m_meshes);
         CopyMeshInstances();
+        // TODO: select camera here
+        if (m_selectedCameraUUID == 0) {
+            SelectCamera(m_mainCamera.get());
+        } else {
+            m_selectedCameraMeshInstance = m_meshInstanceMap[m_selectedCameraUUID];
+            SelectCamera(m_selectedCameraMeshInstance->camera.get());
+        }
+    }
+
+    if (m_selectedCameraUUID != 0) {
+        m_selectedCameraMeshInstance->camera->ControlByMatrix(m_selectedCameraMeshInstance->UBO.model);
+        m_selectedCameraMeshInstance->camera->Update();
     }
 
     Physics::Simulate(m_meshes);
@@ -522,6 +544,8 @@ void Scene::Play()
 
 void Scene::Stop()
 {
+    SelectCamera(m_mainCamera.get());
+
     for (auto& mesh : m_meshes) {
         for (auto& instance : mesh->m_meshInstances) {
             if (instance->physicsInfo)
@@ -546,4 +570,14 @@ Scene::~Scene()
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& imageLoadCommandPool : m_imageLoadCommandPools)
         vkn::Device::Get().device.destroyCommandPool(imageLoadCommandPool);
+}
+
+void Scene::AddCamera(MeshInstance& instance)
+{
+    instance.camera = std::make_unique<SubCamera>(m_commandPool);
+}
+
+void Scene::SelectCamera(Camera* camera)
+{
+    UpdateCameraDescriptorSet(camera);
 }

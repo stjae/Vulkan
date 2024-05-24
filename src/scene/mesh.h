@@ -9,6 +9,7 @@
 #include "assimp/postprocess.h"
 #include "physicsDebugDrawer.h"
 #include "id.h"
+#include "camera.h"
 
 typedef struct MeshPart_ MeshPart;
 typedef struct MeshInstanceUBO_ MeshInstanceUBO;
@@ -85,6 +86,7 @@ typedef struct PhysicsDebugUBO_
 {
     glm::mat4 model;
     glm::vec3 scale;
+    // flag for shader
     int32_t havePhysicsInfo;
 
     PhysicsDebugUBO_() : model(1.0f), scale(1.0f), havePhysicsInfo(false) {}
@@ -98,6 +100,7 @@ typedef struct MeshInstance_
     std::unique_ptr<PhysicsInfo> physicsInfo;
     PhysicsDebugUBO physicsDebugUBO;
     std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
+    std::unique_ptr<SubCamera> camera;
 
     MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO) : UBO(UBO), UUID(UUID)
     {

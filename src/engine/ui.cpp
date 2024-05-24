@@ -77,7 +77,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui::NewFrame();
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_camera.IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_mainCamera->IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         scene.UnselectAll();
     }
 
@@ -299,7 +299,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
 
     for (auto& light : scene.m_pointLights) {
 
-        glm::vec4 pos = scene.m_camera.GetMatrix().proj * scene.m_camera.GetMatrix().view * light.model * glm::vec4(light.pos, 1.0f);
+        glm::vec4 pos = scene.m_mainCamera->GetUBO().proj * scene.m_mainCamera->GetUBO().view * light.model * glm::vec4(light.pos, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
@@ -328,11 +328,11 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
 void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -351,7 +351,7 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.m_camera.GetMatrix().view), glm::value_ptr(scene.m_camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix);
+    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, matrix);
     scene.m_meshDirtyFlag = true;
     meshInstanceUBO.model = glm::make_mat4(matrix);
 }
@@ -359,11 +359,11 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_camera.IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera->IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -380,7 +380,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     glm::mat4 model = glm::translate(lightData.model, lightData.pos);
     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
     ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_camera.GetMatrix().view), glm::value_ptr(scene.m_camera.GetMatrix().proj), OP, ImGuizmo::LOCAL, matrix)) {
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, matrix)) {
         scene.m_lightDirtyFlag = true;
     }
     model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
@@ -392,7 +392,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     ImGui::Begin("Scene");
     ImGui::BeginTabBar("MeshTab");
     // Mesh List
-    if (ImGui::BeginTabItem("Meshes")) {
+    if (ImGui::BeginTabItem("Mesh")) {
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_meshes.size(); i++) {
                 std::string name(scene.m_meshes[i]->GetName());
@@ -494,23 +494,46 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         physicsInfo.colliderShape = eColliderShape::MESH;
                     ImGui::EndCombo();
                 }
-                if (ImGui::Button("Add")) {
+                if (ImGui::Button("Add##physics")) {
                     scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo);
                 }
             } else {
-                if (ImGui::SliderFloat3("Scale", glm::value_ptr(meshInstance.physicsInfo->scale), 0.0f, 10.0f)) {
+                if (ImGui::SliderFloat3("Scale##physics", glm::value_ptr(meshInstance.physicsInfo->scale), 0.0f, 10.0f)) {
                     meshInstance.physicsDebugUBO.scale = meshInstance.physicsInfo->scale;
                 }
-                if (ImGui::Button("Delete")) {
+                if (ImGui::Button("Delete##physics")) {
                     scene.DeletePhysics(meshInstance);
                 }
             }
             // Add Script
+
+            // Add Camera
+            ImGui::SeparatorText("Camera");
+            if (!meshInstance.camera) {
+                if (ImGui::Button("Add##_CAMERA")) {
+                    scene.AddCamera(meshInstance);
+                    scene.m_selectedCameraUUID = meshInstance.UUID;
+                }
+            } else {
+                if (scene.m_selectedCameraUUID != meshInstance.UUID) {
+                    if (ImGui::Button("Select##_CAMERA")) {
+                        scene.m_selectedCameraUUID = meshInstance.UUID;
+                    }
+                } else {
+                    if (ImGui::Button("Deselect##_CAMERA")) {
+                        scene.m_selectedCameraUUID = 0;
+                    }
+                }
+                if (ImGui::Button("Delete##_CAMERA")) {
+                    meshInstance.camera.reset();
+                    scene.m_selectedCameraUUID = 0;
+                }
+            }
         }
         ImGui::EndTabItem();
     }
     // Light List
-    if (ImGui::BeginTabItem("Lights")) {
+    if (ImGui::BeginTabItem("Light")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_pointLights.size(); i++) {
                 std::string name("light");
@@ -541,11 +564,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 float matrix[16];
 
                 ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
-                std::vector<std::string> labels = { "Position", "Rotate", "Color" };
                 ImGui::SeparatorText("Point Light");
-                if (ImGui::SliderFloat3(labels[0].append("##position").c_str(), translation, -10.0f, 10.0f))
+                if (ImGui::SliderFloat3("Position##_POINTLIGHT", translation, -10.0f, 10.0f))
                     scene.m_lightDirtyFlag = true;
-                if (ImGui::SliderFloat3(labels[2].append("##color").c_str(), &lightData.color[0], 0.0f, 1.0f))
+                if (ImGui::SliderFloat3("Color##_POINTLIGHT", &lightData.color[0], 0.0f, 1.0f))
                     scene.m_lightDirtyFlag = true;
                 ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
 
@@ -595,12 +617,12 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         if (!scene.m_hdriFilePath.empty()) {
             ImGui::Text("%s", scene.m_hdriFilePath.c_str());
         }
-        if (ImGui::Button("Remove")) {
+        if (ImGui::Button("Remove##_IBL")) {
             scene.InitHdri();
         }
         ImGui::SeparatorText("Exposure");
-        ImGui::SliderFloat("##Exposure", &scene.m_iblExposure, 0.0f, 10.0f);
-        if (ImGui::Button("Reset")) {
+        ImGui::SliderFloat("Exposure##_IBL", &scene.m_iblExposure, 0.0f, 10.0f);
+        if (ImGui::Button("Reset##_IBL")) {
             scene.m_iblExposure = 1.0f;
         }
         ImGui::EndTabItem();
@@ -656,10 +678,10 @@ void UI::ShowInformationOverlay(const Scene& scene)
     const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDocking;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", GetFrameRate().c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene.m_camera.IsControllable() ? "on" : "off");
+    ImGui::Text("Camera Control: %s [press C]", scene.m_mainCamera->IsControllable() ? "on" : "off");
     ImGui::End();
 }
 

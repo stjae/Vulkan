@@ -83,7 +83,7 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     SerializeDirLight(out, scene);
     SerializePointLights(out, scene.m_pointLights);
-    SerializeCamera(out, scene.m_camera);
+    SerializeCamera(out, *scene.m_mainCamera);
     SerializeResources(out, scene.m_resources);
     SerializeMeshes(out, scene.m_meshes);
 
@@ -193,9 +193,9 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     scene.m_sceneFilePath = data["SceneFilePath"].as<std::string>();
 
     auto camera = data["Camera"];
-    scene.m_camera.m_pos = camera["Position"].as<glm::vec3>();
-    scene.m_camera.m_dir = camera["Dir"].as<glm::vec3>();
-    scene.m_camera.m_at = scene.m_camera.m_pos + scene.m_camera.m_dir;
+    scene.m_mainCamera->m_pos = camera["Position"].as<glm::vec3>();
+    scene.m_mainCamera->m_dir = camera["Dir"].as<glm::vec3>();
+    scene.m_mainCamera->m_at = scene.m_mainCamera->m_pos + scene.m_mainCamera->m_dir;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
