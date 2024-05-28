@@ -20,6 +20,7 @@ typedef struct MaterialFilePath_ MaterialFilePath;
 class Mesh : public MeshBase
 {
     friend class Scene;
+    friend class Physics;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
@@ -30,6 +31,7 @@ class Mesh : public MeshBase
 
     // id used for mouse picking
     int32_t m_meshColorID;
+    std::vector<MeshInstanceUBO> m_meshInstanceUBOs;
     std::unique_ptr<vkn::Buffer> m_meshInstanceUBOBuffer;
     std::vector<std::unique_ptr<MeshInstance>> m_meshInstances;
     std::vector<MeshPart> m_meshParts;
@@ -41,6 +43,7 @@ class Mesh : public MeshBase
     void CreateBuffers(const vk::CommandBuffer& commandBuffer);
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddInstance(uint64_t UUID);
+    void DeleteInstance(int32_t instanceColorID);
 
 public:
     explicit Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
@@ -95,6 +98,9 @@ typedef struct PhysicsDebugUBO_
 typedef struct MeshInstance_
 {
     const uint64_t UUID;
+    glm::vec3 translation = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
     MeshInstanceUBO UBO;
     std::unique_ptr<PhysicsDebugDrawer> physicsDebugDrawer;
     std::unique_ptr<PhysicsInfo> physicsInfo;
@@ -102,14 +108,18 @@ typedef struct MeshInstance_
     std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
     std::unique_ptr<SubCamera> camera;
 
-    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO) : UBO(UBO), UUID(UUID)
+    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO) : UUID(UUID), UBO(UBO)
     {
         vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
     }
     MeshInstance_& operator=(const MeshInstance& other)
     {
+        this->translation = other.translation;
+        this->rotation = other.rotation;
+        this->scale = other.scale;
         this->UBO = other.UBO;
+        this->physicsDebugUBO.model = UBO.model;
         return *this;
     }
 } MeshInstance_;

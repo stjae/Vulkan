@@ -2,11 +2,11 @@
 
 Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
 {
+    Script::Init();
+
     vkn::Command::CreateCommandPool(m_commandPool);
-    vkn::Command::CreateCommandPool(ShadowCubemap::s_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
     m_mainCamera = std::make_unique<MainCamera>(m_commandPool);
-    vkn::Command::AllocateCommandBuffer(ShadowCubemap::s_commandPool, ShadowCubemap::m_commandBuffers);
 
     for (int i = 0; i < 4; i++) {
         vkn::Command::CreateCommandPool(m_imageLoadCommandPools[i]);
@@ -38,7 +38,9 @@ Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
         vkn::BufferInfo bufferInput = { sizeof(glm::mat4), sizeof(glm::mat4), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         m_shadowMapViewSpaceProjBuffer = std::make_unique<vkn::Buffer>(bufferInput);
         shadowMapPipeline.m_shadowMapSpaceViewProjDescriptor = m_shadowMapViewSpaceProjBuffer->Get().descriptorBufferInfo;
+        shadowMapPipeline.UpdateShadowMapSpaceViewProjDescriptor();
         meshRenderPipeline.m_shadowMapSpaceViewProjDescriptor = m_shadowMapViewSpaceProjBuffer->Get().descriptorBufferInfo;
+        meshRenderPipeline.UpdateShadowMapSpaceViewProjDescriptor();
         m_shadowCubemapProjBuffer = std::make_unique<vkn::Buffer>(bufferInput);
         shadowCubemapPipeline.m_projDescriptor = m_shadowCubemapProjBuffer->Get().descriptorBufferInfo;
         shadowCubemapPipeline.UpdateProjDescriptor();
@@ -95,7 +97,7 @@ void Scene::AddResource(std::string& filePath)
 
     if (!m_meshes.back()->m_materials.empty()) {
         LoadMaterials(filePath, m_meshes.back()->m_materials);
-        m_resourceDirtyFlag = true;
+        UpdateTextureDescriptors();
     }
 }
 
@@ -148,14 +150,14 @@ void Scene::AddMeshInstance(Mesh& mesh, glm::vec3 pos, glm::vec3 scale)
 {
     mesh.AddInstance(pos, scale);
     m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
-    m_meshDirtyFlag = true;
+    UpdateMeshBuffer();
 }
 
 void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
 {
     mesh.AddInstance(UUID);
     m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
-    m_meshDirtyFlag = true;
+    UpdateMeshBuffer();
 }
 
 void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo)
@@ -164,6 +166,7 @@ void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& phys
     meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
     meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
     Physics::AddRigidBody(mesh, meshInstance);
+    meshInstance.physicsDebugUBO.model = meshInstance.UBO.model;
 }
 
 void Scene::DeletePhysics(MeshInstance& meshInstance)
@@ -183,20 +186,17 @@ void Scene::Update()
 
     UpdateMainCamera();
     UpdatePointLight();
-    UpdateMesh();
     UpdatePhysicsDebug();
     UpdateShadowMap();
-    UpdateShadowCubemaps();
-    UpdateDescriptorSet();
 }
 
-void Scene::AddLight()
+void Scene::AddPointLight()
 {
     m_pointLights.emplace_back();
     m_shadowCubemaps.emplace_back();
     m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-    m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_lightDirtyFlag = true;
+    m_shadowCubemaps.back()->CreateShadowMap();
+    UpdatePointLightBuffer();
 }
 
 void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
@@ -213,33 +213,23 @@ void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
     m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
     m_prefilteredCubemap->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, *m_envCubemap, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envCubemapDirtyFlag = true;
+    UpdateEnvCubemapDescriptors();
 }
 
-void Scene::DeleteMeshInstance()
+void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
-    if (m_selectedMeshID < 0 || m_selectedMeshInstanceID < 0)
-        return;
-    DeletePhysics(GetSelectedMeshInstance());
-    m_meshInstanceMap.erase(GetSelectedMeshInstance().UUID);
-    m_meshes[m_selectedMeshID]->m_meshInstances.erase(m_meshes[m_selectedMeshID]->m_meshInstances.begin() + m_selectedMeshInstanceID);
-
-    for (int32_t i = m_selectedMeshInstanceID; i < m_meshes[m_selectedMeshID]->m_meshInstances.size(); i++) {
-        m_meshes[m_selectedMeshID]->m_meshInstances[i]->UBO.instanceColorID--;
-    }
-
+    DeletePhysics(instance);
+    mesh.DeleteInstance(instance.UBO.instanceColorID);
+    m_meshInstanceMap.erase(instance.UUID);
     UnselectAll();
-    m_meshDirtyFlag = true;
+    UpdateMeshBuffer();
 }
 
 void Scene::DeletePointLight()
 {
-    if (m_selectedLightID < 0)
-        return;
     m_pointLights.erase(m_pointLights.begin() + m_selectedLightID);
-
-    m_selectedLightID = -1;
-    m_lightDirtyFlag = true;
+    UnselectAll();
+    UpdatePointLightBuffer();
 }
 
 size_t Scene::GetInstanceCount()
@@ -253,6 +243,7 @@ size_t Scene::GetInstanceCount()
 
 void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 {
+    UnselectAll();
     m_selectedMeshID = meshID;
     m_selectedMeshInstanceID = instanceID;
 }
@@ -260,26 +251,32 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 void Scene::HandlePointLightDuplication()
 {
     if (m_selectedLightID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
-        AddLight();
+        AddPointLight();
         m_pointLights.back() = m_pointLights[m_selectedLightID];
+        m_selectedLightID = m_pointLights.size() - 1;
     }
 }
 
 void Scene::HandleMeshDuplication()
 {
     if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
-        AddMeshInstance(*m_meshes[m_selectedMeshID]);
-        auto& newInstance = m_meshes[m_selectedMeshID]->m_meshInstances.back();
-        int32_t newColorID = newInstance->UBO.instanceColorID;
-        auto& srcMeshInstance = m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID];
-        *newInstance = *srcMeshInstance;
-        // copy except for color id
-        newInstance->UBO.instanceColorID = newColorID;
-        if (srcMeshInstance->physicsInfo) {
-            AddPhysics(*m_meshes[m_selectedMeshID], *newInstance, *srcMeshInstance->physicsInfo);
+        auto& mesh = GetSelectedMesh();
+        auto& srcInstance = GetSelectedMeshInstance();
+
+        AddMeshInstance(mesh);
+        auto& newInstance = *mesh.m_meshInstances.back();
+        int32_t newColorID = newInstance.UBO.instanceColorID;
+        newInstance = srcInstance;
+        // Copy except for color id
+        newInstance.UBO.instanceColorID = newColorID;
+        // Copy physics information
+        if (srcInstance.physicsInfo) {
+            AddPhysics(mesh, newInstance, *srcInstance.physicsInfo);
         }
-        // select new instance
-        m_selectedMeshInstanceID = newInstance->UBO.instanceColorID;
+        // Select new instance
+        m_selectedMeshInstanceID = newInstance.UBO.instanceColorID;
+        // Update
+        UpdateMeshInstance(GetSelectedMesh(), GetSelectedMeshInstance());
     }
 }
 
@@ -293,7 +290,20 @@ void Scene::UpdateMainCamera()
 
 void Scene::UpdatePointLight()
 {
-    if (!m_pointLights.empty() && m_lightDirtyFlag) {
+    if (m_pointLights.empty())
+        return;
+
+    m_pointLightDataBuffer->Copy(m_pointLights.data());
+
+    for (int i = 0; i < m_pointLights.size(); i++) {
+        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLights, m_meshes);
+    }
+}
+
+void Scene::UpdatePointLightBuffer()
+{
+    // TODO: separate
+    if (!m_pointLights.empty()) {
         vkn::BufferInfo bufferInput = { sizeof(PointLightUBO) * m_pointLights.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         m_pointLightDataBuffer.reset();
         m_pointLightDataBuffer = std::make_unique<vkn::Buffer>(bufferInput);
@@ -303,8 +313,7 @@ void Scene::UpdatePointLight()
         meshRenderPipeline.UpdatePointLightDescriptor();
         shadowCubemapPipeline.UpdatePointLightDescriptor();
 
-        m_lightDirtyFlag = false;
-        m_shadowShadowCubemapDirtyFlag = true;
+        UpdateShadowCubemaps();
     }
 }
 
@@ -323,22 +332,26 @@ void Scene::UpdateShadowMap()
 
 void Scene::UpdateShadowCubemaps()
 {
-    if (m_shadowShadowCubemapDirtyFlag) {
-        for (int i = 0; i < m_pointLights.size(); i++) {
-            m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLights, m_meshes);
-        }
-        meshRenderPipeline.m_shadowCubemapDescriptors.clear();
-        for (auto& shadowCubemap : m_shadowCubemaps) {
-            meshRenderPipeline.m_shadowCubemapDescriptors.emplace_back(nullptr, shadowCubemap->Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
-        }
-        meshRenderPipeline.UpdateShadowCubemapDescriptors();
-        m_shadowShadowCubemapDirtyFlag = false;
+    for (int i = 0; i < m_pointLights.size(); i++) {
+        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLights, m_meshes);
     }
+    meshRenderPipeline.m_shadowCubemapDescriptors.clear();
+    for (auto& shadowCubemap : m_shadowCubemaps) {
+        meshRenderPipeline.m_shadowCubemapDescriptors.emplace_back(nullptr, shadowCubemap->Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+    }
+    meshRenderPipeline.UpdateShadowCubemapDescriptors();
 }
 
-void Scene::UpdateMesh()
+void Scene::UpdateMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
-    if (GetInstanceCount() > 0 && m_meshDirtyFlag) {
+    mesh.m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
+    mesh.m_meshInstanceUBOBuffer->Copy(mesh.m_meshInstanceUBOs.data());
+    instance.physicsDebugUBO.model = instance.UBO.model;
+}
+
+void Scene::UpdateMeshBuffer()
+{
+    if (GetInstanceCount() > 0) {
         std::vector<vk::DescriptorBufferInfo> bufferInfos;
         bufferInfos.reserve(m_meshes.size());
         for (auto& mesh : m_meshes) {
@@ -347,13 +360,11 @@ void Scene::UpdateMesh()
             vkn::BufferInfo bufferInfo = { sizeof(MeshInstanceUBO) * mesh->GetInstanceCount(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
             mesh->m_meshInstanceUBOBuffer.reset();
             mesh->m_meshInstanceUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
-            std::vector<MeshInstanceUBO> UBOs;
-            UBOs.reserve(mesh->m_meshInstances.size());
+            mesh->m_meshInstanceUBOs.clear();
             for (auto& instance : mesh->m_meshInstances) {
-                UBOs.push_back(instance->UBO);
-                instance->physicsDebugUBO.model = instance->UBO.model;
+                mesh->m_meshInstanceUBOs.push_back(instance->UBO);
             }
-            mesh->m_meshInstanceUBOBuffer->Copy(UBOs.data());
+            mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
             bufferInfos.emplace_back(mesh->m_meshInstanceUBOBuffer->Get().descriptorBufferInfo);
         }
         meshRenderPipeline.m_meshDescriptors = bufferInfos;
@@ -362,8 +373,6 @@ void Scene::UpdateMesh()
         meshRenderPipeline.UpdateMeshDescriptors();
         shadowMapPipeline.UpdateMeshDescriptors();
         shadowCubemapPipeline.UpdateMeshDescriptors();
-        m_meshDirtyFlag = false;
-        m_shadowShadowCubemapDirtyFlag = true;
     }
 }
 
@@ -374,12 +383,6 @@ void Scene::UpdatePhysicsDebug()
         lineRenderPipeline.m_UBODescriptor = GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo;
         lineRenderPipeline.UpdateUBODescriptor();
     }
-}
-
-void Scene::UpdateUniformDescriptors()
-{
-    meshRenderPipeline.UpdateShadowMapSpaceViewProjDescriptor();
-    shadowMapPipeline.UpdateShadowMapSpaceViewProjDescriptor();
 }
 
 void Scene::UpdateTextureDescriptors()
@@ -404,7 +407,6 @@ void Scene::UpdateTextureDescriptors()
         meshRenderPipeline.m_roughnessTextureDescriptors.emplace_back(roughnessTexture->Get().descriptorImageInfo);
     }
     meshRenderPipeline.UpdateRoughnessTextureWriteDescriptors();
-    m_resourceDirtyFlag = false;
 }
 
 void Scene::UpdateEnvCubemapDescriptors()
@@ -415,16 +417,6 @@ void Scene::UpdateEnvCubemapDescriptors()
     meshRenderPipeline.UpdateIrraianceCubemapDescriptor();
     meshRenderPipeline.m_prefilteredCubemapDescriptor = m_prefilteredCubemap->m_mipmapDescriptorImageInfo;
     meshRenderPipeline.UpdatePrefilteredCubemapDescriptor();
-    m_envCubemapDirtyFlag = false;
-}
-
-void Scene::UpdateDescriptorSet()
-{
-    UpdateUniformDescriptors();
-    if (m_resourceDirtyFlag)
-        UpdateTextureDescriptors();
-    if (m_envCubemapDirtyFlag)
-        UpdateEnvCubemapDescriptors();
 }
 
 void Scene::InitScene()
@@ -473,7 +465,7 @@ void Scene::InitHdri()
     m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, *m_envCubemap, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 
     m_iblExposure = 1.0f;
-    m_envCubemapDirtyFlag = true;
+    UpdateEnvCubemapDescriptors();
 }
 
 void Scene::CopyMeshInstances()
@@ -488,7 +480,6 @@ void Scene::CopyMeshInstances()
             m_meshInstanceMap[instance->UUID] = instance.get();
             if (instance->physicsInfo)
                 m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
-            // TODO: separate commandPool?
             if (instance->camera)
                 m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_commandPool);
         }
@@ -497,6 +488,9 @@ void Scene::CopyMeshInstances()
 
 void Scene::RevertMeshInstances()
 {
+    if (m_meshCopies.empty())
+        return;
+
     for (int i = 0; i < m_meshes.size(); i++) {
         m_meshes[i]->m_meshInstances.clear();
         for (int j = 0; j < m_meshCopies[i].m_meshInstances.size(); j++) {
@@ -538,8 +532,6 @@ void Scene::Play()
     }
 
     Physics::Simulate(m_meshes);
-
-    m_meshDirtyFlag = true;
 }
 
 void Scene::Stop()
@@ -552,9 +544,9 @@ void Scene::Stop()
                 DeletePhysics(*instance);
         }
     }
-    m_meshDirtyFlag = true;
     m_isStartUp = true;
     RevertMeshInstances();
+    UpdateMeshBuffer();
 }
 
 void Scene::UnselectAll()
@@ -566,7 +558,6 @@ void Scene::UnselectAll()
 
 Scene::~Scene()
 {
-    vkn::Device::Get().device.destroyCommandPool(ShadowCubemap::s_commandPool);
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& imageLoadCommandPool : m_imageLoadCommandPools)
         vkn::Device::Get().device.destroyCommandPool(imageLoadCommandPool);

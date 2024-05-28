@@ -88,14 +88,31 @@ add_executable(${PROJECT_NAME}
         src/vulkan/sync.cpp
         src/scene/id.h
         src/scene/id.cpp
+        src/engine/script/script.cpp
+        src/engine/script/script.h
+        src/engine/script/registry.cpp
+        src/engine/script/registry.h
 )
 
-include(Dependency.cmake)
-include(Shader.cmake)
+if (WIN32)
+    set(BULLET_ROOT "C:/bullet3")
+endif ()
 find_package(Bullet REQUIRED)
 include_directories(${BULLET_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${BULLET_LIBRARIES})
 
+if (WIN32)
+    set(MONO_INCLUDE_DIR "C:/Program Files/Mono/include/mono-2.0")
+    set(MONO_LIB_DIR "C:/Program Files/Mono/lib")
+    include_directories(${MONO_INCLUDE_DIR})
+    target_link_directories(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR}/mono-2.0-sgen.lib)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/bin/mono-2.0-sgen.dll" ${PROJECT_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Program Files/Mono/lib/mono/4.5" ${PROJECT_BINARY_DIR}/mono/lib/mono/4.5)
+endif ()
+
+include(Dependency.cmake)
 target_include_directories(${PROJECT_NAME} PUBLIC ${DEP_INCLUDE_DIR})
 target_link_directories(${PROJECT_NAME} PUBLIC ${DEP_LIB_DIR})
 file(GLOB LIBS "${DEP_INSTALL_DIR}/lib/*.lib" "${DEP_INSTALL_DIR}/lib/*.a" "${DEP_INSTALL_DIR}/lib/*.dylib")
@@ -109,8 +126,8 @@ foreach (DLL ${DLLS})
     )
 endforeach ()
 
+include(Shader.cmake)
 add_dependencies(${PROJECT_NAME} ${DEP_LIST} shader)
-
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/"
         COMMAND ${CMAKE_COMMAND} -E copy_directory

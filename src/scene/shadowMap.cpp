@@ -79,8 +79,17 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std:
             commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
         }
     }
-
     commandBuffer.endRenderPass();
+
+    vkn::Command::SetImageMemoryBarrier(commandBuffer,
+                                        m_bundle.image,
+                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                                        vk::AccessFlagBits::eShaderRead,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        vk::PipelineStageFlagBits::eAllCommands,
+                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
 
     vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &commandBuffer);

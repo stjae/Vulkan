@@ -20,15 +20,13 @@ struct MeshInstanceData
 struct LightData
 {
     mat4 model;
-    vec3 pos;
-    float padding0;
     vec3 color;
-    float padding1;
+    float padding;
 };
 
 float Lambert(vec3 worldNormal, vec3 worldModel, LightData lightData)
 {
-    vec4 lightPos = lightData.model * vec4(lightData.pos, 1.0);
+    vec4 lightPos = lightData.model * vec4(0.0, 0.0, 0.0, 1.0);
     vec3 N = worldNormal;
     vec3 L = normalize(lightPos.xyz - worldModel);
 

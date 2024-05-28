@@ -20,6 +20,7 @@
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 #include "physics.h"
+#include "../engine/script/script.h"
 
 typedef struct DirLightUBO_ DirLightUBO;
 typedef struct DirLightUBO_
@@ -81,7 +82,7 @@ class Scene
     std::unique_ptr<MainCamera> m_mainCamera;
     MeshInstance* m_selectedCameraMeshInstance;
     // meshInstance UUID of selected camera
-    uint64_t m_selectedCameraUUID;
+    uint64_t m_selectedCameraUUID = 0;
 
     std::unique_ptr<vkn::Buffer> m_shadowMapViewSpaceProjBuffer;
     glm::mat4 m_shadowMapViewProj;
@@ -93,11 +94,6 @@ class Scene
     int32_t m_selectedLightID = -1;
 
     bool m_showLightIcon = true;
-    bool m_meshDirtyFlag = true;
-    bool m_lightDirtyFlag = true;
-    bool m_shadowShadowCubemapDirtyFlag = true;
-    bool m_resourceDirtyFlag = true;
-    bool m_envCubemapDirtyFlag = true;
 
     std::string m_sceneFolderPath;
     std::string m_sceneFilePath;
@@ -112,9 +108,9 @@ class Scene
     void AddMeshInstance(Mesh& mesh, uint64_t UUID);
     void AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo);
     void DeletePhysics(MeshInstance& meshInstance);
-    void AddLight();
+    void AddPointLight();
     void AddEnvironmentMap(const std::string& hdriFilePath);
-    void DeleteMeshInstance();
+    void DeleteMeshInstance(Mesh& mesh, MeshInstance& instance);
     void DeletePointLight();
     void HandlePointLightDuplication();
     void HandleMeshDuplication();
@@ -122,16 +118,18 @@ class Scene
     void RevertMeshInstances();
     void UpdateMainCamera();
     void UpdateCameraDescriptorSet(Camera* camera);
-    void UpdatePointLight();
-    void UpdateMesh();
+    void UpdatePointLightBuffer();
+    void UpdateMeshInstance(Mesh& mesh, MeshInstance& instance);
+    void UpdateMeshBuffer();
     void UpdateShadowMap();
     void UpdateShadowCubemaps();
-    void UpdateDescriptorSet();
-    void UpdateUniformDescriptors();
+    // void UpdateDescriptorSet();
     void UpdateTextureDescriptors();
     void UpdateEnvCubemapDescriptors();
     void InitScene();
     void InitHdri();
+    void AddCamera(MeshInstance& instance);
+    void SelectCamera(Camera* camera);
 
 public:
     Scene();
@@ -152,8 +150,7 @@ public:
     void Play();
     void Stop();
     ~Scene();
-    void AddCamera(MeshInstance& instance);
-    void SelectCamera(Camera* camera);
+    void UpdatePointLight();
 };
 
 typedef struct Resource_

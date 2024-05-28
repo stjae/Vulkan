@@ -14,7 +14,7 @@ layout (set = 0, binding = 2) readonly buffer Mesh {
     MeshInstanceData data[];
 } mesh[];
 
-layout(push_constant) uniform PushConsts
+layout (push_constant) uniform PushConsts
 {
     mat4 view;
     vec2 padding;
@@ -38,5 +38,5 @@ void main() {
     gl_Position = proj.mat * pushConsts.view * worldPos;
 
     outPos = worldPos;
-    outLightPos = light.data[pushConsts.lightIndex].model * vec4(light.data[pushConsts.lightIndex].pos, 1.0);
+    outLightPos = light.data[pushConsts.lightIndex].model * vec4(0.0, 0.0, 0.0, 1.0);
 }

@@ -1,7 +1,7 @@
 #ifndef LINERENDERPIPELINE_H
 #define LINERENDERPIPELINE_H
 
-#include <bullet/btBulletCollisionCommon.h>
+#include <btBulletCollisionCommon.h>
 #include "../vulkan/pipeline.h"
 #include "../scene/physicsDebugDrawer.h"
 

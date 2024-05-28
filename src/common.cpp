@@ -99,13 +99,13 @@ std::string nfdPickFolder()
 {
     NFD_Init();
     std::string pathStr;
-    nfdu8char_t* folderPath;
+    nfdnchar_t* folderPath;
 
     nfdresult_t result = NFD_PickFolderN(&folderPath, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
-        puts(folderPath);
-        pathStr = folderPath;
+        puts((const char*)folderPath);
+        pathStr = reinterpret_cast<const char* const>(folderPath);
         NFD_FreePathN(folderPath);
     } else if (result == NFD_CANCEL) {
         puts("User pressed cancel.");

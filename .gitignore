@@ -2,3 +2,7 @@
 .vscode/
 .DS_STORE
 .idea/
+script/obj/
+script/Properties/
+.vs/
+*.pdb

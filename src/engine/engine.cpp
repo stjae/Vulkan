@@ -24,16 +24,16 @@ void Engine::Render()
     vkn::Device::s_submitInfos.clear();
 
     m_imGui.Draw(*m_scene, m_viewport, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_init);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene->IsPlaying()) {
+        m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), *m_scene);
+    }
+    m_imGui.AcceptDragDrop(m_viewport, *m_scene);
 
     m_scene->Play();
     m_scene->Update();
 
     m_viewport.Draw(*m_scene);
     m_swapchain.Draw(currentImage.value, ImGui::GetDrawData());
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene->IsPlaying()) {
-        m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), *m_scene);
-    }
-    m_imGui.AcceptDragDrop(m_viewport, *m_scene);
 
     vkn::Device::Get().graphicsQueue.submit(vkn::Device::s_submitInfos, vkn::Sync::GetInFlightFence());
     vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);

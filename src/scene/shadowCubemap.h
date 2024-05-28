@@ -19,28 +19,26 @@ class ShadowCubemap : public vkn::Cubemap
     vkn::Image m_depthImage;
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eTopOfPipe };
 
-    inline static vk::CommandPool s_commandPool;
-    inline static std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    vk::CommandPool m_commandPool;
+    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
-    void UpdateCubemapFace(uint32_t faceIndex, vk::CommandBuffer& commandBuffer, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
+    void UpdateCubemapFace(uint32_t faceIndex, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
     void CreateFramebuffer();
-    void CreateDepthImage(vk::CommandBuffer& commandBuffer);
+    void CreateDepthImage();
 
 public:
-    void CreateShadowMap(vk::CommandBuffer& commandBuffer);
+    void CreateShadowMap();
     void DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes);
+    ~ShadowCubemap();
 };
 
 typedef struct PointLightUBO_
 {
     glm::mat4 model;
-    glm::vec3 pos;
-    float padding0;
     glm::vec3 color;
-    float padding1;
+    float padding;
 
-    PointLightUBO_() : model(glm::mat4(1.0f)), pos(glm::vec3(0.0f)), color(1.0f), padding0(0.0f), padding1(0.0f) {}
-    explicit PointLightUBO_(glm::vec3&& pos) : model(glm::mat4(1.0f)), pos(pos), color(1.0f), padding0(0.0f), padding1(0.0f) {}
+    PointLightUBO_() : model(glm::mat4(1.0f)), color(1.0f) {}
 } PointLightUBO_;
 
 #endif

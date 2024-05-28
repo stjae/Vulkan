@@ -33,7 +33,6 @@ ExternalProject_Add(
         -DGLFW_BUILD_DOCS=OFF
 )
 set(DEP_LIST ${DEP_LIST} dep-glfw)
-#set(DEP_LIBS ${DEP_LIBS} glfw3)
 
 #glm
 ExternalProject_Add(
@@ -53,7 +52,7 @@ ExternalProject_Add(
 set(DEP_LIST ${DEP_LIST} dep-glm)
 
 #imgui
-set(imguiLIBS
+set(imgui_src
         ${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp
         ${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp
         ${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp
@@ -61,9 +60,9 @@ set(imguiLIBS
         ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_glfw.cpp
         ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_vulkan.cpp)
 if (WIN32)
-    add_library(imgui ${imguiLIBS} ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_win32.cpp)
+    add_library(imgui ${imgui_src} ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_win32.cpp)
 else ()
-    add_library(imgui ${imguiLIBS})
+    add_library(imgui ${imgui_src})
 endif ()
 
 target_include_directories(imgui PRIVATE ${DEP_INCLUDE_DIR})
@@ -121,9 +120,9 @@ ExternalProject_Add(
         TEST_COMMAND ""
         CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
+        -DASSIMP_WARNINGS_AS_ERRORS=OFF
 )
 set(DEP_LIST ${DEP_LIST} dep-assimp)
-#set(DEP_LIBS ${DEP_LIBS} assimp)
 
 # Native File Dialog
 ExternalProject_Add(
@@ -139,7 +138,6 @@ ExternalProject_Add(
         -DNFD_BUILD_TESTS=OFF
 )
 set(DEP_LIST ${DEP_LIST} dep-nativefiledialog)
-#set(DEP_LIBS ${DEP_LIBS} nfd)
 
 # yaml
 ExternalProject_Add(
@@ -155,17 +153,3 @@ ExternalProject_Add(
         -DYAML_BUILD_SHARED_LIBS=ON
 )
 set(DEP_LIST ${DEP_LIST} dep-yaml)
-
-# lua
-ExternalProject_Add(
-        dep-lua
-        GIT_REPOSITORY "https://github.com/walterschell/Lua.git"
-        GIT_TAG "master"
-        GIT_SHALLOW 1
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        TEST_COMMAND ""
-        CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
-)
-set(DEP_LIST ${DEP_LIST} dep-lua)

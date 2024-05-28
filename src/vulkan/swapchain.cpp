@@ -241,12 +241,6 @@ void Swapchain::ChoosePresentMode()
 {
     vk::PresentModeKHR mode = vk::PresentModeKHR::eFifo;
 
-    for (auto& presentMode : m_supportedPresentModes) {
-        if (presentMode == vk::PresentModeKHR::eMailbox) {
-            mode = vk::PresentModeKHR::eMailbox;
-        }
-    }
-
     Log(DEBUG, fmt::terminal_color::bright_cyan, "set swapchain present mode: {}", vk::to_string(mode));
 
     s_bundle.presentMode = mode;

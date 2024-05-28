@@ -4,11 +4,21 @@ void Mesh::AddInstance(glm::vec3 pos, glm::vec3 scale)
 {
     const uint64_t UUID = ID::GenerateID();
     m_meshInstances.push_back(std::make_unique<MeshInstance>(UUID, MeshInstanceUBO(m_meshColorID, (int32_t)m_meshInstances.size(), pos, scale)));
+    m_meshInstanceUBOs.push_back(m_meshInstances.back()->UBO);
 }
 
 void Mesh::AddInstance(const uint64_t UUID)
 {
     m_meshInstances.push_back(std::make_unique<MeshInstance>(UUID, MeshInstanceUBO(m_meshColorID, (int32_t)m_meshInstances.size())));
+    m_meshInstanceUBOs.push_back(m_meshInstances.back()->UBO);
+}
+
+void Mesh::DeleteInstance(int32_t instanceColorID)
+{
+    m_meshInstances.erase(m_meshInstances.begin() + instanceColorID);
+    for (int32_t i = instanceColorID; i < m_meshInstances.size(); i++) {
+        m_meshInstances[i]->UBO.instanceColorID--;
+    }
 }
 
 void Mesh::CreateSquare(float scale, const char* texturePath)

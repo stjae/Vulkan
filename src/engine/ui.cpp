@@ -81,8 +81,11 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
         scene.UnselectAll();
     }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-        scene.DeleteMeshInstance();
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {
+        scene.DeleteMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedLightID > -1) {
         scene.DeletePointLight();
     }
 
@@ -196,7 +199,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
         }
         if (ImGui::BeginMenu("Add")) {
             if (ImGui::MenuItem("Point Light")) {
-                scene.AddLight();
+                scene.AddPointLight();
             }
             ImGui::EndMenu();
         }
@@ -299,7 +302,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
 
     for (auto& light : scene.m_pointLights) {
 
-        glm::vec4 pos = scene.m_mainCamera->GetUBO().proj * scene.m_mainCamera->GetUBO().view * light.model * glm::vec4(light.pos, 1.0f);
+        glm::vec4 pos = scene.m_mainCamera->GetUBO().proj * scene.m_mainCamera->GetUBO().view * light.model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
@@ -340,20 +343,19 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
+    auto& meshInstance = scene.GetSelectedMeshInstance();
+
     float translation[3];
     float rotation[3];
     float scale[3];
-    float matrix[16];
-    float pMatrix[16];
 
-    auto& mesh = scene.GetSelectedMesh();
-    auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
-
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
-    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, matrix);
-    scene.m_meshDirtyFlag = true;
-    meshInstanceUBO.model = glm::make_mat4(matrix);
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.UBO.model), translation, rotation, scale);
+        meshInstance.translation = glm::make_vec3(translation);
+        meshInstance.rotation = glm::make_vec3(rotation);
+        meshInstance.scale = glm::make_vec3(scale);
+        scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+    }
 }
 
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
@@ -371,26 +373,14 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
-    float translation[3];
-    float rotation[3];
-    float scale[3];
-    float matrix[16];
-
     auto& lightData = scene.m_pointLights[scene.m_selectedLightID];
-    glm::mat4 model = glm::translate(lightData.model, lightData.pos);
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
-    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, matrix)) {
-        scene.m_lightDirtyFlag = true;
-    }
-    model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
-    lightData.model = model;
+    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightData.model));
 }
 
 void UI::DrawSceneAttribWindow(Scene& scene)
 {
     ImGui::Begin("Scene");
-    ImGui::BeginTabBar("MeshTab");
+    ImGui::BeginTabBar("Scene");
     // Mesh List
     if (ImGui::BeginTabItem("Mesh")) {
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
@@ -409,7 +399,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                             if (ImGui::MenuItem("Delete")) {
                                 scene.m_selectedMeshID = i;
                                 scene.m_selectedMeshInstanceID = j;
-                                scene.DeleteMeshInstance();
+                                scene.DeleteMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
                             }
                             ImGui::EndPopup();
                         }
@@ -428,39 +418,27 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
 
-            float translation[3];
-            float rotation[3];
-            float scale[3];
-            float matrix[16];
-            float pMatrix[16];
-
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstanceUBO.model), translation, rotation, scale);
-            std::vector<std::string> labels = { "Move", "Rotate", "Scale" };
-            ImGui::SeparatorText("Translation");
-            if (ImGui::SliderFloat3(labels[0].append("##translation").c_str(), translation, -10.0f, 10.0f))
-                scene.m_meshDirtyFlag = true;
-            if (ImGui::SliderFloat3(labels[1].append("##rotation").c_str(), rotation, -180.0f, 180.0f))
-                scene.m_meshDirtyFlag = true;
-            if (ImGui::SliderFloat3(labels[2].append("##scale").c_str(), scale, -10.0f, 10.0f))
-                scene.m_meshDirtyFlag = true;
-            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-
-            meshInstanceUBO.model = glm::make_mat4(matrix);
+            ImGui::Separator();
+            ImGui::DragFloat3("Translation##_INSTANCE", &meshInstance.translation[0], 0.1f);
+            ImGui::DragFloat3("Rotation##_INSTANCE", &meshInstance.rotation[0], 0.1f);
+            ImGui::DragFloat3("Scale##_INSTANCE", &meshInstance.scale[0], 0.1f);
+            ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(meshInstance.translation), glm::value_ptr(meshInstance.rotation), glm::value_ptr(meshInstance.scale), glm::value_ptr(meshInstance.UBO.model));
+            scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
 
             ImGui::SeparatorText("Texture");
             bool useTexture = meshInstanceUBO.useTexture > 0;
             if (ImGui::Checkbox("Use Texture", &useTexture)) {
                 meshInstanceUBO.useTexture = useTexture ? 1 : -1;
-                scene.m_meshDirtyFlag = true;
+                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
             }
 
             ImGui::SeparatorText("Material");
             if (ImGui::SliderFloat3("Albedo", &meshInstanceUBO.albedo[0], 0.0f, 1.0f))
-                scene.m_meshDirtyFlag = true;
+                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
             if (ImGui::SliderFloat("Metallic", &meshInstanceUBO.metallic, 0.0f, 1.0f))
-                scene.m_meshDirtyFlag = true;
+                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
             if (ImGui::SliderFloat("Roughness", &meshInstanceUBO.roughness, 0.0f, 1.0f))
-                scene.m_meshDirtyFlag = true;
+                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
 
             ImGui::SeparatorText("RigidBody");
             ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID]->GetName().c_str());
@@ -490,8 +468,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         physicsInfo.colliderShape = eColliderShape::CYLINDER;
                     if (ImGui::MenuItem("Cone"))
                         physicsInfo.colliderShape = eColliderShape::CONE;
-                    if (ImGui::MenuItem("Mesh"))
-                        physicsInfo.colliderShape = eColliderShape::MESH;
+                    if (physicsInfo.rigidBodyType == eRigidBodyType::STATIC) {
+                        if (ImGui::MenuItem("Mesh"))
+                            physicsInfo.colliderShape = eColliderShape::MESH;
+                    }
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add##physics")) {
@@ -536,10 +516,11 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     if (ImGui::BeginTabItem("Light")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_pointLights.size(); i++) {
-                std::string name("light");
+                std::string name(std::string("Point Light ") + std::to_string(i));
                 ImGui::PushID(i);
                 if (ImGui::Selectable(name.c_str(), i == scene.m_selectedLightID)) {
                     scene.UnselectAll();
+                    scene.m_selectedLightID = i;
                 }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
@@ -554,25 +535,14 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::Checkbox("Show Light Icon", &scene.m_showLightIcon);
             // Light Attributes
             if (scene.m_selectedLightID > -1) {
-
                 auto& lightData = scene.m_pointLights[scene.m_selectedLightID];
-                glm::mat4 model = glm::translate(lightData.model, lightData.pos);
+                glm::vec3 lightPos = lightData.model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-                float translation[3];
-                float rotation[3];
-                float scale[3];
-                float matrix[16];
-
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model), translation, rotation, scale);
                 ImGui::SeparatorText("Point Light");
-                if (ImGui::SliderFloat3("Position##_POINTLIGHT", translation, -10.0f, 10.0f))
-                    scene.m_lightDirtyFlag = true;
-                if (ImGui::SliderFloat3("Color##_POINTLIGHT", &lightData.color[0], 0.0f, 1.0f))
-                    scene.m_lightDirtyFlag = true;
-                ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
+                ImGui::DragFloat3("Position##_POINTLIGHT", &lightPos[0], 0.1f);
+                ImGui::SliderFloat3("Color##_POINTLIGHT", &lightData.color[0], 0.0f, 1.0f);
 
-                model = glm::translate(glm::make_mat4(matrix), -lightData.pos);
-                lightData.model = model;
+                lightData.model = glm::translate(glm::mat4(1.0f), lightPos);
             }
             // Directional Light
             ImGui::SeparatorText("Directional Light");
@@ -633,43 +603,83 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
 void UI::DrawResourceWindow(Scene& scene)
 {
-    ImGui::Begin("Resources");
-
-    const float resourceButtonSize = 100.0f;
-    float panelSize = ImGui::GetContentRegionAvail().x;
-    int columnCount = std::max(1, (int)(panelSize / resourceButtonSize));
-    // Add Resource
-    ImGui::Columns(columnCount, nullptr, false);
-    if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-        std::string path = nfdOpen({ "Model", "gltf,fbx" });
-        if (!path.empty()) {
-            scene.AddResource(path);
-        }
-    }
-    ImGui::NextColumn();
-
-    for (int i = 0; i < scene.m_resources.size(); i++) {
-        ImGui::PushID(i);
-        ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
-        if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Delete")) {
-                // TODO: resource deletion
-                // scene.m_resources.erase(scene.m_resources.begin() + i);
+    ImGui::Begin("Resource");
+    ImGui::BeginTabBar("Resource");
+    if (ImGui::BeginTabItem("Model")) {
+        const float resourceButtonSize = 100.0f;
+        float panelSize = ImGui::GetContentRegionAvail().x;
+        int columnCount = std::max(1, (int)(panelSize / resourceButtonSize));
+        // Add Resource
+        ImGui::Columns(columnCount, nullptr, false);
+        if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+            std::string path = nfdOpen({ "Model", "gltf" });
+            if (!path.empty()) {
+                scene.AddResource(path);
             }
-            ImGui::EndPopup();
         }
-
-        // Send Drag Drop
-        if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.m_resources[i], sizeof(scene.m_resources[i]));
-            ImGui::EndDragDropSource();
-        }
-
-        ImGui::PopID();
-        ImGui::Text("%s", scene.m_resources[i].fileName.c_str());
         ImGui::NextColumn();
+
+        for (int i = 0; i < scene.m_resources.size(); i++) {
+            ImGui::PushID(i);
+            ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Delete")) {
+                    // TODO: resource deletion
+                    // scene.m_resources.erase(scene.m_resources.begin() + i);
+                }
+                ImGui::EndPopup();
+            }
+
+            // Send Drag Drop
+            if (ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.m_resources[i], sizeof(scene.m_resources[i]));
+                ImGui::EndDragDropSource();
+            }
+
+            ImGui::PopID();
+            ImGui::Text("%s", scene.m_resources[i].fileName.c_str());
+            ImGui::NextColumn();
+        }
+        ImGui::Columns(1);
+        ImGui::EndTabItem();
     }
-    ImGui::Columns(1);
+    if (ImGui::BeginTabItem("Script")) {
+        const float resourceButtonSize = 100.0f;
+        float panelSize = ImGui::GetContentRegionAvail().x;
+        int columnCount = std::max(1, (int)(panelSize / resourceButtonSize));
+        // Add Resource
+        ImGui::Columns(columnCount, nullptr, false);
+        if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
+            // std::string path = nfdOpen({ "Script", "dll" });
+            Script::Reload();
+        }
+        ImGui::NextColumn();
+
+        // for (int i = 0; i < scene.m_resources.size(); i++) {
+        //     ImGui::PushID(i);
+        //     ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+        //     if (ImGui::BeginPopupContextItem()) {
+        //         if (ImGui::MenuItem("Delete")) {
+        //             // TODO: resource deletion
+        //             // scene.m_resources.erase(scene.m_resources.begin() + i);
+        //         }
+        //         ImGui::EndPopup();
+        //     }
+        //
+        //     // Send Drag Drop
+        //     if (ImGui::BeginDragDropSource()) {
+        //         ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.m_resources[i], sizeof(scene.m_resources[i]));
+        //         ImGui::EndDragDropSource();
+        //     }
+        //
+        //     ImGui::PopID();
+        //     ImGui::Text("%s", scene.m_resources[i].fileName.c_str());
+        //     ImGui::NextColumn();
+        // }
+        // ImGui::Columns(1);
+        ImGui::EndTabItem();
+    }
+    ImGui::EndTabBar();
     ImGui::End();
 }
 

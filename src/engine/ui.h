@@ -1,11 +1,6 @@
 #ifndef IMGUI_H
 #define IMGUI_H
 
-#include "../common.h"
-#include "../scene/camera.h"
-#include "../scene/scene.h"
-#include "viewport.h"
-#include "sceneSerializer.h"
 #include "../../imgui/imgui.h"
 #include "../../imgui/imgui_impl_glfw.h"
 #include "../../imgui/imgui_impl_vulkan.h"
@@ -14,6 +9,13 @@
 #endif
 #include "../../imgui/ImGuizmo.h"
 #include "../../imgui/imgui_internal.h"
+
+#include "../common.h"
+#include "../scene/camera.h"
+#include "../scene/scene.h"
+#include "viewport.h"
+#include "sceneSerializer.h"
+#include "../engine/script/script.h"
 
 class UI
 {

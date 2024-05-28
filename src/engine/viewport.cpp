@@ -108,7 +108,7 @@ void Viewport::UpdateImage()
     m_outDated = false;
 }
 
-const int32_t* Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
+void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 {
     vkn::Command::Begin(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     vkn::Command::SetImageMemoryBarrier(m_pickColorCommandBuffers[vkn::Sync::GetCurrentFrameIndex()],
@@ -201,15 +201,6 @@ void Viewport::Draw(const Scene& scene)
                                         vk::AccessFlagBits::eColorAttachmentRead,
                                         vk::PipelineStageFlagBits::eFragmentShader,
                                         vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
-                                        scene.m_shadowMap.Get().image,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = meshRenderPipeline.m_renderPass;

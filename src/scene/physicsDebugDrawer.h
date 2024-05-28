@@ -1,7 +1,7 @@
 #ifndef PHYSICSDEBUGDRAWER_H
 #define PHYSICSDEBUGDRAWER_H
 
-#include <bullet/btBulletCollisionCommon.h>
+#include <btBulletCollisionCommon.h>
 #include "../vulkan/command.h"
 // #include "../struct.h"
 #include "../enum.h"
@@ -13,8 +13,6 @@ struct PhysicsInfo
     eColliderShape colliderShape;
     btRigidBody* rigidBodyPtr;
     btCollisionShape* collisionShapePtr;
-    // model matrix before simulation
-    glm::mat4 initialModel;
     glm::vec3 scale = glm::vec3(1.0f);
 };
 

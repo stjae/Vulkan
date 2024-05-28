@@ -115,7 +115,6 @@ void SceneSerializer::SerializePointLights(YAML::Emitter& out, const std::vector
         for (auto& pointLight : pointLights) {
             out << YAML::BeginMap;
             out << YAML::Key << "Transform" << YAML::Value << pointLight.model;
-            out << YAML::Key << "Position" << YAML::Value << pointLight.pos;
             out << YAML::Key << "Color" << YAML::Value << pointLight.color;
             out << YAML::EndMap;
         }
@@ -158,6 +157,9 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<std:
             for (const auto& instance : mesh->GetInstances()) {
                 out << YAML::BeginMap;
                 out << YAML::Key << "UUID" << YAML::Value << instance->UUID;
+                out << YAML::Key << "Translation" << YAML::Value << instance->translation;
+                out << YAML::Key << "Rotation" << YAML::Value << instance->rotation;
+                out << YAML::Key << "Scale" << YAML::Value << instance->scale;
                 out << YAML::Key << "Transform" << YAML::Value << instance->UBO.model;
                 out << YAML::Key << "Albedo" << YAML::Value << instance->UBO.albedo;
                 out << YAML::Key << "Metallic" << YAML::Value << instance->UBO.metallic;
@@ -220,9 +222,9 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto pointLights = data["PointLights"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
-            scene.AddLight();
+            scene.AddPointLight();
+            // TODO: need position only
             scene.m_pointLights.back().model = pointLight["Transform"].as<glm::mat4>();
-            scene.m_pointLights.back().pos = pointLight["Position"].as<glm::vec3>();
             scene.m_pointLights.back().color = pointLight["Color"].as<glm::vec3>();
         }
     }
@@ -242,6 +244,9 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             for (auto instance : instances) {
                 scene.AddMeshInstance(*scene.m_meshes[i], instance["UUID"].as<uint64_t>());
                 auto& meshInstance = scene.m_meshes[i]->GetInstances().back();
+                meshInstance->translation = instance["Translation"].as<glm::vec3>();
+                meshInstance->rotation = instance["Rotation"].as<glm::vec3>();
+                meshInstance->scale = instance["Scale"].as<glm::vec3>();
                 meshInstance->UBO.model = instance["Transform"].as<glm::mat4>();
                 meshInstance->UBO.albedo = instance["Albedo"].as<glm::vec3>();
                 meshInstance->UBO.metallic = instance["Metallic"].as<float>();
@@ -256,5 +261,6 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                 }
             }
         }
+        scene.UpdateMeshBuffer();
     }
 }

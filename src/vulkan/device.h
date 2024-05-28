@@ -2,6 +2,7 @@
 #define DEVICE_H
 
 #include "instance.h"
+#include <optional>
 #include <set>
 
 namespace vkn {

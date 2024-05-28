@@ -140,7 +140,7 @@ void main() {
 
     for (int i = 0; i < pushConsts.lightCount; i++) {
 
-        vec4 lightPos = light.data[i].model * vec4(light.data[i].pos, 1.0);
+        vec4 lightPos = light.data[i].model * vec4(0.0, 0.0, 0.0, 1.0);
         vec3 lightVec = (inModel - lightPos).xyz;
         float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);

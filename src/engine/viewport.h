@@ -45,7 +45,7 @@ public:
     Viewport();
     void CreateImage();
     void DestroyImage();
-    const int32_t* PickColor(double mouseX, double mouseY, Scene& scene);
+    void PickColor(double mouseX, double mouseY, Scene& scene);
     void Draw(const Scene& scene);
     const std::vector<vk::SubmitInfo>& GetSubmitInfos() { return m_submitInfos; }
     void ClearSubmitInfos() { m_submitInfos.clear(); }

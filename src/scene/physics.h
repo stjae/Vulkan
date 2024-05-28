@@ -1,7 +1,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include <bullet/btBulletCollisionCommon.h>
+#include <btBulletCollisionCommon.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include "../scene/mesh.h"
@@ -11,7 +11,6 @@
 #if defined(_WIN32)
 #include "../../imgui/imgui_impl_win32.h"
 #endif
-#include "../../imgui/ImGuizmo.h"
 #include "../../imgui/imgui_internal.h"
 
 class Physics

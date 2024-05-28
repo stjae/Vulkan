@@ -79,11 +79,11 @@ void MeshRenderPipeline::SetUpDescriptors()
 
     bindings = {
         // shadowMap view projection
-        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, vk::DescriptorBindingFlagBits::eUpdateAfterBind },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
         // directional light
-        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment, vk::DescriptorBindingFlagBits::eUpdateAfterBind },
+        { vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment },
     };
-    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings, vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool));
+    m_descriptorSetLayouts.push_back(vkn::Descriptor::CreateDescriptorSetLayout(bindings));
     vkn::Descriptor::SetPoolSizes(poolSizes, bindings, maxSets);
 
     vkn::Descriptor::CreateDescriptorPool(m_descriptorPool, poolSizes, maxSets, vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);

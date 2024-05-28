@@ -50,7 +50,8 @@ void Physics::AddRigidBody(Mesh& mesh, MeshInstance& instance)
 
     btScalar mass = instance.physicsInfo->rigidBodyType == eRigidBodyType::DYNAMIC ? 1.0f : 0.0f;
     btVector3 localInertia(0, 0, 0);
-    instance.physicsInfo->collisionShapePtr->calculateLocalInertia(mass, localInertia);
+    if (mass > 0)
+        instance.physicsInfo->collisionShapePtr->calculateLocalInertia(mass, localInertia);
 
     auto* myMotionState = new btDefaultMotionState(startTransform);
     btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, instance.physicsInfo->collisionShapePtr, localInertia);
@@ -58,7 +59,6 @@ void Physics::AddRigidBody(Mesh& mesh, MeshInstance& instance)
     body->setWorldTransform(startTransform);
     s_dynamicsWorld->addRigidBody(body);
 
-    instance.physicsInfo->initialModel = instance.UBO.model;
     instance.physicsInfo->rigidBodyPtr = body;
 }
 
@@ -69,20 +69,22 @@ void Physics::UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes)
             if (!instance->physicsInfo)
                 continue;
 
-            float* instanceM = glm::value_ptr(instance->UBO.model);
+            glm::mat4 instanceModel = instance->UBO.model;
+            float* instanceM = glm::value_ptr(instanceModel);
             float instanceT[3];
             float instanceR[3];
             float instanceS[3];
+            float unitS[3] = { 1.0f, 1.0f, 1.0f };
             ImGuizmo::DecomposeMatrixToComponents(instanceM, instanceT, instanceR, instanceS);
+            ImGuizmo::RecomposeMatrixFromComponents(instanceT, instanceR, unitS, instanceM);
 
             instance->physicsInfo->rigidBodyPtr->getCollisionShape()->setLocalScaling({ instanceS[0] * instance->physicsInfo->scale.x, instanceS[1] * instance->physicsInfo->scale.y, instanceS[2] * instance->physicsInfo->scale.z });
 
             btTransform startTransform;
             startTransform.setIdentity();
-            startTransform.setOrigin({ instanceT[0], instanceT[1], instanceT[2] });
+            startTransform.setFromOpenGLMatrix(instanceM);
 
             instance->physicsInfo->rigidBodyPtr->setWorldTransform(startTransform);
-            instance->physicsInfo->initialModel = instance->UBO.model;
         }
     }
 }
@@ -101,7 +103,9 @@ void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
             btScalar m[16];
             t.getOpenGLMatrix(m);
             instance->UBO.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance->physicsInfo->scale);
+            mesh->m_meshInstanceUBOs[instance->UBO.instanceColorID] = instance->UBO;
         }
+        mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
     }
 }
 
@@ -129,7 +133,6 @@ Physics::~Physics()
     delete s_dispatcher;
 }
 
-// TODO: move to destructor?
 void Physics::DeleteRigidBody(MeshInstance& instance)
 {
     if (instance.physicsInfo->rigidBodyPtr->getMotionState())
