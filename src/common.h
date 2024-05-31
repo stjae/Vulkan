@@ -41,7 +41,6 @@ void Log(bool debugMode, fmt::terminal_color color, T... args)
     spdlog::info(fmt::format(fmt::fg(color), args...));
 }
 
-std::string& GetFrameRate();
 std::vector<char> FetchCode(const std::string& filename);
 std::string nfdOpen(nfdfilteritem_t filterItem);
 std::string nfdSave(nfdu8filteritem_t filterItem);

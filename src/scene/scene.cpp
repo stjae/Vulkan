@@ -1,8 +1,9 @@
 #include "scene.h"
+#include "../engine/script/script.h"
 
 Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
 {
-    Script::Init();
+    Script::Init(this);
 
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
@@ -276,7 +277,7 @@ void Scene::HandleMeshDuplication()
         // Select new instance
         m_selectedMeshInstanceID = newInstance.UBO.instanceColorID;
         // Update
-        UpdateMeshInstance(GetSelectedMesh(), GetSelectedMeshInstance());
+        mesh.UpdateUBO(GetSelectedMeshInstance());
     }
 }
 
@@ -342,12 +343,12 @@ void Scene::UpdateShadowCubemaps()
     meshRenderPipeline.UpdateShadowCubemapDescriptors();
 }
 
-void Scene::UpdateMeshInstance(Mesh& mesh, MeshInstance& instance)
-{
-    mesh.m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
-    mesh.m_meshInstanceUBOBuffer->Copy(mesh.m_meshInstanceUBOs.data());
-    instance.physicsDebugUBO.model = instance.UBO.model;
-}
+// void Scene::UpdateMeshInstance(Mesh& mesh, MeshInstance& instance)
+// {
+//     mesh.m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
+//     mesh.m_meshInstanceUBOBuffer->Copy(mesh.m_meshInstanceUBOs.data());
+//     instance.physicsDebugUBO.model = instance.UBO.model;
+// }
 
 void Scene::UpdateMeshBuffer()
 {
@@ -475,7 +476,7 @@ void Scene::CopyMeshInstances()
         m_meshCopies.emplace_back(mesh->m_meshColorID);
         m_meshCopies.back().m_meshInstances.reserve(mesh->m_meshInstances.size());
         for (auto& instance : mesh->m_meshInstances) {
-            m_meshCopies.back().AddInstance(instance->UUID);
+            AddMeshInstance(m_meshCopies.back(), instance->UUID);
             *m_meshCopies.back().m_meshInstances.back() = *instance;
             m_meshInstanceMap[instance->UUID] = instance.get();
             if (instance->physicsInfo)
@@ -518,11 +519,14 @@ void Scene::Play()
         Physics::UpdateRigidBodies(m_meshes);
         CopyMeshInstances();
         // TODO: select camera here
-        if (m_selectedCameraUUID == 0) {
-            SelectCamera(m_mainCamera.get());
-        } else {
-            m_selectedCameraMeshInstance = m_meshInstanceMap[m_selectedCameraUUID];
-            SelectCamera(m_selectedCameraMeshInstance->camera.get());
+        // if (m_selectedCameraUUID == 0) {
+        //     SelectCamera(m_mainCamera.get());
+        // } else {
+        //     m_selectedCameraMeshInstance = m_meshInstanceMap[m_selectedCameraUUID];
+        //     SelectCamera(m_selectedCameraMeshInstance->camera.get());
+        // }
+        for (auto& scriptInstance : Script::s_scriptInstances) {
+            scriptInstance.second->InvokeOnCreate();
         }
     }
 
@@ -532,6 +536,10 @@ void Scene::Play()
     }
 
     Physics::Simulate(m_meshes);
+
+    for (auto& scriptInstance : Script::s_scriptInstances) {
+        scriptInstance.second->InvokeOnUpdate(Time::GetDeltaTime());
+    }
 }
 
 void Scene::Stop()

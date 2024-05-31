@@ -1,22 +1,22 @@
 #include "script.h"
 
-void Script::Init()
+#include <utility>
+#include "registry.h"
+#include "../../scene/scene.h"
+
+void Script::Init(Scene* scene)
 {
+    s_scene = scene;
     InitMono();
     Registry::RegisterFunctions();
 
     // Base
     MonoAssembly* baseAssembly = monoUtils::LoadAssembly(PROJECT_DIR "script/vkApp.dll");
-    s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "Base");
-
-    MonoObject* baseInstance = s_baseScriptClass->Instantiate();
+    s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "MeshInstance");
 
     // Player
     MonoAssembly* playerAssembly = monoUtils::LoadAssembly("C:/Users/stjae/Desktop/player/bin/Debug/player.dll");
     LoadAssemblyClasses(playerAssembly);
-
-    MonoMethod* printFunc = s_baseScriptClass->GetMethodByName("Print", 0);
-    InvokeMethod(printFunc, baseInstance, nullptr);
 }
 
 void Script::InitMono()
@@ -69,7 +69,7 @@ void Script::Reload()
     }
 
     MonoAssembly* baseAssembly = monoUtils::LoadAssembly(PROJECT_DIR "script/vkApp.dll");
-    s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "Base");
+    s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "MeshInstance");
 
     MonoAssembly* playerAssembly = monoUtils::LoadAssembly("C:/Users/stjae/Desktop/player/bin/Debug/player.dll");
     LoadAssemblyClasses(playerAssembly);
@@ -80,16 +80,29 @@ void Script::Reload()
     InvokeMethod(printFunc, playerInstance, nullptr);
 }
 
-void Script::Stop()
+std::string Script::GetScriptClassName(uint64_t UUID)
 {
-    mono_domain_free(s_appDomain, true);
-    mono_domain_free(s_rootDomain, true);
+    std::string className = "None";
+    if (s_scriptInstances.find(UUID) != s_scriptInstances.end())
+        return s_scriptInstances[UUID]->m_scriptClass->m_fullName;
+    else
+        return className;
+}
+bool Script::InstanceExists(uint64_t UUID)
+{
+    if (s_scriptInstances.find(UUID) != s_scriptInstances.end())
+        return true;
+    else
+        return false;
 }
 
-ScriptClass::ScriptClass(MonoAssembly* assembly, const char* nameSpace, const char* name) : m_monoAssembly(assembly), m_classNameSpace(nameSpace), m_className(name)
+// ScriptClass
+ScriptClass::ScriptClass(MonoAssembly* assembly, const char* nameSpace, const char* name)
+    : m_monoAssembly(assembly), m_classNameSpace(nameSpace), m_className(name)
 {
     m_monoImage = mono_assembly_get_image(assembly);
     m_monoClass = mono_class_from_name(m_monoImage, m_classNameSpace.c_str(), m_className.c_str());
+    m_fullName = m_classNameSpace.empty() ? m_className : m_classNameSpace + "::" + m_className;
 }
 MonoObject* ScriptClass::Instantiate()
 {
@@ -105,6 +118,31 @@ MonoMethod* ScriptClass::GetMethodByName(const char* name, int paramCount)
 bool ScriptClass::IsParentOf(MonoClass* monoClass)
 {
     return mono_class_is_subclass_of(monoClass, m_monoClass, true);
+}
+
+// ScriptInstance
+ScriptInstance::ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, MeshInstance& meshInstance) : m_scriptClass(scriptClass)
+{
+    m_instance = scriptClass->Instantiate();
+    m_constructor = Script::s_baseScriptClass->GetMethodByName(".ctor", 1);
+    m_onCreateMethod = scriptClass->GetMethodByName("OnCreate", 0);
+    m_onUpdateMethod = scriptClass->GetMethodByName("OnUpdate", 1);
+
+    // call constructor
+    uint64_t meshInstanceID = meshInstance.UUID;
+    void* param = &meshInstanceID;
+    Script::InvokeMethod(m_constructor, m_instance, &param);
+}
+
+void ScriptInstance::InvokeOnCreate()
+{
+    Script::InvokeMethod(m_onCreateMethod, m_instance, nullptr);
+}
+
+void ScriptInstance::InvokeOnUpdate(float dt)
+{
+    void* param = &dt;
+    Script::InvokeMethod(m_onUpdateMethod, m_instance, &param);
 }
 
 namespace monoUtils {

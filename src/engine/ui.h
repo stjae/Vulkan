@@ -16,6 +16,7 @@
 #include "viewport.h"
 #include "sceneSerializer.h"
 #include "../engine/script/script.h"
+#include "../time.h"
 
 class UI
 {

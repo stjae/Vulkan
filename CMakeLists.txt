@@ -92,6 +92,7 @@ add_executable(${PROJECT_NAME}
         src/engine/script/script.h
         src/engine/script/registry.cpp
         src/engine/script/registry.h
+        src/time.h
 )
 
 if (WIN32)

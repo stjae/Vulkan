@@ -44,12 +44,6 @@ void MainCamera::Control()
     SetControl();
 
     if (m_isControllable) {
-        static double delta, currentTime, lastTime = 0.0;
-        currentTime = ImGui::GetTime();
-
-        delta = currentTime - lastTime;
-        lastTime = currentTime;
-
         static float prevMouseX, prevMouseY;
         static float mouseX, mouseY;
 
@@ -77,23 +71,25 @@ void MainCamera::Control()
         glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), m_right);
         m_dir = rotateX * glm::vec4(m_dir, 0.0f);
 
+        float dt = Time::GetDeltaTime();
+
         if (ImGui::IsKeyDown(ImGuiKey_W)) {
-            m_pos += m_dir * (float)delta * m_speed;
+            m_pos += m_dir * (float)dt * m_speed;
         }
         if (ImGui::IsKeyDown(ImGuiKey_S)) {
-            m_pos -= m_dir * (float)delta * m_speed;
+            m_pos -= m_dir * (float)dt * m_speed;
         }
         if (ImGui::IsKeyDown(ImGuiKey_A)) {
-            m_pos -= m_right * (float)delta * m_speed;
+            m_pos -= m_right * (float)dt * m_speed;
         }
         if (ImGui::IsKeyDown(ImGuiKey_D)) {
-            m_pos += m_right * (float)delta * m_speed;
+            m_pos += m_right * (float)dt * m_speed;
         }
         if (ImGui::IsKeyDown(ImGuiKey_E)) {
-            m_pos += m_up * (float)delta * m_speed;
+            m_pos += m_up * (float)dt * m_speed;
         }
         if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-            m_pos -= m_up * (float)delta * m_speed;
+            m_pos -= m_up * (float)dt * m_speed;
         }
 
         m_at = m_pos + m_dir;
@@ -118,12 +114,6 @@ void SubCamera::ControlByMatrix(const glm::mat4& matrix)
     m_pos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
 
     if (m_isControllable) {
-        static double delta, currentTime, lastTime = 0.0;
-        currentTime = ImGui::GetTime();
-
-        delta = currentTime - lastTime;
-        lastTime = currentTime;
-
         static float prevMouseX, prevMouseY;
         static float mouseX, mouseY;
 

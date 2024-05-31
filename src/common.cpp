@@ -3,30 +3,6 @@
 #include <stb/stb_image.h>
 #include <fstream>
 
-std::string& GetFrameRate()
-{
-    static int frameCount;
-    static double delta, currentTime, lastTime;
-    static std::string frameRate;
-
-    currentTime = glfwGetTime();
-    delta = currentTime - lastTime;
-
-    if (delta > 1.0) {
-        std::stringstream title;
-        title << frameCount << " fps, " << 1000.0f / (float)frameCount << " ms";
-
-        frameRate = title.str();
-
-        lastTime = currentTime;
-        frameCount = 0;
-    }
-
-    frameCount++;
-
-    return frameRate;
-}
-
 std::vector<char> FetchCode(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);

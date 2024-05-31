@@ -343,18 +343,12 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
+    auto& mesh = scene.GetSelectedMesh();
     auto& meshInstance = scene.GetSelectedMeshInstance();
 
-    float translation[3];
-    float rotation[3];
-    float scale[3];
-
     if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(meshInstance.UBO.model), translation, rotation, scale);
-        meshInstance.translation = glm::make_vec3(translation);
-        meshInstance.rotation = glm::make_vec3(rotation);
-        meshInstance.scale = glm::make_vec3(scale);
-        scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+        meshInstance.UpdateTransform();
+        mesh.UpdateUBO(meshInstance);
     }
 }
 
@@ -413,32 +407,31 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         }
         // Mesh Attributes
         if (scene.m_selectedMeshID > -1) {
+            auto& mesh = scene.GetSelectedMesh();
             auto& meshInstance = scene.GetSelectedMeshInstance();
+
             ImGui::SeparatorText((std::string("ID: ") + std::to_string(meshInstance.UUID)).c_str());
-
-            auto& meshInstanceUBO = scene.GetSelectedMeshInstanceUBO();
-
             ImGui::Separator();
             ImGui::DragFloat3("Translation##_INSTANCE", &meshInstance.translation[0], 0.1f);
             ImGui::DragFloat3("Rotation##_INSTANCE", &meshInstance.rotation[0], 0.1f);
             ImGui::DragFloat3("Scale##_INSTANCE", &meshInstance.scale[0], 0.1f);
-            ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(meshInstance.translation), glm::value_ptr(meshInstance.rotation), glm::value_ptr(meshInstance.scale), glm::value_ptr(meshInstance.UBO.model));
-            scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+            meshInstance.UpdateMatrix();
+            mesh.UpdateUBO(meshInstance);
 
             ImGui::SeparatorText("Texture");
-            bool useTexture = meshInstanceUBO.useTexture > 0;
+            bool useTexture = meshInstance.UBO.useTexture > 0;
             if (ImGui::Checkbox("Use Texture", &useTexture)) {
-                meshInstanceUBO.useTexture = useTexture ? 1 : -1;
-                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+                meshInstance.UBO.useTexture = useTexture ? 1 : -1;
+                mesh.UpdateUBO(meshInstance);
             }
 
             ImGui::SeparatorText("Material");
-            if (ImGui::SliderFloat3("Albedo", &meshInstanceUBO.albedo[0], 0.0f, 1.0f))
-                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
-            if (ImGui::SliderFloat("Metallic", &meshInstanceUBO.metallic, 0.0f, 1.0f))
-                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
-            if (ImGui::SliderFloat("Roughness", &meshInstanceUBO.roughness, 0.0f, 1.0f))
-                scene.UpdateMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
+            if (ImGui::SliderFloat3("Albedo", &meshInstance.UBO.albedo[0], 0.0f, 1.0f))
+                mesh.UpdateUBO(meshInstance);
+            if (ImGui::SliderFloat("Metallic", &meshInstance.UBO.metallic, 0.0f, 1.0f))
+                mesh.UpdateUBO(meshInstance);
+            if (ImGui::SliderFloat("Roughness", &meshInstance.UBO.roughness, 0.0f, 1.0f))
+                mesh.UpdateUBO(meshInstance);
 
             ImGui::SeparatorText("RigidBody");
             ImGui::Text("%s", scene.m_meshes[scene.m_selectedMeshID]->GetName().c_str());
@@ -486,6 +479,19 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 }
             }
             // Add Script
+            ImGui::SeparatorText("Script");
+            std::string scriptClassName = Script::GetScriptClassName(meshInstance.UUID);
+            if (ImGui::BeginCombo("##ScriptClasses", scriptClassName.c_str())) {
+                if (ImGui::MenuItem("None")) {
+                    Script::s_scriptInstances.erase(meshInstance.UUID);
+                }
+                for (auto& scriptClass : Script::s_scriptClasses) {
+                    if (ImGui::MenuItem(scriptClass->GetName().c_str())) {
+                        Script::s_scriptInstances.emplace(meshInstance.UUID, std::make_shared<ScriptInstance>(scriptClass, meshInstance));
+                    }
+                }
+                ImGui::EndCombo();
+            }
 
             // Add Camera
             ImGui::SeparatorText("Camera");
@@ -651,7 +657,7 @@ void UI::DrawResourceWindow(Scene& scene)
         ImGui::Columns(columnCount, nullptr, false);
         if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             // std::string path = nfdOpen({ "Script", "dll" });
-            Script::Reload();
+            // Script::Reload();
         }
         ImGui::NextColumn();
 
@@ -690,7 +696,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
     ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDocking;
     ImGui::Begin("Information", nullptr, window_flags);
-    ImGui::Text("%s", GetFrameRate().c_str());
+    ImGui::Text("%s", std::to_string(Time::GetFrameCount()).c_str());
     ImGui::Text("Camera Control: %s [press C]", scene.m_mainCamera->IsControllable() ? "on" : "off");
     ImGui::End();
 }

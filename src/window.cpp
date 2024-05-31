@@ -11,16 +11,14 @@ Window::Window(int width, int height, const char* title)
 
 double Window::GetMousePosX()
 {
-    double mouseX = 0;
-    double mouseY = 0;
+    double mouseX, mouseY;
     glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
     return mouseX;
 }
 
 double Window::GetMousePosY()
 {
-    double mouseX = 0;
-    double mouseY = 0;
+    double mouseX, mouseY;
     glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
     return mouseY;
 }

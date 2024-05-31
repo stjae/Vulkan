@@ -1,16 +1,12 @@
 ﻿using System;
+using System.Windows.Input;
 using vkApp;
 
-public class Player : Base
+public class Player : MeshInstance
 {
-    Player()
-    {
-        Log("Player Constructed\n");
-    }
-
     void OnCreate()
     {
-        Console.WriteLine("Player.OnCreate renamed");
+        Console.WriteLine($"Player.OnCreate: {ID}");
     }
     void OnUpdate(float dt)
     {

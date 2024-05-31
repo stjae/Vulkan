@@ -55,6 +55,7 @@ public:
     const std::vector<std::unique_ptr<MeshInstance>>& GetInstances() const { return m_meshInstances; }
     const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
     btTriangleIndexVertexArray* GetBulletVertexArray() { return &m_bulletVertexArray; }
+    void UpdateUBO(MeshInstance& instance);
 };
 
 typedef struct MeshPart_
@@ -108,7 +109,8 @@ typedef struct MeshInstance_
     std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
     std::unique_ptr<SubCamera> camera;
 
-    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO) : UUID(UUID), UBO(UBO)
+    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO)
+        : UUID(UUID), UBO(UBO)
     {
         vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
@@ -121,6 +123,16 @@ typedef struct MeshInstance_
         this->UBO = other.UBO;
         this->physicsDebugUBO.model = UBO.model;
         return *this;
+    }
+    // update translation, rotation, scale based on model matrix
+    void UpdateTransform()
+    {
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(UBO.model), glm::value_ptr(translation), glm::value_ptr(translation), glm::value_ptr(translation));
+    }
+    // update matrix based on translation, rotation, scale
+    void UpdateMatrix()
+    {
+        ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale), glm::value_ptr(UBO.model));
     }
 } MeshInstance_;
 

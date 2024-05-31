@@ -20,7 +20,7 @@
 #include "../vulkan/image.h"
 #include "../../imgui/imgui_impl_vulkan.h"
 #include "physics.h"
-#include "../engine/script/script.h"
+#include "../time.h"
 
 typedef struct DirLightUBO_ DirLightUBO;
 typedef struct DirLightUBO_
@@ -33,6 +33,7 @@ typedef struct Resource_ Resource;
 
 class Scene
 {
+    friend class Engine;
     friend class UI;
     friend class Viewport;
     friend class SceneSerializer;
@@ -118,39 +119,38 @@ class Scene
     void RevertMeshInstances();
     void UpdateMainCamera();
     void UpdateCameraDescriptorSet(Camera* camera);
+    void UpdatePointLight();
     void UpdatePointLightBuffer();
-    void UpdateMeshInstance(Mesh& mesh, MeshInstance& instance);
     void UpdateMeshBuffer();
     void UpdateShadowMap();
     void UpdateShadowCubemaps();
-    // void UpdateDescriptorSet();
     void UpdateTextureDescriptors();
     void UpdateEnvCubemapDescriptors();
     void InitScene();
     void InitHdri();
     void AddCamera(MeshInstance& instance);
     void SelectCamera(Camera* camera);
+    void Play();
+    void Stop();
+    void Update();
+    void UpdatePhysicsDebug();
 
 public:
     Scene();
-    void Update();
-    void UpdatePhysicsDebug();
     size_t GetInstanceCount();
     size_t GetLightCount() { return m_pointLights.size(); }
     const std::vector<std::shared_ptr<Mesh>>& GetMeshes() { return m_meshes; }
     // TODO: std::optional
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
     MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
+    MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstanceMap[UUID]; }
     MeshInstanceUBO& GetSelectedMeshInstanceUBO() { return m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]->UBO; }
     MeshInstanceUBO& GetMeshInstanceUBO(int32_t meshID, int32_t instanceID) { return m_meshes[meshID]->m_meshInstances[instanceID]->UBO; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void UnselectAll();
     bool IsPlaying() { return m_isPlaying; }
 
-    void Play();
-    void Stop();
     ~Scene();
-    void UpdatePointLight();
 };
 
 typedef struct Resource_

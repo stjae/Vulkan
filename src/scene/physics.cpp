@@ -104,7 +104,9 @@ void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
             t.getOpenGLMatrix(m);
             instance->UBO.model = glm::scale(glm::make_mat4(m), glm::vec3(s.x(), s.y(), s.z()) / instance->physicsInfo->scale);
             mesh->m_meshInstanceUBOs[instance->UBO.instanceColorID] = instance->UBO;
+            instance->UpdateTransform();
         }
+        // update buffer
         mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
     }
 }

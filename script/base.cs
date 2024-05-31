@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using vkApp;
 
 namespace vkApp
 {
@@ -17,27 +18,40 @@ namespace vkApp
 
     public static class InternalCalls
     {
-    [MethodImplAttribute(MethodImplOptions.InternalCall)]
-    internal extern static void CppLog_string(string str);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CppLog_string(string str);
 
-    [MethodImplAttribute(MethodImplOptions.InternalCall)]
-    internal extern static void CppLog_vec3(ref Vector3 inVec, out Vector3 outVec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CppLog_vec3(ref Vector3 inVec, out Vector3 outVec);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void GetTranslation(ulong meshInstanceID, out Vector3 translation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetTranslation(ulong meshInstanceID, ref Vector3 translation);
     }
 
-    public class Base
+    public class MeshInstance
     {
-        protected Base()
+        protected MeshInstance()
         {
-            Log("Base constructor called\n");
-            Vector3 v = new Vector3(1, 2, 3);
-            Vector3 result = Log(v);
-            Console.WriteLine($"{ result.X},{ result.Y},{ result.Z}");
-            //Console.WriteLine($"{ result.X},{ result.Y},{ result.Z}");
+            ID = 0;
         }
-
-        protected static void Print()
+        internal MeshInstance(ulong id)
         {
-            Console.WriteLine("Hello C#");
+            ID = id;
+        }
+        public readonly ulong ID;
+
+        public Vector3 Translation
+        {
+            get
+            {
+                InternalCalls.GetTranslation(ID, out Vector3 translation);
+                return translation;
+            }
+            set
+            {
+                InternalCalls.SetTranslation(ID, ref value);
+            }
         }
 
         protected void Log(string msg)
@@ -49,6 +63,5 @@ namespace vkApp
             InternalCalls.CppLog_vec3(ref v, out Vector3 result);
             return result;
         }
-
     }
 }

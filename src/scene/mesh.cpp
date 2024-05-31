@@ -348,3 +348,10 @@ void Mesh::CreateBuffers(const vk::CommandBuffer& commandBuffer)
         m_indexStagingBuffers.back()->Destroy();
     }
 }
+
+void Mesh::UpdateUBO(MeshInstance& instance)
+{
+    m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
+    m_meshInstanceUBOBuffer->Copy(m_meshInstanceUBOs.data());
+    instance.physicsDebugUBO.model = instance.UBO.model;
+}
