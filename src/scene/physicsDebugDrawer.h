@@ -73,7 +73,7 @@ public:
             drawSphere(btVector3(0.0f, 0.0f, 0.0f), 1.03f, color);
             break;
         case (eColliderShape::CAPSULE):
-            drawCapsule(1.0f, 1.0f, 1, transform, color);
+            drawCapsule(1.0f, 0.5f, 1, transform, color);
             break;
         case (eColliderShape::CYLINDER):
             drawCylinder(1.0f, 0.5f, 1, transform, color);

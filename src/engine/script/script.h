@@ -69,11 +69,13 @@ class ScriptInstance
     MonoMethod* m_constructor = nullptr;
     MonoMethod* m_onCreateMethod = nullptr;
     MonoMethod* m_onUpdateMethod = nullptr;
+    MonoMethod* m_onDestroyMethod = nullptr;
 
 public:
     ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, MeshInstance& meshInstance);
     void InvokeOnCreate();
     void InvokeOnUpdate(float dt);
+    void InvokeOnDestroy();
 };
 
 namespace monoUtils {

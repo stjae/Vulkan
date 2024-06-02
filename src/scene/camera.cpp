@@ -47,16 +47,8 @@ void MainCamera::Control()
         static float prevMouseX, prevMouseY;
         static float mouseX, mouseY;
 
-        ImGuiIO& io = ImGui::GetIO();
-        mouseX = io.MousePos.x;
-        mouseY = io.MousePos.y;
-
-        int width, height;
-        glfwGetWindowSize(Window::GetWindow(), &width, &height);
-        mouseX /= (float)width;
-        mouseY /= (float)height;
-        mouseX -= 0.5f;
-        mouseY -= 0.5f;
+        mouseX = Window::GetMousePosNormalizedX();
+        mouseY = Window::GetMousePosNormalizedY();
 
         if (m_startControl) {
             prevMouseX = mouseX;
@@ -108,42 +100,21 @@ void SubCamera::ControlByMatrix(const glm::mat4& matrix)
 
         m_isFirstFrame = false;
     }
-
     SetControl();
 
+    float translation[3];
+    float rotation[3];
+    float scale[3];
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(matrix), translation, rotation, scale);
+
+    rotation[0] += m_rotation.x;
+    rotation[1] += m_rotation.y;
+    rotation[2] += m_rotation.z;
+
+    float outMatrix[16];
+    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, outMatrix);
+
     m_pos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
-
-    if (m_isControllable) {
-        static float prevMouseX, prevMouseY;
-        static float mouseX, mouseY;
-
-        ImGuiIO& io = ImGui::GetIO();
-        mouseX = io.MousePos.x;
-        mouseY = io.MousePos.y;
-
-        int width, height;
-        glfwGetWindowSize(Window::GetWindow(), &width, &height);
-        mouseX /= (float)width;
-        mouseY /= (float)height;
-        mouseX -= 0.5f;
-        mouseY -= 0.5f;
-
-        if (m_startControl) {
-            prevMouseX = mouseX;
-            prevMouseY = mouseY;
-            m_startControl = false;
-        }
-
-        glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), m_up);
-        m_dir = rotateY * glm::vec4(m_dir, 0.0f);
-        glm::normalize(m_dir);
-        m_right = glm::cross(m_dir, m_up);
-        glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f), (float)(prevMouseY - mouseY), m_right);
-        m_dir = rotateX * glm::vec4(m_dir, 0.0f);
-
-        m_at = m_pos + m_dir;
-
-        prevMouseX = mouseX;
-        prevMouseY = mouseY;
-    }
+    m_dir = glm::make_mat4(outMatrix) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+    m_at = m_dir + m_pos;
 }

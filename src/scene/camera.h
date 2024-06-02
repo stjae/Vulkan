@@ -38,6 +38,7 @@ protected:
     glm::vec3 m_at = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_up = { 0.0f, 1.0f, 0.0f };
     glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_rotation = glm::vec3(0.0f);
 
     void SetControl();
 
@@ -71,6 +72,8 @@ class SubCamera : public Camera
 public:
     SubCamera(const vk::CommandPool& commandPool) : Camera(commandPool) {}
     void ControlByMatrix(const glm::mat4& matrix) override;
+    glm::vec3& GetDirection() { return m_dir; }
+    glm::vec3& GetRotation() { return m_rotation; }
 };
 
 #endif

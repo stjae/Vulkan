@@ -15,7 +15,7 @@ void Script::Init(Scene* scene)
     s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "MeshInstance");
 
     // Player
-    MonoAssembly* playerAssembly = monoUtils::LoadAssembly("C:/Users/stjae/Desktop/player/bin/Debug/player.dll");
+    MonoAssembly* playerAssembly = monoUtils::LoadAssembly(PROJECT_DIR "script/player.dll");
     LoadAssemblyClasses(playerAssembly);
 }
 
@@ -127,6 +127,7 @@ ScriptInstance::ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, MeshIn
     m_constructor = Script::s_baseScriptClass->GetMethodByName(".ctor", 1);
     m_onCreateMethod = scriptClass->GetMethodByName("OnCreate", 0);
     m_onUpdateMethod = scriptClass->GetMethodByName("OnUpdate", 1);
+    m_onDestroyMethod = scriptClass->GetMethodByName("OnDestroy", 0);
 
     // call constructor
     uint64_t meshInstanceID = meshInstance.UUID;
@@ -143,6 +144,11 @@ void ScriptInstance::InvokeOnUpdate(float dt)
 {
     void* param = &dt;
     Script::InvokeMethod(m_onUpdateMethod, m_instance, &param);
+}
+
+void ScriptInstance::InvokeOnDestroy()
+{
+    Script::InvokeMethod(m_onDestroyMethod, m_instance, nullptr);
 }
 
 namespace monoUtils {

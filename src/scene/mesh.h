@@ -88,12 +88,10 @@ typedef struct MeshInstanceUBO_
 
 typedef struct PhysicsDebugUBO_
 {
-    glm::mat4 model;
-    glm::vec3 scale;
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
     // flag for shader
-    int32_t havePhysicsInfo;
-
-    PhysicsDebugUBO_() : model(1.0f), scale(1.0f), havePhysicsInfo(false) {}
+    int32_t havePhysicsInfo = 0;
 } PhysicsDebugUBO_;
 
 typedef struct MeshInstance_
@@ -127,7 +125,7 @@ typedef struct MeshInstance_
     // update translation, rotation, scale based on model matrix
     void UpdateTransform()
     {
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(UBO.model), glm::value_ptr(translation), glm::value_ptr(translation), glm::value_ptr(translation));
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(UBO.model), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
     }
     // update matrix based on translation, rotation, scale
     void UpdateMatrix()

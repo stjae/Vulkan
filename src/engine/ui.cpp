@@ -471,7 +471,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo);
                 }
             } else {
-                if (ImGui::SliderFloat3("Scale##physics", glm::value_ptr(meshInstance.physicsInfo->scale), 0.0f, 10.0f)) {
+                if (ImGui::DragFloat3("Scale##physics", glm::value_ptr(meshInstance.physicsInfo->scale), 0.1f, 0.0f)) {
                     meshInstance.physicsDebugUBO.scale = meshInstance.physicsInfo->scale;
                 }
                 if (ImGui::Button("Delete##physics")) {
@@ -594,7 +594,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::Text("%s", scene.m_hdriFilePath.c_str());
         }
         if (ImGui::Button("Remove##_IBL")) {
-            scene.InitHdri();
+            scene.DrawDummyEnviromentMap();
         }
         ImGui::SeparatorText("Exposure");
         ImGui::SliderFloat("Exposure##_IBL", &scene.m_iblExposure, 0.0f, 10.0f);

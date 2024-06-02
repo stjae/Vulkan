@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include "common.h"
+#include "keycode.h"
 
 class Window
 {
@@ -14,6 +15,9 @@ public:
     static GLFWwindow* GetWindow() { return s_glfwWindow; }
     static double GetMousePosX();
     static double GetMousePosY();
+    static float GetMousePosNormalizedX();
+    static float GetMousePosNormalizedY();
+    static bool IsKeyDown(Keycode keycode);
     static void FramebufferResizeCallback(GLFWwindow* window, int width, int height) { s_resized = true; }
     ~Window();
 };
