@@ -66,6 +66,7 @@ struct SkyboxRenderPushConstants
 
 struct ShadowMapPushConstants
 {
+    glm::mat4 viewProj;
     int meshIndex;
 };
 

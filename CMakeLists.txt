@@ -94,6 +94,10 @@ add_executable(${PROJECT_NAME}
         src/engine/script/registry.h
         src/time.h
         src/keycode.h
+        src/scene/cascadedShadowMap.cpp
+        src/scene/cascadedShadowMap.h
+        src/scene/light.cpp
+        src/scene/light.h
 )
 
 if (WIN32)

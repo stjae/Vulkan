@@ -1,13 +1,20 @@
 #include "shadowCubemap.h"
 
+void ShadowCubemap::CreateProjBuffer()
+{
+    vkn::BufferInfo bufferInfo = { sizeof(glm::mat4), sizeof(glm::mat4), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    s_shadowCubemapProjBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
+    s_shadowCubemapProj = glm::perspective(glm::radians(90.0f), 1.0f, s_zNear, s_zFar);
+    s_shadowCubemapProjBuffer->Copy(&s_shadowCubemapProj);
+    shadowCubemapPipeline.UpdateProjBuffer(s_shadowCubemapProjBuffer->Get().descriptorBufferInfo);
+}
+
 void ShadowCubemap::CreateShadowMap()
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
 
     CreateCubemap(shadowCubemapSize, shadowMapImageFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 
     CreateDepthImage();
     CreateFramebuffer();
@@ -17,6 +24,8 @@ void ShadowCubemap::CreateDepthImage()
 {
     m_depthImage.CreateImage({ shadowCubemapSize, shadowCubemapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
+    // TODO: Use subpass dependency
+    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
     vkn::Command::SetImageMemoryBarrier(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()],
                                         m_depthImage.Get().image,
                                         {},
@@ -46,7 +55,7 @@ void ShadowCubemap::CreateFramebuffer()
     }
 }
 
-void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes)
+void ShadowCubemap::DrawShadowMap(int lightIndex, PointLight& light, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
@@ -57,14 +66,14 @@ void ShadowCubemap::DrawShadowMap(int lightIndex, std::vector<PointLightUBO>& li
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].setScissor(0, 1, &scissor);
 
     for (uint32_t face = 0; face < 6; face++) {
-        UpdateCubemapFace(face, lightIndex, lights, meshes);
+        UpdateCubemapFace(face, lightIndex, light, meshes);
     }
 
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
     vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
-void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, std::vector<PointLightUBO>& lights, std::vector<std::shared_ptr<Mesh>>& meshes)
+void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointLight& light, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     std::array<vk::ClearValue, 2> clearValues;
     clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -73,7 +82,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, std::v
     vk::RenderPassBeginInfo renderPassBI(shadowCubemapPipeline.m_renderPass, m_framebuffers[faceIndex], { { 0, 0 }, { shadowCubemapSize, shadowCubemapSize } }, 2, clearValues.data());
 
     glm::mat4 viewMatrix;
-    glm::vec3 lightPos = lights[lightIndex].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec3 lightPos = light.Get()[lightIndex].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     switch (faceIndex) {
     case 0: // POS X
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
@@ -128,4 +137,9 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, std::v
 ShadowCubemap::~ShadowCubemap()
 {
     vkn::Device::Get().device.destroy(m_commandPool);
+}
+
+void ShadowCubemap::DestroyBuffer()
+{
+    s_shadowCubemapProjBuffer.reset();
 }

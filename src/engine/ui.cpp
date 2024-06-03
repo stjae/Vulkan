@@ -53,7 +53,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     vkn::Command::Begin(m_commandBuffer);
     m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/light.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -85,7 +85,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
         scene.DeleteMeshInstance(scene.GetSelectedMesh(), scene.GetSelectedMeshInstance());
     }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedLightID > -1) {
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedLightIndex > -1) {
         scene.DeletePointLight();
     }
 
@@ -300,8 +300,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
         ImGui::EndDragDropTarget();
     }
 
-    for (auto& light : scene.m_pointLights) {
-
+    for (auto& light : scene.m_pointLight.m_UBOs) {
         glm::vec4 pos = scene.m_mainCamera->GetUBO().proj * scene.m_mainCamera->GetUBO().view * light.model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
@@ -310,9 +309,9 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
         pos.x *= width;
         pos.y *= height;
         ImVec2 screenPos(pos.x, pos.y);
-        ImVec2 offset(100, 100);
+        ImVec2 offset(300, 300);
         offset /= posZ;
-        if (posZ > 1.0f && scene.m_showLightIcon)
+        if (posZ > 1.0f && scene.m_showLightIcon && scene.m_selectedCameraUUID == 0)
             ImGui::GetWindowDrawList()->AddImage(m_lightIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
@@ -320,7 +319,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer&
         DrawMeshGuizmo(scene, viewport.m_panelPos);
     }
 
-    if (scene.m_selectedLightID > -1) {
+    if (scene.m_selectedLightIndex > -1) {
         DrawLightGuizmo(scene, viewport.m_panelPos);
     }
 
@@ -367,8 +366,8 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
 
-    auto& lightData = scene.m_pointLights[scene.m_selectedLightID];
-    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightData.model));
+    auto& light = scene.m_pointLight.m_UBOs[scene.m_selectedLightIndex];
+    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(light.model));
 }
 
 void UI::DrawSceneAttribWindow(Scene& scene)
@@ -521,16 +520,16 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     // Light List
     if (ImGui::BeginTabItem("Light")) {
         if (ImGui::BeginListBox("##Light", ImVec2(-FLT_MIN, 0.0f))) {
-            for (int i = 0; i < scene.m_pointLights.size(); i++) {
+            for (int i = 0; i < scene.m_pointLight.Size(); i++) {
                 std::string name(std::string("Point Light ") + std::to_string(i));
                 ImGui::PushID(i);
-                if (ImGui::Selectable(name.c_str(), i == scene.m_selectedLightID)) {
+                if (ImGui::Selectable(name.c_str(), i == scene.m_selectedLightIndex)) {
                     scene.UnselectAll();
-                    scene.m_selectedLightID = i;
+                    scene.m_selectedLightIndex = i;
                 }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
-                        scene.m_selectedLightID = i;
+                        scene.m_selectedLightIndex = i;
                         scene.DeletePointLight();
                     }
                     ImGui::EndPopup();
@@ -540,39 +539,24 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::EndListBox();
             ImGui::Checkbox("Show Light Icon", &scene.m_showLightIcon);
             // Light Attributes
-            if (scene.m_selectedLightID > -1) {
-                auto& lightData = scene.m_pointLights[scene.m_selectedLightID];
-                glm::vec3 lightPos = lightData.model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            if (scene.m_selectedLightIndex > -1) {
+                auto& light = scene.m_pointLight.m_UBOs[scene.m_selectedLightIndex];
+                glm::vec3 lightPos = light.model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
                 ImGui::SeparatorText("Point Light");
                 ImGui::DragFloat3("Position##_POINTLIGHT", &lightPos[0], 0.1f);
-                ImGui::SliderFloat3("Color##_POINTLIGHT", &lightData.color[0], 0.0f, 1.0f);
+                ImGui::SliderFloat3("Color##_POINTLIGHT", &light.color[0], 0.0f, 1.0f);
 
-                lightData.model = glm::translate(glm::mat4(1.0f), lightPos);
+                light.model = glm::translate(glm::mat4(1.0f), lightPos);
             }
-            // Directional Light
+            ImGui::SeparatorText("Shadow Map");
+            ImGui::SliderFloat("Cascade Range 1", &scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_zNear, scene.m_mainCamera->m_cascadeRanges[1]);
+            ImGui::SliderFloat("Cascade Range 2", &scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_cascadeRanges[2]);
+            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_zFar);
             ImGui::SeparatorText("Directional Light");
-
-            glm::mat4 rotMat(1.0f);
-            float translation[3];
-            float rotation[3];
-            float scale[3];
-            float matrix[16];
-
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(scene.m_dirLightRot), translation, rotation, scale);
-            ImGui::SliderFloat("Near Plane", &scene.m_dirLightNearPlane, 0.0f, 100.0f);
-            ImGui::SliderFloat("Far Plane", &scene.m_dirLightFarPlane, 0.0f, 100.0f);
-            ImGui::SliderFloat("Size", &scene.m_dirLightSize, 0.0f, 50.0f);
-            ImGui::SliderFloat("Distance", &scene.m_dirLightDistance, 0.0f, 100.0f);
-            ImGui::SliderFloat3("Rotation", &rotation[0], -1.0f, 1.0f);
-            ImGui::SliderFloat3("Color", &scene.m_dirLightUBO.color[0], 0.0f, 1.0f);
-            ImGui::SliderFloat("Intensity", &scene.m_dirLightUBO.intensity, 0.0f, 10.0f);
-            rotMat = glm::rotate(rotMat, rotation[0], glm::vec3(1.0f, 0.0f, 0.0f));
-            rotMat = glm::rotate(rotMat, rotation[1], glm::vec3(0.0f, 1.0f, 0.0f));
-            rotMat = glm::rotate(rotMat, rotation[2], glm::vec3(0.0f, 0.0f, 1.0f));
-            ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, matrix);
-            scene.m_dirLightRot = glm::make_mat4(matrix);
-            scene.m_dirLightPos = rotMat * glm::vec4(0.0f, scene.m_dirLightDistance, 0.0f, 1.0f);
+            ImGui::DragFloat3("Position", &scene.m_dirLight.m_position[0], 0.1f);
+            ImGui::SliderFloat3("Color", &scene.m_dirLight.m_UBO.color[0], 0.0f, 1.0f);
+            ImGui::DragFloat("Intensity", &scene.m_dirLight.m_UBO.intensity, 0.1f, 0.0f);
 
             // TODO: fix glitch on scroll
             // dir light shadow depth map

@@ -14,13 +14,10 @@ class LineRenderPipeline : public vkn::Pipeline
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo m_cameraDescriptor;
-    vk::DescriptorBufferInfo m_UBODescriptor;
-
     LineRenderPipeline();
     void CreatePipeline() override;
-    void UpdateCameraDescriptor();
-    void UpdateUBODescriptor();
+    void UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo);
+    void UpdateMeshUBO(const vk::DescriptorBufferInfo& bufferInfo);
 
 } inline lineRenderPipeline;
 

@@ -97,38 +97,17 @@ void ShadowCubemapPipeline::CreateRenderPass()
     vkn::CheckResult(vkn::Device::Get().device.createRenderPass(&renderPassCI, nullptr, &m_renderPass));
 }
 
-void ShadowCubemapPipeline::UpdateProjDescriptor()
+void ShadowCubemapPipeline::UpdateProjBuffer(const vk::DescriptorBufferInfo& bufferInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &m_projDescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo), nullptr);
 }
 
-void ShadowCubemapPipeline::UpdatePointLightDescriptor()
+void ShadowCubemapPipeline::UpdatePointLightUBO(const vk::DescriptorBufferInfo& bufferInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 1;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = &m_pointLightDescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 1, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &bufferInfo), nullptr);
 }
 
-void ShadowCubemapPipeline::UpdateMeshDescriptors()
+void ShadowCubemapPipeline::UpdateMeshUBO(const std::vector<vk::DescriptorBufferInfo>& bufferInfos)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 2;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = m_meshDescriptors.size();
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = m_meshDescriptors.data();
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 2, 0, bufferInfos.size(), vk::DescriptorType::eStorageBuffer, nullptr, bufferInfos.data()), nullptr);
 }

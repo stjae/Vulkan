@@ -6,7 +6,6 @@ Image::Image()
     m_imageCreateInfo.imageType = vk::ImageType::e2D;
     m_imageCreateInfo.mipLevels = 1;
     m_imageCreateInfo.arrayLayers = 1;
-
     vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     m_imageViewCreateInfo.subresourceRange = subresourceRange;
     m_imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
@@ -19,18 +18,15 @@ void Image::CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsage
     m_imageCreateInfo.format = format;
     m_imageCreateInfo.usage = usage;
     m_imageCreateInfo.tiling = tiling;
-
     m_bundle.image = Device::Get().device.createImage(m_imageCreateInfo);
     m_bundle.descriptorImageInfo.sampler = sampler;
-
     m_memory.AllocateMemory(m_bundle.image, memoryProperty);
+    m_imageViewCreateInfo.image = m_bundle.image;
+    m_imageViewCreateInfo.format = m_imageCreateInfo.format;
 }
 
 void Image::CreateImageView()
 {
-    m_imageViewCreateInfo.image = m_bundle.image;
-    m_imageViewCreateInfo.format = m_imageCreateInfo.format;
-
     m_bundle.imageView = Device::Get().device.createImageView(m_imageViewCreateInfo);
     m_bundle.descriptorImageInfo.imageView = m_bundle.imageView;
 }
@@ -223,6 +219,14 @@ void Image::CreateFramebuffer(const Pipeline& pipeline)
 {
     vk::ImageView attachment = m_bundle.imageView;
     vk::FramebufferCreateInfo frameBufferCI({}, pipeline.m_renderPass, 1, &attachment, m_imageCreateInfo.extent.width, m_imageCreateInfo.extent.height, 1);
+
+    CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
+}
+
+void Image::CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t height)
+{
+    vk::ImageView attachment = m_bundle.imageView;
+    vk::FramebufferCreateInfo frameBufferCI({}, pipeline.m_renderPass, 1, &attachment, width, height, 1);
 
     CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }

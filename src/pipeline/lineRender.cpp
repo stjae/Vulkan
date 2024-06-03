@@ -139,26 +139,12 @@ void LineRenderPipeline::CreateRenderPass()
     m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
 }
 
-void LineRenderPipeline::UpdateCameraDescriptor()
+void LineRenderPipeline::UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &m_cameraDescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo), nullptr);
 }
 
-void LineRenderPipeline::UpdateUBODescriptor()
+void LineRenderPipeline::UpdateMeshUBO(const vk::DescriptorBufferInfo& bufferInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 1;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &m_UBODescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 1, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo), nullptr);
 }

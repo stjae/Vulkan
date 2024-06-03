@@ -12,6 +12,8 @@
 #include "../../imgui/ImGuizmo.h"
 #include "../time.h"
 
+const uint8_t SHADOW_MAP_CASCADE_COUNT = 4;
+
 struct CameraUBO
 {
     glm::mat4 view;
@@ -21,6 +23,7 @@ struct CameraUBO
 
 class Camera
 {
+    friend class UI;
     friend class Scene;
     friend class SceneSerializer;
 
@@ -33,12 +36,16 @@ protected:
     bool m_isControllable = false;
     bool m_startControl = true; // prevent sudden camera move
 
+    float m_zNear = 0.1f;
+    float m_zFar = 1024.0f;
+    std::array<float, SHADOW_MAP_CASCADE_COUNT> m_cascadeRanges = { 10.0f, 40.0f, 200.0f, m_zFar };
+
     glm::vec3 m_pos = { 0.0f, 0.0f, 4.0f };
     glm::vec3 m_dir = { 0.0f, 0.0f, -1.0f };
     glm::vec3 m_at = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_up = { 0.0f, 1.0f, 0.0f };
     glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 m_rotation = glm::vec3(0.0f);
+    glm::vec3 m_rotation = { 0.0f, 0.0f, 0.0f };
 
     void SetControl();
 
@@ -49,7 +56,13 @@ public:
     const vk::DescriptorBufferInfo& GetBufferInfo() { return m_cameraBuffer->Get().descriptorBufferInfo; }
     virtual void Control() = 0;
     virtual void ControlByMatrix(const glm::mat4& matrix) = 0;
+    float GetZnear() const { return m_zNear; }
+    float GetZfar() const { return m_zFar; }
     void Update();
+    float GetCascadeDepth(int index);
+    glm::mat4 GetCascadeProj(int index);
+    glm::vec3& GetDirection() { return m_dir; }
+    glm::vec3& GetRotation() { return m_rotation; }
 };
 
 class MainCamera : public Camera
@@ -72,8 +85,6 @@ class SubCamera : public Camera
 public:
     SubCamera(const vk::CommandPool& commandPool) : Camera(commandPool) {}
     void ControlByMatrix(const glm::mat4& matrix) override;
-    glm::vec3& GetDirection() { return m_dir; }
-    glm::vec3& GetRotation() { return m_rotation; }
 };
 
 #endif

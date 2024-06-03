@@ -116,26 +116,12 @@ void SkyboxRenderPipeline::CreateRenderPass()
     m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
 }
 
-void SkyboxRenderPipeline::UpdateCameraDescriptor()
+void SkyboxRenderPipeline::UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &m_cameraDescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferInfo), nullptr);
 }
 
-void SkyboxRenderPipeline::UpdateIrradianceCubemapDescriptor()
+void SkyboxRenderPipeline::UpdateIrradianceCubemap(const vk::DescriptorImageInfo& imageInfo)
 {
-    vk::WriteDescriptorSet writeDescriptorSet;
-    writeDescriptorSet.dstSet = m_descriptorSets[0];
-    writeDescriptorSet.dstBinding = 1;
-    writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    writeDescriptorSet.pImageInfo = &m_irradianceCubemapDescriptor;
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &imageInfo), nullptr);
 }

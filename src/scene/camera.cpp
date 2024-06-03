@@ -12,7 +12,7 @@ Camera::Camera(const vk::CommandPool& commandPool)
 void Camera::Update()
 {
     m_cameraUBO.view = glm::lookAt(m_pos, m_at, m_up);
-    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), 0.1f, 1024.0f);
+    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_zNear, m_zFar);
     m_cameraUBO.pos = m_pos;
     m_cameraStagingBuffer->Copy(&m_cameraUBO);
 
@@ -36,6 +36,25 @@ void Camera::SetControl()
         }
 
         m_startControl = true;
+    }
+}
+
+float Camera::GetCascadeDepth(int index)
+{
+    return m_cascadeRanges[index];
+}
+
+glm::mat4 Camera::GetCascadeProj(int index)
+{
+    switch (index) {
+    case 0:
+        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_zNear, m_cascadeRanges[0]);
+    case 1:
+        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[0], m_cascadeRanges[1]);
+    case 2:
+        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[1], m_cascadeRanges[2]);
+    default:
+        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[2], m_zFar);
     }
 }
 

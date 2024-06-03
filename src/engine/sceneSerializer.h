@@ -14,7 +14,7 @@ public:
     void SerializeResources(YAML::Emitter& out, const std::vector<Resource>& resources);
     void Deserialize(Scene& scene, const std::string& filePath);
     void SerializeCamera(YAML::Emitter& out, const Camera& camera);
-    void SerializePointLights(YAML::Emitter& out, const std::vector<PointLightUBO>& pointLights);
+    void SerializePointLight(YAML::Emitter& out, const PointLight& pointLight);
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
 };
 

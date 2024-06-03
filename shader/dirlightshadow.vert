@@ -10,8 +10,9 @@ layout (set = 0, binding = 1) readonly buffer Mesh {
     MeshInstanceData data[];
 } mesh[];
 
-layout(push_constant) uniform PushConsts
+layout (push_constant) uniform PushConsts
 {
+    mat4 viewProj;
     int meshIndex;
 } pushConsts;
 
@@ -24,6 +25,6 @@ layout (location = 4) in vec3 inTangent;
 void main() {
 
     vec4 worldPos = mesh[pushConsts.meshIndex].data[gl_InstanceIndex].model * vec4(inPos, 1.0);
-    gl_Position = shadowMapSpace.viewProj * worldPos;
+    gl_Position = pushConsts.viewProj * worldPos;
 
 }

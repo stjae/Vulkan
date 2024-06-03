@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier: enable
 #include "common.glsl"
 #include "pbr.glsl"
+#define SHADOW_MAP_CASCADE_COUNT 4
 
 layout (set = 0, binding = 0) uniform Camera {
     CameraData data;
@@ -15,11 +16,11 @@ layout (set = 0, binding = 2) readonly buffer Mesh {
     MeshInstanceData data[];
 } mesh[];
 
-layout (set = 3, binding = 1) uniform DirLight {
-    vec3 dir;
-    float intensity;
-    vec3 color;
-} dirLight;
+layout (set = 3, binding = 0) uniform Cascade {
+    vec4 splits;
+    mat4 viewProj[SHADOW_MAP_CASCADE_COUNT];
+    vec3 lightDir;
+} cascade;
 
 layout (push_constant) uniform PushConsts
 {
@@ -39,14 +40,14 @@ layout (set = 1, binding = 5) uniform textureCube shadowCubeMaps[];
 layout (set = 2, binding = 0) uniform samplerCube irradianceCubemap;
 layout (set = 2, binding = 1) uniform samplerCube prefilteredCubemap;
 layout (set = 2, binding = 2) uniform sampler2D brdfLUT;
-layout (set = 2, binding = 3) uniform sampler2D shadowMap;
+layout (set = 2, binding = 3) uniform sampler2DArray shadowMap;
 
-layout (location = 0) in vec4 inModel;
+layout (location = 0) in vec4 inWorldPos;
 layout (location = 1) in vec4 inNormal;
 layout (location = 2) in vec2 inTexcoord;
 layout (location = 3) in vec3 inTangent;
 layout (location = 4) in vec3 inBitangent;
-layout (location = 5) in vec4 inShadowMapFragPos;
+layout (location = 5) in vec4 inViewPos;
 
 layout (location = 6) flat in int instanceIndex;
 
@@ -54,6 +55,28 @@ layout (location = 0) out vec4 outColor;
 layout (location = 1) out ivec2 outID;
 
 const float SHADOW_OFFSET = 0.005;
+
+float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex)
+{
+    float shadow = 0.0;
+    float bias = 0.005;
+
+    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
+        float dist = texture(shadowMap, vec3(shadowCoord.st + offset, cascadeIndex)).r;
+        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
+            // cast no shadow
+            shadow = 1.0;
+        }
+    }
+    return shadow;
+}
+
+const mat4 biasMat = mat4(
+    0.5, 0.0, 0.0, 0.0,
+    0.0, 0.5, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.5, 0.5, 0.0, 1.0
+);
 
 void main() {
 
@@ -99,9 +122,9 @@ void main() {
         }
     }
 
-    vec3 worldModel = inModel.xyz;
+    vec3 worldPos = inWorldPos.xyz;
     vec3 N = normalWorld;
-    vec3 V = normalize(camera.data.pos - worldModel);
+    vec3 V = normalize(camera.data.pos - worldPos);
     vec3 R = reflect(-V, N);
 
     vec3 F0 = vec3(0.04);
@@ -109,15 +132,19 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
-    vec3 projCoords = inShadowMapFragPos.xyz / inShadowMapFragPos.w;
-    projCoords.xy = projCoords.xy * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    float currentDepth = projCoords.z;
-    float bias = 0.001;
-    if (currentDepth - bias < closestDepth) {
-        vec3 N = normalWorld;
-        vec3 L = dirLight.dir;
-        vec3 radiance = max(0.0, dot(L, N)) * dirLight.color * dirLight.intensity;
+    uint cascadeIndex = 0;
+    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
+        if (inViewPos.z < cascade.splits[i]) {
+            cascadeIndex = i + 1;
+        }
+    }
+    float shadow = 1.0;
+    vec4 shadowCoord = (biasMat * cascade.viewProj[cascadeIndex]) * vec4(worldPos, 1.0);
+    shadow = textureProj(shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
+    if (shadow < 1.0) {
+        vec3 L = -cascade.lightDir;
+        //        vec3 radiance = max(0.0, dot(L, N)) * dirLight.color * dirLight.intensity;
+        vec3 radiance = max(0.0, dot(L, N)) * vec3(1.0);
 
         vec3 H = normalize(V + L);
 
@@ -141,7 +168,7 @@ void main() {
     for (int i = 0; i < pushConsts.lightCount; i++) {
 
         vec4 lightPos = light.data[i].model * vec4(0.0, 0.0, 0.0, 1.0);
-        vec3 lightVec = (inModel - lightPos).xyz;
+        vec3 lightVec = (inWorldPos - lightPos).xyz;
         float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);
         bool castShadow = distToLight > sampledDist + SHADOW_OFFSET;
@@ -149,9 +176,9 @@ void main() {
             continue;
         }
 
-        vec3 radiance = Lambert(normalWorld, inModel.xyz, light.data[i]) * light.data[i].color;
+        vec3 radiance = Lambert(normalWorld, inWorldPos.xyz, light.data[i]) * light.data[i].color;
 
-        vec3 L = normalize(lightPos.xyz - worldModel);
+        vec3 L = normalize(lightPos.xyz - worldPos);
         vec3 H = normalize(V + L);
 
         // brdf
@@ -191,4 +218,19 @@ void main() {
 
     outID.r = meshInstance.meshID;
     outID.g = meshInstance.instanceID;
+
+    //    switch (cascadeIndex) {
+    //        case 0:
+    //            outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+    //            break;
+    //        case 1:
+    //            outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+    //            break;
+    //        case 2:
+    //            outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+    //            break;
+    //        case 3:
+    //            outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+    //            break;
+    //    }
 }

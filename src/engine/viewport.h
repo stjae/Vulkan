@@ -30,7 +30,6 @@ class Viewport
     std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
     std::array<vk::CommandBuffer, MAX_FRAME> m_pickColorCommandBuffers;
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-    std::vector<vk::SubmitInfo> m_submitInfos;
 
     vkn::Image m_pickedColor;
 
@@ -47,8 +46,6 @@ public:
     void DestroyImage();
     void PickColor(double mouseX, double mouseY, Scene& scene);
     void Draw(const Scene& scene);
-    const std::vector<vk::SubmitInfo>& GetSubmitInfos() { return m_submitInfos; }
-    void ClearSubmitInfos() { m_submitInfos.clear(); }
     ~Viewport();
     void UpdateImage();
 };

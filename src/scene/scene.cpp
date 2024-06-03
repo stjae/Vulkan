@@ -3,11 +3,12 @@
 
 Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
 {
+    vkn::Image::CreateSampler();
     Script::Init(this);
     CreateCommandBuffers();
     CreateMainCamera();
     CreateShadowMap();
-    UpdateShadowMapDescriptor();
+    ShadowCubemap::CreateProjBuffer();
     CreateEnvironmentMap();
     DrawDummyEnviromentMap();
     Physics::InitPhysics();
@@ -35,36 +36,10 @@ void Scene::CreateMainCamera()
 
 void Scene::CreateShadowMap()
 {
-    vkn::Image::CreateSampler();
-    m_shadowMap.CreateShadowMap(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    meshRenderPipeline.m_shadowMapImageDescriptor = { vkn::Image::s_repeatSampler, m_shadowMap.Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal };
-    meshRenderPipeline.UpdateShadowMapDescriptor();
+    m_pointLight.Create(m_commandPool);
+    m_cascadedShadowMap.Create();
     vk::DescriptorImageInfo samplerInfo(vkn::Image::s_repeatSampler);
-    vk::WriteDescriptorSet writeDescriptorSet(meshRenderPipeline.m_descriptorSets[1], 0, 0, 1, vk::DescriptorType::eSampler, &samplerInfo);
-    vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
-}
-
-void Scene::UpdateShadowMapDescriptor()
-{
-    vkn::BufferInfo bufferInput = { sizeof(glm::mat4), sizeof(glm::mat4), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_shadowMapViewSpaceProjBuffer = std::make_unique<vkn::Buffer>(bufferInput);
-    shadowMapPipeline.m_shadowMapSpaceViewProjDescriptor = m_shadowMapViewSpaceProjBuffer->Get().descriptorBufferInfo;
-    shadowMapPipeline.UpdateShadowMapSpaceViewProjDescriptor();
-    meshRenderPipeline.m_shadowMapSpaceViewProjDescriptor = m_shadowMapViewSpaceProjBuffer->Get().descriptorBufferInfo;
-    meshRenderPipeline.UpdateShadowMapSpaceViewProjDescriptor();
-    m_shadowCubemapProjBuffer = std::make_unique<vkn::Buffer>(bufferInput);
-    shadowCubemapPipeline.m_projDescriptor = m_shadowCubemapProjBuffer->Get().descriptorBufferInfo;
-    shadowCubemapPipeline.UpdateProjDescriptor();
-    m_shadowCubemapProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.001f, 1024.f);
-    m_shadowCubemapProjBuffer->Copy(&m_shadowCubemapProj);
-    bufferInput = { sizeof(DirLightUBO), sizeof(DirLightUBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_dirLightDataBuffer = std::make_unique<vkn::Buffer>(bufferInput);
-    meshRenderPipeline.m_dirLightDescriptor = m_dirLightDataBuffer->Get().descriptorBufferInfo;
-    meshRenderPipeline.UpdateDirLightDescriptor();
-    bufferInput = { sizeof(PointLightUBO), sizeof(PointLightUBO), vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_pointLightDataBuffer = std::make_unique<vkn::Buffer>(bufferInput);
-    meshRenderPipeline.m_pointLightDescriptor = m_pointLightDataBuffer->Get().descriptorBufferInfo;
-    shadowCubemapPipeline.m_pointLightDescriptor = m_pointLightDataBuffer->Get().descriptorBufferInfo;
+    meshRenderPipeline.UpdateSampler(samplerInfo);
 }
 
 void Scene::CreateEnvironmentMap()
@@ -79,19 +54,15 @@ void Scene::CreateEnvironmentMap()
     m_brdfLut.CreateImageView();
     m_brdfLut.CreateFramebuffer(brdfLutPipeline);
     m_brdfLut.Draw(m_brdfLutSquare, brdfLutPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    meshRenderPipeline.m_brdfLutDescriptor = m_brdfLut.Get().descriptorImageInfo;
-    meshRenderPipeline.UpdateBrdfLutDescriptor();
+    meshRenderPipeline.UpdateBrdfLut(m_brdfLut.Get().descriptorImageInfo);
 }
 
 void Scene::UpdateCameraDescriptor(Camera* camera)
 {
     assert(camera != nullptr);
-    meshRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
-    meshRenderPipeline.UpdateCameraDescriptor();
-    skyboxRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
-    skyboxRenderPipeline.UpdateCameraDescriptor();
-    lineRenderPipeline.m_cameraDescriptor = camera->m_cameraBuffer->Get().descriptorBufferInfo;
-    lineRenderPipeline.UpdateCameraDescriptor();
+    meshRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
+    skyboxRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
+    lineRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -198,7 +169,7 @@ void Scene::Update()
 
 void Scene::AddPointLight()
 {
-    m_pointLights.emplace_back();
+    m_pointLight.Add();
     m_shadowCubemaps.emplace_back();
     m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
     m_shadowCubemaps.back()->CreateShadowMap();
@@ -233,7 +204,7 @@ void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 
 void Scene::DeletePointLight()
 {
-    m_pointLights.erase(m_pointLights.begin() + m_selectedLightID);
+    m_pointLight.Delete(m_selectedLightIndex);
     UnselectAll();
     UpdatePointLightBuffer();
 }
@@ -256,10 +227,13 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 
 void Scene::HandlePointLightDuplication()
 {
-    if (m_selectedLightID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
-        AddPointLight();
-        m_pointLights.back() = m_pointLights[m_selectedLightID];
-        m_selectedLightID = m_pointLights.size() - 1;
+    if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
+        m_pointLight.Duplicate(m_selectedLightIndex);
+        m_selectedLightIndex = (int)m_pointLight.Size() - 1;
+        m_shadowCubemaps.emplace_back();
+        m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
+        m_shadowCubemaps.back()->CreateShadowMap();
+        UpdatePointLightBuffer();
     }
 }
 
@@ -296,56 +270,34 @@ void Scene::UpdateMainCamera()
 
 void Scene::UpdatePointLight()
 {
-    if (m_pointLights.empty())
-        return;
-
-    m_pointLightDataBuffer->Copy(m_pointLights.data());
-
-    for (int i = 0; i < m_pointLights.size(); i++) {
-        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLights, m_meshes);
+    m_pointLight.Update();
+    for (int i = 0; i < m_pointLight.Size(); i++) {
+        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLight, m_meshes);
     }
 }
 
 void Scene::UpdatePointLightBuffer()
 {
-    // TODO: separate
-    if (!m_pointLights.empty()) {
-        vkn::BufferInfo bufferInput = { sizeof(PointLightUBO) * m_pointLights.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        m_pointLightDataBuffer.reset();
-        m_pointLightDataBuffer = std::make_unique<vkn::Buffer>(bufferInput);
-        m_pointLightDataBuffer->Copy(m_pointLights.data());
-        meshRenderPipeline.m_pointLightDescriptor = m_pointLightDataBuffer->Get().descriptorBufferInfo;
-        shadowCubemapPipeline.m_pointLightDescriptor = m_pointLightDataBuffer->Get().descriptorBufferInfo;
-        meshRenderPipeline.UpdatePointLightDescriptor();
-        shadowCubemapPipeline.UpdatePointLightDescriptor();
-
-        UpdateShadowCubemaps();
-    }
+    m_pointLight.UpdateBuffer();
+    UpdateShadowCubemaps();
 }
 
 void Scene::UpdateShadowMap()
 {
-    // TODO: follow camera
-    m_dirLightUBO.dir = glm::normalize(m_dirLightPos);
-    m_dirLightDataBuffer->Copy(&m_dirLightUBO);
-
-    glm::mat4 lightProjection = glm::ortho(-1.0f * m_dirLightSize, m_dirLightSize, -1.0f * m_dirLightSize, m_dirLightSize, m_dirLightNearPlane, m_dirLightFarPlane);
-    glm::mat4 lightView = glm::lookAt(m_dirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 0.0f, 1.0f));
-    m_shadowMapViewProj = lightProjection * lightView;
-    m_shadowMapViewSpaceProjBuffer->Copy(&m_shadowMapViewProj);
-    m_shadowMap.DrawShadowMap(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_meshes);
+    m_dirLight.Update();
+    m_cascadedShadowMap.UpdateCascades(m_mainCamera.get(), m_dirLight.GetPosition());
+    m_cascadedShadowMap.Draw(m_meshes);
 }
 
 void Scene::UpdateShadowCubemaps()
 {
-    for (int i = 0; i < m_pointLights.size(); i++) {
-        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLights, m_meshes);
-    }
-    meshRenderPipeline.m_shadowCubemapDescriptors.clear();
+    std::vector<vk::DescriptorImageInfo> imageInfos;
     for (auto& shadowCubemap : m_shadowCubemaps) {
-        meshRenderPipeline.m_shadowCubemapDescriptors.emplace_back(nullptr, shadowCubemap->Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+        imageInfos.reserve(m_shadowCubemaps.size());
+        imageInfos.emplace_back(nullptr, shadowCubemap->Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
-    meshRenderPipeline.UpdateShadowCubemapDescriptors();
+    if (!imageInfos.empty())
+        meshRenderPipeline.UpdateShadowCubemap(imageInfos);
 }
 
 void Scene::UpdateMeshBuffer()
@@ -366,12 +318,9 @@ void Scene::UpdateMeshBuffer()
             mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
             bufferInfos.emplace_back(mesh->m_meshInstanceUBOBuffer->Get().descriptorBufferInfo);
         }
-        meshRenderPipeline.m_meshDescriptors = bufferInfos;
-        shadowMapPipeline.m_meshDescriptors = bufferInfos;
-        shadowCubemapPipeline.m_meshDescriptors = bufferInfos;
-        meshRenderPipeline.UpdateMeshDescriptors();
-        shadowMapPipeline.UpdateMeshDescriptors();
-        shadowCubemapPipeline.UpdateMeshDescriptors();
+        meshRenderPipeline.UpdateMeshUBO(bufferInfos);
+        shadowMapPipeline.UpdateMeshUBOBuffer(bufferInfos);
+        shadowCubemapPipeline.UpdateMeshUBO(bufferInfos);
     }
 }
 
@@ -379,43 +328,43 @@ void Scene::UpdatePhysicsDebug()
 {
     if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1) {
         GetSelectedMeshInstance().physicsDebugUBOBuffer->Copy(&GetSelectedMeshInstance().physicsDebugUBO);
-        lineRenderPipeline.m_UBODescriptor = GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo;
-        lineRenderPipeline.UpdateUBODescriptor();
+        lineRenderPipeline.UpdateMeshUBO(GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo);
     }
 }
 
 void Scene::UpdateTextureDescriptors()
 {
-    meshRenderPipeline.m_albeodoTextureDescriptors.clear();
+    std::vector<vk::DescriptorImageInfo> imageInfos;
+    imageInfos.reserve(m_albedoTextures.size());
     for (const auto& albedoTexture : m_albedoTextures) {
-        meshRenderPipeline.m_albeodoTextureDescriptors.emplace_back(albedoTexture->Get().descriptorImageInfo);
+        imageInfos.push_back(albedoTexture->Get().descriptorImageInfo);
     }
-    meshRenderPipeline.UpdateAlbedoTextureWriteDescriptors();
-    meshRenderPipeline.m_normalTextureDescriptors.clear();
+    meshRenderPipeline.UpdateAlbedoTextures(imageInfos);
+    imageInfos.clear();
+    imageInfos.reserve(m_normalTextures.size());
     for (const auto& normalTexture : m_normalTextures) {
-        meshRenderPipeline.m_normalTextureDescriptors.emplace_back(normalTexture->Get().descriptorImageInfo);
+        imageInfos.push_back(normalTexture->Get().descriptorImageInfo);
     }
-    meshRenderPipeline.UpdateNormalTextureWriteDescriptors();
-    meshRenderPipeline.m_metallicTextureDescriptors.clear();
+    meshRenderPipeline.UpdateNormalTextures(imageInfos);
+    imageInfos.clear();
+    imageInfos.reserve(m_metallicTextures.size());
     for (const auto& metallicTexture : m_metallicTextures) {
-        meshRenderPipeline.m_metallicTextureDescriptors.emplace_back(metallicTexture->Get().descriptorImageInfo);
+        imageInfos.push_back(metallicTexture->Get().descriptorImageInfo);
     }
-    meshRenderPipeline.UpdateMetallicTextureWriteDescriptors();
-    meshRenderPipeline.m_roughnessTextureDescriptors.clear();
+    meshRenderPipeline.UpdateMetallicTextures(imageInfos);
+    imageInfos.clear();
+    imageInfos.reserve(m_roughnessTextures.size());
     for (const auto& roughnessTexture : m_roughnessTextures) {
-        meshRenderPipeline.m_roughnessTextureDescriptors.emplace_back(roughnessTexture->Get().descriptorImageInfo);
+        imageInfos.push_back(roughnessTexture->Get().descriptorImageInfo);
     }
-    meshRenderPipeline.UpdateRoughnessTextureWriteDescriptors();
+    meshRenderPipeline.UpdateRoughnessTextures(imageInfos);
 }
 
 void Scene::UpdateEnvCubemapDescriptors()
 {
-    skyboxRenderPipeline.m_irradianceCubemapDescriptor = m_irradianceCubemap->Get().descriptorImageInfo;
-    skyboxRenderPipeline.UpdateIrradianceCubemapDescriptor();
-    meshRenderPipeline.m_irradianceCubemapDescriptor = m_irradianceCubemap->Get().descriptorImageInfo;
-    meshRenderPipeline.UpdateIrraianceCubemapDescriptor();
-    meshRenderPipeline.m_prefilteredCubemapDescriptor = m_prefilteredCubemap->m_mipmapDescriptorImageInfo;
-    meshRenderPipeline.UpdatePrefilteredCubemapDescriptor();
+    skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
+    meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
+    meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);
 }
 
 void Scene::InitScene()
@@ -430,7 +379,7 @@ void Scene::InitScene()
     m_prefilteredCubemap.reset();
     m_meshes.clear();
     m_resources.clear();
-    m_pointLights.clear();
+    m_pointLight.Clear();
     m_shadowCubemaps.clear();
     m_albedoTextures.clear();
     m_normalTextures.clear();
@@ -557,11 +506,12 @@ void Scene::UnselectAll()
 {
     m_selectedMeshID = -1;
     m_selectedMeshInstanceID = -1;
-    m_selectedLightID = -1;
+    m_selectedLightIndex = -1;
 }
 
 Scene::~Scene()
 {
+    ShadowCubemap::DestroyBuffer();
     vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& imageLoadCommandPool : m_imageLoadCommandPools)
         vkn::Device::Get().device.destroyCommandPool(imageLoadCommandPool);

@@ -32,8 +32,8 @@ void Engine::Render()
     m_scene->Play();
     m_scene->Update();
 
-    m_viewport.Draw(*m_scene);
     m_swapchain.Draw(currentImage.value, ImGui::GetDrawData());
+    m_viewport.Draw(*m_scene);
 
     vkn::Device::Get().graphicsQueue.submit(vkn::Device::s_submitInfos, vkn::Sync::GetInFlightFence());
     vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);

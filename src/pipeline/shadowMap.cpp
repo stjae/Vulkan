@@ -81,7 +81,7 @@ void ShadowMapPipeline::CreateRenderPass()
     vkn::CheckResult(vkn::Device::Get().device.createRenderPass(&renderPassCI, nullptr, &m_renderPass));
 }
 
-void ShadowMapPipeline::UpdateShadowMapSpaceViewProjDescriptor()
+void ShadowMapPipeline::UpdateViewProjBuffer(const vk::DescriptorBufferInfo& bufferInfo)
 {
     vk::WriteDescriptorSet writeDescriptorSet;
     writeDescriptorSet.dstSet = m_descriptorSets[0];
@@ -89,18 +89,18 @@ void ShadowMapPipeline::UpdateShadowMapSpaceViewProjDescriptor()
     writeDescriptorSet.dstArrayElement = 0;
     writeDescriptorSet.descriptorCount = 1;
     writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-    writeDescriptorSet.pBufferInfo = &m_shadowMapSpaceViewProjDescriptor;
+    writeDescriptorSet.pBufferInfo = &bufferInfo;
     vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }
 
-void ShadowMapPipeline::UpdateMeshDescriptors()
+void ShadowMapPipeline::UpdateMeshUBOBuffer(const std::vector<vk::DescriptorBufferInfo>& bufferInfos)
 {
     vk::WriteDescriptorSet writeDescriptorSet;
     writeDescriptorSet.dstSet = m_descriptorSets[0];
     writeDescriptorSet.dstBinding = 1;
     writeDescriptorSet.dstArrayElement = 0;
-    writeDescriptorSet.descriptorCount = m_meshDescriptors.size();
+    writeDescriptorSet.descriptorCount = bufferInfos.size();
     writeDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-    writeDescriptorSet.pBufferInfo = m_meshDescriptors.data();
+    writeDescriptorSet.pBufferInfo = bufferInfos.data();
     vkn::Device::Get().device.updateDescriptorSets(writeDescriptorSet, nullptr);
 }

@@ -264,7 +264,7 @@ void Viewport::Draw(const Scene& scene)
     for (const auto& mesh : scene.m_meshes) {
         if (mesh->GetInstanceCount() > 0) {
             meshRenderPushConsts.meshIndex = meshIndex;
-            meshRenderPushConsts.lightCount = (int)scene.m_pointLights.size();
+            meshRenderPushConsts.lightCount = (int)scene.m_pointLight.Size();
             meshIndex++;
             for (const auto& part : mesh->GetMeshParts()) {
                 m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
@@ -312,7 +312,8 @@ void Viewport::Draw(const Scene& scene)
                                         vk::PipelineStageFlagBits::eFragmentShader);
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
 
-    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    // vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
 Viewport::~Viewport()

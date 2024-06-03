@@ -82,7 +82,7 @@ void SceneSerializer::Serialize(const Scene& scene)
     out << YAML::Key << "IBLExposure" << YAML::Value << scene.m_iblExposure;
 
     SerializeDirLight(out, scene);
-    SerializePointLights(out, scene.m_pointLights);
+    SerializePointLight(out, scene.m_pointLight);
     SerializeCamera(out, *scene.m_mainCamera);
     SerializeResources(out, scene.m_resources);
     SerializeMeshes(out, scene.m_meshes);
@@ -97,25 +97,23 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
 {
     out << YAML::Key << "DirectionalLight" << YAML::Value;
     out << YAML::BeginMap;
-    out << YAML::Key << "NearPlane" << YAML::Value << scene.m_dirLightNearPlane;
-    out << YAML::Key << "FarPlane" << YAML::Value << scene.m_dirLightFarPlane;
-    out << YAML::Key << "Distance" << YAML::Value << scene.m_dirLightDistance;
-    out << YAML::Key << "Rotation" << YAML::Value << scene.m_dirLightRot;
-    out << YAML::Key << "Position" << YAML::Value << scene.m_dirLightPos;
-    out << YAML::Key << "Color" << YAML::Value << scene.m_dirLightUBO.color;
-    out << YAML::Key << "Intensity" << YAML::Value << scene.m_dirLightUBO.intensity;
+    // out << YAML::Key << "NearPlane" << YAML::Value << scene.m_shadowMap.m_nearPlane;
+    // out << YAML::Key << "FarPlane" << YAML::Value << scene.m_shadowMap.m_farPlane;
+    out << YAML::Key << "Position" << YAML::Value << scene.m_dirLight.m_position;
+    out << YAML::Key << "Color" << YAML::Value << scene.m_dirLight.m_UBO.color;
+    out << YAML::Key << "Intensity" << YAML::Value << scene.m_dirLight.m_UBO.intensity;
     out << YAML::EndMap;
 }
 
-void SceneSerializer::SerializePointLights(YAML::Emitter& out, const std::vector<PointLightUBO>& pointLights)
+void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& pointLight)
 {
-    if (!pointLights.empty()) {
+    if (pointLight.Size() > 0) {
         out << YAML::Key << "PointLights";
         out << YAML::Value << YAML::BeginSeq;
-        for (auto& pointLight : pointLights) {
+        for (auto& UBO : pointLight.Get()) {
             out << YAML::BeginMap;
-            out << YAML::Key << "Transform" << YAML::Value << pointLight.model;
-            out << YAML::Key << "Color" << YAML::Value << pointLight.color;
+            out << YAML::Key << "Transform" << YAML::Value << UBO.model;
+            out << YAML::Key << "Color" << YAML::Value << UBO.color;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -211,21 +209,18 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     }
 
     auto dirLight = data["DirectionalLight"];
-    scene.m_dirLightNearPlane = dirLight["NearPlane"].as<float>();
-    scene.m_dirLightFarPlane = dirLight["FarPlane"].as<float>();
-    scene.m_dirLightDistance = dirLight["Distance"].as<float>();
-    scene.m_dirLightRot = dirLight["Rotation"].as<glm::mat4>();
-    scene.m_dirLightPos = dirLight["Position"].as<glm::vec3>();
-    scene.m_dirLightUBO.color = dirLight["Color"].as<glm::vec3>();
-    scene.m_dirLightUBO.intensity = dirLight["Intensity"].as<float>();
+    // scene.m_shadowMap.m_nearPlane = dirLight["NearPlane"].as<float>();
+    // scene.m_shadowMap.m_farPlane = dirLight["FarPlane"].as<float>();
+    scene.m_dirLight.m_position = dirLight["Position"].as<glm::vec3>();
+    scene.m_dirLight.m_UBO.color = dirLight["Color"].as<glm::vec3>();
+    scene.m_dirLight.m_UBO.intensity = dirLight["Intensity"].as<float>();
 
     auto pointLights = data["PointLights"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
             scene.AddPointLight();
-            // TODO: need position only
-            scene.m_pointLights.back().model = pointLight["Transform"].as<glm::mat4>();
-            scene.m_pointLights.back().color = pointLight["Color"].as<glm::vec3>();
+            scene.m_pointLight.m_UBOs.back().model = pointLight["Transform"].as<glm::mat4>();
+            scene.m_pointLight.m_UBOs.back().color = pointLight["Color"].as<glm::vec3>();
         }
     }
 

@@ -33,6 +33,7 @@ public:
     void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = s_repeatSampler);
     void CreateImageView();
     void CreateFramebuffer(const Pipeline& pipeline);
+    void CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t height);
     void Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer);
     void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
     void InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color = { 0, 0, 0, 255 });

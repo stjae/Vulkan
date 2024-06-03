@@ -9,12 +9,9 @@ class SkyboxRenderPipeline : public vkn::Pipeline
     void CreateRenderPass() override;
 
 public:
-    vk::DescriptorBufferInfo m_cameraDescriptor;
-    vk::DescriptorImageInfo m_irradianceCubemapDescriptor;
-
     void CreatePipeline() override;
-    void UpdateCameraDescriptor();
-    void UpdateIrradianceCubemapDescriptor();
+    void UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo);
+    void UpdateIrradianceCubemap(const vk::DescriptorImageInfo& imageInfo);
 } inline skyboxRenderPipeline;
 
 #endif
