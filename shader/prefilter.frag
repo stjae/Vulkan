@@ -1,11 +1,11 @@
 #version 450
+#include "pbr.glsl"
 
 layout (location = 0) in vec3 localPos;
 layout (location = 1) in float roughness;
 layout (location = 0) out vec4 fragColor;
 
 layout (binding = 0) uniform samplerCube envmap;
-const float PI = 3.14159265359;
 
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 float RadicalInverse_VdC(uint bits)
@@ -15,7 +15,7 @@ float RadicalInverse_VdC(uint bits)
     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+    return float(bits) * 2.3283064365386963e-10;// / 0x100000000
 }
 
 vec2 Hammersley(uint i, uint N)
@@ -62,7 +62,17 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
         if (NdotL > 0.0)
         {
-            prefilteredColor += texture(envmap, L).rgb * NdotL;
+            float NdotH = max(dot(N, H), 0.0);
+            float HdotV = max(dot(H, V), 0.0);
+            float D   = DistributionGGX(N, H, roughness);
+            float pdf = (D * NdotH / (4.0 * HdotV)) + 0.0001;
+
+            float resolution = 512.0;// resolution of source cubemap (per face)
+            float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
+            float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
+
+            float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
+            prefilteredColor += textureLod(envmap, L, mipLevel).rgb * NdotL;
             totalWeight += NdotL;
         }
     }

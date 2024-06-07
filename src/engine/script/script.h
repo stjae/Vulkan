@@ -12,6 +12,7 @@
 #include "glm/gtx/string_cast.hpp"
 #include "../../path.h"
 #include "../../scene/mesh.h"
+#include "../../scene/scene.h"
 
 class ScriptClass;
 class ScriptInstance;

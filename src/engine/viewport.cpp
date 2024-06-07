@@ -312,8 +312,7 @@ void Viewport::Draw(const Scene& scene)
                                         vk::PipelineStageFlagBits::eFragmentShader);
     m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
 
-    // vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }
 
 Viewport::~Viewport()

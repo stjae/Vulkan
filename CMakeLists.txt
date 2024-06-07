@@ -6,7 +6,7 @@ project(${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 17)
 
 if (APPLE)
-    set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework AppKit -framework UniformTypeIdentifiers")
+    set(CMAKE_CXX_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework AppKit -framework UniformTypeIdentifiers -liconv")
     find_package(Vulkan REQUIRED MoltenVK SPIRV-Tools)
     include_directories(${Vulkan_MoltenVK_INCLUDE_DIR})
     include_directories(${Vulkan_INCLUDE_DIR})
@@ -116,6 +116,15 @@ if (WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/bin/mono-2.0-sgen.dll" ${PROJECT_BINARY_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Program Files/Mono/lib/mono/4.5" ${PROJECT_BINARY_DIR}/mono/lib/mono/4.5)
+elseif (APPLE)
+    set(MONO_INCLUDE_DIR "/opt/homebrew/include/mono-2.0")
+    set(MONO_LIB_DIR "/opt/homebrew/lib")
+    include_directories(${MONO_INCLUDE_DIR})
+    target_link_directories(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR}/libmonosgen-2.0.a)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${MONO_LIB_DIR}/libmonosgen-2.0.dylib" ${PROJECT_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${MONO_LIB_DIR}/mono/4.5" ${PROJECT_BINARY_DIR}/mono/lib/mono/4.5)
 endif ()
 
 include(Dependency.cmake)

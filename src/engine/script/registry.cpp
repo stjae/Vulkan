@@ -112,22 +112,22 @@ static void SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity)
 
 void Registry::RegisterFunctions()
 {
-    mono_add_internal_call("vkApp.InternalCall::GetTranslation", GetTranslation);
-    mono_add_internal_call("vkApp.InternalCall::SetTranslation", SetTranslation);
-    mono_add_internal_call("vkApp.InternalCall::GetRotation", GetRotation);
-    mono_add_internal_call("vkApp.InternalCall::SetRotation", SetRotation);
-    mono_add_internal_call("vkApp.InternalCall::GetForward", GetForward);
-    mono_add_internal_call("vkApp.InternalCall::GetRight", GetRight);
-    mono_add_internal_call("vkApp.InternalCall::GetMatrix", GetMatrix);
+    mono_add_internal_call("vkApp.InternalCall::GetTranslation", (const void*)GetTranslation);
+    mono_add_internal_call("vkApp.InternalCall::SetTranslation", (const void*)SetTranslation);
+    mono_add_internal_call("vkApp.InternalCall::GetRotation", (const void*)GetRotation);
+    mono_add_internal_call("vkApp.InternalCall::SetRotation", (const void*)SetRotation);
+    mono_add_internal_call("vkApp.InternalCall::GetForward", (const void*)GetForward);
+    mono_add_internal_call("vkApp.InternalCall::GetRight", (const void*)GetRight);
+    mono_add_internal_call("vkApp.InternalCall::GetMatrix", (const void*)GetMatrix);
 
-    mono_add_internal_call("vkApp.InternalCall::GetCameraRotation", GetCameraRotation);
-    mono_add_internal_call("vkApp.InternalCall::SetCameraRotation", SetCameraRotation);
+    mono_add_internal_call("vkApp.InternalCall::GetCameraRotation", (const void*)GetCameraRotation);
+    mono_add_internal_call("vkApp.InternalCall::SetCameraRotation", (const void*)SetCameraRotation);
 
-    mono_add_internal_call("vkApp.InternalCall::IsKeyDown", IsKeyDown);
-    mono_add_internal_call("vkApp.InternalCall::GetMouseX", GetMouseX);
-    mono_add_internal_call("vkApp.InternalCall::GetMouseY", GetMouseY);
+    mono_add_internal_call("vkApp.InternalCall::IsKeyDown", (const void*)IsKeyDown);
+    mono_add_internal_call("vkApp.InternalCall::GetMouseX", (const void*)GetMouseX);
+    mono_add_internal_call("vkApp.InternalCall::GetMouseY", (const void*)GetMouseY);
 
-    mono_add_internal_call("vkApp.InternalCall::ApplyImpulse", ApplyImpulse);
-    mono_add_internal_call("vkApp.InternalCall::SetVelocity", SetVelocity);
-    mono_add_internal_call("vkApp.InternalCall::SetAngularVelocity", SetAngularVelocity);
+    mono_add_internal_call("vkApp.InternalCall::ApplyImpulse", (const void*)ApplyImpulse);
+    mono_add_internal_call("vkApp.InternalCall::SetVelocity", (const void*)SetVelocity);
+    mono_add_internal_call("vkApp.InternalCall::SetAngularVelocity", (const void*)SetAngularVelocity);
 }
