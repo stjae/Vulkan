@@ -17,7 +17,7 @@
 class Engine
 {
     vk::CommandPool m_commandPool;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    std::vector<vk::CommandBuffer> m_commandBuffers;
 
     vkn::Device m_device;
     vkn::Sync m_sync;

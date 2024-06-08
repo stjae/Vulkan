@@ -9,8 +9,8 @@ DirLight::DirLight()
 
 void DirLight::Update()
 {
-    m_UBO.dir = glm::normalize(m_position);
-    m_dirLightUBOBuffer->Copy(&m_UBO);
+    // m_UBO.dir = glm::normalize(m_position);
+    // m_dirLightUBOBuffer->Copy(&m_UBO);
 }
 
 void PointLight::Duplicate(int index)
@@ -19,9 +19,8 @@ void PointLight::Duplicate(int index)
     m_UBOs.back() = m_UBOs[index];
 }
 
-void PointLight::Create(const vk::CommandPool& commandPool)
+void PointLight::Create()
 {
-    vkn::Command::AllocateCommandBuffer(commandPool, m_commandBuffers);
     vkn::BufferInfo bufferInfo = { sizeof(PointLightUBO), sizeof(PointLightUBO), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     m_UBOStagingBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
     bufferInfo = { sizeof(PointLightUBO), sizeof(PointLightUBO), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal };
@@ -30,21 +29,17 @@ void PointLight::Create(const vk::CommandPool& commandPool)
     shadowCubemapPipeline.UpdatePointLightUBO(m_UBOBuffer->Get().descriptorBufferInfo);
 }
 
-void PointLight::Update()
+void PointLight::Update(const vk::CommandBuffer& commandBuffer)
 {
     if (!m_UBOs.empty()) {
         m_UBOStagingBuffer->Copy(m_UBOs.data());
-        vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-        vkn::Command::CopyBufferToBuffer(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
-        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-        vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+        vkn::Command::CopyBufferToBuffer(commandBuffer, m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
     }
 }
 
 void PointLight::UpdateBuffer()
 {
     if (!m_UBOs.empty()) {
-        vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], vk::CommandBufferUsageFlagBits::eSimultaneousUse);
         vkn::BufferInfo bufferInfo = { sizeof(PointLightUBO) * m_UBOs.size(), vk::WholeSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
         m_UBOStagingBuffer.reset();
         m_UBOBuffer.reset();
@@ -52,9 +47,6 @@ void PointLight::UpdateBuffer()
         bufferInfo = { sizeof(PointLightUBO) * m_UBOs.size(), vk::WholeSize, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal };
         m_UBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
         m_UBOStagingBuffer->Copy(m_UBOs.data());
-        vkn::Command::CopyBufferToBuffer(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
-        m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-        vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
         meshRenderPipeline.UpdatePointLightUBO(m_UBOBuffer->Get().descriptorBufferInfo);
         shadowCubemapPipeline.UpdatePointLightUBO(m_UBOBuffer->Get().descriptorBufferInfo);
     }

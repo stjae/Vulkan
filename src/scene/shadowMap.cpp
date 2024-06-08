@@ -33,7 +33,6 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 
 void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
-    vkn::Command::Begin(commandBuffer);
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                         m_bundle.image,
                                         vk::ImageLayout::eUndefined,
@@ -88,9 +87,6 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std:
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         vk::PipelineStageFlagBits::eAllCommands,
                                         { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
-    commandBuffer.end();
-
-    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &commandBuffer);
 }
 
 void ShadowMap::Update(const glm::vec3& lightPos)

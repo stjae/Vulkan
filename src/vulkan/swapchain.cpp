@@ -8,7 +8,7 @@ namespace vkn {
 Swapchain::Swapchain()
 {
     Command::CreateCommandPool(m_commandPool);
-    Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
+    Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
 
     CreateSwapchain();
     InitSwapchain();
@@ -66,12 +66,12 @@ void Swapchain::CreateSwapchain()
 
 void Swapchain::InitSwapchain()
 {
-    vkn::Command::Begin(m_commandBuffers[Sync::GetCurrentFrameIndex()]);
+    vkn::Command::Begin(m_commandBuffer);
     for (auto& swapchainImage : m_swapchainImages) {
-        vkn::Command::SetImageMemoryBarrier(m_commandBuffers[Sync::GetCurrentFrameIndex()], swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
+        vkn::Command::SetImageMemoryBarrier(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
     }
-    m_commandBuffers[Sync::GetCurrentFrameIndex()].end();
-    vkn::Command::SubmitAndWait(m_commandBuffers[Sync::GetCurrentFrameIndex()]);
+    m_commandBuffer.end();
+    vkn::Command::SubmitAndWait(m_commandBuffer);
 }
 
 void Swapchain::CreateRenderPass()
@@ -125,12 +125,10 @@ void Swapchain::CreateFrameBuffer()
     }
 }
 
-void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
+void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::CommandBuffer& commandBuffer)
 {
-    auto& commandBuffer = m_commandBuffers[Sync::GetCurrentFrameIndex()];
     auto& swapchainImage = m_swapchainImages[imageIndex];
 
-    Command::Begin(commandBuffer);
     Command::SetImageMemoryBarrier(commandBuffer,
                                    swapchainImage.image,
                                    vk::ImageLayout::ePresentSrcKHR,
@@ -180,9 +178,6 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
                                    vk::AccessFlagBits::eColorAttachmentWrite, {},
                                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                    vk::PipelineStageFlagBits::eBottomOfPipe);
-    commandBuffer.end();
-
-    vkn::Device::s_submitInfos.emplace_back(1, &vkn::Sync::GetImageAvailableSemaphore(), &m_waitStage, 1, &commandBuffer, 1, &vkn::Sync::GetRenderFinishedSemaphore());
 }
 
 void Swapchain::Destroy()

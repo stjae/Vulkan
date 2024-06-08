@@ -34,7 +34,7 @@ class Scene
     friend class SceneSerializer;
 
     vk::CommandPool m_commandPool;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
+    vk::CommandBuffer m_commandBuffer;
     std::array<vk::CommandPool, 4> m_imageLoadCommandPools;
     std::array<vk::CommandBuffer, 4> m_imageLoadCommandBuffers;
     std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
@@ -100,24 +100,24 @@ class Scene
     void AddEnvironmentMap(const std::string& hdriFilePath);
     void DeleteMeshInstance(Mesh& mesh, MeshInstance& instance);
     void DeletePointLight();
-    void HandlePointLightDuplication();
+    void HandlePointLightDuplication(const vk::CommandBuffer& commandBuffer);
     void HandleMeshDuplication();
     void CopyMeshInstances();
     void RevertMeshInstances();
-    void UpdateMainCamera();
+    void UpdateMainCamera(const vk::CommandBuffer& commandBuffer);
     void UpdateCameraDescriptor(Camera* camera);
-    void UpdatePointLight();
-    void UpdatePointLightBuffer();
+    void UpdatePointLight(const vk::CommandBuffer& commandBuffer);
+    void UpdatePointLightBuffer(const vk::CommandBuffer& commandBuffer);
     void UpdateMeshBuffer();
-    void UpdateShadowMap();
+    void UpdateShadowMap(const vk::CommandBuffer& commandBuffer);
     void UpdateShadowCubemaps();
     void UpdateTextureDescriptors();
     void InitScene();
     void AddCamera(MeshInstance& instance);
     void SelectCamera(Camera* camera);
-    void Play();
+    void Play(const vk::CommandBuffer& commandBuffer);
     void Stop();
-    void Update();
+    void Update(const vk::CommandBuffer& commandBuffer);
     void UpdatePhysicsDebug();
 
 public:

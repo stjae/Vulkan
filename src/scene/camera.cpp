@@ -1,25 +1,21 @@
 #include "camera.h"
 
-Camera::Camera(const vk::CommandPool& commandPool)
+Camera::Camera()
 {
-    vkn::Command::AllocateCommandBuffer(commandPool, m_commandBuffers);
     vkn::BufferInfo bufferInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     m_cameraStagingBuffer = std::make_unique<vkn::Buffer>(bufferInput);
     bufferInput = { sizeof(CameraUBO), sizeof(CameraUBO), vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal };
     m_cameraBuffer = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
-void Camera::Update()
+void Camera::Update(const vk::CommandBuffer& commandBuffer)
 {
     m_cameraUBO.view = glm::lookAt(m_pos, m_at, m_up);
     m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_zNear, m_zFar);
     m_cameraUBO.pos = m_pos;
     m_cameraStagingBuffer->Copy(&m_cameraUBO);
 
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    vkn::Command::CopyBufferToBuffer(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_cameraStagingBuffer->Get().buffer, m_cameraBuffer->Get().buffer, m_cameraStagingBuffer->Get().bufferInfo.size);
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::CopyBufferToBuffer(commandBuffer, m_cameraStagingBuffer->Get().buffer, m_cameraBuffer->Get().buffer, m_cameraStagingBuffer->Get().bufferInfo.size);
 }
 
 void Camera::SetControl()

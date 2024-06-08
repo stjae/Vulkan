@@ -27,8 +27,7 @@ class Viewport
     vkn::Image m_colorID;
 
     vk::CommandPool m_commandPool;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_pickColorCommandBuffers;
+    vk::CommandBuffer m_commandBuffer;
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
     vkn::Image m_pickedColor;
@@ -45,7 +44,7 @@ public:
     void CreateImage();
     void DestroyImage();
     void PickColor(double mouseX, double mouseY, Scene& scene);
-    void Draw(const Scene& scene);
+    void Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer);
     ~Viewport();
     void UpdateImage();
 };

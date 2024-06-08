@@ -16,9 +16,9 @@ const uint8_t SHADOW_MAP_CASCADE_COUNT = 4;
 
 struct CameraUBO
 {
-    glm::mat4 view;
-    glm::mat4 proj;
-    glm::vec3 pos;
+    glm::mat4 view{ 1.0f };
+    glm::mat4 proj{ 1.0f };
+    glm::vec3 pos{ 0.0f };
 };
 
 class Camera
@@ -30,7 +30,6 @@ class Camera
     CameraUBO m_cameraUBO;
     std::unique_ptr<vkn::Buffer> m_cameraBuffer;
     std::unique_ptr<vkn::Buffer> m_cameraStagingBuffer;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
 
 protected:
     bool m_isControllable = false;
@@ -50,7 +49,7 @@ protected:
     void SetControl();
 
 public:
-    explicit Camera(const vk::CommandPool& commandPool);
+    explicit Camera();
     bool IsControllable() const { return m_isControllable; }
     const CameraUBO& GetUBO() { return m_cameraUBO; }
     const vk::DescriptorBufferInfo& GetBufferInfo() { return m_cameraBuffer->Get().descriptorBufferInfo; }
@@ -58,7 +57,7 @@ public:
     virtual void ControlByMatrix(const glm::mat4& matrix) = 0;
     float GetZnear() const { return m_zNear; }
     float GetZfar() const { return m_zFar; }
-    void Update();
+    void Update(const vk::CommandBuffer& commandBuffer);
     float GetCascadeDepth(int index);
     glm::mat4 GetCascadeProj(int index);
     glm::vec3& GetDirection() { return m_dir; }
@@ -72,7 +71,6 @@ class MainCamera : public Camera
     void ControlByMatrix(const glm::mat4& matrix) override {}
 
 public:
-    MainCamera(const vk::CommandPool& commandPool) : Camera(commandPool) {}
     void Control() override;
 };
 
@@ -83,7 +81,6 @@ class SubCamera : public Camera
     void Control() override {}
 
 public:
-    SubCamera(const vk::CommandPool& commandPool) : Camera(commandPool) {}
     void ControlByMatrix(const glm::mat4& matrix) override;
 };
 

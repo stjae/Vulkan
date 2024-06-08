@@ -17,7 +17,7 @@ Scene::Scene() : m_envCube(0), m_brdfLutSquare(0)
 void Scene::CreateCommandBuffers()
 {
     vkn::Command::CreateCommandPool(m_commandPool);
-    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
     for (int i = 0; i < 4; i++) {
         vkn::Command::CreateCommandPool(m_imageLoadCommandPools[i]);
         vkn::Command::AllocateCommandBuffer(m_imageLoadCommandPools[i], m_imageLoadCommandBuffers[i]);
@@ -26,7 +26,7 @@ void Scene::CreateCommandBuffers()
 
 void Scene::CreateMainCamera()
 {
-    m_mainCamera = std::make_unique<MainCamera>(m_commandPool);
+    m_mainCamera = std::make_unique<MainCamera>();
     // Set Initial Camera Position
     m_mainCamera->m_dir = { 0.5, -0.3, -0.7 };
     m_mainCamera->m_pos = { -3.0, 3.3, 8.0 };
@@ -36,7 +36,7 @@ void Scene::CreateMainCamera()
 
 void Scene::CreateShadowMap()
 {
-    m_pointLight.Create(m_commandPool);
+    m_pointLight.Create();
     m_cascadedShadowMap.Create();
     vk::DescriptorImageInfo samplerInfo(vkn::Image::s_repeatSampler);
     meshRenderPipeline.UpdateSampler(samplerInfo);
@@ -45,15 +45,15 @@ void Scene::CreateShadowMap()
 void Scene::CreateEnvironmentMap()
 {
     m_envCube.CreateCube();
-    m_envCube.CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_envCube.CreateBuffers(m_commandBuffer);
     m_envCube.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
     m_brdfLutSquare.CreateSquare();
-    m_brdfLutSquare.CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_brdfLutSquare.CreateBuffers(m_commandBuffer);
     m_brdfLutSquare.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
     m_brdfLut.CreateImage({ 512, 512, 1 }, vk::Format::eR16G16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
     m_brdfLut.CreateImageView();
     m_brdfLut.CreateFramebuffer(brdfLutPipeline);
-    m_brdfLut.Draw(m_brdfLutSquare, brdfLutPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_brdfLut.Draw(m_brdfLutSquare, brdfLutPipeline, m_commandBuffer);
     meshRenderPipeline.UpdateBrdfLut(m_brdfLut.Get().descriptorImageInfo);
 }
 
@@ -69,7 +69,7 @@ void Scene::AddResource(std::string& filePath)
 {
     m_resources.emplace_back(filePath);
     m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), m_resources.back().filePath));
-    m_meshes.back()->CreateBuffers(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_meshes.back()->CreateBuffers(m_commandBuffer);
     m_resources.back().ptr = m_meshes.back();
 
     if (!m_meshes.back()->m_materials.empty()) {
@@ -139,7 +139,7 @@ void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
 
 void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo)
 {
-    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers);
+    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers, m_commandBuffer);
     meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
     meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
     Physics::AddRigidBody(mesh, meshInstance);
@@ -156,15 +156,15 @@ void Scene::DeletePhysics(MeshInstance& meshInstance)
     meshInstance.physicsDebugUBO = {};
 }
 
-void Scene::Update()
+void Scene::Update(const vk::CommandBuffer& commandBuffer)
 {
-    HandlePointLightDuplication();
+    HandlePointLightDuplication(commandBuffer);
     HandleMeshDuplication();
 
-    UpdateMainCamera();
-    UpdatePointLight();
+    UpdateMainCamera(commandBuffer);
+    UpdatePointLight(commandBuffer);
     UpdatePhysicsDebug();
-    UpdateShadowMap();
+    UpdateShadowMap(commandBuffer);
 }
 
 void Scene::AddPointLight()
@@ -172,15 +172,15 @@ void Scene::AddPointLight()
     m_pointLight.Add();
     m_shadowCubemaps.emplace_back();
     m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-    m_shadowCubemaps.back()->CreateShadowMap();
-    UpdatePointLightBuffer();
+    m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffer);
+    UpdatePointLightBuffer(m_commandBuffer);
 }
 
 void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
 {
     m_hdriFilePath = hdriFilePath;
     m_envMap = std::make_unique<vkn::Image>();
-    m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffer);
     UpdateEnvCubemaps();
 }
 
@@ -188,10 +188,10 @@ void Scene::DrawDummyEnviromentMap()
 {
     m_hdriFilePath.clear();
     m_envMap = std::make_unique<vkn::Image>();
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envMap->InsertDummyImage(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], { 128, 128, 128, 255 });
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    vkn::Command::Begin(m_commandBuffer);
+    m_envMap->InsertDummyImage(m_commandBuffer, { 128, 128, 128, 255 });
+    m_commandBuffer.end();
+    vkn::Command::SubmitAndWait(m_commandBuffer);
     UpdateEnvCubemaps();
 }
 
@@ -199,16 +199,16 @@ void Scene::UpdateEnvCubemaps()
 {
     envCubemapPipeline.UpdateHDRimage(m_envMap->Get().descriptorImageInfo);
     m_envCubemap = std::make_unique<EnvCubemap>();
-    m_envCubemap->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envCubemap->DrawEnvCubemap(m_envCube, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_envCubemap->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, m_commandBuffer);
+    m_envCubemap->DrawEnvCubemap(m_envCube, envCubemapPipeline, m_commandBuffer);
     irradianceCubemapPipeline.UpdateEnvCubemap(m_envCubemap->Get().descriptorImageInfo);
     m_irradianceCubemap = std::make_unique<EnvCubemap>();
-    m_irradianceCubemap->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_irradianceCubemap->DrawEnvCubemap(m_envCube, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_irradianceCubemap->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, m_commandBuffer);
+    m_irradianceCubemap->DrawEnvCubemap(m_envCube, irradianceCubemapPipeline, m_commandBuffer);
     prefilteredCubemapPipeline.UpdateEnvCubemap(m_envCubemap->Get().descriptorImageInfo);
     m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
-    m_prefilteredCubemap->CreatePrefilteredCubemap(5, 256, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_prefilteredCubemap->CreatePrefilteredCubemap(5, 256, prefilteredCubemapPipeline, m_commandBuffer);
+    m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, prefilteredCubemapPipeline, m_commandBuffer);
     skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);
@@ -227,7 +227,7 @@ void Scene::DeletePointLight()
 {
     m_pointLight.Delete(m_selectedLightIndex);
     UnselectAll();
-    UpdatePointLightBuffer();
+    UpdatePointLightBuffer(m_commandBuffer);
 }
 
 size_t Scene::GetInstanceCount()
@@ -246,15 +246,15 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
     m_selectedMeshInstanceID = instanceID;
 }
 
-void Scene::HandlePointLightDuplication()
+void Scene::HandlePointLightDuplication(const vk::CommandBuffer& commandBuffer)
 {
     if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
         m_pointLight.Duplicate(m_selectedLightIndex);
         m_selectedLightIndex = (int)m_pointLight.Size() - 1;
         m_shadowCubemaps.emplace_back();
         m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-        m_shadowCubemaps.back()->CreateShadowMap();
-        UpdatePointLightBuffer();
+        m_shadowCubemaps.back()->CreateShadowMap(commandBuffer);
+        UpdatePointLightBuffer(commandBuffer);
     }
 }
 
@@ -281,33 +281,34 @@ void Scene::HandleMeshDuplication()
     }
 }
 
-void Scene::UpdateMainCamera()
+void Scene::UpdateMainCamera(const vk::CommandBuffer& commandBuffer)
 {
     if (m_isPlaying && m_selectedCameraUUID != 0)
         return;
     m_mainCamera->Control();
-    m_mainCamera->Update();
+    m_mainCamera->Update(commandBuffer);
 }
 
-void Scene::UpdatePointLight()
+void Scene::UpdatePointLight(const vk::CommandBuffer& commandBuffer)
 {
-    m_pointLight.Update();
+    m_pointLight.Update(commandBuffer);
     for (int i = 0; i < m_pointLight.Size(); i++) {
-        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLight, m_meshes);
+        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLight, m_meshes, commandBuffer);
     }
 }
 
-void Scene::UpdatePointLightBuffer()
+void Scene::UpdatePointLightBuffer(const vk::CommandBuffer& commandBuffer)
 {
     m_pointLight.UpdateBuffer();
     UpdateShadowCubemaps();
 }
 
-void Scene::UpdateShadowMap()
+void Scene::UpdateShadowMap(const vk::CommandBuffer& commandBuffer)
 {
     m_dirLight.Update();
     m_cascadedShadowMap.UpdateCascades(m_mainCamera.get(), m_dirLight.GetPosition());
-    m_cascadedShadowMap.Draw(m_meshes);
+    m_cascadedShadowMap.UpdateUBO(m_dirLight.GetPosition(), commandBuffer);
+    m_cascadedShadowMap.Draw(m_meshes, commandBuffer);
 }
 
 void Scene::UpdateShadowCubemaps()
@@ -415,7 +416,7 @@ void Scene::CopyMeshInstances()
             if (instance->physicsInfo)
                 m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
             if (instance->camera)
-                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_commandPool);
+                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>();
         }
     }
 }
@@ -436,13 +437,13 @@ void Scene::RevertMeshInstances()
                 m_meshes[i]->m_meshInstances.back()->physicsDebugUBO.scale = m_meshCopies[i].m_meshInstances[j]->physicsInfo->scale;
             }
             if (m_meshCopies[i].m_meshInstances[j]->camera)
-                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_commandPool);
+                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>();
         }
     }
     m_meshCopies.clear();
 }
 
-void Scene::Play()
+void Scene::Play(const vk::CommandBuffer& commandBuffer)
 {
     if (!m_isPlaying) {
         return;
@@ -467,7 +468,7 @@ void Scene::Play()
 
     if (m_selectedCameraUUID != 0) {
         m_selectedCameraMeshInstance->camera->ControlByMatrix(m_selectedCameraMeshInstance->UBO.model);
-        m_selectedCameraMeshInstance->camera->Update();
+        m_selectedCameraMeshInstance->camera->Update(commandBuffer);
     }
 
     Physics::Simulate(m_meshes);
@@ -512,7 +513,7 @@ Scene::~Scene()
 
 void Scene::AddCamera(MeshInstance& instance)
 {
-    instance.camera = std::make_unique<SubCamera>(m_commandPool);
+    instance.camera = std::make_unique<SubCamera>();
 }
 
 void Scene::SelectCamera(Camera* camera)

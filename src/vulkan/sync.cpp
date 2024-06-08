@@ -7,30 +7,17 @@ Sync::Sync()
 }
 void Sync::Create()
 {
-    s_inFlightFences.resize(MAX_FRAME);
     s_commandFence = CreateVkFence();
-    s_imageAvailableSemaphores.resize(MAX_FRAME);
-    s_renderFinishedSemaphores.resize(MAX_FRAME);
-    s_shadowMapSemaphores.resize(MAX_FRAME);
-    s_viewportSemaphores.resize(MAX_FRAME);
-    for (int i = 0; i < MAX_FRAME; i++) {
-        s_inFlightFences[i] = CreateVkFence();
-        s_imageAvailableSemaphores[i] = CreateVkSemaphore();
-        s_renderFinishedSemaphores[i] = CreateVkSemaphore();
-        s_shadowMapSemaphores[i] = CreateVkSemaphore();
-        s_viewportSemaphores[i] = CreateVkSemaphore();
-    }
+    s_inFlightFence = CreateVkFence();
+    s_imageAvailableSemaphore = CreateVkSemaphore();
+    s_renderFinishedSemaphore = CreateVkSemaphore();
 }
 void Sync::Destroy()
 {
     Device::Get().device.destroy(s_commandFence);
-    for (int i = 0; i < MAX_FRAME; i++) {
-        Device::Get().device.destroy(s_inFlightFences[i]);
-        Device::Get().device.destroy(s_imageAvailableSemaphores[i]);
-        Device::Get().device.destroy(s_renderFinishedSemaphores[i]);
-        Device::Get().device.destroy(s_shadowMapSemaphores[i]);
-        Device::Get().device.destroy(s_viewportSemaphores[i]);
-    }
+    Device::Get().device.destroy(s_inFlightFence);
+    Device::Get().device.destroy(s_imageAvailableSemaphore);
+    Device::Get().device.destroy(s_renderFinishedSemaphore);
 }
 vk::Semaphore Sync::CreateVkSemaphore()
 {

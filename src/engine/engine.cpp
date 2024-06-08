@@ -3,6 +3,7 @@
 Engine::Engine() : m_init(true)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
+    m_commandBuffers.resize(vkn::Swapchain::Get().frameImageCount);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
     m_scene = std::make_unique<Scene>();
     m_imGui.Setup(vkn::Swapchain::Get().renderPass, m_viewport, *m_scene);
@@ -21,25 +22,25 @@ void Engine::Render()
         return;
     }
 
-    vkn::Device::s_submitInfos.clear();
-
     m_imGui.Draw(*m_scene, m_viewport, m_init);
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene->IsPlaying()) {
         m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), *m_scene);
     }
     m_imGui.AcceptDragDrop(m_viewport, *m_scene);
 
-    m_scene->Play();
-    m_scene->Update();
+    vkn::Command::Begin(m_commandBuffers[currentImage.value]);
+    m_scene->Play(m_commandBuffers[currentImage.value]);
+    m_scene->Update(m_commandBuffers[currentImage.value]);
 
-    m_swapchain.Draw(currentImage.value, ImGui::GetDrawData());
-    m_viewport.Draw(*m_scene);
+    m_swapchain.Draw(currentImage.value, ImGui::GetDrawData(), m_commandBuffers[currentImage.value]);
+    m_viewport.Draw(*m_scene, m_commandBuffers[currentImage.value]);
 
-    vkn::Device::Get().graphicsQueue.submit(vkn::Device::s_submitInfos, vkn::Sync::GetInFlightFence());
+    m_commandBuffers[currentImage.value].end();
+    vk::PipelineStageFlags waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::SubmitInfo submitInfo(1, &vkn::Sync::GetImageAvailableSemaphore(), &waitStage, 1, &m_commandBuffers[currentImage.value], 1, &vkn::Sync::GetRenderFinishedSemaphore());
+    vkn::Device::Get().graphicsQueue.submit(submitInfo, vkn::Sync::GetInFlightFence());
     vk::PresentInfoKHR presentInfo(1, &vkn::Sync::GetRenderFinishedSemaphore(), 1, &vkn::Swapchain::Get().swapchain, &currentImage.value);
     vkn::CheckResult(vkn::Device::Get().presentQueue.presentKHR(presentInfo));
-
-    vkn::Sync::SetNextFrameIndex();
 }
 
 void Engine::UpdateSwapchain()

@@ -36,8 +36,7 @@ class Swapchain
     std::vector<Image> m_swapchainImages;
 
     vk::CommandPool m_commandPool;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
-    vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::CommandBuffer m_commandBuffer;
 
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
@@ -51,7 +50,7 @@ public:
     void InitSwapchain();
     void CreateRenderPass();
     void CreateFrameBuffer();
-    void Draw(uint32_t imageIndex, ImDrawData* imDrawData);
+    void Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::CommandBuffer& commandBuffer);
     void Destroy();
 
     static const Bundle& Get() { return s_bundle; }

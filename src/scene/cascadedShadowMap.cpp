@@ -11,7 +11,7 @@ void Cascade::Create(int index, const vkn::Image& depthImage)
     CreateFramebuffer(shadowMapPipeline, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 }
 
-void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, vk::CommandBuffer& commandBuffer)
+void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
     vkn::Command::SetImageMemoryBarrier(commandBuffer,
                                         depthImage.Get().image,
@@ -81,9 +81,6 @@ CascadedShadowMap::CascadedShadowMap()
 
 void CascadedShadowMap::Create()
 {
-    vkn::Command::CreateCommandPool(m_commandPool);
-    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffers);
-
     m_depthImage.m_imageCreateInfo.arrayLayers = SHADOW_MAP_CASCADE_COUNT;
     m_depthImage.CreateImage({ SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_depthImage.m_imageViewCreateInfo.viewType = vk::ImageViewType::e2DArray;
@@ -150,11 +147,9 @@ void CascadedShadowMap::UpdateCascades(Camera* camera, const glm::vec3& lightPos
 
         lastDepth = cascadeDepth;
     }
-
-    UpdateUBO(lightPos);
 }
 
-void CascadedShadowMap::UpdateUBO(const glm::vec3& lightPos)
+void CascadedShadowMap::UpdateUBO(const glm::vec3& lightPos, const vk::CommandBuffer& commandBuffer)
 {
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
         m_UBO.depth[i] = m_cascades[i].m_depth;
@@ -162,15 +157,12 @@ void CascadedShadowMap::UpdateUBO(const glm::vec3& lightPos)
     }
     m_UBO.lightDir = normalize(-lightPos);
     m_UBOStagingBuffer->Copy(&m_UBO);
+    vkn::Command::CopyBufferToBuffer(commandBuffer, m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
 }
 
-void CascadedShadowMap::Draw(std::vector<std::shared_ptr<Mesh>>& meshes)
+void CascadedShadowMap::Draw(std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    vkn::Command::CopyBufferToBuffer(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
     for (int i = 0; i < m_cascades.size(); i++) {
-        m_cascades[i].Draw(i, m_depthImage, meshes, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+        m_cascades[i].Draw(i, m_depthImage, meshes, commandBuffer);
     }
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
 }

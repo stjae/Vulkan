@@ -24,13 +24,11 @@ class Cascade : public vkn::Image
 
 public:
     void Create(int index, const vkn::Image& depthImage);
-    void Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, vk::CommandBuffer& commandBuffer);
+    void Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
 };
 
 class CascadedShadowMap
 {
-    vk::CommandPool m_commandPool;
-    std::array<vk::CommandBuffer, MAX_FRAME> m_commandBuffers;
     std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> m_cascades;
     vkn::Image m_depthImage;
     std::unique_ptr<vkn::Buffer> m_UBOBuffer;
@@ -42,9 +40,8 @@ public:
     CascadedShadowMap();
     void Create();
     void UpdateCascades(Camera* camera, const glm::vec3& lightPos);
-    void UpdateUBO(const glm::vec3& lightPos);
-    void Draw(std::vector<std::shared_ptr<Mesh>>& meshes);
-    ~CascadedShadowMap() { vkn::Device::Get().device.destroyCommandPool(m_commandPool); }
+    void UpdateUBO(const glm::vec3& lightPos, const vk::CommandBuffer& commandBuffer);
+    void Draw(std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
 };
 
 #endif

@@ -15,7 +15,7 @@ Cubemap::Cubemap()
     m_imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
 }
 
-void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsageFlags usage, vk::CommandBuffer& commandBuffer)
+void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsageFlags usage, const vk::CommandBuffer& commandBuffer)
 {
     m_imageSize = imageSize;
     CreateImage({ imageSize, imageSize, 1 }, format, usage, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);

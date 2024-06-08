@@ -28,8 +28,6 @@ class Device
     bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
 
 public:
-    inline static std::vector<vk::SubmitInfo> s_submitInfos;
-
     Device();
     ~Device();
     static const Bundle& Get() { return s_bundle; }

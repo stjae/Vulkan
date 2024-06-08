@@ -35,9 +35,6 @@ public:
     std::unique_ptr<vkn::Buffer> m_indexStagingBuffer;
     std::unique_ptr<vkn::Buffer> m_indexBuffer;
 
-    vk::CommandPool m_commandPool;
-    vk::CommandBuffer m_commandBuffer;
-
     void DrawMesh(const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers, const btVector3& color)
     {
         for (int i = 0; i < indexContainers.size(); i++) {
@@ -57,11 +54,8 @@ public:
         }
     }
 
-    PhysicsDebugDrawer(const PhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers)
+    PhysicsDebugDrawer(const PhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers, const vk::CommandBuffer& commandBuffer)
     {
-        vkn::Command::CreateCommandPool(m_commandPool);
-        vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
-
         btVector3 color = physicsInfo.rigidBodyType == eRigidBodyType::STATIC ? btVector3(0.5f, 0.0f, 0.0f) : btVector3(0.0f, 0.5f, 0.0f);
         btTransform transform;
         transform.setIdentity();
@@ -89,7 +83,7 @@ public:
         }
 
         CreateBuffer();
-        CopyBuffer();
+        CopyBuffer(commandBuffer);
     }
 
     void setDebugMode(int debugMode) override
@@ -148,25 +142,19 @@ public:
         m_indexBuffer = std::make_unique<vkn::Buffer>(bufferInput);
     }
 
-    void CopyBuffer() const
+    void CopyBuffer(const vk::CommandBuffer& commandBuffer) const
     {
-        vkn::Command::Begin(m_commandBuffer);
-        vkn::Command::CopyBufferToBuffer(m_commandBuffer,
+        vkn::Command::Begin(commandBuffer);
+        vkn::Command::CopyBufferToBuffer(commandBuffer,
                                          m_vertexStagingBuffer->Get().buffer,
                                          m_vertexBuffer->Get().buffer,
                                          m_vertexStagingBuffer->Get().bufferInfo.size);
-        vkn::Command::CopyBufferToBuffer(m_commandBuffer,
+        vkn::Command::CopyBufferToBuffer(commandBuffer,
                                          m_indexStagingBuffer->Get().buffer,
                                          m_indexBuffer->Get().buffer,
                                          m_indexStagingBuffer->Get().bufferInfo.size);
-        m_commandBuffer.end();
-
-        vkn::Device::s_submitInfos.emplace_back(0, nullptr, nullptr, 1, &m_commandBuffer);
-    }
-
-    ~PhysicsDebugDrawer() override
-    {
-        vkn::Device::Get().device.destroyCommandPool(m_commandPool);
+        commandBuffer.end();
+        vkn::Command::SubmitAndWait(commandBuffer);
     }
 };
 
