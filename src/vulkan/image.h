@@ -30,7 +30,7 @@ public:
     Image();
     ~Image();
     const Bundle& Get() const { return m_bundle; }
-    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = s_repeatSampler);
+    void CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler = s_repeatSampler, int mipLevels = 1);
     void CreateImageView();
     void CreateFramebuffer(const Pipeline& pipeline);
     void CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t height);

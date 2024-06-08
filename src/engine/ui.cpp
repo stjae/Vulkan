@@ -68,7 +68,7 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     s_dragDropped = false;
 }
 
-void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, bool& init)
+void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -91,7 +91,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& command
 
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
     DrawDockSpace(scene, init);
-    DrawViewport(scene, viewport, commandBuffer);
+    DrawViewport(scene, viewport);
     DrawSceneAttribWindow(scene);
     DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
@@ -255,7 +255,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
     ImGui::End();
 }
 
-void UI::DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer)
+void UI::DrawViewport(Scene& scene, Viewport& viewport)
 {
     int width = 0, height = 0;
     glfwGetWindowSize(Window::GetWindow(), &width, &height);

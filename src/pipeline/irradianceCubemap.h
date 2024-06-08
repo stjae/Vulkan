@@ -10,6 +10,7 @@ class IrradianceCubemapPipeline : public vkn::Pipeline
 
 public:
     void CreatePipeline() override;
+    void UpdateEnvCubemap(const vk::DescriptorImageInfo& imageInfo);
 } inline irradianceCubemapPipeline;
 
 #endif

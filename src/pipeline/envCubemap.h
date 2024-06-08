@@ -10,6 +10,7 @@ class EnvCubemapPipeline : public vkn::Pipeline
 
 public:
     void CreatePipeline() override;
+    void UpdateHDRimage(const vk::DescriptorImageInfo& imageInfo);
 } inline envCubemapPipeline;
 
 #endif

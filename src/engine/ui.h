@@ -43,7 +43,7 @@ class UI
     // vk::DescriptorSet m_shadowMapDescriptorSet;
 
     void DrawDockSpace(Scene& scene, bool& init);
-    void DrawViewport(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer);
+    void DrawViewport(Scene& scene, Viewport& viewport);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawSceneAttribWindow(Scene& scene);
@@ -60,7 +60,7 @@ public:
     inline static std::unique_ptr<Resource> s_dragDropResource;
 
     void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
-    void Draw(Scene& scene, Viewport& viewport, const vk::CommandBuffer& commandBuffer, bool& init);
+    void Draw(Scene& scene, Viewport& viewport, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Viewport& viewport, Scene& scene);
     ~UI();

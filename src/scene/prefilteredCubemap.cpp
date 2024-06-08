@@ -2,13 +2,10 @@
 
 void PrefilteredCubemap::CreateMipmap(vk::CommandBuffer& commandBuffer)
 {
-    uint32_t mipMapSize = 64;
-
     m_mipmap.m_imageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
     m_mipmap.m_imageCreateInfo.imageType = vk::ImageType::e2D;
-    m_mipmap.m_imageCreateInfo.mipLevels = m_numMips;
     m_mipmap.m_imageCreateInfo.arrayLayers = 6;
-    m_mipmap.CreateImage({ mipMapSize, mipMapSize, 1 }, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_mipmap.CreateImage({ m_mipSize, m_mipSize, 1 }, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, s_repeatSampler, m_numMips);
 
     vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, m_numMips, 0, 6);
     m_mipmap.m_imageViewCreateInfo.subresourceRange = subresourceRange;
@@ -34,11 +31,12 @@ void PrefilteredCubemap::CreateMipmap(vk::CommandBuffer& commandBuffer)
 
 void PrefilteredCubemap::CreatePrefilteredCubemap(int numMips, uint32_t cubemapSize, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
+    m_numMips = numMips;
+    m_mipSize = cubemapSize;
     m_imageSize = cubemapSize;
     m_imageCreateInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc;
     CreateCubemap(m_imageSize, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, commandBuffer);
 
-    m_numMips = numMips;
     vkn::Command::Begin(commandBuffer);
     CreateMipmap(commandBuffer);
 
@@ -71,15 +69,15 @@ void PrefilteredCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline,
     }
 }
 
-void PrefilteredCubemap::DrawPrefilteredCubemap(const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void PrefilteredCubemap::DrawPrefilteredCubemap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     for (int mipLevel = 0; mipLevel < m_numMips; mipLevel++) {
-        int mipSize = 64 * std::pow(0.5, mipLevel);
+        int mipSize = m_mipSize * std::pow(0.5, mipLevel);
         float roughness = (float)mipLevel / (float)(m_numMips - 1);
 
         vkn::Command::Begin(commandBuffer);
 
-        Draw(mipSize, roughness, envCube, envMap, cubemapPipeline, commandBuffer);
+        Draw(mipSize, roughness, envCube, cubemapPipeline, commandBuffer);
         CopyToMipmap(mipSize, mipLevel, commandBuffer);
 
         commandBuffer.end();
@@ -113,10 +111,8 @@ void PrefilteredCubemap::DrawPrefilteredCubemap(const Mesh& envCube, const vkn::
     vkn::Command::SubmitAndWait(commandBuffer);
 }
 
-void PrefilteredCubemap::Draw(uint32_t mipSize, float roughness, const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void PrefilteredCubemap::Draw(uint32_t mipSize, float roughness, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
-    UpdateDescriptorSets(cubemapPipeline, envMap);
-
     vk::Viewport viewport({}, {}, (float)mipSize, (float)mipSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
@@ -182,15 +178,6 @@ void PrefilteredCubemap::CopyToMipmap(uint32_t mipSize, int mipLevel, vk::Comman
                                             vk::PipelineStageFlagBits::eAllCommands,
                                             m_imageViewCreateInfo.subresourceRange);
     }
-}
-
-void PrefilteredCubemap::UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap)
-{
-    std::vector<vk::WriteDescriptorSet> writes = {
-        { cubemapPipeline.m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &envMap.Get().descriptorImageInfo }
-    };
-
-    vkn::Device::Get().device.updateDescriptorSets(writes, nullptr);
 }
 
 void PrefilteredCubemap::DrawPrefilteredCubemapFace(float roughness, uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)

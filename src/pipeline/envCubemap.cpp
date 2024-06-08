@@ -77,3 +77,8 @@ void EnvCubemapPipeline::CreateRenderPass()
 
     m_renderPass = vkn::Device::Get().device.createRenderPass(renderPassInfo);
 }
+
+void EnvCubemapPipeline::UpdateHDRimage(const vk::DescriptorImageInfo& imageInfo)
+{
+    vkn::Device::Get().device.updateDescriptorSets(vk::WriteDescriptorSet(m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &imageInfo), nullptr);
+}

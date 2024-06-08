@@ -181,16 +181,37 @@ void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
     m_hdriFilePath = hdriFilePath;
     m_envMap = std::make_unique<vkn::Image>();
     m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    UpdateEnvCubemaps();
+}
+
+void Scene::DrawDummyEnviromentMap()
+{
+    m_hdriFilePath.clear();
+    m_envMap = std::make_unique<vkn::Image>();
+    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_envMap->InsertDummyImage(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], { 128, 128, 128, 255 });
+    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
+    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    UpdateEnvCubemaps();
+}
+
+void Scene::UpdateEnvCubemaps()
+{
+    envCubemapPipeline.UpdateHDRimage(m_envMap->Get().descriptorImageInfo);
     m_envCubemap = std::make_unique<EnvCubemap>();
     m_envCubemap->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envCubemap->DrawEnvCubemap(m_envCube, *m_envMap, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_envCubemap->DrawEnvCubemap(m_envCube, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    irradianceCubemapPipeline.UpdateEnvCubemap(m_envCubemap->Get().descriptorImageInfo);
     m_irradianceCubemap = std::make_unique<EnvCubemap>();
     m_irradianceCubemap->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_irradianceCubemap->DrawEnvCubemap(m_envCube, *m_envCubemap, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_irradianceCubemap->DrawEnvCubemap(m_envCube, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    prefilteredCubemapPipeline.UpdateEnvCubemap(m_envCubemap->Get().descriptorImageInfo);
     m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
-    m_prefilteredCubemap->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, *m_envCubemap, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    UpdateEnvCubemapDescriptors();
+    m_prefilteredCubemap->CreatePrefilteredCubemap(5, 256, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
+    skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
+    meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
+    meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);
 }
 
 void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
@@ -360,13 +381,6 @@ void Scene::UpdateTextureDescriptors()
     meshRenderPipeline.UpdateRoughnessTextures(imageInfos);
 }
 
-void Scene::UpdateEnvCubemapDescriptors()
-{
-    skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
-    meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
-    meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);
-}
-
 void Scene::InitScene()
 {
     UnselectAll();
@@ -386,27 +400,6 @@ void Scene::InitScene()
     m_metallicTextures.clear();
     m_roughnessTextures.clear();
     DrawDummyEnviromentMap();
-}
-
-void Scene::DrawDummyEnviromentMap()
-{
-    m_hdriFilePath.clear();
-    m_envMap = std::make_unique<vkn::Image>();
-    vkn::Command::Begin(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envMap->InsertDummyImage(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()], { 128, 128, 128, 255 });
-    m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()].end();
-    vkn::Command::SubmitAndWait(m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envCubemap = std::make_unique<EnvCubemap>();
-    m_envCubemap->CreateEnvCubemap(512, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_envCubemap->DrawEnvCubemap(m_envCube, *m_envMap, envCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_irradianceCubemap = std::make_unique<EnvCubemap>();
-    m_irradianceCubemap->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_irradianceCubemap->DrawEnvCubemap(m_envCube, *m_envCubemap, irradianceCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
-    m_prefilteredCubemap->CreatePrefilteredCubemap(5, 128, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_prefilteredCubemap->DrawPrefilteredCubemap(m_envCube, *m_envCubemap, prefilteredCubemapPipeline, m_commandBuffers[vkn::Sync::GetCurrentFrameIndex()]);
-    m_iblExposure = 1.0f;
-    UpdateEnvCubemapDescriptors();
 }
 
 void Scene::CopyMeshInstances()

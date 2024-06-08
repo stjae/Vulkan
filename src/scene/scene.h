@@ -89,6 +89,7 @@ class Scene
     void CreateShadowMap();
     void CreateEnvironmentMap();
     void DrawDummyEnviromentMap();
+    void UpdateEnvCubemaps();
     void AddResource(std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
     void AddMeshInstance(Mesh& mesh, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
@@ -111,7 +112,6 @@ class Scene
     void UpdateShadowMap();
     void UpdateShadowCubemaps();
     void UpdateTextureDescriptors();
-    void UpdateEnvCubemapDescriptors();
     void InitScene();
     void AddCamera(MeshInstance& instance);
     void SelectCamera(Camera* camera);

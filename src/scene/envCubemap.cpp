@@ -3,7 +3,6 @@
 void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     m_imageSize = cubemapSize;
-
     CreateCubemap(m_imageSize, format, usage, commandBuffer);
 
     vkn::Command::Begin(commandBuffer);
@@ -37,11 +36,9 @@ void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::Com
     }
 }
 
-void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
 {
     vkn::Command::Begin(commandBuffer);
-
-    UpdateDescriptorSets(cubemapPipeline, envMap);
 
     vk::Viewport viewport({}, {}, (float)m_imageSize, (float)m_imageSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -69,15 +66,6 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Image& envMap, c
 
     commandBuffer.end();
     vkn::Command::SubmitAndWait(commandBuffer);
-}
-
-void EnvCubemap::UpdateDescriptorSets(const vkn::Pipeline& cubemapPipeline, const vkn::Image& envMap)
-{
-    std::vector<vk::WriteDescriptorSet> writes = {
-        { cubemapPipeline.m_descriptorSets[0], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &envMap.Get().descriptorImageInfo }
-    };
-
-    vkn::Device::Get().device.updateDescriptorSets(writes, nullptr);
 }
 
 void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)

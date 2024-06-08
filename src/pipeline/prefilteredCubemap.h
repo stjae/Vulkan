@@ -10,6 +10,7 @@ class PrefilteredCubemapPipeline : public vkn::Pipeline
 
 public:
     void CreatePipeline() override;
+    void UpdateEnvCubemap(const vk::DescriptorImageInfo& imageInfo);
 } inline prefilteredCubemapPipeline;
 
 #endif

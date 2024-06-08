@@ -12,17 +12,19 @@ Image::Image()
     m_imageViewCreateInfo.subresourceRange = subresourceRange;
 }
 
-void Image::CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler sampler)
+void Image::CreateImage(vk::Extent3D&& extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryProperty, vk::Sampler sampler, int mipLevels)
 {
     m_imageCreateInfo.extent = extent;
     m_imageCreateInfo.format = format;
     m_imageCreateInfo.usage = usage;
     m_imageCreateInfo.tiling = tiling;
+    m_imageCreateInfo.mipLevels = mipLevels;
     m_bundle.image = Device::Get().device.createImage(m_imageCreateInfo);
     m_bundle.descriptorImageInfo.sampler = sampler;
     m_memory.AllocateMemory(m_bundle.image, memoryProperty);
     m_imageViewCreateInfo.image = m_bundle.image;
     m_imageViewCreateInfo.format = m_imageCreateInfo.format;
+    m_imageViewCreateInfo.subresourceRange.levelCount = mipLevels;
 }
 
 void Image::CreateImageView()
