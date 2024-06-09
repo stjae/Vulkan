@@ -11,8 +11,8 @@ void ShadowCubemap::CreateProjBuffer()
 
 void ShadowCubemap::CreateShadowMap(const vk::CommandBuffer& commandBuffer)
 {
-    CreateCubemap(shadowCubemapSize, shadowMapImageFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, commandBuffer);
-
+    CreateCubemap(shadowCubemapSize, shadowMapImageFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, commandBuffer);
+    vkn::Cubemap::ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
     CreateDepthImage(commandBuffer);
     CreateFramebuffer();
 }
@@ -20,21 +20,7 @@ void ShadowCubemap::CreateShadowMap(const vk::CommandBuffer& commandBuffer)
 void ShadowCubemap::CreateDepthImage(const vk::CommandBuffer& commandBuffer)
 {
     m_depthImage.CreateImage({ shadowCubemapSize, shadowCubemapSize, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-    // TODO: Use subpass dependency
-    vkn::Command::Begin(commandBuffer);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_depthImage.Get().image,
-                                        {},
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
-    commandBuffer.end();
-    vkn::Command::SubmitAndWait(commandBuffer);
-
+    vkn::Command::ChangeImageLayout(commandBuffer, m_depthImage.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     m_depthImage.m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
     m_depthImage.CreateImageView();
 }

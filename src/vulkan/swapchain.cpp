@@ -68,7 +68,7 @@ void Swapchain::InitSwapchain()
 {
     vkn::Command::Begin(m_commandBuffer);
     for (auto& swapchainImage : m_swapchainImages) {
-        vkn::Command::SetImageMemoryBarrier(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, {}, {}, vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eBottomOfPipe);
+        vkn::Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
     }
     m_commandBuffer.end();
     vkn::Command::SubmitAndWait(m_commandBuffer);
@@ -129,13 +129,7 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::Comm
 {
     auto& swapchainImage = m_swapchainImages[imageIndex];
 
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   swapchainImage.image,
-                                   vk::ImageLayout::ePresentSrcKHR,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   {}, vk::AccessFlagBits::eColorAttachmentWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = s_bundle.renderPass;
@@ -171,13 +165,7 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::Comm
 
     commandBuffer.endRenderPass();
 
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   swapchainImage.image,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   vk::ImageLayout::ePresentSrcKHR,
-                                   vk::AccessFlagBits::eColorAttachmentWrite, {},
-                                   vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                   vk::PipelineStageFlagBits::eBottomOfPipe);
+    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 }
 
 void Swapchain::Destroy()

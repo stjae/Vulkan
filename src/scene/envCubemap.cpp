@@ -1,31 +1,15 @@
 #include "envCubemap.h"
 
-void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
 {
+    m_baseMipSize = cubemapSize;
+    m_numMips = (int)std::floor(std::log2(std::max(cubemapSize, cubemapSize))) + 1;
     m_imageSize = cubemapSize;
     CreateCubemap(m_imageSize, format, usage, commandBuffer);
-
-    vkn::Command::Begin(commandBuffer);
-    for (int i = 0; i < 6; i++) {
-        m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
-        vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                            m_bundle.image,
-                                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                                            vk::ImageLayout::eColorAttachmentOptimal,
-                                            vk::AccessFlagBits::eShaderRead,
-                                            vk::AccessFlagBits::eColorAttachmentWrite,
-                                            vk::PipelineStageFlagBits::eAllCommands,
-                                            vk::PipelineStageFlagBits::eAllCommands,
-                                            m_imageViewCreateInfo.subresourceRange);
-    }
-
-    commandBuffer.end();
-    vkn::Command::SubmitAndWait(commandBuffer);
-
-    CreateFramebuffer(cubemapPipeline, commandBuffer);
+    CreateFramebuffer(cubemapPipeline);
 }
 
-void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline)
 {
     vk::ImageView attachment;
     vk::FramebufferCreateInfo frameBufferCI({}, cubemapPipeline.m_renderPass, 1, &attachment, m_imageSize, m_imageSize, 1);
@@ -36,11 +20,9 @@ void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::Com
     }
 }
 
-void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::DrawEnvCubemap(int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::Begin(commandBuffer);
-
-    vk::Viewport viewport({}, {}, (float)m_imageSize, (float)m_imageSize, 0.0f, 1.0f);
+    vk::Viewport viewport({}, {}, (float)size, (float)size, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
     vk::Rect2D scissor({ 0, 0 }, { m_imageSize, m_imageSize });
@@ -49,26 +31,9 @@ void EnvCubemap::DrawEnvCubemap(const Mesh& envCube, const vkn::Pipeline& cubema
     for (uint32_t face = 0; face < 6; face++) {
         DrawEnvCubemapFace(face, envCube, cubemapPipeline, commandBuffer);
     }
-
-    for (int i = 0; i < 6; i++) {
-        m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
-        vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                            m_bundle.image,
-                                            vk::ImageLayout::eColorAttachmentOptimal,
-                                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                                            vk::AccessFlagBits::eColorAttachmentWrite,
-                                            vk::AccessFlagBits::eShaderRead,
-                                            vk::PipelineStageFlagBits::eAllCommands,
-                                            vk::PipelineStageFlagBits::eAllCommands,
-                                            m_imageViewCreateInfo.subresourceRange);
-    }
-    m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-    commandBuffer.end();
-    vkn::Command::SubmitAndWait(commandBuffer);
 }
 
-void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer)
+void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
 {
     vk::ClearValue clearValues = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
@@ -115,4 +80,26 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
     commandBuffer.drawIndexed(envCube.GetIndicesCount(0), envCube.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();
+}
+
+void EnvCubemap::DrawMipmap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
+{
+    for (int mipLevel = 0; mipLevel < m_numMips; mipLevel++) {
+        int mipSize = m_baseMipSize * std::pow(0.5, mipLevel);
+        DrawEnvCubemap(mipSize, envCube, cubemapPipeline, commandBuffer);
+        for (int i = 0; i < 6; i++) {
+            m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
+            vkn::Command::ChangeImageLayout(commandBuffer, m_bundle.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal, m_imageViewCreateInfo.subresourceRange);
+        }
+        CopyToMipmap(mipSize, mipLevel, commandBuffer);
+        for (int i = 0; i < 6; i++) {
+            m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
+            vkn::Command::ChangeImageLayout(commandBuffer, m_bundle.image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal, m_imageViewCreateInfo.subresourceRange);
+        }
+    }
+    m_mipmap.m_imageViewCreateInfo.subresourceRange.layerCount = 6;
+    vkn::Command::ChangeImageLayout(commandBuffer, m_mipmap.Get().image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, m_mipmap.m_imageViewCreateInfo.subresourceRange);
+    m_mipmapDescriptorImageInfo.imageView = m_mipmap.Get().imageView;
+    m_mipmapDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    m_mipmapDescriptorImageInfo.sampler = m_mipmapSampler;
 }

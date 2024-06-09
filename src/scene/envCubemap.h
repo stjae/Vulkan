@@ -12,12 +12,13 @@ class EnvCubemap : public vkn::Cubemap
 {
     CubemapPushConstants m_pushConstants;
 
-    void CreateFramebuffer(const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
-    void DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
+    void CreateFramebuffer(const vkn::Pipeline& cubemapPipeline);
+    void DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
 
 public:
-    void CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
-    void DrawEnvCubemap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, vk::CommandBuffer& commandBuffer);
+    void CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
+    void DrawEnvCubemap(int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
+    void DrawMipmap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
 };
 
 #endif

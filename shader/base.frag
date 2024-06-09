@@ -20,6 +20,9 @@ layout (set = 3, binding = 0) uniform Cascade {
     vec4 splits;
     mat4 viewProj[SHADOW_MAP_CASCADE_COUNT];
     vec3 lightDir;
+    int debug;
+    vec3 color;
+    float intensity;
 } cascade;
 
 layout (push_constant) uniform PushConsts
@@ -143,8 +146,7 @@ void main() {
     shadow = textureProj(shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
     if (shadow < 1.0) {
         vec3 L = -cascade.lightDir;
-        //        vec3 radiance = max(0.0, dot(L, N)) * dirLight.color * dirLight.intensity;
-        vec3 radiance = max(0.0, dot(L, N)) * vec3(1.0);
+        vec3 radiance = max(0.0, dot(L, N)) * cascade.color * cascade.intensity;
 
         vec3 H = normalize(V + L);
 
@@ -166,11 +168,11 @@ void main() {
     }
 
     for (int i = 0; i < pushConsts.lightCount; i++) {
-
         vec4 lightPos = light.data[i].model * vec4(0.0, 0.0, 0.0, 1.0);
         vec3 lightVec = (inWorldPos - lightPos).xyz;
         float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);
+        // TODO: Attenuation
         bool castShadow = distToLight > sampledDist + SHADOW_OFFSET;
         if (castShadow) {
             continue;
@@ -219,18 +221,20 @@ void main() {
     outID.r = meshInstance.meshID;
     outID.g = meshInstance.instanceID;
 
-    //    switch (cascadeIndex) {
-    //        case 0:
-    //            outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
-    //            break;
-    //        case 1:
-    //            outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
-    //            break;
-    //        case 2:
-    //            outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
-    //            break;
-    //        case 3:
-    //            outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
-    //            break;
-    //    }
+    if (cascade.debug > 0) {
+        switch (cascadeIndex) {
+            case 0:
+                outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+                break;
+            case 1:
+                outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+                break;
+            case 2:
+                outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+                break;
+            case 3:
+                outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+                break;
+        }
+    }
 }

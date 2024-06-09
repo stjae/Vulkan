@@ -13,15 +13,11 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
     CreateImage({ SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
 
     vkn::Command::Begin(commandBuffer);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_bundle.image,
-                                        {},
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+    vkn::Command::ChangeImageLayout(commandBuffer,
+                                    m_bundle.image,
+                                    {},
+                                    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                    { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
     vkn::Command::SubmitAndWait(commandBuffer);
 
@@ -33,15 +29,11 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 
 void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std::shared_ptr<Mesh>>& meshes)
 {
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_bundle.image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+    vkn::Command::ChangeImageLayout(commandBuffer,
+                                    m_bundle.image,
+                                    vk::ImageLayout::eUndefined,
+                                    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                    { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 
     vk::Viewport viewport({}, {}, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -78,15 +70,11 @@ void ShadowMap::DrawShadowMap(vk::CommandBuffer& commandBuffer, std::vector<std:
     }
     commandBuffer.endRenderPass();
 
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_bundle.image,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
+    vkn::Command::ChangeImageLayout(commandBuffer,
+                                    m_bundle.image,
+                                    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                    vk::ImageLayout::eShaderReadOnlyOptimal,
+                                    { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
 }
 
 void ShadowMap::Update(const glm::vec3& lightPos)

@@ -24,7 +24,7 @@ class Engine
     vkn::Swapchain m_swapchain;
     Viewport m_viewport;
     UI m_imGui;
-    std::unique_ptr<Scene> m_scene;
+    Scene m_scene;
     bool m_init;
 
     void UpdateSwapchain();

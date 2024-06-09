@@ -46,7 +46,8 @@ class Mesh : public MeshBase
     void DeleteInstance(int32_t instanceColorID);
 
 public:
-    explicit Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
+    Mesh() = default;
+    Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
     Mesh(int meshColorID, const std::string& filePath);
     const std::string& GetName() { return m_name; }
     int32_t GetMeshColorID() const { return m_meshColorID; }

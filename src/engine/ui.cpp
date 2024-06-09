@@ -1,11 +1,8 @@
 #include "ui.h"
 #include "font/IconsFontAwesome5.h"
 
-void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
+void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene, const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::CreateCommandPool(m_commandPool);
-    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
-
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
 
@@ -50,25 +47,21 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
 
     m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_image.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkn::Command::Begin(m_commandBuffer);
-    m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
     m_playIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_playIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
     m_stopIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_stopIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_commandBuffer.end();
-
-    vkn::Command::SubmitAndWait(m_commandBuffer);
 
     s_dragDropped = false;
 }
 
-void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
+void UI::Draw(Scene& scene, Viewport& viewport, bool& init, const vk::CommandBuffer& commandBuffer)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -86,14 +79,14 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedLightIndex > -1) {
-        scene.DeletePointLight();
+        scene.DeletePointLight(commandBuffer);
     }
 
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
-    DrawDockSpace(scene, init);
+    DrawDockSpace(scene, init, commandBuffer);
     DrawViewport(scene, viewport);
-    DrawSceneAttribWindow(scene);
-    DrawResourceWindow(scene);
+    DrawSceneAttribWindow(scene, commandBuffer);
+    DrawResourceWindow(scene, commandBuffer);
     ShowInformationOverlay(scene);
     ImGui::PopItemFlag();
 
@@ -101,7 +94,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
     ImGui::Render();
 }
 
-void UI::DrawInitPopup(bool& init, Scene& scene)
+void UI::DrawInitPopup(bool& init, Scene& scene, const vk::CommandBuffer& commandBuffer)
 {
     ImGui::OpenPopup("Welcome");
 
@@ -121,7 +114,7 @@ void UI::DrawInitPopup(bool& init, Scene& scene)
             std::string openFilePath = nfdOpen({ "Scene", "scn" });
             if (!openFilePath.empty()) {
                 SceneSerializer serializer;
-                serializer.Deserialize(scene, openFilePath);
+                serializer.Deserialize(scene, openFilePath, commandBuffer);
                 init = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -130,7 +123,7 @@ void UI::DrawInitPopup(bool& init, Scene& scene)
     }
 }
 
-void UI::DrawDockSpace(Scene& scene, bool& init)
+void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& commandBuffer)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -174,7 +167,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
                 if (!sceneFilePath.empty()) {
                     scene.m_sceneFilePath = sceneFilePath;
                     SceneSerializer serializer;
-                    serializer.Deserialize(scene, sceneFilePath);
+                    serializer.Deserialize(scene, sceneFilePath, commandBuffer);
                 }
             }
             if (ImGui::MenuItem("Save")) {
@@ -199,7 +192,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
         }
         if (ImGui::BeginMenu("Add")) {
             if (ImGui::MenuItem("Point Light")) {
-                scene.AddPointLight();
+                scene.AddPointLight(commandBuffer);
             }
             ImGui::EndMenu();
         }
@@ -215,7 +208,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
         if (ImGui::ImageButton(icon, { GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)), GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)) }, { 0, 0 }, { 1, 1 }, GetButtonPadding(buttonSize, paddingRatio))) {
             scene.m_isPlaying = !scene.m_isPlaying;
             if (!scene.m_isPlaying) {
-                scene.Stop();
+                scene.Stop(commandBuffer);
             }
         }
         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
@@ -238,7 +231,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
 
             if (ImGui::Button("OK", ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
-                scene.InitScene();
+                scene.Clear(commandBuffer);
             }
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
@@ -248,7 +241,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
             ImGui::EndPopup();
         }
         if (init) {
-            DrawInitPopup(init, scene);
+            DrawInitPopup(init, scene, commandBuffer);
         }
     }
     ImGui::PopStyleVar();
@@ -370,7 +363,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(light.model));
 }
 
-void UI::DrawSceneAttribWindow(Scene& scene)
+void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuffer)
 {
     ImGui::Begin("Scene");
     ImGui::BeginTabBar("Scene");
@@ -467,7 +460,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add##physics")) {
-                    scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo);
+                    scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo, commandBuffer);
                 }
             } else {
                 if (ImGui::DragFloat3("Scale##physics", glm::value_ptr(meshInstance.physicsInfo->scale), 0.1f, 0.0f)) {
@@ -530,7 +523,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
                         scene.m_selectedLightIndex = i;
-                        scene.DeletePointLight();
+                        scene.DeletePointLight(commandBuffer);
                     }
                     ImGui::EndPopup();
                 }
@@ -552,11 +545,15 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::SeparatorText("Shadow Map");
             ImGui::SliderFloat("Cascade Range 1", &scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_zNear, scene.m_mainCamera->m_cascadeRanges[1]);
             ImGui::SliderFloat("Cascade Range 2", &scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_cascadeRanges[2]);
-            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_zFar);
+            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_cascadeRanges[3]);
+            ImGui::SliderFloat("Cascade Range 4", &scene.m_mainCamera->m_cascadeRanges[3], scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_zFar);
+            bool cascadeDebug = scene.m_cascadedShadowMap.m_UBO.debug > 0;
+            if (ImGui::Checkbox("Debug", &cascadeDebug))
+                scene.m_cascadedShadowMap.m_UBO.debug = cascadeDebug ? 1 : -1;
             ImGui::SeparatorText("Directional Light");
-            ImGui::DragFloat3("Position", &scene.m_dirLight.m_position[0], 0.1f);
-            ImGui::SliderFloat3("Color", &scene.m_dirLight.m_UBO.color[0], 0.0f, 1.0f);
-            ImGui::DragFloat("Intensity", &scene.m_dirLight.m_UBO.intensity, 0.1f, 0.0f);
+            ImGui::DragFloat3("Position", &scene.m_dirLight.pos[0], 0.1f);
+            ImGui::SliderFloat3("Color", &scene.m_dirLight.color[0], 0.0f, 1.0f);
+            ImGui::SliderFloat("Intensity", &scene.m_dirLight.intensity, 0.0f, 5.0f);
 
             // TODO: fix glitch on scroll
             // dir light shadow depth map
@@ -571,14 +568,15 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)), GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(iblButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             std::string hdriFilePath = nfdOpen({ "HDRI", "hdr" });
             if (!hdriFilePath.empty()) {
-                scene.AddEnvironmentMap(hdriFilePath);
+                scene.AddEnvironmentMap(hdriFilePath, commandBuffer);
             }
         }
         if (!scene.m_hdriFilePath.empty()) {
             ImGui::Text("%s", scene.m_hdriFilePath.c_str());
         }
         if (ImGui::Button("Remove##_IBL")) {
-            scene.DrawDummyEnviromentMap();
+            scene.m_hdriFilePath.clear();
+            scene.SelectDummyEnvMap(commandBuffer);
         }
         ImGui::SeparatorText("Exposure");
         ImGui::SliderFloat("Exposure##_IBL", &scene.m_iblExposure, 0.0f, 10.0f);
@@ -591,7 +589,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     ImGui::End();
 }
 
-void UI::DrawResourceWindow(Scene& scene)
+void UI::DrawResourceWindow(Scene& scene, const vk::CommandBuffer& commandBuffer)
 {
     ImGui::Begin("Resource");
     ImGui::BeginTabBar("Resource");
@@ -604,7 +602,7 @@ void UI::DrawResourceWindow(Scene& scene)
         if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             std::string path = nfdOpen({ "Model", "gltf" });
             if (!path.empty()) {
-                scene.AddResource(path);
+                scene.AddResource(path, commandBuffer);
             }
         }
         ImGui::NextColumn();
@@ -703,7 +701,6 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
 
 UI::~UI()
 {
-    vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& layout : m_descriptorSetLayouts)
         vkn::Device::Get().device.destroyDescriptorSetLayout(layout);
     ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSet);

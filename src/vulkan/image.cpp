@@ -33,7 +33,7 @@ void Image::CreateImageView()
     m_bundle.descriptorImageInfo.imageView = m_bundle.imageView;
 }
 
-void Image::InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
+void Image::InsertImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer)
 {
     stbi_set_flip_vertically_on_load(false);
     int width = 0, height = 0, channel = 0;
@@ -50,8 +50,8 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     }
     spdlog::info("load texture from [{}]", filePath.c_str());
 
-    BufferInfo bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_stagingBuffer = std::make_unique<Buffer>(bufferInput);
+    BufferInfo bufferInfo = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    m_stagingBuffer = std::make_unique<Buffer>(bufferInfo);
     m_stagingBuffer->Copy(imageData);
 
     stbi_image_free(imageData);
@@ -59,70 +59,27 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, vk::Comm
     CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
 
-    // Command::Begin(commandBuffer);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
-    Command::CopyBufferToImage(commandBuffer,
-                               m_stagingBuffer->Get().buffer,
-                               m_bundle.image, width,
-                               height);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
-    // commandBuffer.end();
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    Command::CopyBufferToImage(commandBuffer, m_stagingBuffer->Get().buffer, m_bundle.image, width, height);
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
 // TODO: reuse dummy
-void Image::InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
+void Image::InsertDummyImage(const vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
 {
-    BufferInfo bufferInput = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_stagingBuffer = std::make_unique<Buffer>(bufferInput);
+    BufferInfo bufferInfo = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    m_stagingBuffer = std::make_unique<Buffer>(bufferInfo);
     m_stagingBuffer->Copy(&color);
 
     CreateImage({ 1, 1, 1 }, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     CreateImageView();
 
-    // Command::Begin(commandBuffer);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
-    Command::CopyBufferToImage(commandBuffer,
-                               m_stagingBuffer->Get().buffer,
-                               m_bundle.image,
-                               1,
-                               1);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
-    // commandBuffer.end();
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    Command::CopyBufferToImage(commandBuffer, m_stagingBuffer->Get().buffer, m_bundle.image, 1, 1);
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
-void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer)
+void Image::InsertHDRImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer)
 {
     stbi_set_flip_vertically_on_load(true);
 
@@ -140,43 +97,18 @@ void Image::InsertHDRImage(const std::string& filePath, vk::Format format, vk::C
     }
     spdlog::info("load texture from [{}]", filePath.c_str());
 
-    BufferInfo bufferInput = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    Buffer stagingBuffer(bufferInput);
-    stagingBuffer.Copy(imageData);
+    BufferInfo bufferInfo = { imageSize, imageSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    m_stagingBuffer = std::make_unique<Buffer>(bufferInfo);
+    m_stagingBuffer->Copy(imageData);
 
     stbi_image_free(imageData);
 
     CreateImage({ (uint32_t)width, (uint32_t)height, 1 }, format, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
     CreateImageView();
 
-    Command::Begin(commandBuffer);
-    // Set texture image layout to transfer dst optimal
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eTransfer);
-    // Copy texture image from staging buffer
-    Command::CopyBufferToImage(commandBuffer,
-                               stagingBuffer.Get().buffer,
-                               m_bundle.image, width,
-                               height);
-    // Set texture image layout to m_shaderModule read only
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   m_bundle.descriptorImageInfo,
-                                   vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eTransferWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eTransfer,
-                                   vk::PipelineStageFlagBits::eFragmentShader);
-    commandBuffer.end();
-    Command::SubmitAndWait(commandBuffer);
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    Command::CopyBufferToImage(commandBuffer, m_stagingBuffer->Get().buffer, m_bundle.image, width, height);
+    ChangeImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
 void Image::CreateSampler()
@@ -233,19 +165,8 @@ void Image::CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t
     CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }
 
-void Image::Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer)
+void Image::Draw(const Mesh& square, const Pipeline& pipeline, const vk::CommandBuffer& commandBuffer)
 {
-    Command::Begin(commandBuffer);
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   {},
-                                   vk::AccessFlagBits::eColorAttachmentWrite,
-                                   vk::PipelineStageFlagBits::eTopOfPipe,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   m_imageViewCreateInfo.subresourceRange);
-
     vk::Viewport viewport({}, {}, (float)m_imageCreateInfo.extent.width, (float)m_imageCreateInfo.extent.height, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
 
@@ -265,20 +186,12 @@ void Image::Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer
     commandBuffer.drawIndexed(square.GetIndicesCount(0), square.GetInstanceCount(), 0, 0, 0);
 
     commandBuffer.endRenderPass();
+}
 
-    Command::SetImageMemoryBarrier(commandBuffer,
-                                   m_bundle.image,
-                                   vk::ImageLayout::eColorAttachmentOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal,
-                                   vk::AccessFlagBits::eColorAttachmentWrite,
-                                   vk::AccessFlagBits::eShaderRead,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   vk::PipelineStageFlagBits::eAllCommands,
-                                   m_imageViewCreateInfo.subresourceRange);
-    commandBuffer.end();
-    Command::SubmitAndWait(commandBuffer);
-
-    m_bundle.descriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+void Image::ChangeImageLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout oldImageLayout, vk::ImageLayout newImageLayout)
+{
+    vkn::Command::ChangeImageLayout(commandBuffer, m_bundle.image, oldImageLayout, newImageLayout, m_imageViewCreateInfo.subresourceRange);
+    m_bundle.descriptorImageInfo.imageLayout = newImageLayout;
 }
 
 Image::~Image()

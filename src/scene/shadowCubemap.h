@@ -18,7 +18,7 @@ class ShadowCubemap : public vkn::Cubemap
     vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eTopOfPipe };
 
     inline static float s_zNear = 0.001f;
-    inline static float s_zFar = 1024.0f;
+    inline static float s_zFar = 128.0f;
     inline static std::unique_ptr<vkn::Buffer> s_shadowCubemapProjBuffer;
     inline static glm::mat4 s_shadowCubemapProj;
 

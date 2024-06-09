@@ -50,7 +50,7 @@ glm::mat4 Camera::GetCascadeProj(int index)
     case 2:
         return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[1], m_cascadeRanges[2]);
     default:
-        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[2], m_zFar);
+        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[2], m_cascadeRanges[3]);
     }
 }
 

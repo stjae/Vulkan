@@ -1,4 +1,5 @@
 #include "cascadedShadowMap.h"
+#include "light.h"
 
 void Cascade::Create(int index, const vkn::Image& depthImage)
 {
@@ -13,15 +14,11 @@ void Cascade::Create(int index, const vkn::Image& depthImage)
 
 void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        depthImage.Get().image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, (uint32_t)index, 1 });
+    vkn::Command::ChangeImageLayout(commandBuffer,
+                                    depthImage.Get().image,
+                                    vk::ImageLayout::eUndefined,
+                                    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                    { vk::ImageAspectFlagBits::eDepth, 0, 1, (uint32_t)index, 1 });
 
     vk::Viewport viewport({}, {}, (float)SHADOW_MAP_SIZE, (float)SHADOW_MAP_SIZE, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -59,15 +56,11 @@ void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::shared_pt
     }
     commandBuffer.endRenderPass();
 
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        depthImage.Get().image,
-                                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        vk::PipelineStageFlagBits::eAllCommands,
-                                        { vk::ImageAspectFlagBits::eDepth, 0, 1, (uint32_t)index, 1 });
+    vkn::Command::ChangeImageLayout(commandBuffer,
+                                    depthImage.Get().image,
+                                    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                    vk::ImageLayout::eShaderReadOnlyOptimal,
+                                    { vk::ImageAspectFlagBits::eDepth, 0, 1, (uint32_t)index, 1 });
 }
 
 CascadedShadowMap::CascadedShadowMap()
@@ -96,7 +89,7 @@ void CascadedShadowMap::Create()
     meshRenderPipeline.UpdateShadowMap(shadowMapImageInfo);
 }
 
-void CascadedShadowMap::UpdateCascades(Camera* camera, const glm::vec3& lightPos)
+void CascadedShadowMap::UpdateCascades(Camera* camera, const DirLight& dirLight)
 {
     float lastDepth = 0.0f;
     for (int i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
@@ -138,7 +131,7 @@ void CascadedShadowMap::UpdateCascades(Camera* camera, const glm::vec3& lightPos
             radius = glm::max(radius, distance);
         }
 
-        glm::vec3 lightDir = normalize(-lightPos);
+        glm::vec3 lightDir = normalize(-dirLight.pos);
         glm::mat4 lightView = glm::lookAt(frustumCenter - lightDir * radius, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -radius, 2.0f * radius);
 
@@ -149,13 +142,15 @@ void CascadedShadowMap::UpdateCascades(Camera* camera, const glm::vec3& lightPos
     }
 }
 
-void CascadedShadowMap::UpdateUBO(const glm::vec3& lightPos, const vk::CommandBuffer& commandBuffer)
+void CascadedShadowMap::UpdateUBO(const DirLight& dirLight, const vk::CommandBuffer& commandBuffer)
 {
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
         m_UBO.depth[i] = m_cascades[i].m_depth;
         m_UBO.viewProj[i] = m_cascades[i].m_viewProj;
     }
-    m_UBO.lightDir = normalize(-lightPos);
+    m_UBO.lightDir = normalize(-dirLight.pos);
+    m_UBO.color = dirLight.color;
+    m_UBO.intensity = dirLight.intensity;
     m_UBOStagingBuffer->Copy(&m_UBO);
     vkn::Command::CopyBufferToBuffer(commandBuffer, m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
 }

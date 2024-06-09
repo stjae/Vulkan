@@ -9,33 +9,17 @@
 #include "../vulkan/command.h"
 #include "../vulkan/sync.h"
 
-struct DirLightUBO
+struct DirLight
 {
-    glm::vec3 dir;
+    glm::vec3 pos{ 0.1, 10.0f, 0.1f };
     float intensity = 1.0f;
-    glm::vec3 color = glm::vec3(1.0f);
-};
-
-class DirLight
-{
-    friend class SceneSerializer;
-    friend class UI;
-
-    DirLightUBO m_UBO;
-    std::unique_ptr<vkn::Buffer> m_dirLightUBOBuffer;
-    glm::vec3 m_position = glm::vec3(0.1f, 10.0f, 0.1f);
-
-public:
-    DirLight();
-    const glm::vec3& GetPosition() { return m_position; }
-    void SetPosition(const glm::vec3& position) { m_position = position; }
-    void Update();
+    glm::vec3 color{ 1.0f };
 };
 
 struct PointLightUBO
 {
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::vec3 color = glm::vec3(1.0f);
+    glm::mat4 model{ 1.0f };
+    glm::vec3 color{ 1.0f };
     float padding = 0.0f;
 };
 

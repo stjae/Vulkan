@@ -37,7 +37,7 @@ protected:
 
     float m_zNear = 0.1f;
     float m_zFar = 1024.0f;
-    std::array<float, SHADOW_MAP_CASCADE_COUNT> m_cascadeRanges = { 10.0f, 40.0f, 200.0f, m_zFar };
+    std::array<float, SHADOW_MAP_CASCADE_COUNT> m_cascadeRanges = { 18.0f, 40.0f, 85.0f, 120.0f };
 
     glm::vec3 m_pos = { 0.0f, 0.0f, 4.0f };
     glm::vec3 m_dir = { 0.0f, 0.0f, -1.0f };

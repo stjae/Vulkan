@@ -327,25 +327,11 @@ void Mesh::CreateBuffers(const vk::CommandBuffer& commandBuffer)
         CreateVertexBuffers(m_vertexContainers[i]);
         CreateIndexBuffers(m_indexContainers[i]);
 
-        vkn::Command::Begin(commandBuffer);
-        // Copy vertices from staging buffer
-        vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         m_vertexStagingBuffers.back()->Get().buffer,
-                                         m_vertexBuffers.back()->Get().buffer,
-                                         m_vertexStagingBuffers.back()->Get().bufferInfo.size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer, m_vertexStagingBuffers.back()->Get().buffer, m_vertexBuffers.back()->Get().buffer, m_vertexStagingBuffers.back()->Get().bufferInfo.size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer, m_indexStagingBuffers.back()->Get().buffer, m_indexBuffers.back()->Get().buffer, m_indexStagingBuffers.back()->Get().bufferInfo.size);
 
-        // Copy indices from staging buffer
-        vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         m_indexStagingBuffers.back()->Get().buffer,
-                                         m_indexBuffers.back()->Get().buffer,
-                                         m_indexStagingBuffers.back()->Get().bufferInfo.size);
-
-        commandBuffer.end();
-
-        vkn::Command::SubmitAndWait(commandBuffer);
-
-        m_vertexStagingBuffers.back()->Destroy();
-        m_indexStagingBuffers.back()->Destroy();
+        // m_vertexStagingBuffers.back()->Destroy();
+        // m_indexStagingBuffers.back()->Destroy();
     }
 }
 

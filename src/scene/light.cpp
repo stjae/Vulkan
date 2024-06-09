@@ -1,18 +1,5 @@
 #include "light.h"
 
-DirLight::DirLight()
-{
-    vkn::BufferInfo bufferInfo = { sizeof(DirLightUBO), sizeof(DirLightUBO), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-    m_dirLightUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
-    // meshRenderPipeline.UpdateDirLightUBO(m_dirLightUBOBuffer->Get().descriptorBufferInfo);
-}
-
-void DirLight::Update()
-{
-    // m_UBO.dir = glm::normalize(m_position);
-    // m_dirLightUBOBuffer->Copy(&m_UBO);
-}
-
 void PointLight::Duplicate(int index)
 {
     Add();

@@ -34,13 +34,14 @@ public:
     void CreateImageView();
     void CreateFramebuffer(const Pipeline& pipeline);
     void CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t height);
-    void Draw(const Mesh& square, const Pipeline& pipeline, vk::CommandBuffer& commandBuffer);
-    void InsertImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
-    void InsertDummyImage(vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color = { 0, 0, 0, 255 });
-    void InsertHDRImage(const std::string& filePath, vk::Format format, vk::CommandBuffer& commandBuffer);
+    void Draw(const Mesh& square, const Pipeline& pipeline, const vk::CommandBuffer& commandBuffer);
+    void InsertImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer);
+    void InsertDummyImage(const vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color = { 0, 0, 0, 255 });
+    void InsertHDRImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer);
     void DestroyImage();
     void DestroyImageView();
     static void CreateSampler();
+    void ChangeImageLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout oldImageLayout, vk::ImageLayout newImageLayout);
     Image(Image&& other) { this->m_stagingBuffer = std::move(other.m_stagingBuffer); }
 };
 } // namespace vkn

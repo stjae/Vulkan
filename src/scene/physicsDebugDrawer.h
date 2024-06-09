@@ -144,17 +144,8 @@ public:
 
     void CopyBuffer(const vk::CommandBuffer& commandBuffer) const
     {
-        vkn::Command::Begin(commandBuffer);
-        vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         m_vertexStagingBuffer->Get().buffer,
-                                         m_vertexBuffer->Get().buffer,
-                                         m_vertexStagingBuffer->Get().bufferInfo.size);
-        vkn::Command::CopyBufferToBuffer(commandBuffer,
-                                         m_indexStagingBuffer->Get().buffer,
-                                         m_indexBuffer->Get().buffer,
-                                         m_indexStagingBuffer->Get().bufferInfo.size);
-        commandBuffer.end();
-        vkn::Command::SubmitAndWait(commandBuffer);
+        vkn::Command::CopyBufferToBuffer(commandBuffer, m_vertexStagingBuffer->Get().buffer, m_vertexBuffer->Get().buffer, m_vertexStagingBuffer->Get().bufferInfo.size);
+        vkn::Command::CopyBufferToBuffer(commandBuffer, m_indexStagingBuffer->Get().buffer, m_indexBuffer->Get().buffer, m_indexStagingBuffer->Get().bufferInfo.size);
     }
 };
 

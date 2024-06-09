@@ -35,22 +35,8 @@ void Viewport::CreateImage()
     m_depth.CreateImageView();
 
     vkn::Command::Begin(m_commandBuffer);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_image.Get().image,
-                                        {},
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_colorID.Get().image,
-                                        {},
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_image.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_colorID.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
     m_commandBuffer.end();
     vkn::Command::SubmitAndWait(m_commandBuffer);
 
@@ -110,22 +96,8 @@ void Viewport::UpdateImage()
 void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 {
     vkn::Command::Begin(m_commandBuffer);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_colorID.Get().image,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::ImageLayout::eTransferSrcOptimal,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::AccessFlagBits::eTransferRead,
-                                        vk::PipelineStageFlagBits::eFragmentShader,
-                                        vk::PipelineStageFlagBits::eTransfer);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_pickedColor.Get().image,
-                                        vk::ImageLayout::eUndefined,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        {},
-                                        vk::AccessFlagBits::eTransferWrite,
-                                        vk::PipelineStageFlagBits::eTransfer,
-                                        vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_colorID.Get().image, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eTransferSrcOptimal);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     vk::ImageCopy region;
     region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -154,22 +126,8 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 
     m_commandBuffer.copyImage(m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
 
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_colorID.Get().image,
-                                        vk::ImageLayout::eTransferSrcOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eTransferRead,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eTransfer,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(m_commandBuffer,
-                                        m_pickedColor.Get().image,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        vk::ImageLayout::eGeneral,
-                                        vk::AccessFlagBits::eTransferRead,
-                                        vk::AccessFlagBits::eMemoryRead,
-                                        vk::PipelineStageFlagBits::eTransfer,
-                                        vk::PipelineStageFlagBits::eTransfer);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vkn::Command::ChangeImageLayout(m_commandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral);
     m_commandBuffer.end();
 
     vkn::Command::SubmitAndWait(m_commandBuffer);
@@ -183,22 +141,8 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 
 void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_image.Get().image,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::ImageLayout::eColorAttachmentOptimal,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::AccessFlagBits::eColorAttachmentRead,
-                                        vk::PipelineStageFlagBits::eFragmentShader,
-                                        vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_colorID.Get().image,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::ImageLayout::eColorAttachmentOptimal,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::AccessFlagBits::eColorAttachmentRead,
-                                        vk::PipelineStageFlagBits::eFragmentShader,
-                                        vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    vkn::Command::ChangeImageLayout(commandBuffer, m_image.Get().image, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    vkn::Command::ChangeImageLayout(commandBuffer, m_colorID.Get().image, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = meshRenderPipeline.m_renderPass;
@@ -292,22 +236,8 @@ void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
 
     commandBuffer.endRenderPass();
 
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_image.Get().image,
-                                        vk::ImageLayout::eColorAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eColorAttachmentRead,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    vkn::Command::SetImageMemoryBarrier(commandBuffer,
-                                        m_colorID.Get().image,
-                                        vk::ImageLayout::eColorAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::AccessFlagBits::eColorAttachmentRead,
-                                        vk::AccessFlagBits::eShaderRead,
-                                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
+    vkn::Command::ChangeImageLayout(commandBuffer, m_image.Get().image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vkn::Command::ChangeImageLayout(commandBuffer, m_colorID.Get().image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
 Viewport::~Viewport()

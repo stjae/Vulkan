@@ -97,11 +97,9 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
 {
     out << YAML::Key << "DirectionalLight" << YAML::Value;
     out << YAML::BeginMap;
-    // out << YAML::Key << "NearPlane" << YAML::Value << scene.m_shadowMap.m_nearPlane;
-    // out << YAML::Key << "FarPlane" << YAML::Value << scene.m_shadowMap.m_farPlane;
-    out << YAML::Key << "Position" << YAML::Value << scene.m_dirLight.m_position;
-    out << YAML::Key << "Color" << YAML::Value << scene.m_dirLight.m_UBO.color;
-    out << YAML::Key << "Intensity" << YAML::Value << scene.m_dirLight.m_UBO.intensity;
+    out << YAML::Key << "Position" << YAML::Value << scene.m_dirLight.pos;
+    out << YAML::Key << "Color" << YAML::Value << scene.m_dirLight.color;
+    out << YAML::Key << "Intensity" << YAML::Value << scene.m_dirLight.intensity;
     out << YAML::EndMap;
 }
 
@@ -126,6 +124,10 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::BeginMap;
     out << YAML::Key << "Position" << YAML::Value << camera.m_pos;
     out << YAML::Key << "Dir" << YAML::Value << camera.m_dir;
+    out << YAML::Key << "Cascade Range 1" << YAML::Value << camera.m_cascadeRanges[0];
+    out << YAML::Key << "Cascade Range 2" << YAML::Value << camera.m_cascadeRanges[1];
+    out << YAML::Key << "Cascade Range 3" << YAML::Value << camera.m_cascadeRanges[2];
+    out << YAML::Key << "Cascade Range 4" << YAML::Value << camera.m_cascadeRanges[3];
     out << YAML::EndMap;
 }
 
@@ -179,9 +181,9 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<std:
     }
 }
 
-void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
+void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath, const vk::CommandBuffer& commandBuffer)
 {
-    scene.InitScene();
+    scene.Clear(commandBuffer);
 
     std::ifstream stream(filePath);
     std::stringstream strStream;
@@ -195,12 +197,18 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto camera = data["Camera"];
     scene.m_mainCamera->m_pos = camera["Position"].as<glm::vec3>();
     scene.m_mainCamera->m_dir = camera["Dir"].as<glm::vec3>();
+    scene.m_mainCamera->m_cascadeRanges[0] = camera["Cascade Range 1"].as<float>();
+    scene.m_mainCamera->m_cascadeRanges[1] = camera["Cascade Range 2"].as<float>();
+    scene.m_mainCamera->m_cascadeRanges[2] = camera["Cascade Range 3"].as<float>();
+    scene.m_mainCamera->m_cascadeRanges[3] = camera["Cascade Range 4"].as<float>();
     scene.m_mainCamera->m_at = scene.m_mainCamera->m_pos + scene.m_mainCamera->m_dir;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
-        scene.AddEnvironmentMap(hdriFilePath.as<std::string>());
+        scene.AddEnvironmentMap(hdriFilePath.as<std::string>(), commandBuffer);
         scene.m_hdriFilePath = hdriFilePath.as<std::string>();
+    } else {
+        scene.SelectDummyEnvMap(commandBuffer);
     }
 
     auto iblExposure = data["IBLExposure"];
@@ -209,16 +217,14 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     }
 
     auto dirLight = data["DirectionalLight"];
-    // scene.m_shadowMap.m_nearPlane = dirLight["NearPlane"].as<float>();
-    // scene.m_shadowMap.m_farPlane = dirLight["FarPlane"].as<float>();
-    scene.m_dirLight.m_position = dirLight["Position"].as<glm::vec3>();
-    scene.m_dirLight.m_UBO.color = dirLight["Color"].as<glm::vec3>();
-    scene.m_dirLight.m_UBO.intensity = dirLight["Intensity"].as<float>();
+    scene.m_dirLight.pos = dirLight["Position"].as<glm::vec3>();
+    scene.m_dirLight.color = dirLight["Color"].as<glm::vec3>();
+    scene.m_dirLight.intensity = dirLight["Intensity"].as<float>();
 
     auto pointLights = data["PointLights"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
-            scene.AddPointLight();
+            scene.AddPointLight(commandBuffer);
             scene.m_pointLight.m_UBOs.back().model = pointLight["Transform"].as<glm::mat4>();
             scene.m_pointLight.m_UBOs.back().color = pointLight["Color"].as<glm::vec3>();
         }
@@ -228,7 +234,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     if (resources) {
         for (auto resource : resources) {
             auto filePath = resource["FilePath"].as<std::string>();
-            scene.AddResource(filePath);
+            scene.AddResource(filePath, commandBuffer);
         }
     }
 
@@ -251,7 +257,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     PhysicsInfo pInfo;
                     pInfo.rigidBodyType = (eRigidBodyType)physicsInfo["Type"].as<int>();
                     pInfo.colliderShape = (eColliderShape)physicsInfo["Shape"].as<int>();
-                    scene.AddPhysics(*scene.m_meshes[i], *meshInstance, pInfo);
+                    scene.AddPhysics(*scene.m_meshes[i], *meshInstance, pInfo, commandBuffer);
                     meshInstance->physicsInfo->scale = physicsInfo["RigidBodyScale"].as<glm::vec3>();
                 }
             }
