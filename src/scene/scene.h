@@ -12,6 +12,7 @@
 #include "prefilteredCubemap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
+#include "../pipeline/colorID.h"
 #include "../pipeline/shadowMap.h"
 #include "../pipeline/envCubemap.h"
 #include "../pipeline/irradianceCubemap.h"

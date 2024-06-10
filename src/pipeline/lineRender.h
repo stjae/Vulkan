@@ -4,6 +4,7 @@
 #include <btBulletCollisionCommon.h>
 #include "../vulkan/pipeline.h"
 #include "../scene/physicsDebugDrawer.h"
+#include "../pipeline/meshRender.h"
 
 class LineRenderPipeline : public vkn::Pipeline
 {
@@ -11,7 +12,7 @@ class LineRenderPipeline : public vkn::Pipeline
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribDesc;
 
     void SetUpDescriptors() override;
-    void CreateRenderPass() override;
+    void CreateRenderPass() override{};
 
 public:
     LineRenderPipeline();

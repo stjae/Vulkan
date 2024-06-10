@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "../vulkan/swapchain.h"
 
 Camera::Camera()
 {

@@ -62,6 +62,7 @@ void Scene::UpdateCameraDescriptor(Camera* camera)
 {
     assert(camera != nullptr);
     meshRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
+    colorIDPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     skyboxRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     lineRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
 }
@@ -351,6 +352,7 @@ void Scene::UpdateMeshBuffer()
             bufferInfos.emplace_back(mesh->m_meshInstanceUBOBuffer->Get().descriptorBufferInfo);
         }
         meshRenderPipeline.UpdateMeshUBO(bufferInfos);
+        colorIDPipeline.UpdateMeshUBO(bufferInfos);
         shadowMapPipeline.UpdateMeshUBOBuffer(bufferInfos);
         shadowCubemapPipeline.UpdateMeshUBO(bufferInfos);
     }

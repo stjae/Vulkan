@@ -1,6 +1,7 @@
 #include "command.h"
 #include "device.h"
 #include "image.h"
+#include "swapchain.h"
 
 void vkn::Command::CreateCommandPool(vk::CommandPool& commandPool)
 {
@@ -143,4 +144,34 @@ void vkn::Command::SubmitAndWait(uint32_t count, vk::CommandBuffer* commandBuffe
     vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
     vkn::CheckResult(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
     vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
+}
+
+void vkn::Command::BeginRenderPass(const vk::CommandBuffer& commandBuffer, vk::RenderPass& renderPass, vk::Framebuffer& framebuffer, vk::Rect2D renderArea, std::vector<vk::ClearValue>& clearValues)
+{
+    vk::RenderPassBeginInfo renderPassInfo;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = framebuffer;
+    renderPassInfo.renderArea = renderArea;
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
+
+    commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+}
+
+void vkn::Command::SetViewport(const vk::CommandBuffer& commandBuffer)
+{
+    vk::Viewport viewport;
+    viewport.x = 0.0f;
+    viewport.y = static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height);
+    viewport.width = static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width);
+    viewport.height = -1.0f * static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    vk::Rect2D scissor;
+    scissor.offset = vk::Offset2D(0, 0);
+    scissor.extent = vkn::Swapchain::Get().swapchainImageExtent;
+
+    commandBuffer.setViewport(0, viewport);
+    commandBuffer.setScissor(0, scissor);
 }

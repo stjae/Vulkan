@@ -12,6 +12,7 @@ class Device
     {
         vk::Device device;
         vk::PhysicalDevice physicalDevice;
+        vk::SampleCountFlagBits maxSampleCount;
         vk::Queue graphicsQueue;
         vk::Queue computeQueue;
         vk::Queue presentQueue;
@@ -26,6 +27,7 @@ class Device
     void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void PickPhysicalDevice();
     bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
+    vk::SampleCountFlagBits GetSupportedMaxSampleCount();
 
 public:
     Device();

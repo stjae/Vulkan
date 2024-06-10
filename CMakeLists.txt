@@ -98,6 +98,8 @@ add_executable(${PROJECT_NAME}
         src/scene/cascadedShadowMap.h
         src/scene/light.cpp
         src/scene/light.h
+        src/pipeline/colorID.cpp
+        src/pipeline/colorID.h
 )
 
 if (WIN32)

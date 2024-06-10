@@ -43,6 +43,7 @@ void Device::PickPhysicalDevice()
     for (auto& device : deviceList) {
         if (IsDeviceSuitable(device)) {
             s_bundle.physicalDevice = device;
+            s_bundle.maxSampleCount = GetSupportedMaxSampleCount();
             break;
         }
     }
@@ -69,6 +70,24 @@ bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
     }
 
     return extensionSets.empty();
+}
+
+vk::SampleCountFlagBits Device::GetSupportedMaxSampleCount()
+{
+    vk::SampleCountFlags sampleCount = s_bundle.physicalDevice.getProperties().limits.framebufferColorSampleCounts & s_bundle.physicalDevice.getProperties().limits.framebufferDepthSampleCounts;
+    if (sampleCount & vk::SampleCountFlagBits::e64)
+        return vk::SampleCountFlagBits::e64;
+    if (sampleCount & vk::SampleCountFlagBits::e32)
+        return vk::SampleCountFlagBits::e32;
+    if (sampleCount & vk::SampleCountFlagBits::e16)
+        return vk::SampleCountFlagBits::e16;
+    if (sampleCount & vk::SampleCountFlagBits::e8)
+        return vk::SampleCountFlagBits::e8;
+    if (sampleCount & vk::SampleCountFlagBits::e4)
+        return vk::SampleCountFlagBits::e4;
+    if (sampleCount & vk::SampleCountFlagBits::e2)
+        return vk::SampleCountFlagBits::e2;
+    return vk::SampleCountFlagBits::e1;
 }
 
 void Device::FindQueueFamilies(const VkSurfaceKHR& surface)

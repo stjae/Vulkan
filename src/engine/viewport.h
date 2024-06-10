@@ -7,6 +7,7 @@
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
 #include "../pipeline/meshRender.h"
+#include "../pipeline/colorID.h"
 #include "../pipeline/shadowMap.h"
 #include "../pipeline/shadowCubemap.h"
 #include "../pipeline/envCubemap.h"
@@ -23,12 +24,15 @@ class Viewport
 
     vk::Framebuffer m_framebuffer;
     vkn::Image m_image;
+    vkn::Image m_final;
     vkn::Image m_depth;
+
+    vk::Framebuffer m_colorIDFramebuffer;
     vkn::Image m_colorID;
+    vkn::Image m_colorIDDepth;
 
     vk::CommandPool m_commandPool;
     vk::CommandBuffer m_commandBuffer;
-    vk::PipelineStageFlags m_waitStage = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
     vkn::Image m_pickedColor;
 

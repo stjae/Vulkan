@@ -2,11 +2,12 @@
 #define SKYBOXRENDERPIPELINE_H
 
 #include "../vulkan/pipeline.h"
+#include "../pipeline/meshRender.h"
 
 class SkyboxRenderPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;
-    void CreateRenderPass() override;
+    void CreateRenderPass() override{};
 
 public:
     void CreatePipeline() override;
