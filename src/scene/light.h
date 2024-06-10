@@ -18,9 +18,10 @@ struct DirLight
 
 struct PointLightUBO
 {
-    glm::mat4 model{ 1.0f };
+    glm::vec3 pos{ 0.0f };
+    float intensity = 5.0f;
     glm::vec3 color{ 1.0f };
-    float padding = 0.0f;
+    float range = 10.0f;
 };
 
 class PointLight

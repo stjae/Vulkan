@@ -28,8 +28,8 @@ layout (location = 2) in vec3 inColor;
 layout (location = 3) in vec2 inTexcoord;
 layout (location = 4) in vec3 inTangent;
 
-layout (location = 0) out vec4 outPos;
-layout (location = 1) out vec4 outLightPos;
+layout (location = 0) out vec3 outPos;
+layout (location = 1) out vec3 outLightPos;
 
 void main() {
 
@@ -37,6 +37,6 @@ void main() {
 
     gl_Position = proj.mat * pushConsts.view * worldPos;
 
-    outPos = worldPos;
-    outLightPos = light.data[pushConsts.lightIndex].model * vec4(0.0, 0.0, 0.0, 1.0);
+    outPos = worldPos.xyz;
+    outLightPos = light.data[pushConsts.lightIndex].pos;
 }

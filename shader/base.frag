@@ -59,27 +59,31 @@ layout (location = 1) out ivec2 outID;
 
 const float SHADOW_OFFSET = 0.005;
 
-float textureProj(vec4 shadowCoord, vec2 offset, uint cascadeIndex)
-{
-    float shadow = 0.0;
-    float bias = 0.005;
-
-    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
-        float dist = texture(shadowMap, vec3(shadowCoord.st + offset, cascadeIndex)).r;
-        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
-            // cast no shadow
-            shadow = 1.0;
-        }
-    }
-    return shadow;
-}
-
 const mat4 biasMat = mat4(
     0.5, 0.0, 0.0, 0.0,
     0.0, 0.5, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.5, 0.5, 0.0, 1.0
 );
+
+void CalculateLo(vec3 albedo, float roughness, float metallic, vec3 radiance, vec3 L, vec3 V, vec3 N, vec3 F0, inout vec3 Lo) {
+    vec3 H = normalize(V + L);
+
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    float NdotL = max(dot(N, L), 0.0);
+    Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+}
 
 void main() {
 
@@ -129,75 +133,50 @@ void main() {
     vec3 N = normalWorld;
     vec3 V = normalize(camera.data.pos - worldPos);
     vec3 R = reflect(-V, N);
-
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
-
     vec3 Lo = vec3(0.0);
 
+    // Directional Light Shadow
     uint cascadeIndex = 0;
     for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
         if (inViewPos.z < cascade.splits[i]) {
             cascadeIndex = i + 1;
         }
     }
-    float shadow = 1.0;
     vec4 shadowCoord = (biasMat * cascade.viewProj[cascadeIndex]) * vec4(worldPos, 1.0);
-    shadow = textureProj(shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
-    if (shadow < 1.0) {
+    float distToLight = shadowCoord.z;
+    bool castShadow = false;
+    shadowCoord /= shadowCoord.w;
+    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
+        float sampledDist = texture(shadowMap, vec3(shadowCoord.xy, cascadeIndex)).r;
+        if (shadowCoord.w > 0 && distToLight > sampledDist + SHADOW_OFFSET) {
+            castShadow = true;
+        }
+    }
+    if (!castShadow) {
         vec3 L = -cascade.lightDir;
         vec3 radiance = max(0.0, dot(L, N)) * cascade.color * cascade.intensity;
-
-        vec3 H = normalize(V + L);
-
-        // brdf
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, L, roughness);
-        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
-
-        vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-        vec3 specular = numerator / denominator;
-
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        CalculateLo(albedo, roughness, metallic, radiance, L, V, N, F0, Lo);
     }
 
+    // Point Light Shadow
     for (int i = 0; i < pushConsts.lightCount; i++) {
-        vec4 lightPos = light.data[i].model * vec4(0.0, 0.0, 0.0, 1.0);
-        vec3 lightVec = (inWorldPos - lightPos).xyz;
+        vec3 lightVec = inWorldPos.xyz - light.data[i].pos;
         float sampledDist = texture(samplerCube(shadowCubeMaps[i], repeatSampler), lightVec).r;
         float distToLight = length(lightVec);
-        // TODO: Attenuation
         bool castShadow = distToLight > sampledDist + SHADOW_OFFSET;
         if (castShadow) {
             continue;
         }
-
-        vec3 radiance = Lambert(normalWorld, inWorldPos.xyz, light.data[i]) * light.data[i].color;
-
-        vec3 L = normalize(lightPos.xyz - worldPos);
-        vec3 H = normalize(V + L);
-
-        // brdf
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, L, roughness);
-        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
-
-        vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-        vec3 specular = numerator / denominator;
-
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        vec3 L = normalize(light.data[i].pos - worldPos);
+        vec3 radiance = max(0.0, dot(L, N)) * light.data[i].color * light.data[i].intensity;
+        float attenuation = max(0.0, min(1.0, (light.data[i].range - distToLight) / (light.data[i].range - 0.001)));
+        radiance *= attenuation;
+        if (distToLight > light.data[i].range) {
+            radiance *= 0.0;
+        }
+        CalculateLo(albedo, roughness, metallic, radiance, L, V, N, F0, Lo);
     }
 
     vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);

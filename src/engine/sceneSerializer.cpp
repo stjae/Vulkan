@@ -110,8 +110,10 @@ void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& 
         out << YAML::Value << YAML::BeginSeq;
         for (auto& UBO : pointLight.Get()) {
             out << YAML::BeginMap;
-            out << YAML::Key << "Transform" << YAML::Value << UBO.model;
+            out << YAML::Key << "Position" << YAML::Value << UBO.pos;
             out << YAML::Key << "Color" << YAML::Value << UBO.color;
+            out << YAML::Key << "Intensity" << YAML::Value << UBO.intensity;
+            out << YAML::Key << "Range" << YAML::Value << UBO.range;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -225,8 +227,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath, con
     if (pointLights) {
         for (auto pointLight : pointLights) {
             scene.AddPointLight(commandBuffer);
-            scene.m_pointLight.m_UBOs.back().model = pointLight["Transform"].as<glm::mat4>();
+            scene.m_pointLight.m_UBOs.back().pos = pointLight["Position"].as<glm::vec3>();
             scene.m_pointLight.m_UBOs.back().color = pointLight["Color"].as<glm::vec3>();
+            scene.m_pointLight.m_UBOs.back().intensity = pointLight["Intensity"].as<float>();
+            scene.m_pointLight.m_UBOs.back().range = pointLight["Range"].as<float>();
         }
     }
 

@@ -60,7 +60,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointL
     vk::RenderPassBeginInfo renderPassBI(shadowCubemapPipeline.m_renderPass, m_framebuffers[faceIndex], { { 0, 0 }, { shadowCubemapSize, shadowCubemapSize } }, 2, clearValues.data());
 
     glm::mat4 viewMatrix;
-    glm::vec3 lightPos = light.Get()[lightIndex].model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec3 lightPos = light.Get()[lightIndex].pos;
     switch (faceIndex) {
     case 0: // POS X
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
