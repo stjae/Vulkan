@@ -16,9 +16,6 @@
 
 class Engine
 {
-    vk::CommandPool m_commandPool;
-    std::vector<vk::CommandBuffer> m_commandBuffers;
-
     vkn::Device m_device;
     vkn::Sync m_sync;
     vkn::Swapchain m_swapchain;
@@ -26,6 +23,7 @@ class Engine
     UI m_imGui;
     Scene m_scene;
     bool m_init;
+    std::vector<vk::CommandBuffer> m_commandBuffers;
 
     void UpdateSwapchain();
     void RecreateSwapchain();

@@ -16,9 +16,9 @@ class EnvCubemap : public vkn::Cubemap
     void DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
 
 public:
-    void CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
-    void DrawEnvCubemap(int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
-    void DrawMipmap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer);
+    void CreateEnvCubemap(const vk::CommandBuffer& commandBuffer, uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline);
+    void DrawEnvCubemap(const vk::CommandBuffer& commandBuffer, int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline);
+    void DrawMipmap(const vk::CommandBuffer& commandBuffer, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline);
 };
 
 #endif

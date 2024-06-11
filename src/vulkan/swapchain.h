@@ -36,7 +36,6 @@ class Swapchain
     std::vector<Image> m_swapchainImages;
 
     vk::CommandPool m_commandPool;
-    vk::CommandBuffer m_commandBuffer;
 
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
@@ -50,10 +49,11 @@ public:
     void InitSwapchain();
     void CreateRenderPass();
     void CreateFrameBuffer();
-    void Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::CommandBuffer& commandBuffer);
+    void Draw(uint32_t imageIndex, ImDrawData* imDrawData);
     void Destroy();
 
     static const Bundle& Get() { return s_bundle; }
+    vk::CommandBuffer m_commandBuffer;
 };
 } // namespace vkn
 

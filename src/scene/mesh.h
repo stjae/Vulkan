@@ -9,6 +9,8 @@
 #include "assimp/postprocess.h"
 #include "physicsDebugDrawer.h"
 #include "id.h"
+#include "../../imgui/imgui.h"
+#include "../../imgui/ImGuizmo.h"
 #include "camera.h"
 
 typedef struct MeshPart_ MeshPart;
@@ -71,9 +73,9 @@ typedef struct MeshInstanceUBO_
 {
     glm::mat4 model = glm::mat4(1.0f);
     // Color ID for mouse picking
-    int32_t meshColorID;
+    int32_t meshColorID = -1;
     int32_t textureID = 0;
-    int32_t instanceColorID;
+    int32_t instanceColorID = -1;
     int32_t useTexture = true;
     glm::vec3 albedo = glm::vec3(0.5f);
     float metallic = 0.0f;

@@ -125,11 +125,11 @@ void Swapchain::CreateFrameBuffer()
     }
 }
 
-void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::CommandBuffer& commandBuffer)
+void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
 {
     auto& swapchainImage = m_swapchainImages[imageIndex];
 
-    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eColorAttachmentOptimal);
+    Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = s_bundle.renderPass;
@@ -145,7 +145,7 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::Comm
     vk::ClearValue clearValues[] = { clearValue, depthClear };
     renderPassInfo.pClearValues = &clearValues[0];
 
-    commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+    m_commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
@@ -158,14 +158,14 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData, const vk::Comm
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
     scissor.extent = s_bundle.swapchainImageExtent;
-    commandBuffer.setViewport(0, viewport);
-    commandBuffer.setScissor(0, scissor);
+    m_commandBuffer.setViewport(0, viewport);
+    m_commandBuffer.setScissor(0, scissor);
 
-    ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(imDrawData, m_commandBuffer);
 
-    commandBuffer.endRenderPass();
+    m_commandBuffer.endRenderPass();
 
-    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
+    Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 }
 
 void Swapchain::Destroy()

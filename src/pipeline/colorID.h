@@ -9,6 +9,8 @@ class ColorIDPipeline : public vkn::Pipeline
     void CreateRenderPass() override;
 
 public:
+    std::vector<vk::ClearValue> m_clearValues;
+
     void CreatePipeline() override;
     void UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo);
     void UpdateMeshUBO(const std::vector<vk::DescriptorBufferInfo>& bufferInfos);

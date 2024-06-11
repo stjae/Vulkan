@@ -10,6 +10,7 @@ void MeshRenderPipeline::CreatePipeline()
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    m_clearValues = { vk::ClearValue({ 0.05f, 0.05f, 0.05f, 1.0f }), vk::ClearValue({ 0.05f, 0.05f, 0.05f, 1.0f }), vk::ClearValue(vk::ClearDepthStencilValue(1.0f)) };
 
     SetUpDescriptors();
     CreateRenderPass();

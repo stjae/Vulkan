@@ -38,6 +38,11 @@ void vkn::Command::Begin(const vk::CommandBuffer& commandBuffer, vk::CommandBuff
     vkn::CheckResult(commandBuffer.begin(&beginInfo));
 }
 
+void vkn::Command::End(const vk::CommandBuffer& commandBuffer)
+{
+    commandBuffer.end();
+}
+
 void vkn::Command::CopyBufferToBuffer(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
 {
     vk::BufferCopy copyRegion(0, 0, size);

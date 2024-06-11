@@ -20,8 +20,8 @@
 
 class UI
 {
-    // vk::CommandPool m_commandPool;
-    // vk::CommandBuffer m_commandBuffer;
+    vk::CommandPool m_commandPool;
+    vk::CommandBuffer m_commandBuffer;
 
     vk::DescriptorPool m_descriptorPool;
     std::vector<vkn::DescriptorBinding> m_descriptorBindings;
@@ -42,12 +42,12 @@ class UI
     // vk::DescriptorSet m_hdriThumbnailDescriptorSet;
     // vk::DescriptorSet m_shadowMapDescriptorSet;
 
-    void DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& commandBuffer);
+    void DrawDockSpace(Scene& scene, bool& init);
     void DrawViewport(Scene& scene, Viewport& viewport);
     void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
     void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
-    void DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuffer);
-    void DrawResourceWindow(Scene& scene, const vk::CommandBuffer& commandBuffer);
+    void DrawSceneAttribWindow(Scene& scene);
+    void DrawResourceWindow(Scene& scene);
     void ShowInformationOverlay(const Scene& scene);
 
     static float GetButtonPadding(float desiredButtonSize, float paddingRatio) { return desiredButtonSize * paddingRatio; }
@@ -59,12 +59,12 @@ public:
     inline static double s_dragDropMouseY;
     inline static std::unique_ptr<Resource> s_dragDropResource;
 
-    void Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene, const vk::CommandBuffer& commandBuffer);
-    void Draw(Scene& scene, Viewport& viewport, bool& init, const vk::CommandBuffer& commandBuffer);
+    void Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
+    void Draw(Scene& scene, Viewport& viewport, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Viewport& viewport, Scene& scene);
+    void DrawInitPopup(bool& init, Scene& scene);
     ~UI();
-    void DrawInitPopup(bool& init, Scene& scene, const vk::CommandBuffer& commandBuffer);
 };
 
 #endif

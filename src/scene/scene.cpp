@@ -1,18 +1,23 @@
 #include "scene.h"
 #include "../engine/script/script.h"
 
-void Scene::Init(const vk::CommandBuffer& commandBuffer)
+void Scene::Init()
 {
+    vkn::Command::CreateCommandPool(m_commandPool);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
+    vkn::Command::Begin(m_commandBuffer);
     vkn::Image::CreateSampler();
     Script::Init(this);
     CreateCommandBuffers();
     CreateMainCamera();
     CreateShadowMap();
     ShadowCubemap::CreateProjBuffer();
-    CreateEnvironmentMap(commandBuffer);
-    CreateDummyEnvMap(commandBuffer);
-    SelectDummyEnvMap(commandBuffer);
+    CreateEnvironmentMap();
+    CreateDummyEnvMap();
+    SelectDummyEnvMap();
     Physics::InitPhysics();
+    vkn::Command::End(m_commandBuffer);
+    vkn::Command::SubmitAndWait(m_commandBuffer);
 }
 
 void Scene::CreateCommandBuffers()
@@ -41,20 +46,20 @@ void Scene::CreateShadowMap()
     meshRenderPipeline.UpdateSampler(samplerInfo);
 }
 
-void Scene::CreateEnvironmentMap(const vk::CommandBuffer& commandBuffer)
+void Scene::CreateEnvironmentMap()
 {
     m_envCube.CreateCube();
-    m_envCube.CreateBuffers(commandBuffer);
+    m_envCube.CreateBuffers(m_commandBuffer);
     m_envCube.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
     m_brdfLutSquare.CreateSquare();
-    m_brdfLutSquare.CreateBuffers(commandBuffer);
+    m_brdfLutSquare.CreateBuffers(m_commandBuffer);
     m_brdfLutSquare.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
     m_brdfLut.CreateImage({ 512, 512, 1 }, vk::Format::eR16G16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
     m_brdfLut.CreateImageView();
     m_brdfLut.CreateFramebuffer(brdfLutPipeline);
-    m_brdfLut.ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_brdfLut.Draw(m_brdfLutSquare, brdfLutPipeline, commandBuffer);
-    m_brdfLut.ChangeImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    m_brdfLut.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    m_brdfLut.Draw(m_commandBuffer, m_brdfLutSquare, brdfLutPipeline);
+    m_brdfLut.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     meshRenderPipeline.UpdateBrdfLut(m_brdfLut.Get().descriptorImageInfo);
 }
 
@@ -67,11 +72,11 @@ void Scene::UpdateCameraDescriptor(Camera* camera)
     lineRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
 }
 
-void Scene::AddResource(std::string& filePath, const vk::CommandBuffer& commandBuffer)
+void Scene::AddResource(std::string& filePath)
 {
     m_resources.emplace_back(filePath);
     m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), m_resources.back().filePath));
-    m_meshes.back()->CreateBuffers(commandBuffer);
+    m_meshes.back()->CreateBuffers(m_commandBuffer);
     m_resources.back().ptr = m_meshes.back();
 
     if (!m_meshes.back()->m_materials.empty()) {
@@ -139,9 +144,9 @@ void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
     UpdateMeshBuffer();
 }
 
-void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo, const vk::CommandBuffer& commandBuffer)
+void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo)
 {
-    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers, commandBuffer);
+    meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(m_commandBuffer, physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers);
     meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
     meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
     Physics::AddRigidBody(mesh, meshInstance);
@@ -158,68 +163,68 @@ void Scene::DeletePhysics(MeshInstance& meshInstance)
     meshInstance.physicsDebugUBO = {};
 }
 
-void Scene::Update(const vk::CommandBuffer& commandBuffer)
+void Scene::Update()
 {
-    HandlePointLightDuplication(commandBuffer);
-    HandleMeshDuplication(commandBuffer);
+    HandlePointLightDuplication();
+    HandleMeshDuplication();
 
-    UpdateMainCamera(commandBuffer);
-    UpdatePointLight(commandBuffer);
+    UpdateCamera();
+    UpdatePointLight();
     UpdatePhysicsDebug();
-    UpdateShadowMap(commandBuffer);
+    UpdateShadowMap();
 }
 
-void Scene::AddPointLight(const vk::CommandBuffer& commandBuffer)
+void Scene::AddPointLight()
 {
     m_pointLight.Add();
     m_shadowCubemaps.emplace_back();
     m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-    m_shadowCubemaps.back()->CreateShadowMap(commandBuffer);
+    m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffer);
     UpdatePointLightBuffer();
 }
 
-void Scene::AddEnvironmentMap(const std::string& hdriFilePath, const vk::CommandBuffer& commandBuffer)
+void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
 {
     m_hdriFilePath = hdriFilePath;
     m_envMap = std::make_unique<vkn::Image>();
-    m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, commandBuffer);
+    m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffer);
     envCubemapPipeline.UpdateHDRimage(m_envMap->Get().descriptorImageInfo);
-    UpdateEnvCubemaps(commandBuffer);
+    UpdateEnvCubemaps();
 }
 
-void Scene::SelectDummyEnvMap(const vk::CommandBuffer& commandBuffer)
+void Scene::SelectDummyEnvMap()
 {
     envCubemapPipeline.UpdateHDRimage(m_dummyEnvMap->Get().descriptorImageInfo);
-    UpdateEnvCubemaps(commandBuffer);
+    UpdateEnvCubemaps();
 }
 
-void Scene::CreateDummyEnvMap(const vk::CommandBuffer& commandBuffer)
+void Scene::CreateDummyEnvMap()
 {
     m_dummyEnvMap = std::make_unique<vkn::Image>();
-    m_dummyEnvMap->InsertDummyImage(commandBuffer, { 128, 128, 128, 255 });
+    m_dummyEnvMap->InsertDummyImage(m_commandBuffer, { 128, 128, 128, 255 });
 }
 
-void Scene::UpdateEnvCubemaps(const vk::CommandBuffer& commandBuffer)
+void Scene::UpdateEnvCubemaps()
 {
     m_envCubemap = std::make_unique<EnvCubemap>();
-    m_envCubemap->CreateEnvCubemap(1024, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, envCubemapPipeline, commandBuffer);
-    m_envCubemap->ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_envCubemap->CreateMipmap(commandBuffer);
-    m_envCubemap->m_mipmap.ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    m_envCubemap->DrawMipmap(m_envCube, envCubemapPipeline, commandBuffer);
+    m_envCubemap->CreateEnvCubemap(m_commandBuffer, 1024, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, envCubemapPipeline);
+    m_envCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    m_envCubemap->CreateMipmap(m_commandBuffer);
+    m_envCubemap->m_mipmap.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    m_envCubemap->DrawMipmap(m_commandBuffer, m_envCube, envCubemapPipeline);
     irradianceCubemapPipeline.UpdateEnvCubemap(m_envCubemap->m_mipmapDescriptorImageInfo);
     m_irradianceCubemap = std::make_unique<EnvCubemap>();
-    m_irradianceCubemap->CreateEnvCubemap(32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline, commandBuffer);
-    m_irradianceCubemap->ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_irradianceCubemap->DrawEnvCubemap(32, m_envCube, irradianceCubemapPipeline, commandBuffer);
-    m_irradianceCubemap->ChangeImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    m_irradianceCubemap->CreateEnvCubemap(m_commandBuffer, 32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline);
+    m_irradianceCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    m_irradianceCubemap->DrawEnvCubemap(m_commandBuffer, 32, m_envCube, irradianceCubemapPipeline);
+    m_irradianceCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     prefilteredCubemapPipeline.UpdateEnvCubemap(m_envCubemap->m_mipmapDescriptorImageInfo);
     m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
-    m_prefilteredCubemap->CreateEnvCubemap(256, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, prefilteredCubemapPipeline, commandBuffer);
-    m_prefilteredCubemap->ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_prefilteredCubemap->CreateMipmap(commandBuffer);
-    m_prefilteredCubemap->m_mipmap.ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    m_prefilteredCubemap->DrawMipmap(m_envCube, prefilteredCubemapPipeline, commandBuffer);
+    m_prefilteredCubemap->CreateEnvCubemap(m_commandBuffer, 256, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, prefilteredCubemapPipeline);
+    m_prefilteredCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    m_prefilteredCubemap->CreateMipmap(m_commandBuffer);
+    m_prefilteredCubemap->m_mipmap.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    m_prefilteredCubemap->DrawMipmap(m_commandBuffer, m_envCube, prefilteredCubemapPipeline);
     skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);
@@ -234,7 +239,7 @@ void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
     UpdateMeshBuffer();
 }
 
-void Scene::DeletePointLight(const vk::CommandBuffer& commandBuffer)
+void Scene::DeletePointLight()
 {
     m_pointLight.Delete(m_selectedLightIndex);
     UnselectAll();
@@ -257,19 +262,19 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
     m_selectedMeshInstanceID = instanceID;
 }
 
-void Scene::HandlePointLightDuplication(const vk::CommandBuffer& commandBuffer)
+void Scene::HandlePointLightDuplication()
 {
     if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
         m_pointLight.Duplicate(m_selectedLightIndex);
         m_selectedLightIndex = (int)m_pointLight.Size() - 1;
         m_shadowCubemaps.emplace_back();
         m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-        m_shadowCubemaps.back()->CreateShadowMap(commandBuffer);
+        m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffer);
         UpdatePointLightBuffer();
     }
 }
 
-void Scene::HandleMeshDuplication(const vk::CommandBuffer& commandBuffer)
+void Scene::HandleMeshDuplication()
 {
     if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
         auto& mesh = GetSelectedMesh();
@@ -283,7 +288,7 @@ void Scene::HandleMeshDuplication(const vk::CommandBuffer& commandBuffer)
         newInstance.UBO.instanceColorID = newColorID;
         // Copy physics information
         if (srcInstance.physicsInfo) {
-            AddPhysics(mesh, newInstance, *srcInstance.physicsInfo, commandBuffer);
+            AddPhysics(mesh, newInstance, *srcInstance.physicsInfo);
         }
         // Select new instance
         m_selectedMeshInstanceID = newInstance.UBO.instanceColorID;
@@ -292,19 +297,19 @@ void Scene::HandleMeshDuplication(const vk::CommandBuffer& commandBuffer)
     }
 }
 
-void Scene::UpdateMainCamera(const vk::CommandBuffer& commandBuffer)
+void Scene::UpdateCamera()
 {
-    if (m_isPlaying && m_selectedCameraUUID != 0)
-        return;
-    m_mainCamera->Control();
-    m_mainCamera->Update(commandBuffer);
+    if (m_selectedCamera == nullptr)
+        m_selectedCamera = m_mainCamera.get();
+    m_selectedCamera->Control();
+    m_selectedCamera->Update(m_commandBuffer);
 }
 
-void Scene::UpdatePointLight(const vk::CommandBuffer& commandBuffer)
+void Scene::UpdatePointLight()
 {
-    m_pointLight.Update(commandBuffer);
+    m_pointLight.Update(m_commandBuffer);
     for (int i = 0; i < m_pointLight.Size(); i++) {
-        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLight, m_meshes, commandBuffer);
+        m_shadowCubemaps[i]->DrawShadowMap(i, m_pointLight, m_meshes, m_commandBuffer);
     }
 }
 
@@ -314,12 +319,12 @@ void Scene::UpdatePointLightBuffer()
     UpdateShadowCubemaps();
 }
 
-void Scene::UpdateShadowMap(const vk::CommandBuffer& commandBuffer)
+void Scene::UpdateShadowMap()
 {
     // TODO:
     m_cascadedShadowMap.UpdateCascades(m_mainCamera.get(), m_dirLight);
-    m_cascadedShadowMap.UpdateUBO(m_dirLight, commandBuffer);
-    m_cascadedShadowMap.Draw(m_meshes, commandBuffer);
+    m_cascadedShadowMap.UpdateUBO(m_dirLight, m_commandBuffer);
+    m_cascadedShadowMap.Draw(m_meshes, m_commandBuffer);
 }
 
 void Scene::UpdateShadowCubemaps()
@@ -394,10 +399,10 @@ void Scene::UpdateTextureDescriptors()
     meshRenderPipeline.UpdateRoughnessTextures(imageInfos);
 }
 
-void Scene::Clear(const vk::CommandBuffer& commandBuffer)
+void Scene::Clear()
 {
     UnselectAll();
-    Stop(commandBuffer);
+    Stop();
     m_sceneFilePath.clear();
     m_hdriFilePath.clear();
     m_envMap.reset();
@@ -427,12 +432,12 @@ void Scene::CopyMeshInstances()
             if (instance->physicsInfo)
                 m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
             if (instance->camera)
-                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>();
+                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(instance->UUID);
         }
     }
 }
 
-void Scene::RevertMeshInstances(const vk::CommandBuffer& commandBuffer)
+void Scene::RevertMeshInstances()
 {
     if (m_meshCopies.empty())
         return;
@@ -444,17 +449,17 @@ void Scene::RevertMeshInstances(const vk::CommandBuffer& commandBuffer)
             *m_meshes[i]->m_meshInstances.back() = *m_meshCopies[i].m_meshInstances[j];
             m_meshInstanceMap[m_meshCopies[i].m_meshInstances[j]->UUID] = m_meshCopies[i].m_meshInstances[j].get();
             if (m_meshCopies[i].m_meshInstances[j]->physicsInfo) {
-                AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo, commandBuffer);
+                AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo);
                 m_meshes[i]->m_meshInstances.back()->physicsDebugUBO.scale = m_meshCopies[i].m_meshInstances[j]->physicsInfo->scale;
             }
             if (m_meshCopies[i].m_meshInstances[j]->camera)
-                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>();
+                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_meshCopies[i].m_meshInstances[j]->UUID);
         }
     }
     m_meshCopies.clear();
 }
 
-void Scene::Play(const vk::CommandBuffer& commandBuffer)
+void Scene::Play()
 {
     if (!m_isPlaying) {
         return;
@@ -465,21 +470,9 @@ void Scene::Play(const vk::CommandBuffer& commandBuffer)
         m_isStartUp = false;
         Physics::UpdateRigidBodies(m_meshes);
         CopyMeshInstances();
-        // TODO: select camera here
-        if (m_selectedCameraUUID == 0) {
-            SelectCamera(m_mainCamera.get());
-        } else {
-            m_selectedCameraMeshInstance = m_meshInstanceMap[m_selectedCameraUUID];
-            SelectCamera(m_selectedCameraMeshInstance->camera.get());
-        }
         for (auto& scriptInstance : Script::s_scriptInstances) {
             scriptInstance.second->InvokeOnCreate();
         }
-    }
-
-    if (m_selectedCameraUUID != 0) {
-        m_selectedCameraMeshInstance->camera->ControlByMatrix(m_selectedCameraMeshInstance->UBO.model);
-        m_selectedCameraMeshInstance->camera->Update(commandBuffer);
     }
 
     Physics::Simulate(m_meshes);
@@ -489,7 +482,7 @@ void Scene::Play(const vk::CommandBuffer& commandBuffer)
     }
 }
 
-void Scene::Stop(const vk::CommandBuffer& commandBuffer)
+void Scene::Stop()
 {
     SelectCamera(m_mainCamera.get());
 
@@ -503,7 +496,7 @@ void Scene::Stop(const vk::CommandBuffer& commandBuffer)
         scriptInstance.second->InvokeOnDestroy();
     }
     m_isStartUp = true;
-    RevertMeshInstances(commandBuffer);
+    RevertMeshInstances();
     UpdateMeshBuffer();
 }
 
@@ -517,16 +510,18 @@ void Scene::UnselectAll()
 Scene::~Scene()
 {
     ShadowCubemap::DestroyBuffer();
+    vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& imageLoadCommandPool : m_imageLoadCommandPools)
         vkn::Device::Get().device.destroyCommandPool(imageLoadCommandPool);
 }
 
 void Scene::AddCamera(MeshInstance& instance)
 {
-    instance.camera = std::make_unique<SubCamera>();
+    instance.camera = std::make_unique<SubCamera>(instance.UUID);
 }
 
 void Scene::SelectCamera(Camera* camera)
 {
+    m_selectedCamera = camera;
     UpdateCameraDescriptor(camera);
 }

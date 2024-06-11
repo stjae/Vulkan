@@ -10,6 +10,7 @@ void ColorIDPipeline::CreatePipeline()
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);
     attachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG;
+    m_clearValues = { vk::ClearValue({ -1, -1, -1, -1 }), vk::ClearValue(vk::ClearDepthStencilValue(1.0f)) };
 
     SetUpDescriptors();
     CreateRenderPass();

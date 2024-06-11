@@ -54,7 +54,7 @@ public:
         }
     }
 
-    PhysicsDebugDrawer(const PhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers, const vk::CommandBuffer& commandBuffer)
+    PhysicsDebugDrawer(const vk::CommandBuffer& commandBuffer, const PhysicsInfo& physicsInfo, const std::vector<std::vector<uint32_t>>& indexContainers, const std::vector<std::vector<Vertex>>& vertexContainers)
     {
         btVector3 color = physicsInfo.rigidBodyType == eRigidBodyType::STATIC ? btVector3(0.5f, 0.0f, 0.0f) : btVector3(0.0f, 0.5f, 0.0f);
         btTransform transform;

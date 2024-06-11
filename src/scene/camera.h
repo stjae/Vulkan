@@ -5,9 +5,9 @@
 #include "../window.h"
 #include "../vulkan/buffer.h"
 #include "../pipeline/meshRender.h"
-#include "../../imgui/imgui.h"
 #include "../vulkan/sync.h"
 #include "../vulkan/command.h"
+#include "../../imgui/imgui.h"
 #include "../../imgui/ImGuizmo.h"
 #include "../time.h"
 
@@ -45,29 +45,25 @@ protected:
     glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_rotation = { 0.0f, 0.0f, 0.0f };
 
+    uint64_t m_assignedMeshInstanceID = 0;
+
     void SetControl();
 
 public:
     explicit Camera();
     bool IsControllable() const { return m_isControllable; }
     const CameraUBO& GetUBO() { return m_cameraUBO; }
-    const vk::DescriptorBufferInfo& GetBufferInfo() { return m_cameraBuffer->Get().descriptorBufferInfo; }
     virtual void Control() = 0;
-    virtual void ControlByMatrix(const glm::mat4& matrix) = 0;
-    float GetZnear() const { return m_zNear; }
-    float GetZfar() const { return m_zFar; }
     void Update(const vk::CommandBuffer& commandBuffer);
     float GetCascadeDepth(int index);
     glm::mat4 GetCascadeProj(int index);
-    glm::vec3& GetDirection() { return m_dir; }
     glm::vec3& GetRotation() { return m_rotation; }
+    uint64_t GetAssignedMeshInstanceID();
 };
 
 class MainCamera : public Camera
 {
     float m_speed = 4.0f;
-
-    void ControlByMatrix(const glm::mat4& matrix) override {}
 
 public:
     void Control() override;
@@ -77,10 +73,9 @@ class SubCamera : public Camera
 {
     bool m_isFirstFrame = true;
 
-    void Control() override {}
-
 public:
-    void ControlByMatrix(const glm::mat4& matrix) override;
+    SubCamera(uint64_t meshInstanceID);
+    void Control() override;
 };
 
 #endif

@@ -1,6 +1,6 @@
 #include "prefilteredCubemap.h"
 
-void PrefilteredCubemap::DrawMipmap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
+void PrefilteredCubemap::DrawMipmap(const vk::CommandBuffer& commandBuffer, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline)
 {
     for (int mipLevel = 0; mipLevel < m_numMips; mipLevel++) {
         int mipSize = m_baseMipSize * std::pow(0.5, mipLevel);

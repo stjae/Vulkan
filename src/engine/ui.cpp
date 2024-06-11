@@ -1,8 +1,12 @@
 #include "ui.h"
 #include "font/IconsFontAwesome5.h"
 
-void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene, const vk::CommandBuffer& commandBuffer)
+void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
 {
+    vkn::Command::CreateCommandPool(m_commandPool);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
+    vkn::Command::Begin(m_commandBuffer);
+
     std::vector<vk::DescriptorPoolSize> poolSizes;
     uint32_t maxSets = 0;
 
@@ -45,21 +49,24 @@ void UI::Setup(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scen
     path.append(FONT_ICON_FILE_NAME_FAS);
     io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
 
-    m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
+    m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
+    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
+    m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
+    m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_playIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_playIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, commandBuffer);
+    m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_stopIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_stopIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     s_dragDropped = false;
+
+    vkn::Command::End(m_commandBuffer);
+    vkn::Command::SubmitAndWait(m_commandBuffer);
 }
 
-void UI::Draw(Scene& scene, Viewport& viewport, bool& init, const vk::CommandBuffer& commandBuffer)
+void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -77,14 +84,14 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init, const vk::CommandBuf
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Delete) && scene.m_selectedLightIndex > -1) {
-        scene.DeletePointLight(commandBuffer);
+        scene.DeletePointLight();
     }
 
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
-    DrawDockSpace(scene, init, commandBuffer);
+    DrawDockSpace(scene, init);
     DrawViewport(scene, viewport);
-    DrawSceneAttribWindow(scene, commandBuffer);
-    DrawResourceWindow(scene, commandBuffer);
+    DrawSceneAttribWindow(scene);
+    DrawResourceWindow(scene);
     ShowInformationOverlay(scene);
     ImGui::PopItemFlag();
 
@@ -92,7 +99,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init, const vk::CommandBuf
     ImGui::Render();
 }
 
-void UI::DrawInitPopup(bool& init, Scene& scene, const vk::CommandBuffer& commandBuffer)
+void UI::DrawInitPopup(bool& init, Scene& scene)
 {
     ImGui::OpenPopup("Welcome");
 
@@ -112,7 +119,7 @@ void UI::DrawInitPopup(bool& init, Scene& scene, const vk::CommandBuffer& comman
             std::string openFilePath = nfdOpen({ "Scene", "scn" });
             if (!openFilePath.empty()) {
                 SceneSerializer serializer;
-                serializer.Deserialize(scene, openFilePath, commandBuffer);
+                serializer.Deserialize(scene, openFilePath);
                 init = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -121,7 +128,7 @@ void UI::DrawInitPopup(bool& init, Scene& scene, const vk::CommandBuffer& comman
     }
 }
 
-void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& commandBuffer)
+void UI::DrawDockSpace(Scene& scene, bool& init)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -165,7 +172,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& comman
                 if (!sceneFilePath.empty()) {
                     scene.m_sceneFilePath = sceneFilePath;
                     SceneSerializer serializer;
-                    serializer.Deserialize(scene, sceneFilePath, commandBuffer);
+                    serializer.Deserialize(scene, sceneFilePath);
                 }
             }
             if (ImGui::MenuItem("Save")) {
@@ -190,7 +197,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& comman
         }
         if (ImGui::BeginMenu("Add")) {
             if (ImGui::MenuItem("Point Light")) {
-                scene.AddPointLight(commandBuffer);
+                scene.AddPointLight();
             }
             ImGui::EndMenu();
         }
@@ -206,7 +213,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& comman
         if (ImGui::ImageButton(icon, { GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)), GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)) }, { 0, 0 }, { 1, 1 }, GetButtonPadding(buttonSize, paddingRatio))) {
             scene.m_isPlaying = !scene.m_isPlaying;
             if (!scene.m_isPlaying) {
-                scene.Stop(commandBuffer);
+                scene.Stop();
             }
         }
         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, scene.IsPlaying());
@@ -229,7 +236,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& comman
 
             if (ImGui::Button("OK", ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
-                scene.Clear(commandBuffer);
+                scene.Clear();
             }
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
@@ -239,7 +246,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init, const vk::CommandBuffer& comman
             ImGui::EndPopup();
         }
         if (init) {
-            DrawInitPopup(init, scene, commandBuffer);
+            DrawInitPopup(init, scene);
         }
     }
     ImGui::PopStyleVar();
@@ -302,7 +309,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
         ImVec2 screenPos(pos.x, pos.y);
         ImVec2 offset(300, 300);
         offset /= posZ;
-        if (posZ > 1.0f && scene.m_showLightIcon && scene.m_selectedCameraUUID == 0)
+        if (posZ > 1.0f && scene.m_showLightIcon && scene.m_selectedCamera->GetAssignedMeshInstanceID() == 0)
             ImGui::GetWindowDrawList()->AddImage(m_lightIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
@@ -363,7 +370,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     light.pos = lightTranslation * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuffer)
+void UI::DrawSceneAttribWindow(Scene& scene)
 {
     ImGui::Begin("Scene");
     ImGui::BeginTabBar("Scene");
@@ -460,7 +467,7 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
                     ImGui::EndCombo();
                 }
                 if (ImGui::Button("Add##physics")) {
-                    scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo, commandBuffer);
+                    scene.AddPhysics(*scene.m_meshes[scene.m_selectedMeshID], meshInstance, physicsInfo);
                 }
             } else {
                 if (ImGui::DragFloat3("Scale##physics", glm::value_ptr(meshInstance.physicsInfo->scale), 0.1f, 0.0f)) {
@@ -490,21 +497,20 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
             if (!meshInstance.camera) {
                 if (ImGui::Button("Add##_CAMERA")) {
                     scene.AddCamera(meshInstance);
-                    scene.m_selectedCameraUUID = meshInstance.UUID;
                 }
             } else {
-                if (scene.m_selectedCameraUUID != meshInstance.UUID) {
+                if (scene.m_selectedCamera->GetAssignedMeshInstanceID() != meshInstance.UUID) {
                     if (ImGui::Button("Select##_CAMERA")) {
-                        scene.m_selectedCameraUUID = meshInstance.UUID;
+                        scene.SelectCamera(meshInstance.camera.get());
                     }
                 } else {
                     if (ImGui::Button("Deselect##_CAMERA")) {
-                        scene.m_selectedCameraUUID = 0;
+                        scene.SelectCamera(scene.m_mainCamera.get());
                     }
                 }
                 if (ImGui::Button("Delete##_CAMERA")) {
                     meshInstance.camera.reset();
-                    scene.m_selectedCameraUUID = 0;
+                    scene.SelectCamera(scene.m_mainCamera.get());
                 }
             }
         }
@@ -523,7 +529,7 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Delete")) {
                         scene.m_selectedLightIndex = i;
-                        scene.DeletePointLight(commandBuffer);
+                        scene.DeletePointLight();
                     }
                     ImGui::EndPopup();
                 }
@@ -570,7 +576,7 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
         if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)), GetIconSize(iblButtonSize, GetButtonPadding(iblButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(iblButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             std::string hdriFilePath = nfdOpen({ "HDRI", "hdr" });
             if (!hdriFilePath.empty()) {
-                scene.AddEnvironmentMap(hdriFilePath, commandBuffer);
+                scene.AddEnvironmentMap(hdriFilePath);
             }
         }
         if (!scene.m_hdriFilePath.empty()) {
@@ -578,7 +584,7 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
         }
         if (ImGui::Button("Remove##_IBL")) {
             scene.m_hdriFilePath.clear();
-            scene.SelectDummyEnvMap(commandBuffer);
+            scene.SelectDummyEnvMap();
         }
         ImGui::SeparatorText("Exposure");
         ImGui::SliderFloat("Exposure##_IBL", &scene.m_iblExposure, 0.0f, 10.0f);
@@ -591,7 +597,7 @@ void UI::DrawSceneAttribWindow(Scene& scene, const vk::CommandBuffer& commandBuf
     ImGui::End();
 }
 
-void UI::DrawResourceWindow(Scene& scene, const vk::CommandBuffer& commandBuffer)
+void UI::DrawResourceWindow(Scene& scene)
 {
     ImGui::Begin("Resource");
     ImGui::BeginTabBar("Resource");
@@ -604,7 +610,7 @@ void UI::DrawResourceWindow(Scene& scene, const vk::CommandBuffer& commandBuffer
         if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
             std::string path = nfdOpen({ "Model", "gltf" });
             if (!path.empty()) {
-                scene.AddResource(path, commandBuffer);
+                scene.AddResource(path);
             }
         }
         ImGui::NextColumn();
@@ -703,6 +709,7 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
 
 UI::~UI()
 {
+    vkn::Device::Get().device.destroyCommandPool(m_commandPool);
     for (auto& layout : m_descriptorSetLayouts)
         vkn::Device::Get().device.destroyDescriptorSetLayout(layout);
     ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSet);

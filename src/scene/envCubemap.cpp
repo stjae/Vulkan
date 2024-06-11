@@ -1,6 +1,6 @@
 #include "envCubemap.h"
 
-void EnvCubemap::CreateEnvCubemap(uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
+void EnvCubemap::CreateEnvCubemap(const vk::CommandBuffer& commandBuffer, uint32_t cubemapSize, vk::Format format, vk::ImageUsageFlags usage, const vkn::Pipeline& cubemapPipeline)
 {
     m_baseMipSize = cubemapSize;
     m_numMips = (int)std::floor(std::log2(std::max(cubemapSize, cubemapSize))) + 1;
@@ -20,7 +20,7 @@ void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline)
     }
 }
 
-void EnvCubemap::DrawEnvCubemap(int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
+void EnvCubemap::DrawEnvCubemap(const vk::CommandBuffer& commandBuffer, int size, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline)
 {
     vk::Viewport viewport({}, {}, (float)size, (float)size, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -82,11 +82,11 @@ void EnvCubemap::DrawEnvCubemapFace(uint32_t faceIndex, const Mesh& envCube, con
     commandBuffer.endRenderPass();
 }
 
-void EnvCubemap::DrawMipmap(const Mesh& envCube, const vkn::Pipeline& cubemapPipeline, const vk::CommandBuffer& commandBuffer)
+void EnvCubemap::DrawMipmap(const vk::CommandBuffer& commandBuffer, const Mesh& envCube, const vkn::Pipeline& cubemapPipeline)
 {
     for (int mipLevel = 0; mipLevel < m_numMips; mipLevel++) {
         int mipSize = m_baseMipSize * std::pow(0.5, mipLevel);
-        DrawEnvCubemap(mipSize, envCube, cubemapPipeline, commandBuffer);
+        DrawEnvCubemap(commandBuffer, mipSize, envCube, cubemapPipeline);
         for (int i = 0; i < 6; i++) {
             m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
             vkn::Command::ChangeImageLayout(commandBuffer, m_bundle.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal, m_imageViewCreateInfo.subresourceRange);

@@ -6,6 +6,7 @@ Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(f
 
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
+    vkn::Command::AllocateCommandBuffer(m_commandPool, m_pickColorCommandBuffer);
 
     meshRenderPipeline.CreatePipeline();
     colorIDPipeline.CreatePipeline();
@@ -32,11 +33,6 @@ void Viewport::CreateImage()
 
     m_final.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_final.CreateImageView();
-
-    vkn::Command::Begin(m_commandBuffer);
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_final.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
-    m_commandBuffer.end();
-    vkn::Command::SubmitAndWait(m_commandBuffer);
 
     std::vector<vk::ImageView> attachments = {
         m_image.Get().imageView,
@@ -122,9 +118,9 @@ void Viewport::UpdateImage()
 
 void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 {
-    vkn::Command::Begin(m_commandBuffer);
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_colorID.Get().image, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eTransferSrcOptimal);
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    vkn::Command::Begin(m_pickColorCommandBuffer);
+    vkn::Command::ChangeImageLayout(m_pickColorCommandBuffer, m_colorID.Get().image, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageLayout::eTransferSrcOptimal);
+    vkn::Command::ChangeImageLayout(m_pickColorCommandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     vk::ImageCopy region;
     region.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -151,50 +147,45 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
     region.extent.height = 1;
     region.extent.depth = 1;
 
-    m_commandBuffer.copyImage(m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
+    m_pickColorCommandBuffer.copyImage(m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, region);
 
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral);
-    m_commandBuffer.end();
-
-    vkn::Command::SubmitAndWait(m_commandBuffer);
+    vkn::Command::ChangeImageLayout(m_pickColorCommandBuffer, m_colorID.Get().image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    vkn::Command::ChangeImageLayout(m_pickColorCommandBuffer, m_pickedColor.Get().image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral);
+    vkn::Command::End(m_pickColorCommandBuffer);
+    vkn::Command::SubmitAndWait(m_pickColorCommandBuffer);
 
     const int32_t* data;
     vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_pickedColor.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
-    std::cout << "mesh id: " << data[0] << " instance id: " << data[1] << '\n';
+    Log(DEBUG, fmt::terminal_color::black, "[Mesh ID: {0}, Instance ID: {1}]", data[0], data[1]);
     scene.SelectByColorID(data[0], data[1]);
     vkn::Device::Get().device.unmapMemory(m_pickedColor.m_memory.GetMemory());
 }
 
-void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
+void Viewport::Draw(const Scene& scene)
 {
-    vk::ClearValue clearValue;
-    clearValue.color = { std::array<float, 4>{ 0.05f, 0.05f, 0.05f, 1.0f } };
-    clearValue.depthStencil.depth = 1.0f;
-    std::vector<vk::ClearValue> clearValues = { clearValue, clearValue, clearValue };
-    vkn::Command::BeginRenderPass(commandBuffer, meshRenderPipeline.m_renderPass, m_framebuffer, { {}, m_extent }, clearValues);
-    vkn::Command::SetViewport(commandBuffer);
+    vkn::Command::BeginRenderPass(m_commandBuffer, meshRenderPipeline.m_renderPass, m_framebuffer, { {}, m_extent }, meshRenderPipeline.m_clearValues);
+    vkn::Command::SetViewport(m_commandBuffer);
     vk::DeviceSize vertexOffsets[]{ 0 };
     {
         // Skybox
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.m_pipelineLayout, 0, 1, &skyboxRenderPipeline.m_descriptorSets[0], 0, nullptr);
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.m_pipeline);
+        m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.m_pipelineLayout, 0, 1, &skyboxRenderPipeline.m_descriptorSets[0], 0, nullptr);
+        m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, skyboxRenderPipeline.m_pipeline);
         skyboxRenderPushConstants.exposure = scene.m_iblExposure;
-        commandBuffer.pushConstants(
+        m_commandBuffer.pushConstants(
             skyboxRenderPipeline.m_pipelineLayout,
             vk::ShaderStageFlagBits::eFragment,
             0,
             sizeof(SkyboxRenderPushConstants),
             &skyboxRenderPushConstants);
-        commandBuffer.bindVertexBuffers(0, 1, &scene.m_envCube.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
-        commandBuffer.bindIndexBuffer(scene.m_envCube.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
-        commandBuffer.drawIndexed(scene.m_envCube.GetIndicesCount(0), scene.m_envCube.GetInstanceCount(), 0, 0, 0);
+        m_commandBuffer.bindVertexBuffers(0, 1, &scene.m_envCube.m_vertexBuffers[0]->Get().buffer, vertexOffsets);
+        m_commandBuffer.bindIndexBuffer(scene.m_envCube.m_indexBuffers[0]->Get().buffer, 0, vk::IndexType::eUint32);
+        m_commandBuffer.drawIndexed(scene.m_envCube.GetIndicesCount(0), scene.m_envCube.GetInstanceCount(), 0, 0, 0);
     }
 
     {
         // Mesh
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.m_pipeline);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.m_pipelineLayout, 0, meshRenderPipeline.m_descriptorSets.size(), meshRenderPipeline.m_descriptorSets.data(), 0, nullptr);
+        m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.m_pipeline);
+        m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, meshRenderPipeline.m_pipelineLayout, 0, meshRenderPipeline.m_descriptorSets.size(), meshRenderPipeline.m_descriptorSets.data(), 0, nullptr);
         meshRenderPushConsts.iblExposure = scene.m_iblExposure;
         // not the actual index; doing this being unable to bind instance UBO in case there is no instance
         int meshIndex = 0;
@@ -205,16 +196,16 @@ void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
                 meshRenderPushConsts.lightCount = (int)scene.m_pointLight.Size();
                 meshIndex++;
                 for (const auto& part : mesh->GetMeshParts()) {
-                    commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-                    commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+                    m_commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+                    m_commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
                     meshRenderPushConsts.materialID = materialOffset + part.materialID;
-                    commandBuffer.pushConstants(
+                    m_commandBuffer.pushConstants(
                         meshRenderPipeline.m_pipelineLayout,
                         vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                         0,
                         sizeof(MeshRenderPushConstants),
                         &meshRenderPushConsts);
-                    commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
+                    m_commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
                 }
             }
             materialOffset += (int)mesh->GetMaterialCount();
@@ -224,22 +215,19 @@ void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
     // Physics Debug
     if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {
         if (scene.GetSelectedMeshInstance().physicsInfo) {
-            commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
-            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
-            commandBuffer.bindVertexBuffers(0, 1, &scene.GetSelectedMeshInstance().physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
-            commandBuffer.bindIndexBuffer(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
-            commandBuffer.drawIndexed(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_lineIndices.size(), 1, 0, 0, 0);
+            m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
+            m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
+            m_commandBuffer.bindVertexBuffers(0, 1, &scene.GetSelectedMeshInstance().physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
+            m_commandBuffer.bindIndexBuffer(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
+            m_commandBuffer.drawIndexed(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_lineIndices.size(), 1, 0, 0, 0);
         }
     }
-    commandBuffer.endRenderPass();
+    m_commandBuffer.endRenderPass();
 
     // Color ID
-    clearValue.color = { std::array<int32_t, 4>{ -1, -1, -1, -1 } };
-    clearValue.depthStencil.depth = 1.0f;
-    clearValues = { clearValue, clearValue };
-    vkn::Command::BeginRenderPass(commandBuffer, colorIDPipeline.m_renderPass, m_colorIDFramebuffer, { {}, m_extent }, clearValues);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorIDPipeline.m_pipeline);
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorIDPipeline.m_pipelineLayout, 0, colorIDPipeline.m_descriptorSets.size(), colorIDPipeline.m_descriptorSets.data(), 0, nullptr);
+    vkn::Command::BeginRenderPass(m_commandBuffer, colorIDPipeline.m_renderPass, m_colorIDFramebuffer, { {}, m_extent }, colorIDPipeline.m_clearValues);
+    m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorIDPipeline.m_pipeline);
+    m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorIDPipeline.m_pipelineLayout, 0, colorIDPipeline.m_descriptorSets.size(), colorIDPipeline.m_descriptorSets.data(), 0, nullptr);
 
     int meshIndex = 0;
     for (const auto& mesh : scene.m_meshes) {
@@ -247,19 +235,19 @@ void Viewport::Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer)
             meshRenderPushConsts.meshIndex = meshIndex;
             meshIndex++;
             for (const auto& part : mesh->GetMeshParts()) {
-                commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-                commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
-                commandBuffer.pushConstants(
+                m_commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
+                m_commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+                m_commandBuffer.pushConstants(
                     meshRenderPipeline.m_pipelineLayout,
                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                     0,
                     sizeof(MeshRenderPushConstants),
                     &meshRenderPushConsts);
-                commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
+                m_commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
             }
         }
     }
-    commandBuffer.endRenderPass();
+    m_commandBuffer.endRenderPass();
 }
 
 Viewport::~Viewport()

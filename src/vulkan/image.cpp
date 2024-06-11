@@ -166,7 +166,7 @@ void Image::CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t
     CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }
 
-void Image::Draw(const Mesh& square, const Pipeline& pipeline, const vk::CommandBuffer& commandBuffer)
+void Image::Draw(const vk::CommandBuffer& commandBuffer, const Mesh& square, const Pipeline& pipeline)
 {
     vk::Viewport viewport({}, {}, (float)m_imageCreateInfo.extent.width, (float)m_imageCreateInfo.extent.height, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);

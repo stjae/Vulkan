@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "../vulkan/swapchain.h"
+#include "mesh.h"
 
 Camera::Camera()
 {
@@ -55,6 +56,11 @@ glm::mat4 Camera::GetCascadeProj(int index)
     }
 }
 
+uint64_t Camera::GetAssignedMeshInstanceID()
+{
+    return m_assignedMeshInstanceID;
+}
+
 void MainCamera::Control()
 {
     SetControl();
@@ -107,7 +113,12 @@ void MainCamera::Control()
     }
 }
 
-void SubCamera::ControlByMatrix(const glm::mat4& matrix)
+SubCamera::SubCamera(uint64_t meshInstanceID)
+{
+    m_assignedMeshInstanceID = meshInstanceID;
+}
+
+void SubCamera::Control()
 {
     if (m_isFirstFrame) {
         m_isControllable = true;
@@ -118,19 +129,7 @@ void SubCamera::ControlByMatrix(const glm::mat4& matrix)
     }
     SetControl();
 
-    float translation[3];
-    float rotation[3];
-    float scale[3];
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(matrix), translation, rotation, scale);
-
-    rotation[0] += m_rotation.x;
-    rotation[1] += m_rotation.y;
-    rotation[2] += m_rotation.z;
-
-    float outMatrix[16];
-    ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, outMatrix);
-
-    m_pos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
-    m_dir = glm::make_mat4(outMatrix) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-    m_at = m_dir + m_pos;
+    // m_pos = glm::make_vec3(translation);
+    // m_dir = glm::make_mat4(outMatrix) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+    // m_at = m_dir + m_pos;
 }

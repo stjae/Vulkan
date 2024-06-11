@@ -33,6 +33,7 @@ class Viewport
 
     vk::CommandPool m_commandPool;
     vk::CommandBuffer m_commandBuffer;
+    vk::CommandBuffer m_pickColorCommandBuffer;
 
     vkn::Image m_pickedColor;
 
@@ -48,7 +49,7 @@ public:
     void CreateImage();
     void DestroyImage();
     void PickColor(double mouseX, double mouseY, Scene& scene);
-    void Draw(const Scene& scene, const vk::CommandBuffer& commandBuffer);
+    void Draw(const Scene& scene);
     ~Viewport();
     void UpdateImage();
 };
