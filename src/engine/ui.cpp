@@ -20,7 +20,6 @@ void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
 
     ImGui_ImplGlfw_InitForVulkan(Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
@@ -75,7 +74,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui::NewFrame();
 
-    if (ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_mainCamera->IsControllable() || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+    if ((ImGui::IsKeyPressed(ImGuiKey_Q) && !scene.m_mainCamera.IsControllable()) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         scene.UnselectAll();
     }
 
@@ -299,7 +298,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
     }
 
     for (auto& light : scene.m_pointLight.m_UBOs) {
-        glm::vec4 pos = scene.m_mainCamera->GetUBO().proj * scene.m_mainCamera->GetUBO().view * glm::vec4(light.pos, 1.0f);
+        glm::vec4 pos = scene.m_mainCamera.GetUBO().proj * scene.m_mainCamera.GetUBO().view * glm::vec4(light.pos, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
@@ -309,7 +308,7 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
         ImVec2 screenPos(pos.x, pos.y);
         ImVec2 offset(300, 300);
         offset /= posZ;
-        if (posZ > 1.0f && scene.m_showLightIcon && scene.m_selectedCamera->GetAssignedMeshInstanceID() == 0)
+        if (posZ > 1.0f && scene.m_showLightIcon && !scene.IsPlaying())
             ImGui::GetWindowDrawList()->AddImage(m_lightIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
     }
 
@@ -328,11 +327,11 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
 void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -343,7 +342,7 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     auto& mesh = scene.GetSelectedMesh();
     auto& meshInstance = scene.GetSelectedMeshInstance();
 
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
+    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
         meshInstance.UpdateTransform();
         mesh.UpdateUBO(meshInstance);
     }
@@ -352,11 +351,11 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
-    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_E) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera->IsControllable())
+    if (ImGui::IsKeyPressed(ImGuiKey_R) && !scene.m_mainCamera.IsControllable())
         OP = ImGuizmo::OPERATION::SCALE;
 
     ImGuizmo::BeginFrame();
@@ -366,7 +365,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
 
     auto& light = scene.m_pointLight.m_UBOs[scene.m_selectedLightIndex];
     glm::mat4 lightTranslation = glm::translate(glm::mat4(1.0f), light.pos);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera->GetUBO().view), glm::value_ptr(scene.m_mainCamera->GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightTranslation));
+    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightTranslation));
     light.pos = lightTranslation * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -494,23 +493,23 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             // Add Camera
             ImGui::SeparatorText("Camera");
-            if (!meshInstance.camera) {
+            if (!meshInstance.camera.lock()) {
                 if (ImGui::Button("Add##_CAMERA")) {
                     scene.AddCamera(meshInstance);
                 }
             } else {
-                if (scene.m_selectedCamera->GetAssignedMeshInstanceID() != meshInstance.UUID) {
+                if (scene.m_playCamera->GetAssignedMeshInstanceID() != meshInstance.UUID) {
                     if (ImGui::Button("Select##_CAMERA")) {
-                        scene.SelectCamera(meshInstance.camera.get());
+                        scene.m_playCamera = meshInstance.camera.lock().get();
                     }
                 } else {
                     if (ImGui::Button("Deselect##_CAMERA")) {
-                        scene.SelectCamera(scene.m_mainCamera.get());
+                        scene.m_playCamera = &scene.m_mainCamera;
                     }
                 }
                 if (ImGui::Button("Delete##_CAMERA")) {
-                    meshInstance.camera.reset();
-                    scene.SelectCamera(scene.m_mainCamera.get());
+                    scene.m_subCameras.erase(meshInstance.UUID);
+                    scene.m_playCamera = &scene.m_mainCamera;
                 }
             }
         }
@@ -550,10 +549,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 ImGui::SliderFloat3("Color##_POINTLIGHT", &light.color[0], 0.0f, 1.0f);
             }
             ImGui::SeparatorText("Shadow Map");
-            ImGui::SliderFloat("Cascade Range 1", &scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_zNear, scene.m_mainCamera->m_cascadeRanges[1]);
-            ImGui::SliderFloat("Cascade Range 2", &scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_cascadeRanges[0], scene.m_mainCamera->m_cascadeRanges[2]);
-            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_cascadeRanges[1], scene.m_mainCamera->m_cascadeRanges[3]);
-            ImGui::SliderFloat("Cascade Range 4", &scene.m_mainCamera->m_cascadeRanges[3], scene.m_mainCamera->m_cascadeRanges[2], scene.m_mainCamera->m_zFar);
+            ImGui::SliderFloat("Cascade Range 1", &scene.m_mainCamera.m_cascadeRanges[0], scene.m_mainCamera.m_zNear, scene.m_mainCamera.m_cascadeRanges[1]);
+            ImGui::SliderFloat("Cascade Range 2", &scene.m_mainCamera.m_cascadeRanges[1], scene.m_mainCamera.m_cascadeRanges[0], scene.m_mainCamera.m_cascadeRanges[2]);
+            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera.m_cascadeRanges[2], scene.m_mainCamera.m_cascadeRanges[1], scene.m_mainCamera.m_cascadeRanges[3]);
+            ImGui::SliderFloat("Cascade Range 4", &scene.m_mainCamera.m_cascadeRanges[3], scene.m_mainCamera.m_cascadeRanges[2], scene.m_mainCamera.m_zFar);
             bool cascadeDebug = scene.m_cascadedShadowMap.m_UBO.debug > 0;
             if (ImGui::Checkbox("Debug", &cascadeDebug))
                 scene.m_cascadedShadowMap.m_UBO.debug = cascadeDebug ? 1 : -1;
@@ -590,6 +589,38 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::SliderFloat("Exposure##_IBL", &scene.m_iblExposure, 0.0f, 10.0f);
         if (ImGui::Button("Reset##_IBL")) {
             scene.m_iblExposure = 1.0f;
+        }
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Camera")) {
+        static std::weak_ptr<SubCamera> subCamera;
+        if (ImGui::BeginListBox("##Camera", ImVec2(-FLT_MIN, 0.0f))) {
+            int i = 0;
+            for (auto& camera : scene.m_subCameras) {
+                std::string name(std::string("Camera ") + std::to_string(i));
+                ImGui::PushID(i);
+                if (ImGui::Selectable(name.c_str())) {
+                    subCamera = camera.second;
+                }
+                i++;
+                ImGui::PopID();
+            }
+            ImGui::EndListBox();
+            if (subCamera.lock()) {
+                if (scene.m_playCamera->GetAssignedMeshInstanceID() != subCamera.lock()->m_assignedMeshInstanceID) {
+                    if (ImGui::Button("Select##_CAMERA")) {
+                        scene.m_playCamera = subCamera.lock().get();
+                    }
+                } else {
+                    if (ImGui::Button("Deselect##_CAMERA")) {
+                        scene.m_playCamera = &scene.m_mainCamera;
+                    }
+                }
+                if (ImGui::Button("Delete##_CAMERA")) {
+                    scene.m_subCameras.erase(subCamera.lock()->m_assignedMeshInstanceID);
+                    scene.m_playCamera = &scene.m_mainCamera;
+                }
+            }
         }
         ImGui::EndTabItem();
     }
@@ -687,7 +718,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDocking;
     ImGui::Begin("Information", nullptr, window_flags);
     ImGui::Text("%s", std::to_string(Time::GetFrameCount()).c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene.m_mainCamera->IsControllable() ? "on" : "off");
+    ImGui::Text("Camera Control: %s [press C]", scene.m_mainCamera.IsControllable() ? "on" : "off");
     ImGui::End();
 }
 

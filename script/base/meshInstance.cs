@@ -1,4 +1,5 @@
-﻿using vkApp;
+﻿using System.Numerics;
+using vkApp;
 
 namespace vkApp
 {
@@ -54,12 +55,24 @@ namespace vkApp
                 return right;
             }
         }
-        public Matrix4 Matrix
+        public Matrix4x4 Matrix
         {
             get
             {
-                InternalCall.GetMatrix(ID, out Matrix4 matrix);
+                InternalCall.GetMatrix(ID, out Matrix4x4 matrix);
                 return matrix;
+            }
+        }
+        public Vector3 CameraTranslation
+        {
+            get
+            {
+                InternalCall.GetCameraTranslation(ID, out Vector3 translation);
+                return translation;
+            }
+            set
+            {
+                InternalCall.SetCameraTranslation(ID, ref value);
             }
         }
         public Vector3 CameraRotation
@@ -72,6 +85,18 @@ namespace vkApp
             set
             {
                 InternalCall.SetCameraRotation(ID, ref value);
+            }
+        }
+        public Vector3 CameraDirection
+        {
+            get
+            {
+                InternalCall.GetCameraDirection(ID, out Vector3 direction);
+                return direction;
+            }
+            set
+            {
+                InternalCall.SetCameraDirection(ID, ref value);
             }
         }
         public Vector3 Impulse

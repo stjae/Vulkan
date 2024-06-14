@@ -11,9 +11,11 @@
 struct CascadeUBO
 {
     float depth[SHADOW_MAP_CASCADE_COUNT];
+    float frustumWidth[SHADOW_MAP_CASCADE_COUNT];
     glm::mat4 viewProj[SHADOW_MAP_CASCADE_COUNT];
+    glm::mat4 invProj[SHADOW_MAP_CASCADE_COUNT];
     glm::vec3 lightDir;
-    int debug;
+    int debug = 0;
     glm::vec3 color{ 1.0f };
     float intensity = 1.0f;
 };
@@ -24,7 +26,9 @@ class Cascade : public vkn::Image
 
     ShadowMapPushConstants m_pushConstants = {};
     float m_depth;
+    float m_frustumWidth;
     glm::mat4 m_viewProj = {};
+    glm::mat4 m_invProj = {};
 
 public:
     void Create(int index, const vkn::Image& depthImage);

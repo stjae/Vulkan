@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace vkApp
 {
@@ -17,11 +18,19 @@ namespace vkApp
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetRight(ulong meshInstanceID, out Vector3 right);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4 matrix);
+        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4x4 matrix);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void GetCameraTranslation(ulong meshInstanceID, out Vector3 translation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetCameraTranslation(ulong meshInstanceID, ref Vector3 translation);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetCameraRotation(ulong meshInstanceID, out Vector3 rotation);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SetCameraRotation(ulong meshInstanceID, ref Vector3 rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void GetCameraDirection(ulong meshInstanceID, out Vector3 direction);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetCameraDirection(ulong meshInstanceID, ref Vector3 direction);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool IsKeyDown(Keycode keycode);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

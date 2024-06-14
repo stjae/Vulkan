@@ -115,6 +115,7 @@ void CascadedShadowMap::UpdateCascades(Camera* camera, const DirLight& dirLight)
         glm::vec3 depth = glm::vec3(cascadeDepth);
         for (int j = 0; j < 4; j++) {
             depth.y *= -1.0f;
+            depth.x *= -1.0f;
             frustumCorners[j + 4] = frustumCorners[j] + depth;
             frustumCorners[j] = frustumCorners[j] + lastDepth;
         }
@@ -137,6 +138,14 @@ void CascadedShadowMap::UpdateCascades(Camera* camera, const DirLight& dirLight)
 
         m_cascades[i].m_depth = cascadeDepth * -1.0f;
         m_cascades[i].m_viewProj = lightProj * lightView;
+        m_cascades[i].m_invProj = glm::inverse(lightProj);
+        glm::vec4 left(-1.0f, -1.0f, 0.0f, 1.0f);
+        glm::vec4 right(1.0f, 1.0f, 0.0f, 1.0f);
+        left = m_cascades[i].m_invProj * left;
+        right = m_cascades[i].m_invProj * right;
+        left /= left.w;
+        right /= right.w;
+        m_cascades[i].m_frustumWidth = right.x - left.x;
 
         lastDepth = cascadeDepth;
     }
@@ -147,6 +156,8 @@ void CascadedShadowMap::UpdateUBO(const DirLight& dirLight, const vk::CommandBuf
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
         m_UBO.depth[i] = m_cascades[i].m_depth;
         m_UBO.viewProj[i] = m_cascades[i].m_viewProj;
+        m_UBO.invProj[i] = m_cascades[i].m_invProj;
+        m_UBO.frustumWidth[i] = m_cascades[i].m_frustumWidth;
     }
     m_UBO.lightDir = normalize(-dirLight.pos);
     m_UBO.color = dirLight.color;

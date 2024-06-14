@@ -13,11 +13,11 @@
 #include "../../imgui/ImGuizmo.h"
 #include "camera.h"
 
-typedef struct MeshPart_ MeshPart;
-typedef struct MeshInstanceUBO_ MeshInstanceUBO;
-typedef struct MeshInstance_ MeshInstance;
-typedef struct PhysicsDebugUBO_ PhysicsDebugUBO;
-typedef struct MaterialFilePath_ MaterialFilePath;
+struct MeshPart;
+struct MeshInstanceUBO;
+struct MeshInstance;
+struct PhysicsDebugUBO;
+struct MaterialFilePath;
 
 class Mesh : public MeshBase
 {
@@ -61,15 +61,16 @@ public:
     void UpdateUBO(MeshInstance& instance);
 };
 
-typedef struct MeshPart_
+struct MeshPart
 {
     int32_t bufferIndex;
     int32_t materialID;
 
-    MeshPart_(int32_t bufferIndex, int32_t materialID) : bufferIndex(bufferIndex), materialID(materialID) {}
-} MeshPart_;
+    MeshPart(int32_t bufferIndex, int32_t materialID)
+        : bufferIndex(bufferIndex), materialID(materialID) {}
+};
 
-typedef struct MeshInstanceUBO_
+struct MeshInstanceUBO
 {
     glm::mat4 model = glm::mat4(1.0f);
     // Color ID for mouse picking
@@ -82,22 +83,18 @@ typedef struct MeshInstanceUBO_
     float roughness = 1.0f;
     float padding[3];
 
-    MeshInstanceUBO_(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f)) : meshColorID(meshColorID), instanceColorID(instanceColorID)
-    {
-        model = glm::translate(model, pos);
-        model = glm::scale(model, scale);
-    }
-} MeshInstanceUBO_;
+    MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
+};
 
-typedef struct PhysicsDebugUBO_
+struct PhysicsDebugUBO
 {
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 scale = glm::vec3(1.0f);
     // flag for shader
     int32_t havePhysicsInfo = 0;
-} PhysicsDebugUBO_;
+};
 
-typedef struct MeshInstance_
+struct MeshInstance
 {
     const uint64_t UUID;
     glm::vec3 translation = glm::vec3(0.0f);
@@ -108,41 +105,20 @@ typedef struct MeshInstance_
     std::unique_ptr<PhysicsInfo> physicsInfo;
     PhysicsDebugUBO physicsDebugUBO;
     std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
-    std::unique_ptr<SubCamera> camera;
+    std::weak_ptr<SubCamera> camera;
 
-    MeshInstance_(uint64_t UUID, MeshInstanceUBO&& UBO)
-        : UUID(UUID), UBO(UBO)
-    {
-        vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-        physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
-    }
-    MeshInstance_& operator=(const MeshInstance& other)
-    {
-        this->translation = other.translation;
-        this->rotation = other.rotation;
-        this->scale = other.scale;
-        this->UBO = other.UBO;
-        this->physicsDebugUBO.model = UBO.model;
-        return *this;
-    }
-    // update translation, rotation, scale based on model matrix
-    void UpdateTransform()
-    {
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(UBO.model), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
-    }
-    // update matrix based on translation, rotation, scale
-    void UpdateMatrix()
-    {
-        ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale), glm::value_ptr(UBO.model));
-    }
-} MeshInstance_;
+    MeshInstance(uint64_t UUID, MeshInstanceUBO&& UBO);
+    MeshInstance& operator=(const MeshInstance& other);
+    void UpdateTransform();
+    void UpdateMatrix();
+};
 
-typedef struct MaterialFilePath_
+struct MaterialFilePath
 {
     std::string albedo;
     std::string normal;
     std::string metallic;
     std::string roughness;
-} MaterialFilePath_;
+};
 
 #endif

@@ -156,7 +156,7 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 
     const int32_t* data;
     vkn::CheckResult(vkn::Device::Get().device.mapMemory(m_pickedColor.m_memory.GetMemory(), 0, vk::WholeSize, {}, (void**)&data));
-    Log(DEBUG, fmt::terminal_color::black, "[Mesh ID: {0}, Instance ID: {1}]", data[0], data[1]);
+    Log(DEBUG, fmt::terminal_color::bright_black, "[Mesh ID: {0}, Instance ID: {1}]", data[0], data[1]);
     scene.SelectByColorID(data[0], data[1]);
     vkn::Device::Get().device.unmapMemory(m_pickedColor.m_memory.GetMemory());
 }

@@ -30,12 +30,10 @@ void Scene::CreateCommandBuffers()
 
 void Scene::CreateMainCamera()
 {
-    m_mainCamera = std::make_unique<MainCamera>();
-    // Set Initial Camera Position
-    m_mainCamera->m_dir = { 0.5, -0.3, -0.7 };
-    m_mainCamera->m_pos = { -3.0, 3.3, 8.0 };
-    m_mainCamera->m_at = { -2.5, 3.0, 7.3 };
-    UpdateCameraDescriptor(m_mainCamera.get());
+    m_mainCamera.m_dir = { 0.5, -0.3, -0.7 };
+    m_mainCamera.m_pos = { -3.0, 3.3, 8.0 };
+    m_mainCamera.m_at = { -2.5, 3.0, 7.3 };
+    UpdateCameraDescriptor(&m_mainCamera);
 }
 
 void Scene::CreateShadowMap()
@@ -168,7 +166,8 @@ void Scene::Update()
     HandlePointLightDuplication();
     HandleMeshDuplication();
 
-    UpdateCamera();
+    UpdateViewportCamera();
+    UpdatePlayCamera();
     UpdatePointLight();
     UpdatePhysicsDebug();
     UpdateShadowMap();
@@ -264,7 +263,7 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 
 void Scene::HandlePointLightDuplication()
 {
-    if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
+    if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable) {
         m_pointLight.Duplicate(m_selectedLightIndex);
         m_selectedLightIndex = (int)m_pointLight.Size() - 1;
         m_shadowCubemaps.emplace_back();
@@ -276,7 +275,7 @@ void Scene::HandlePointLightDuplication()
 
 void Scene::HandleMeshDuplication()
 {
-    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera->m_isControllable) {
+    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable) {
         auto& mesh = GetSelectedMesh();
         auto& srcInstance = GetSelectedMeshInstance();
 
@@ -297,12 +296,24 @@ void Scene::HandleMeshDuplication()
     }
 }
 
-void Scene::UpdateCamera()
+void Scene::UpdateViewportCamera()
 {
-    if (m_selectedCamera == nullptr)
-        m_selectedCamera = m_mainCamera.get();
-    m_selectedCamera->Control();
-    m_selectedCamera->Update(m_commandBuffer);
+    if (m_viewportCamera == nullptr)
+        m_viewportCamera = &m_mainCamera;
+    if (IsPlaying())
+        return;
+    m_viewportCamera->Control();
+    m_viewportCamera->Update(m_commandBuffer);
+}
+
+void Scene::UpdatePlayCamera()
+{
+    if (m_playCamera == nullptr)
+        m_playCamera = &m_mainCamera;
+    if (!IsPlaying())
+        return;
+    m_playCamera->Control();
+    m_playCamera->Update(m_commandBuffer);
 }
 
 void Scene::UpdatePointLight()
@@ -321,8 +332,12 @@ void Scene::UpdatePointLightBuffer()
 
 void Scene::UpdateShadowMap()
 {
-    // TODO:
-    m_cascadedShadowMap.UpdateCascades(m_mainCamera.get(), m_dirLight);
+    Camera* camera;
+    if (!IsPlaying())
+        camera = m_viewportCamera;
+    else
+        camera = m_playCamera;
+    m_cascadedShadowMap.UpdateCascades(camera, m_dirLight);
     m_cascadedShadowMap.UpdateUBO(m_dirLight, m_commandBuffer);
     m_cascadedShadowMap.Draw(m_meshes, m_commandBuffer);
 }
@@ -431,8 +446,8 @@ void Scene::CopyMeshInstances()
             m_meshInstanceMap[instance->UUID] = instance.get();
             if (instance->physicsInfo)
                 m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
-            if (instance->camera)
-                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(instance->UUID);
+            if (instance->camera.lock())
+                m_meshCopies.back().m_meshInstances.back()->camera = instance->camera;
         }
     }
 }
@@ -452,8 +467,9 @@ void Scene::RevertMeshInstances()
                 AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo);
                 m_meshes[i]->m_meshInstances.back()->physicsDebugUBO.scale = m_meshCopies[i].m_meshInstances[j]->physicsInfo->scale;
             }
-            if (m_meshCopies[i].m_meshInstances[j]->camera)
-                m_meshes[i]->m_meshInstances.back()->camera = std::make_unique<SubCamera>(m_meshCopies[i].m_meshInstances[j]->UUID);
+            if (m_meshCopies[i].m_meshInstances[j]->camera.lock()) {
+                m_meshes[i]->m_meshInstances.back()->camera = m_meshCopies[i].m_meshInstances[j]->camera;
+            }
         }
     }
     m_meshCopies.clear();
@@ -473,6 +489,8 @@ void Scene::Play()
         for (auto& scriptInstance : Script::s_scriptInstances) {
             scriptInstance.second->InvokeOnCreate();
         }
+        m_playCamera->Init();
+        UpdateCameraDescriptor(m_playCamera);
     }
 
     Physics::Simulate(m_meshes);
@@ -484,7 +502,7 @@ void Scene::Play()
 
 void Scene::Stop()
 {
-    SelectCamera(m_mainCamera.get());
+    UpdateCameraDescriptor(m_viewportCamera);
 
     for (auto& mesh : m_meshes) {
         for (auto& instance : mesh->m_meshInstances) {
@@ -517,11 +535,12 @@ Scene::~Scene()
 
 void Scene::AddCamera(MeshInstance& instance)
 {
-    instance.camera = std::make_unique<SubCamera>(instance.UUID);
+    m_subCameras.emplace(instance.UUID, std::make_shared<SubCamera>(instance.UUID));
+    instance.camera = m_subCameras[instance.UUID];
 }
 
-void Scene::SelectCamera(Camera* camera)
+_Resource::_Resource(std::string& path)
 {
-    m_selectedCamera = camera;
-    UpdateCameraDescriptor(camera);
+    this->filePath = path;
+    this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
 }

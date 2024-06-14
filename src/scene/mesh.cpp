@@ -25,10 +25,6 @@ void Mesh::CreateSquare(float scale, const char* texturePath)
 {
     const int SQUARE_VERTEX_COUNT = 4;
 
-    // std::vector<glm::vec3> position = { { -1.0f, 0.0f, -1.0f },
-    //                                     { -1.0f, 0.0f, 1.0f },
-    //                                     { 1.0f, 0.0f, 1.0f },
-    //                                     { 1.0f, 0.0f, -1.0f } };
     std::vector<glm::vec3> position = { { -1.0f, 1.0f, 0.0f },
                                         { -1.0f, -1.0f, 0.0f },
                                         { 1.0f, -1.0f, 0.0f },
@@ -340,4 +336,40 @@ void Mesh::UpdateUBO(MeshInstance& instance)
     m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
     m_meshInstanceUBOBuffer->Copy(m_meshInstanceUBOs.data());
     instance.physicsDebugUBO.model = instance.UBO.model;
+}
+
+MeshInstanceUBO::MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos, glm::vec3 scale)
+    : meshColorID(meshColorID), instanceColorID(instanceColorID)
+{
+    model = glm::translate(model, pos);
+    model = glm::scale(model, scale);
+}
+
+MeshInstance::MeshInstance(uint64_t UUID, MeshInstanceUBO&& UBO)
+    : UUID(UUID), UBO(UBO)
+{
+    vkn::BufferInfo bufferInfo = { sizeof(PhysicsDebugUBO), vk::WholeSize, vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+    physicsDebugUBOBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
+}
+
+MeshInstance& MeshInstance::operator=(const MeshInstance& other)
+{
+    this->translation = other.translation;
+    this->rotation = other.rotation;
+    this->scale = other.scale;
+    this->UBO = other.UBO;
+    this->physicsDebugUBO.model = UBO.model;
+    return *this;
+}
+
+void MeshInstance::UpdateTransform()
+{
+    // update translation, rotation, scale based on model matrix
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(UBO.model), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+}
+
+void MeshInstance::UpdateMatrix()
+{
+    // update matrix based on translation, rotation, scale
+    ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale), glm::value_ptr(UBO.model));
 }

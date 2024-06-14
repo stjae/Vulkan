@@ -34,7 +34,7 @@ static void SetRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
 static void GetForward(uint64_t meshInstanceID, glm::vec3* outForward)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    *outForward = glm::normalize(instance.UBO.model * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+    *outForward = glm::normalize(instance.UBO.model * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 }
 
 static void GetRight(uint64_t meshInstanceID, glm::vec3* outRight)
@@ -50,19 +50,51 @@ static void GetMatrix(uint64_t meshInstanceID, glm::mat4* outMatrix)
     *outMatrix = instance.UBO.model;
 }
 
+static void GetCameraTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.camera.lock()) {
+        *outTranslation = instance.camera.lock()->GetTranslation();
+    }
+}
+
+static void SetCameraTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.camera.lock()) {
+        instance.camera.lock()->GetTranslation() = *inTranslation;
+    }
+}
+
 static void GetCameraRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera) {
-        *outRotation = instance.camera->GetRotation();
+    if (instance.camera.lock()) {
+        *outRotation = instance.camera.lock()->GetRotation();
     }
 }
 
 static void SetCameraRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera) {
-        instance.camera->GetRotation() = *inRotation;
+    if (instance.camera.lock()) {
+        instance.camera.lock()->GetRotation() = *inRotation;
+    }
+}
+
+static void GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.camera.lock()) {
+        *outDirection = instance.camera.lock()->GetDirection();
+    }
+}
+
+static void SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirection)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.camera.lock()) {
+        instance.camera.lock()->GetDirection() = *inDirection;
     }
 }
 
@@ -120,8 +152,12 @@ void Registry::RegisterFunctions()
     mono_add_internal_call("vkApp.InternalCall::GetRight", (const void*)GetRight);
     mono_add_internal_call("vkApp.InternalCall::GetMatrix", (const void*)GetMatrix);
 
+    mono_add_internal_call("vkApp.InternalCall::GetCameraTranslation", (const void*)GetCameraTranslation);
+    mono_add_internal_call("vkApp.InternalCall::SetCameraTranslation", (const void*)SetCameraTranslation);
     mono_add_internal_call("vkApp.InternalCall::GetCameraRotation", (const void*)GetCameraRotation);
     mono_add_internal_call("vkApp.InternalCall::SetCameraRotation", (const void*)SetCameraRotation);
+    mono_add_internal_call("vkApp.InternalCall::GetCameraDirection", (const void*)GetCameraDirection);
+    mono_add_internal_call("vkApp.InternalCall::SetCameraDirection", (const void*)SetCameraDirection);
 
     mono_add_internal_call("vkApp.InternalCall::IsKeyDown", (const void*)IsKeyDown);
     mono_add_internal_call("vkApp.InternalCall::GetMouseX", (const void*)GetMouseX);

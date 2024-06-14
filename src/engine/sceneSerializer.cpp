@@ -83,7 +83,7 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     SerializeDirLight(out, scene);
     SerializePointLight(out, scene.m_pointLight);
-    SerializeCamera(out, *scene.m_mainCamera);
+    SerializeCamera(out, scene.m_mainCamera);
     SerializeResources(out, scene.m_resources);
     SerializeMeshes(out, scene.m_meshes);
 
@@ -197,13 +197,13 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     scene.m_sceneFilePath = data["SceneFilePath"].as<std::string>();
 
     auto camera = data["Camera"];
-    scene.m_mainCamera->m_pos = camera["Position"].as<glm::vec3>();
-    scene.m_mainCamera->m_dir = camera["Dir"].as<glm::vec3>();
-    scene.m_mainCamera->m_cascadeRanges[0] = camera["Cascade Range 1"].as<float>();
-    scene.m_mainCamera->m_cascadeRanges[1] = camera["Cascade Range 2"].as<float>();
-    scene.m_mainCamera->m_cascadeRanges[2] = camera["Cascade Range 3"].as<float>();
-    scene.m_mainCamera->m_cascadeRanges[3] = camera["Cascade Range 4"].as<float>();
-    scene.m_mainCamera->m_at = scene.m_mainCamera->m_pos + scene.m_mainCamera->m_dir;
+    scene.m_mainCamera.m_pos = camera["Position"].as<glm::vec3>();
+    scene.m_mainCamera.m_dir = camera["Dir"].as<glm::vec3>();
+    scene.m_mainCamera.m_cascadeRanges[0] = camera["Cascade Range 1"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[1] = camera["Cascade Range 2"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[2] = camera["Cascade Range 3"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[3] = camera["Cascade Range 4"].as<float>();
+    scene.m_mainCamera.m_at = scene.m_mainCamera.m_pos + scene.m_mainCamera.m_dir;
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {

@@ -10,6 +10,13 @@ Camera::Camera()
     m_cameraBuffer = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
+void Camera::Init()
+{
+    m_isControllable = true;
+    glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+}
+
 void Camera::Update(const vk::CommandBuffer& commandBuffer)
 {
     m_cameraUBO.view = glm::lookAt(m_pos, m_at, m_up);
@@ -120,16 +127,14 @@ SubCamera::SubCamera(uint64_t meshInstanceID)
 
 void SubCamera::Control()
 {
-    if (m_isFirstFrame) {
-        m_isControllable = true;
-        glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
-
-        m_isFirstFrame = false;
-    }
     SetControl();
 
-    // m_pos = glm::make_vec3(translation);
-    // m_dir = glm::make_mat4(outMatrix) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-    // m_at = m_dir + m_pos;
+    m_right = glm::cross(m_dir, m_up);
+    auto rotateX = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.x), m_right);
+    m_dir = rotateX * glm::vec4(m_dir, 0.0f);
+    auto rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.y), m_up);
+    m_dir = rotateY * glm::vec4(m_dir, 0.0f);
+    auto rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.z), m_dir);
+    m_dir = rotateZ * glm::vec4(m_dir, 0.0f);
+    m_at = m_pos + m_dir;
 }

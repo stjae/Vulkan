@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Numerics;
+using System;
 using vkApp;
 
 public class Player : MeshInstance
@@ -24,13 +25,13 @@ public class Player : MeshInstance
         Vector3 velocity = new Vector3();
 
         if (Input.IsKeyDown(Keycode.KEY_W))
-            velocity -= Forward * speed;
-        if (Input.IsKeyDown(Keycode.KEY_S))
             velocity += Forward * speed;
-        if (Input.IsKeyDown(Keycode.KEY_D))
-            velocity -= Right * speed;
+        if (Input.IsKeyDown(Keycode.KEY_S))
+            velocity -= Forward * speed;
         if (Input.IsKeyDown(Keycode.KEY_A))
             velocity += Right * speed;
+        if (Input.IsKeyDown(Keycode.KEY_D))
+            velocity -= Right * speed;
 
         Velocity = velocity;
 
@@ -38,8 +39,11 @@ public class Player : MeshInstance
         AngularVelocity = angularVelocty;
 
         Vector3 cameraRotation = CameraRotation;
-        cameraRotation.X += mouseDy * 50.0f;
+        cameraRotation.X -= mouseDy * 50.0f;
         CameraRotation = cameraRotation;
+
+        CameraTranslation = Translation + new Vector3(0.0f, 2.0f, 0.0f);
+        CameraDirection = Forward;
 
         prevMouseX = mouseX;
         prevMouseY = mouseY;

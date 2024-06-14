@@ -38,8 +38,8 @@ protected:
     float m_zFar = 1024.0f;
     std::array<float, SHADOW_MAP_CASCADE_COUNT> m_cascadeRanges = { 18.0f, 40.0f, 85.0f, 120.0f };
 
-    glm::vec3 m_pos = { 0.0f, 0.0f, 4.0f };
-    glm::vec3 m_dir = { 0.0f, 0.0f, -1.0f };
+    glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_dir = { 0.0f, 0.0f, 1.0f };
     glm::vec3 m_at = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_up = { 0.0f, 1.0f, 0.0f };
     glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
@@ -50,13 +50,16 @@ protected:
     void SetControl();
 
 public:
-    explicit Camera();
+    Camera();
     bool IsControllable() const { return m_isControllable; }
     const CameraUBO& GetUBO() { return m_cameraUBO; }
     virtual void Control() = 0;
+    void Init();
     void Update(const vk::CommandBuffer& commandBuffer);
     float GetCascadeDepth(int index);
     glm::mat4 GetCascadeProj(int index);
+    glm::vec3& GetDirection() { return m_dir; }
+    glm::vec3& GetTranslation() { return m_pos; }
     glm::vec3& GetRotation() { return m_rotation; }
     uint64_t GetAssignedMeshInstanceID();
 };
@@ -71,8 +74,6 @@ public:
 
 class SubCamera : public Camera
 {
-    bool m_isFirstFrame = true;
-
 public:
     SubCamera(uint64_t meshInstanceID);
     void Control() override;

@@ -25,7 +25,7 @@
 #include "physics.h"
 #include "../time.h"
 
-typedef struct Resource_ Resource;
+typedef struct _Resource Resource;
 
 class Scene
 {
@@ -47,9 +47,9 @@ class Scene
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
     // Mesh
     std::vector<std::shared_ptr<Mesh>> m_meshes;
-    // store meshes for scene resetting
-    std::vector<Mesh> m_meshCopies;
+    std::vector<Mesh> m_meshCopies; // store meshes for scene resetting
     std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap;
+    // TODO: consider storing physics here
 
     // Environment Map
     Mesh m_envCube;
@@ -70,11 +70,10 @@ class Scene
     std::vector<std::unique_ptr<vkn::Image>> m_roughnessTextures;
 
     // Camera
-    std::unique_ptr<MainCamera> m_mainCamera;
-    Camera* m_selectedCamera = nullptr;
-    // MeshInstance* m_selectedCameraMeshInstance;
-    // meshInstance UUID of selected camera
-    // uint64_t m_selectedCameraUUID = 0;
+    MainCamera m_mainCamera;
+    std::unordered_map<uint64_t, std::shared_ptr<SubCamera>> m_subCameras;
+    Camera* m_viewportCamera = nullptr;
+    Camera* m_playCamera = nullptr;
 
     std::vector<Resource> m_resources;
     int32_t m_selectedMeshID = -1;
@@ -108,7 +107,8 @@ class Scene
     void HandleMeshDuplication();
     void CopyMeshInstances();
     void RevertMeshInstances();
-    void UpdateCamera();
+    void UpdateViewportCamera();
+    void UpdatePlayCamera();
     void UpdateCameraDescriptor(Camera* camera);
     void UpdatePointLight();
     void UpdatePointLightBuffer();
@@ -118,7 +118,6 @@ class Scene
     void UpdateTextureDescriptors();
     void Clear();
     void AddCamera(MeshInstance& instance);
-    void SelectCamera(Camera* camera);
     void Play();
     void Stop();
     void Update();
@@ -137,17 +136,12 @@ public:
     ~Scene();
 };
 
-typedef struct Resource_
+typedef struct _Resource
 {
     std::string filePath;
     std::string fileName;
     std::weak_ptr<void> ptr;
-
-    explicit Resource_(std::string& path)
-    {
-        this->filePath = path;
-        this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
-    }
-} Resource_;
+    _Resource(std::string& path);
+} _Resource;
 
 #endif
