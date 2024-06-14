@@ -7,6 +7,7 @@
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
 #include "../pipeline/meshRender.h"
+#include "../pipeline/postProcess.h"
 #include "../pipeline/colorID.h"
 #include "../pipeline/shadowMap.h"
 #include "../pipeline/shadowCubemap.h"
@@ -23,13 +24,14 @@ class Viewport
     friend class Engine;
 
     vk::Framebuffer m_framebuffer;
-    vkn::Image m_image;
-    vkn::Image m_final;
-    vkn::Image m_depth;
+    vkn::Image m_imageSampled;
+    vkn::Image m_imageResolved;
+    vkn::Image m_depthSampled;
+    vkn::Image m_imageFinal;
 
     vk::Framebuffer m_colorIDFramebuffer;
     vkn::Image m_colorID;
-    vkn::Image m_colorIDDepth;
+    vkn::Image m_depth;
 
     vk::CommandPool m_commandPool;
     vk::CommandBuffer m_commandBuffer;

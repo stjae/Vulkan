@@ -62,10 +62,10 @@ layout (location = 1) out ivec2 outID;
 const float SHADOW_OFFSET = 0.005;
 
 const mat4 biasMat = mat4(
-    0.5, 0.0, 0.0, 0.0,
-    0.0, 0.5, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.5, 0.5, 0.0, 1.0
+0.5, 0.0, 0.0, 0.0,
+0.0, 0.5, 0.0, 0.0,
+0.0, 0.0, 1.0, 0.0,
+0.5, 0.5, 0.0, 1.0
 );
 
 const vec2 offsets[9] =
@@ -88,10 +88,10 @@ vec3(0, 1, -1), vec3(0, 1, 0), vec3(0, 1, 1),
 vec3(1, 1, -1), vec3(1, 1, 0), vec3(1, 1, 1)
 };
 
-float CalculatePointLightShadow(vec3 lightVec, vec3 offset, int lightIndex)
+float CalculatePointLightShadow(vec3 lightVec, vec3 offset, int lightIndex, textureCube shadowCubeMap)
 {
     float distToLight = length(lightVec);
-    float sampledDist = texture(samplerCube(shadowCubeMaps[lightIndex], repeatSampler), lightVec + offset).r;
+    float sampledDist = texture(samplerCube(shadowCubeMap, repeatSampler), lightVec + offset).r;
     if (distToLight > sampledDist + SHADOW_OFFSET) {
         return 0.0;
     } else {
@@ -99,12 +99,12 @@ float CalculatePointLightShadow(vec3 lightVec, vec3 offset, int lightIndex)
     }
 }
 
-float PCF_PointLightShadow(float radius, vec3 lightVec, int lightIndex)
+float PCF_PointLightShadow(float radius, vec3 lightVec, int lightIndex, textureCube shadowCubeMap)
 {
     float radianceAmount = 0.0;
     for (int i = 0; i < 27; i++)
     {
-        radianceAmount += CalculatePointLightShadow(lightVec, offsets3D[i] * radius, lightIndex);
+        radianceAmount += CalculatePointLightShadow(lightVec, offsets3D[i] * radius, lightIndex, shadowCubeMap);
     }
     radianceAmount /= 27.0;
     return radianceAmount;
@@ -226,7 +226,7 @@ void main() {
     for (int i = 0; i < pushConsts.lightCount; i++) {
         float dx = 2.0 / 1024;
         vec3 lightVec = worldPos - light.data[i].pos;
-        float radianceAmount = PCF_PointLightShadow(dx, lightVec, i);
+        float radianceAmount = PCF_PointLightShadow(dx, lightVec, i, shadowCubeMaps[i]);
         vec3 L = normalize(light.data[i].pos - worldPos);
         vec3 radiance = max(0.0, dot(L, N)) * light.data[i].color * light.data[i].intensity;
         float attenuation = max(0.0, min(1.0, (light.data[i].range - length(lightVec)) / (light.data[i].range - 0.001)));
@@ -261,17 +261,17 @@ void main() {
     if (cascade.debug > 0) {
         switch (cascadeIndex) {
             case 0:
-                outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
-                break;
+            outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+            break;
             case 1:
-                outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
-                break;
+            outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+            break;
             case 2:
-                outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
-                break;
+            outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+            break;
             case 3:
-                outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
-                break;
+            outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+            break;
         }
     }
 }

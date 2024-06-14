@@ -46,17 +46,17 @@ void Scene::CreateShadowMap()
 
 void Scene::CreateEnvironmentMap()
 {
-    m_envCube.CreateCube();
-    m_envCube.CreateBuffers(m_commandBuffer);
-    m_envCube.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
-    m_brdfLutSquare.CreateSquare();
-    m_brdfLutSquare.CreateBuffers(m_commandBuffer);
-    m_brdfLutSquare.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
+    m_cube.CreateCube();
+    m_cube.CreateBuffers(m_commandBuffer);
+    m_cube.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
+    m_square.CreateSquare();
+    m_square.CreateBuffers(m_commandBuffer);
+    m_square.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
     m_brdfLut.CreateImage({ 512, 512, 1 }, vk::Format::eR16G16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
     m_brdfLut.CreateImageView();
     m_brdfLut.CreateFramebuffer(brdfLutPipeline);
     m_brdfLut.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_brdfLut.Draw(m_commandBuffer, m_brdfLutSquare, brdfLutPipeline);
+    m_brdfLut.Draw(m_commandBuffer, m_square, brdfLutPipeline);
     m_brdfLut.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     meshRenderPipeline.UpdateBrdfLut(m_brdfLut.Get().descriptorImageInfo);
 }
@@ -65,6 +65,8 @@ void Scene::UpdateCameraDescriptor(Camera* camera)
 {
     assert(camera != nullptr);
     meshRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
+    postProcessPipeline.UpdatePrevCameraUBO(camera->m_prevCameraBuffer->Get().descriptorBufferInfo);
+    postProcessPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     colorIDPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     skyboxRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     lineRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
@@ -210,12 +212,12 @@ void Scene::UpdateEnvCubemaps()
     m_envCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
     m_envCubemap->CreateMipmap(m_commandBuffer);
     m_envCubemap->m_mipmap.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    m_envCubemap->DrawMipmap(m_commandBuffer, m_envCube, envCubemapPipeline);
+    m_envCubemap->DrawMipmap(m_commandBuffer, m_cube, envCubemapPipeline);
     irradianceCubemapPipeline.UpdateEnvCubemap(m_envCubemap->m_mipmapDescriptorImageInfo);
     m_irradianceCubemap = std::make_unique<EnvCubemap>();
     m_irradianceCubemap->CreateEnvCubemap(m_commandBuffer, 32, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, irradianceCubemapPipeline);
     m_irradianceCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_irradianceCubemap->DrawEnvCubemap(m_commandBuffer, 32, m_envCube, irradianceCubemapPipeline);
+    m_irradianceCubemap->DrawEnvCubemap(m_commandBuffer, 32, m_cube, irradianceCubemapPipeline);
     m_irradianceCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     prefilteredCubemapPipeline.UpdateEnvCubemap(m_envCubemap->m_mipmapDescriptorImageInfo);
     m_prefilteredCubemap = std::make_unique<PrefilteredCubemap>();
@@ -223,7 +225,7 @@ void Scene::UpdateEnvCubemaps()
     m_prefilteredCubemap->ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
     m_prefilteredCubemap->CreateMipmap(m_commandBuffer);
     m_prefilteredCubemap->m_mipmap.ChangeImageLayout(m_commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    m_prefilteredCubemap->DrawMipmap(m_commandBuffer, m_envCube, prefilteredCubemapPipeline);
+    m_prefilteredCubemap->DrawMipmap(m_commandBuffer, m_cube, prefilteredCubemapPipeline);
     skyboxRenderPipeline.UpdateIrradianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdateIrraianceCubemap(m_irradianceCubemap->Get().descriptorImageInfo);
     meshRenderPipeline.UpdatePrefilteredCubemap(m_prefilteredCubemap->m_mipmapDescriptorImageInfo);

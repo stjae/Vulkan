@@ -725,7 +725,7 @@ void UI::ShowInformationOverlay(const Scene& scene)
 void UI::RecreateViewportDescriptorSet(const Viewport& viewport)
 {
     ImGui_ImplVulkan_RemoveTexture(m_viewportImageDescriptorSet);
-    m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_final.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_imageFinal.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)

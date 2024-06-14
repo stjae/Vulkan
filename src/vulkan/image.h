@@ -26,6 +26,7 @@ public:
     Memory m_memory;
     inline static vk::Sampler s_repeatSampler;
     inline static vk::Sampler s_clampSampler;
+    inline static vk::Sampler s_clampToBorderSampler;
 
     Image();
     ~Image();

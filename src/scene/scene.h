@@ -12,6 +12,7 @@
 #include "prefilteredCubemap.h"
 #include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
+#include "../pipeline/postProcess.h"
 #include "../pipeline/colorID.h"
 #include "../pipeline/shadowMap.h"
 #include "../pipeline/envCubemap.h"
@@ -52,14 +53,14 @@ class Scene
     // TODO: consider storing physics here
 
     // Environment Map
-    Mesh m_envCube;
+    Mesh m_cube;
     std::string m_hdriFilePath;
     std::unique_ptr<vkn::Image> m_envMap;
     std::unique_ptr<vkn::Image> m_dummyEnvMap;
     std::unique_ptr<EnvCubemap> m_envCubemap;
     std::unique_ptr<EnvCubemap> m_irradianceCubemap;
     std::unique_ptr<PrefilteredCubemap> m_prefilteredCubemap;
-    Mesh m_brdfLutSquare;
+    Mesh m_square;
     vkn::Image m_brdfLut;
     float m_iblExposure = 1.0f;
 

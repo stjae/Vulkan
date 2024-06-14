@@ -100,6 +100,8 @@ add_executable(${PROJECT_NAME}
         src/scene/light.h
         src/pipeline/colorID.cpp
         src/pipeline/colorID.h
+        src/pipeline/postProcess.cpp
+        src/pipeline/postProcess.h
 )
 
 if (WIN32)

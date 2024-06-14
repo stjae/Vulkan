@@ -27,6 +27,8 @@ class Camera
     friend class SceneSerializer;
 
     CameraUBO m_cameraUBO;
+    std::unique_ptr<vkn::Buffer> m_prevCameraBuffer;
+    std::unique_ptr<vkn::Buffer> m_prevCameraStagingBuffer;
     std::unique_ptr<vkn::Buffer> m_cameraBuffer;
     std::unique_ptr<vkn::Buffer> m_cameraStagingBuffer;
 
