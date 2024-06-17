@@ -21,13 +21,14 @@ class Script
 {
     friend class UI;
     friend class Scene;
+    friend class SceneSerializer;
 
     inline static MonoDomain* s_rootDomain = nullptr;
-    inline static std::vector<std::shared_ptr<ScriptClass>> s_scriptClasses;
+    inline static std::unordered_map<std::string, std::shared_ptr<ScriptClass>> s_scriptClasses;
     inline static std::unordered_map<uint64_t, std::shared_ptr<ScriptInstance>> s_scriptInstances;
 
     static void InitMono();
-    static void LoadAssemblyClasses(MonoAssembly* assembly);
+    static void LoadAssemblyClasses(const std::string& filePath);
 
 public:
     inline static Scene* s_scene;
@@ -35,8 +36,9 @@ public:
     inline static std::shared_ptr<ScriptClass> s_baseScriptClass;
 
     static void Init(Scene* scene);
+    static void LoadDll(const std::string& sceneFolderPath);
     static void InvokeMethod(MonoMethod* method, MonoObject* instance, void** params);
-    static void Reload();
+    // static void Reload();
     static std::string GetScriptClassName(uint64_t UUID);
     static bool InstanceExists(uint64_t UUID);
 };
@@ -44,6 +46,7 @@ public:
 class ScriptClass
 {
     friend Script;
+    friend SceneSerializer;
 
     MonoAssembly* m_monoAssembly = nullptr;
     MonoImage* m_monoImage = nullptr;
@@ -51,9 +54,10 @@ class ScriptClass
     std::string m_classNameSpace;
     std::string m_className;
     std::string m_fullName;
+    std::string m_filePath;
 
 public:
-    ScriptClass(MonoAssembly* assembly, const char* nameSpace, const char* name);
+    ScriptClass(MonoAssembly* assembly, const char* nameSpace, const char* name, const std::string& filePath);
     MonoObject* Instantiate();
     MonoMethod* GetMethodByName(const char* name, int paramCount);
     bool IsParentOf(MonoClass* monoClass);
@@ -64,6 +68,7 @@ class ScriptInstance
 {
     friend Script;
     friend Scene;
+    friend SceneSerializer;
 
     std::shared_ptr<ScriptClass> m_scriptClass;
     MonoObject* m_instance = nullptr;
@@ -73,7 +78,7 @@ class ScriptInstance
     MonoMethod* m_onDestroyMethod = nullptr;
 
 public:
-    ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, MeshInstance& meshInstance);
+    ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, uint64_t meshInstanceID);
     void InvokeOnCreate();
     void InvokeOnUpdate(float dt);
     void InvokeOnDestroy();

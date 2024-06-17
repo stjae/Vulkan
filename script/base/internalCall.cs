@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace vkApp
 {
@@ -18,7 +17,7 @@ namespace vkApp
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetRight(ulong meshInstanceID, out Vector3 right);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4x4 matrix);
+        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4 matrix);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetCameraTranslation(ulong meshInstanceID, out Vector3 translation);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using vkApp;
+﻿using vkApp;
 
 namespace vkApp
 {
@@ -55,11 +54,11 @@ namespace vkApp
                 return right;
             }
         }
-        public Matrix4x4 Matrix
+        public Matrix4 Matrix
         {
             get
             {
-                InternalCall.GetMatrix(ID, out Matrix4x4 matrix);
+                InternalCall.GetMatrix(ID, out Matrix4 matrix);
                 return matrix;
             }
         }

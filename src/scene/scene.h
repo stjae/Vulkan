@@ -48,8 +48,8 @@ class Scene
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
     // Mesh
     std::vector<std::shared_ptr<Mesh>> m_meshes;
-    std::vector<Mesh> m_meshCopies; // store meshes for scene resetting
-    std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap;
+    std::vector<Mesh> m_meshCopies;                                // store meshes for scene resetting
+    std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap; // to search by uuid
     // TODO: consider storing physics here
 
     // Environment Map

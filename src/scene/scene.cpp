@@ -234,6 +234,7 @@ void Scene::UpdateEnvCubemaps()
 void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
     DeletePhysics(instance);
+    Script::s_scriptInstances.erase(instance.UUID);
     mesh.DeleteInstance(instance.UBO.instanceColorID);
     m_meshInstanceMap.erase(instance.UUID);
     UnselectAll();

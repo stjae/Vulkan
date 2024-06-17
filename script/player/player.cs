@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System;
+﻿using System;
 using vkApp;
 
 public class Player : MeshInstance

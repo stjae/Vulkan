@@ -75,14 +75,14 @@ std::string nfdPickFolder()
 {
     NFD_Init();
     std::string pathStr;
-    nfdnchar_t* folderPath;
+    nfdu8char_t* folderPath;
 
-    nfdresult_t result = NFD_PickFolderN(&folderPath, nullptr);
+    nfdresult_t result = NFD_PickFolderU8(&folderPath, nullptr);
     if (result == NFD_OKAY) {
         puts("Success!");
         puts((const char*)folderPath);
         pathStr = reinterpret_cast<const char* const>(folderPath);
-        NFD_FreePathN(folderPath);
+        NFD_FreePathU8(folderPath);
     } else if (result == NFD_CANCEL) {
         puts("User pressed cancel.");
     } else {

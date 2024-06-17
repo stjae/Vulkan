@@ -478,14 +478,16 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             }
             // Add Script
             ImGui::SeparatorText("Script");
+            if (ImGui::Button("Load"))
+                Script::LoadDll(scene.m_sceneFolderPath);
             std::string scriptClassName = Script::GetScriptClassName(meshInstance.UUID);
             if (ImGui::BeginCombo("##ScriptClasses", scriptClassName.c_str())) {
                 if (ImGui::MenuItem("None")) {
                     Script::s_scriptInstances.erase(meshInstance.UUID);
                 }
                 for (auto& scriptClass : Script::s_scriptClasses) {
-                    if (ImGui::MenuItem(scriptClass->GetName().c_str())) {
-                        Script::s_scriptInstances.emplace(meshInstance.UUID, std::make_shared<ScriptInstance>(scriptClass, meshInstance));
+                    if (ImGui::MenuItem(scriptClass.first.c_str())) {
+                        Script::s_scriptInstances.emplace(meshInstance.UUID, std::make_shared<ScriptInstance>(scriptClass.second, meshInstance.UUID));
                     }
                 }
                 ImGui::EndCombo();

@@ -84,8 +84,10 @@ void SceneSerializer::Serialize(const Scene& scene)
     SerializeDirLight(out, scene);
     SerializePointLight(out, scene.m_pointLight);
     SerializeCamera(out, scene.m_mainCamera);
-    SerializeResources(out, scene.m_resources);
-    SerializeMeshes(out, scene.m_meshes);
+    SerializeResource(out, scene.m_resources);
+    SerializeMesh(out, scene.m_meshes);
+    SerializeScriptClass(out);
+    SerializeScriptInstance(out);
 
     out << YAML::EndMap;
 
@@ -106,7 +108,7 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
 void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& pointLight)
 {
     if (pointLight.Size() > 0) {
-        out << YAML::Key << "PointLights";
+        out << YAML::Key << "PointLight";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& UBO : pointLight.Get()) {
             out << YAML::BeginMap;
@@ -133,10 +135,10 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::EndMap;
 }
 
-void SceneSerializer::SerializeResources(YAML::Emitter& out, const std::vector<Resource>& resources)
+void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources)
 {
     if (!resources.empty()) {
-        out << YAML::Key << "Resources";
+        out << YAML::Key << "Resource";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& resource : resources) {
             out << YAML::BeginMap;
@@ -147,14 +149,14 @@ void SceneSerializer::SerializeResources(YAML::Emitter& out, const std::vector<R
     }
 }
 
-void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes)
+void SceneSerializer::SerializeMesh(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     if (!meshes.empty()) {
-        out << YAML::Key << "Meshes";
+        out << YAML::Key << "Mesh";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& mesh : meshes) {
             out << YAML::BeginMap;
-            out << YAML::Key << "Instances";
+            out << YAML::Key << "Instance";
             out << YAML::Value << YAML::BeginSeq;
             for (const auto& instance : mesh->GetInstances()) {
                 out << YAML::BeginMap;
@@ -177,6 +179,35 @@ void SceneSerializer::SerializeMeshes(YAML::Emitter& out, const std::vector<std:
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+    }
+}
+
+void SceneSerializer::SerializeScriptClass(YAML::Emitter& out)
+{
+    if (!Script::s_scriptClasses.empty()) {
+        out << YAML::Key << "Script Class";
+        out << YAML::Value << YAML::BeginSeq;
+        for (auto& klass : Script::s_scriptClasses) {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Script File Path" << YAML::Value << klass.second->m_filePath;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+    }
+}
+
+void SceneSerializer::SerializeScriptInstance(YAML::Emitter& out)
+{
+    if (!Script::s_scriptInstances.empty()) {
+        out << YAML::Key << "Script Instance";
+        out << YAML::Value << YAML::BeginSeq;
+        for (auto& instance : Script::s_scriptInstances) {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Class Name" << YAML::Value << instance.second->m_scriptClass->m_fullName;
+            out << YAML::Key << "Mesh Instance ID" << YAML::Value << instance.first;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -223,7 +254,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     scene.m_dirLight.color = dirLight["Color"].as<glm::vec3>();
     scene.m_dirLight.intensity = dirLight["Intensity"].as<float>();
 
-    auto pointLights = data["PointLights"];
+    auto pointLights = data["PointLight"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
             scene.AddPointLight();
@@ -234,7 +265,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
         }
     }
 
-    auto resources = data["Resources"];
+    auto resources = data["Resource"];
     if (resources) {
         for (auto resource : resources) {
             auto filePath = resource["FilePath"].as<std::string>();
@@ -242,10 +273,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
         }
     }
 
-    auto meshes = data["Meshes"];
+    auto meshes = data["Mesh"];
     if (meshes) {
         for (size_t i = 0; i < meshes.size(); i++) {
-            auto instances = meshes[i]["Instances"];
+            auto instances = meshes[i]["Instance"];
             for (auto instance : instances) {
                 scene.AddMeshInstance(*scene.m_meshes[i], instance["UUID"].as<uint64_t>());
                 auto& meshInstance = scene.m_meshes[i]->GetInstances().back();
@@ -267,5 +298,21 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             }
         }
         scene.UpdateMeshBuffer();
+    }
+
+    auto scriptClasses = data["Script Class"];
+    if (scriptClasses) {
+        for (auto&& scriptClass : scriptClasses) {
+            Script::LoadAssemblyClasses(scriptClass["Script File Path"].as<std::string>());
+        }
+    }
+
+    auto scriptInstances = data["Script Instance"];
+    if (scriptInstances) {
+        for (auto&& scriptInstance : scriptInstances) {
+            auto scriptClassName = scriptInstance["Class Name"].as<std::string>();
+            auto meshInstanceID = scriptInstance["Mesh Instance ID"].as<uint64_t>();
+            Script::s_scriptInstances.emplace(meshInstanceID, std::make_shared<ScriptInstance>(Script::s_scriptClasses[scriptClassName], meshInstanceID));
+        }
     }
 }
