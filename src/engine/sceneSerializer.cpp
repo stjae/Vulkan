@@ -1,4 +1,5 @@
 #include "sceneSerializer.h"
+#include "script/script.h"
 
 namespace YAML {
 template <>

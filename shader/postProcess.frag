@@ -33,8 +33,6 @@ void main() {
     for (int i = 1; i < numSamples; i++) {
         texCoord += velocity;
         vec4 currentColor = texture(renderImage, texCoord);
-        if (length(currentColor) <= 0.0)
-        currentColor = texture(renderImage, inTexCoord);
         color += currentColor;
     }
 

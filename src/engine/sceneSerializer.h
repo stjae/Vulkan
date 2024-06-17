@@ -5,7 +5,6 @@
 #include "../scene/scene.h"
 #include <yaml-cpp/yaml.h>
 #include <fstream>
-#include "script/script.h"
 
 class SceneSerializer
 {

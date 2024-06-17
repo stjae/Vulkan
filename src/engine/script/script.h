@@ -13,6 +13,7 @@
 #include "../../path.h"
 #include "../../scene/mesh.h"
 #include "../../scene/scene.h"
+#include "../sceneSerializer.h"
 
 class ScriptClass;
 class ScriptInstance;
