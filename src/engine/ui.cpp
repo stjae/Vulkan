@@ -194,12 +194,6 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Add")) {
-            if (ImGui::MenuItem("Point Light")) {
-                scene.AddPointLight();
-            }
-            ImGui::EndMenu();
-        }
         const float buttonSize = ImGui::GetCurrentWindow()->MenuBarRect().GetSize().y;
         const float paddingRatio = 0.2f;
         ImGui::SetCursorPosX(ImGui::GetCurrentWindow()->MenuBarRect().GetSize().x * 0.5f - GetIconSize(buttonSize, GetButtonPadding(buttonSize, paddingRatio)));
@@ -537,6 +531,9 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 ImGui::PopID();
             }
             ImGui::EndListBox();
+            if (ImGui::Button("Add")) {
+                scene.AddPointLight();
+            }
             ImGui::Checkbox("Show Light Icon", &scene.m_showLightIcon);
             // Light Attributes
             if (scene.m_selectedLightIndex > -1) {
@@ -563,12 +560,6 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::SliderFloat3("Color", &scene.m_dirLight.color[0], 0.0f, 1.0f);
             if (ImGui::DragFloat("Intensity", &scene.m_dirLight.intensity, 0.1f))
                 scene.m_dirLight.intensity = std::max(0.0f, scene.m_dirLight.intensity);
-
-            // TODO: fix glitch on scroll
-            // dir light shadow depth map
-            // ImGui_ImplVulkan_RemoveTexture(m_shadowMapDescriptorSet);
-            // m_shadowMapDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, scene.m_shadowMap.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            // ImGui::Image(m_shadowMapDescriptorSet, { 200, 200 });
         }
         ImGui::EndTabItem();
     }
@@ -609,6 +600,10 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             }
             ImGui::EndListBox();
             if (subCamera.lock()) {
+                ImGui::SliderFloat("Cascade Range 1", &subCamera.lock()->m_cascadeRanges[0], subCamera.lock()->m_zNear, subCamera.lock()->m_cascadeRanges[1]);
+                ImGui::SliderFloat("Cascade Range 2", &subCamera.lock()->m_cascadeRanges[1], subCamera.lock()->m_cascadeRanges[0], subCamera.lock()->m_cascadeRanges[2]);
+                ImGui::SliderFloat("Cascade Range 3", &subCamera.lock()->m_cascadeRanges[2], subCamera.lock()->m_cascadeRanges[1], subCamera.lock()->m_cascadeRanges[3]);
+                ImGui::SliderFloat("Cascade Range 4", &subCamera.lock()->m_cascadeRanges[3], subCamera.lock()->m_cascadeRanges[2], subCamera.lock()->m_zFar);
                 if (scene.m_playCamera->GetAssignedMeshInstanceID() != subCamera.lock()->m_assignedMeshInstanceID) {
                     if (ImGui::Button("Select##_CAMERA")) {
                         scene.m_playCamera = subCamera.lock().get();
@@ -651,13 +646,6 @@ void UI::DrawResourceWindow(Scene& scene)
         for (int i = 0; i < scene.m_resources.size(); i++) {
             ImGui::PushID(i);
             ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
-            if (ImGui::BeginPopupContextItem()) {
-                if (ImGui::MenuItem("Delete")) {
-                    // TODO: resource deletion
-                    // scene.m_resources.erase(scene.m_resources.begin() + i);
-                }
-                ImGui::EndPopup();
-            }
 
             // Send Drag Drop
             if (ImGui::BeginDragDropSource()) {
@@ -670,42 +658,6 @@ void UI::DrawResourceWindow(Scene& scene)
             ImGui::NextColumn();
         }
         ImGui::Columns(1);
-        ImGui::EndTabItem();
-    }
-    if (ImGui::BeginTabItem("Script")) {
-        const float resourceButtonSize = 100.0f;
-        float panelSize = ImGui::GetContentRegionAvail().x;
-        int columnCount = std::max(1, (int)(panelSize / resourceButtonSize));
-        // Add Resource
-        ImGui::Columns(columnCount, nullptr, false);
-        if (ImGui::ImageButton(m_plusIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1))) {
-            // std::string path = nfdOpen({ "Script", "dll" });
-            // Script::Reload();
-        }
-        ImGui::NextColumn();
-
-        // for (int i = 0; i < scene.m_resources.size(); i++) {
-        //     ImGui::PushID(i);
-        //     ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
-        //     if (ImGui::BeginPopupContextItem()) {
-        //         if (ImGui::MenuItem("Delete")) {
-        //             // TODO: resource deletion
-        //             // scene.m_resources.erase(scene.m_resources.begin() + i);
-        //         }
-        //         ImGui::EndPopup();
-        //     }
-        //
-        //     // Send Drag Drop
-        //     if (ImGui::BeginDragDropSource()) {
-        //         ImGui::SetDragDropPayload("RESOURCE_WINDOW_ITEM", (void*)&scene.m_resources[i], sizeof(scene.m_resources[i]));
-        //         ImGui::EndDragDropSource();
-        //     }
-        //
-        //     ImGui::PopID();
-        //     ImGui::Text("%s", scene.m_resources[i].fileName.c_str());
-        //     ImGui::NextColumn();
-        // }
-        // ImGui::Columns(1);
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

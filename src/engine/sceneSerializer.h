@@ -14,7 +14,7 @@ public:
     void SerializeMesh(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes);
     void SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources);
     void Deserialize(Scene& scene, const std::string& filePath);
-    void SerializeCamera(YAML::Emitter& out, const Camera& camera);
+    void SerializeCamera(YAML::Emitter& out, const Camera& camera, const std::unordered_map<uint64_t, std::shared_ptr<SubCamera>>& subCameras);
     void SerializePointLight(YAML::Emitter& out, const PointLight& pointLight);
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
     void SerializeScriptClass(YAML::Emitter& out);

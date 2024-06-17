@@ -26,7 +26,7 @@
 #include "physics.h"
 #include "../time.h"
 
-typedef struct _Resource Resource;
+struct Resource;
 
 class Scene
 {
@@ -137,12 +137,12 @@ public:
     ~Scene();
 };
 
-typedef struct _Resource
+struct Resource
 {
     std::string filePath;
     std::string fileName;
     std::weak_ptr<void> ptr;
-    _Resource(std::string& path);
-} _Resource;
+    Resource(std::string& path);
+};
 
 #endif

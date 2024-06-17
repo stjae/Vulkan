@@ -83,7 +83,7 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     SerializeDirLight(out, scene);
     SerializePointLight(out, scene.m_pointLight);
-    SerializeCamera(out, scene.m_mainCamera);
+    SerializeCamera(out, scene.m_mainCamera, scene.m_subCameras);
     SerializeResource(out, scene.m_resources);
     SerializeMesh(out, scene.m_meshes);
     SerializeScriptClass(out);
@@ -122,7 +122,7 @@ void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& 
     }
 }
 
-void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
+void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera, const std::unordered_map<uint64_t, std::shared_ptr<SubCamera>>& subCameras)
 {
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
@@ -133,6 +133,21 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::Key << "Cascade Range 3" << YAML::Value << camera.m_cascadeRanges[2];
     out << YAML::Key << "Cascade Range 4" << YAML::Value << camera.m_cascadeRanges[3];
     out << YAML::EndMap;
+
+    // if (!subCameras.empty()) {
+    //     out << YAML::Key << "Sub Camera";
+    //     out << YAML::Value << YAML::BeginSeq;
+    //     for (auto& subCamera : subCameras) {
+    //         out << YAML::BeginMap;
+    //         out << YAML::Key << "Mesh Instance ID" << YAML::Value << subCamera.second->m_assignedMeshInstanceID;
+    //         out << YAML::Key << "Cascade Range 1" << YAML::Value << subCamera.second->m_cascadeRanges[0];
+    //         out << YAML::Key << "Cascade Range 2" << YAML::Value << subCamera.second->m_cascadeRanges[1];
+    //         out << YAML::Key << "Cascade Range 3" << YAML::Value << subCamera.second->m_cascadeRanges[2];
+    //         out << YAML::Key << "Cascade Range 4" << YAML::Value << subCamera.second->m_cascadeRanges[3];
+    //         out << YAML::EndMap;
+    //     }
+    //     out << YAML::EndSeq;
+    // }
 }
 
 void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources)
@@ -174,6 +189,15 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const std::vector<std::s
                     out << YAML::Key << "Type" << YAML::Value << (int)instance->physicsInfo->rigidBodyType;
                     out << YAML::Key << "Shape" << YAML::Value << (int)instance->physicsInfo->colliderShape;
                     out << YAML::Key << "RigidBodyScale" << YAML::Value << instance->physicsInfo->scale;
+                    out << YAML::EndMap;
+                }
+                if (instance->camera.lock()) {
+                    out << YAML::Key << "Camera" << YAML::Value;
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "Cascade Range 1" << YAML::Value << instance->camera.lock()->m_cascadeRanges[0];
+                    out << YAML::Key << "Cascade Range 2" << YAML::Value << instance->camera.lock()->m_cascadeRanges[1];
+                    out << YAML::Key << "Cascade Range 3" << YAML::Value << instance->camera.lock()->m_cascadeRanges[2];
+                    out << YAML::Key << "Cascade Range 4" << YAML::Value << instance->camera.lock()->m_cascadeRanges[3];
                     out << YAML::EndMap;
                 }
                 out << YAML::EndMap;
@@ -294,6 +318,14 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     pInfo.colliderShape = (eColliderShape)physicsInfo["Shape"].as<int>();
                     scene.AddPhysics(*scene.m_meshes[i], *meshInstance, pInfo);
                     meshInstance->physicsInfo->scale = physicsInfo["RigidBodyScale"].as<glm::vec3>();
+                }
+                auto subCamera = instance["Camera"];
+                if (subCamera) {
+                    scene.AddCamera(*meshInstance);
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[0] = subCamera["Cascade Range 1"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[1] = subCamera["Cascade Range 2"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[2] = subCamera["Cascade Range 3"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[3] = subCamera["Cascade Range 4"].as<float>();
                 }
             }
         }

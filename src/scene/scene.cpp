@@ -542,7 +542,7 @@ void Scene::AddCamera(MeshInstance& instance)
     instance.camera = m_subCameras[instance.UUID];
 }
 
-_Resource::_Resource(std::string& path)
+Resource::Resource(std::string& path)
 {
     this->filePath = path;
     this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
