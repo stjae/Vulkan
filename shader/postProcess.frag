@@ -23,13 +23,13 @@ void main() {
     vec4 currentPos = H;
     vec4 prevPos = prevCamera.data.proj * prevCamera.data.view * worldPos;
     prevPos /= prevPos.w;
-    vec2 velocity = (currentPos - prevPos).xy / 30.0;
+    vec2 velocity = (currentPos - prevPos).xy / 20.0;
 
     vec4 color = texture(renderImage, inTexCoord);
     vec2 texCoord = inTexCoord;
     texCoord += velocity;
 
-    int numSamples = 20;
+    int numSamples = 10;
     for (int i = 1; i < numSamples; i++) {
         texCoord += velocity;
         vec4 currentColor = texture(renderImage, texCoord);

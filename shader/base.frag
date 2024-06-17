@@ -59,13 +59,11 @@ layout (location = 6) flat in int instanceIndex;
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out ivec2 outID;
 
-const float SHADOW_OFFSET = 0.005;
-
 const mat4 biasMat = mat4(
-0.5, 0.0, 0.0, 0.0,
-0.0, 0.5, 0.0, 0.0,
-0.0, 0.0, 1.0, 0.0,
-0.5, 0.5, 0.0, 1.0
+    0.5, 0.0, 0.0, 0.0,
+    0.0, 0.5, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.5, 0.5, 0.0, 1.0
 );
 
 const vec2 offsets[9] =
@@ -90,9 +88,10 @@ vec3(1, 1, -1), vec3(1, 1, 0), vec3(1, 1, 1)
 
 float CalculatePointLightShadow(vec3 lightVec, vec3 offset, int lightIndex, textureCube shadowCubeMap)
 {
+    float bias = 0.15;
     float distToLight = length(lightVec);
     float sampledDist = texture(samplerCube(shadowCubeMap, repeatSampler), lightVec + offset).r;
-    if (distToLight > sampledDist + SHADOW_OFFSET) {
+    if (distToLight > sampledDist + bias) {
         return 0.0;
     } else {
         return 1.0;
@@ -112,8 +111,9 @@ float PCF_PointLightShadow(float radius, vec3 lightVec, int lightIndex, textureC
 
 float CalculateDirLightShadow(float distToLight, vec4 shadowCoord, vec2 offset, uint cascadeIndex)
 {
+    float bias = 0.005;
     float sampledDist = texture(shadowMap, vec3(shadowCoord.xy + offset, cascadeIndex)).r;
-    if (shadowCoord.w > 0 && distToLight > sampledDist + SHADOW_OFFSET) {
+    if (shadowCoord.w > 0 && distToLight > sampledDist + bias) {
         return 0.0;
     } else {
         return 1.0;
@@ -215,8 +215,8 @@ void main() {
     vec4 shadowCoord = (biasMat * cascade.viewProj[cascadeIndex]) * vec4(worldPos, 1.0);
     float distToLight = shadowCoord.z;
     ivec2 textureDim = textureSize(shadowMap, 0).xy;
-    float dx = 2.0 / textureDim.x;
-    float radianceAmount = PCF_DirLightShadow(distToLight, dx, shadowCoord, cascadeIndex);
+    float radius = 2.0 / textureDim.x;
+    float radianceAmount = PCF_DirLightShadow(distToLight, radius, shadowCoord, cascadeIndex);
     vec3 L = -cascade.lightDir;
     vec3 radiance = max(0.0, dot(L, N)) * cascade.color * cascade.intensity;
     if (radianceAmount > 0.0)
@@ -224,9 +224,9 @@ void main() {
 
     // Point Light Shadow
     for (int i = 0; i < pushConsts.lightCount; i++) {
-        float dx = 2.0 / 1024;
+        float radius = 20.0 / 1024;
         vec3 lightVec = worldPos - light.data[i].pos;
-        float radianceAmount = PCF_PointLightShadow(dx, lightVec, i, shadowCubeMaps[i]);
+        float radianceAmount = PCF_PointLightShadow(radius, lightVec, i, shadowCubeMaps[i]);
         vec3 L = normalize(light.data[i].pos - worldPos);
         vec3 radiance = max(0.0, dot(L, N)) * light.data[i].color * light.data[i].intensity;
         float attenuation = max(0.0, min(1.0, (light.data[i].range - length(lightVec)) / (light.data[i].range - 0.001)));
@@ -261,17 +261,17 @@ void main() {
     if (cascade.debug > 0) {
         switch (cascadeIndex) {
             case 0:
-            outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
-            break;
+                outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+                break;
             case 1:
-            outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
-            break;
+                outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+                break;
             case 2:
-            outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
-            break;
+                outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+                break;
             case 3:
-            outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
-            break;
+                outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+                break;
         }
     }
 }
