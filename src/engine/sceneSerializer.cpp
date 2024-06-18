@@ -84,9 +84,9 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     SerializeDirLight(out, scene);
     SerializePointLight(out, scene.m_pointLight);
-    SerializeCamera(out, scene.m_mainCamera, scene.m_subCameras);
+    SerializeCamera(out, scene.m_mainCamera);
     SerializeResource(out, scene.m_resources);
-    SerializeMesh(out, scene.m_meshes);
+    SerializeMesh(out, scene, scene.m_meshes);
     SerializeScriptClass(out);
     SerializeScriptInstance(out);
 
@@ -123,7 +123,7 @@ void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& 
     }
 }
 
-void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera, const std::unordered_map<uint64_t, std::shared_ptr<SubCamera>>& subCameras)
+void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
 {
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
@@ -134,21 +134,6 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera, 
     out << YAML::Key << "Cascade Range 3" << YAML::Value << camera.m_cascadeRanges[2];
     out << YAML::Key << "Cascade Range 4" << YAML::Value << camera.m_cascadeRanges[3];
     out << YAML::EndMap;
-
-    // if (!subCameras.empty()) {
-    //     out << YAML::Key << "Sub Camera";
-    //     out << YAML::Value << YAML::BeginSeq;
-    //     for (auto& subCamera : subCameras) {
-    //         out << YAML::BeginMap;
-    //         out << YAML::Key << "Mesh Instance ID" << YAML::Value << subCamera.second->m_assignedMeshInstanceID;
-    //         out << YAML::Key << "Cascade Range 1" << YAML::Value << subCamera.second->m_cascadeRanges[0];
-    //         out << YAML::Key << "Cascade Range 2" << YAML::Value << subCamera.second->m_cascadeRanges[1];
-    //         out << YAML::Key << "Cascade Range 3" << YAML::Value << subCamera.second->m_cascadeRanges[2];
-    //         out << YAML::Key << "Cascade Range 4" << YAML::Value << subCamera.second->m_cascadeRanges[3];
-    //         out << YAML::EndMap;
-    //     }
-    //     out << YAML::EndSeq;
-    // }
 }
 
 void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources)
@@ -165,7 +150,7 @@ void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Re
     }
 }
 
-void SceneSerializer::SerializeMesh(YAML::Emitter& out, const std::vector<std::shared_ptr<Mesh>>& meshes)
+void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, const std::vector<std::shared_ptr<Mesh>>& meshes)
 {
     if (!meshes.empty()) {
         out << YAML::Key << "Mesh";
@@ -195,6 +180,8 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const std::vector<std::s
                 if (instance->camera.lock()) {
                     out << YAML::Key << "Camera" << YAML::Value;
                     out << YAML::BeginMap;
+                    if (scene.m_playCamera == instance->camera.lock().get())
+                        out << YAML::Key << "Selected" << YAML::Value << true;
                     out << YAML::Key << "Cascade Range 1" << YAML::Value << instance->camera.lock()->m_cascadeRanges[0];
                     out << YAML::Key << "Cascade Range 2" << YAML::Value << instance->camera.lock()->m_cascadeRanges[1];
                     out << YAML::Key << "Cascade Range 3" << YAML::Value << instance->camera.lock()->m_cascadeRanges[2];
@@ -327,6 +314,8 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[1] = subCamera["Cascade Range 2"].as<float>();
                     scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[2] = subCamera["Cascade Range 3"].as<float>();
                     scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[3] = subCamera["Cascade Range 4"].as<float>();
+                    if (subCamera["Selected"])
+                        scene.m_playCamera = scene.m_subCameras[meshInstance->UUID].get();
                 }
             }
         }

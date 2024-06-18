@@ -52,6 +52,10 @@ void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    m_cameraIcon.InsertImage(PROJECT_DIR "image/icon/camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_cameraIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cameraIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    m_noCameraIcon.InsertImage(PROJECT_DIR "image/icon/no_camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_noCameraIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_noCameraIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
@@ -291,34 +295,22 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
         ImGui::EndDragDropTarget();
     }
 
-    for (auto& light : scene.m_pointLight.m_UBOs) {
-        glm::vec4 pos = scene.m_mainCamera.GetUBO().proj * scene.m_mainCamera.GetUBO().view * glm::vec4(light.pos, 1.0f);
-        float posZ = pos.z;
-        pos /= pos.w;
-        pos.x = (pos.x + 1.0f) * 0.5f;
-        pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
-        pos.x *= (float)width;
-        pos.y *= (float)height;
-        ImVec2 screenPos(pos.x, pos.y);
-        ImVec2 offset(300, 300);
-        offset /= posZ;
-        if (posZ > 1.0f && scene.m_showLightIcon && !scene.IsPlaying())
-            ImGui::GetWindowDrawList()->AddImage(m_lightIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
-    }
+    DrawLightIcon(scene, viewport);
+    DrawCameraIcon(scene, viewport);
 
     if (scene.m_selectedMeshID > -1) {
-        DrawMeshGuizmo(scene, viewport.m_panelPos);
+        DrawMeshGuizmo(scene, viewport);
     }
 
     if (scene.m_selectedLightIndex > -1) {
-        DrawLightGuizmo(scene, viewport.m_panelPos);
+        DrawLightGuizmo(scene, viewport);
     }
 
     ImGui::End();
     ImGui::PopStyleVar();
 }
 
-void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
+void UI::DrawMeshGuizmo(Scene& scene, const Viewport& viewport)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
     if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera.IsControllable())
@@ -331,7 +323,7 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::BeginFrame();
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+    ImGuizmo::SetRect(viewport.m_panelPos.x, viewport.m_panelPos.y, viewport.m_panelSize.x, viewport.m_panelSize.y);
 
     auto& mesh = scene.GetSelectedMesh();
     auto& meshInstance = scene.GetSelectedMeshInstance();
@@ -342,7 +334,7 @@ void UI::DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     }
 }
 
-void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
+void UI::DrawLightGuizmo(Scene& scene, const Viewport& viewport)
 {
     static ImGuizmo::OPERATION OP(ImGuizmo::OPERATION::TRANSLATE);
     if (ImGui::IsKeyPressed(ImGuiKey_W) && !scene.m_mainCamera.IsControllable())
@@ -355,7 +347,7 @@ void UI::DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos)
     ImGuizmo::BeginFrame();
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-    ImGuizmo::SetRect(viewportPanelPos.x, viewportPanelPos.y, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+    ImGuizmo::SetRect(viewport.m_panelPos.x, viewport.m_panelPos.y, viewport.m_panelSize.x, viewport.m_panelSize.y);
 
     auto& light = scene.m_pointLight.m_UBOs[scene.m_selectedLightIndex];
     glm::mat4 lightTranslation = glm::translate(glm::mat4(1.0f), light.pos);
@@ -499,7 +491,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         scene.m_playCamera = meshInstance.camera.lock().get();
                     }
                 } else {
-                    if (ImGui::Button("Deselect##_CAMERA")) {
+                    if (ImGui::Button("Unselect##_CAMERA")) {
                         scene.m_playCamera = &scene.m_mainCamera;
                     }
                 }
@@ -609,7 +601,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                         scene.m_playCamera = subCamera.lock().get();
                     }
                 } else {
-                    if (ImGui::Button("Deselect##_CAMERA")) {
+                    if (ImGui::Button("Unselect##_CAMERA")) {
                         scene.m_playCamera = &scene.m_mainCamera;
                     }
                 }
@@ -662,6 +654,46 @@ void UI::DrawResourceWindow(Scene& scene)
     }
     ImGui::EndTabBar();
     ImGui::End();
+}
+
+void UI::DrawLightIcon(const Scene& scene, const Viewport& viewport)
+{
+    for (auto& light : scene.m_pointLight.m_UBOs) {
+        glm::vec4 pos = scene.m_mainCamera.GetUBO().proj * scene.m_mainCamera.GetUBO().view * glm::vec4(light.pos, 1.0f);
+        float posZ = pos.z;
+        pos /= pos.w;
+        pos.x = (pos.x + 1.0f) * 0.5f;
+        pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
+        pos.x *= (float)viewport.m_panelSize.x;
+        pos.y *= (float)viewport.m_panelSize.y;
+        ImVec2 screenPos(pos.x, pos.y);
+        ImVec2 offset(300, 300);
+        offset /= posZ;
+        if (posZ > 1.0f && scene.m_showLightIcon && !scene.IsPlaying())
+            ImGui::GetWindowDrawList()->AddImage(m_lightIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
+    }
+}
+
+void UI::DrawCameraIcon(const Scene& scene, const Viewport& viewport)
+{
+    for (auto& camera : scene.m_subCameras) {
+        glm::vec4 pos = scene.m_mainCamera.GetUBO().proj * scene.m_mainCamera.GetUBO().view * glm::vec4(camera.second->m_pos, 1.0f);
+        float posZ = pos.z;
+        pos /= pos.w;
+        pos.x = (pos.x + 1.0f) * 0.5f;
+        pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
+        pos.x *= (float)viewport.m_panelSize.x;
+        pos.y *= (float)viewport.m_panelSize.y;
+        ImVec2 screenPos(pos.x, pos.y);
+        ImVec2 offset(300, 300);
+        offset /= posZ;
+        if (posZ > 1.0f && scene.m_showLightIcon && !scene.IsPlaying()) {
+            if (scene.m_playCamera == camera.second.get())
+                ImGui::GetWindowDrawList()->AddImage(m_cameraIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
+            else
+                ImGui::GetWindowDrawList()->AddImage(m_noCameraIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
+        }
+    }
 }
 
 void UI::ShowInformationOverlay(const Scene& scene)

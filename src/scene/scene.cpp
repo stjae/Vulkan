@@ -472,6 +472,7 @@ void Scene::RevertMeshInstances()
             }
             if (m_meshCopies[i].m_meshInstances[j]->camera.lock()) {
                 m_meshes[i]->m_meshInstances.back()->camera = m_meshCopies[i].m_meshInstances[j]->camera;
+                m_meshes[i]->m_meshInstances.back()->camera.lock()->GetTranslation() = m_meshes[i]->m_meshInstances.back()->translation;
             }
         }
     }
@@ -540,6 +541,7 @@ void Scene::AddCamera(MeshInstance& instance)
 {
     m_subCameras.emplace(instance.UUID, std::make_shared<SubCamera>(instance.UUID));
     instance.camera = m_subCameras[instance.UUID];
+    instance.camera.lock()->GetTranslation() = instance.translation;
 }
 
 Resource::Resource(std::string& path)

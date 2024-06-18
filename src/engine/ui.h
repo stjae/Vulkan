@@ -30,11 +30,15 @@ class UI
 
     vkn::Image m_plusIcon;
     vkn::Image m_lightIcon;
+    vkn::Image m_cameraIcon;
+    vkn::Image m_noCameraIcon;
     vkn::Image m_cubeIcon;
     vkn::Image m_playIcon;
     vkn::Image m_stopIcon;
     vk::DescriptorSet m_plusIconDescriptorSet;
     vk::DescriptorSet m_lightIconDescriptorSet;
+    vk::DescriptorSet m_cameraIconDescriptorSet;
+    vk::DescriptorSet m_noCameraIconDescriptorSet;
     vk::DescriptorSet m_cubeIconDescriptorSet;
     vk::DescriptorSet m_playIconDescriptorSet;
     vk::DescriptorSet m_stopIconDescriptorSet;
@@ -44,11 +48,13 @@ class UI
 
     void DrawDockSpace(Scene& scene, bool& init);
     void DrawViewport(Scene& scene, Viewport& viewport);
-    void DrawMeshGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
-    void DrawLightGuizmo(Scene& scene, const ImVec2& viewportPanelPos);
+    void DrawMeshGuizmo(Scene& scene, const Viewport& viewport);
+    void DrawLightGuizmo(Scene& scene, const Viewport& viewport);
     void DrawSceneAttribWindow(Scene& scene);
     void DrawResourceWindow(Scene& scene);
     void ShowInformationOverlay(const Scene& scene);
+    void DrawLightIcon(const Scene& scene, const Viewport& viewport);
+    void DrawCameraIcon(const Scene& scene, const Viewport& viewport);
 
     static float GetButtonPadding(float desiredButtonSize, float paddingRatio) { return desiredButtonSize * paddingRatio; }
     static float GetIconSize(float desiredButtonSize, float padding) { return desiredButtonSize - padding * 2.0f; }

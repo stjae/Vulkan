@@ -133,7 +133,7 @@ public:
     MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstanceMap[UUID]; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void UnselectAll();
-    bool IsPlaying() { return m_isPlaying; }
+    bool IsPlaying() const { return m_isPlaying; }
     ~Scene();
 };
 

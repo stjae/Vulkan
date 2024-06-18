@@ -325,9 +325,6 @@ void Mesh::CreateBuffers(const vk::CommandBuffer& commandBuffer)
 
         vkn::Command::CopyBufferToBuffer(commandBuffer, m_vertexStagingBuffers.back()->Get().buffer, m_vertexBuffers.back()->Get().buffer, m_vertexStagingBuffers.back()->Get().bufferInfo.size);
         vkn::Command::CopyBufferToBuffer(commandBuffer, m_indexStagingBuffers.back()->Get().buffer, m_indexBuffers.back()->Get().buffer, m_indexStagingBuffers.back()->Get().bufferInfo.size);
-
-        // m_vertexStagingBuffers.back()->Destroy();
-        // m_indexStagingBuffers.back()->Destroy();
     }
 }
 
@@ -336,6 +333,8 @@ void Mesh::UpdateUBO(MeshInstance& instance)
     m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
     m_meshInstanceUBOBuffer->Copy(m_meshInstanceUBOs.data());
     instance.physicsDebugUBO.model = instance.UBO.model;
+    if (instance.camera.lock())
+        instance.camera.lock()->GetTranslation() = instance.translation;
 }
 
 MeshInstanceUBO::MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos, glm::vec3 scale)

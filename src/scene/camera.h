@@ -54,7 +54,7 @@ protected:
 public:
     Camera();
     bool IsControllable() const { return m_isControllable; }
-    const CameraUBO& GetUBO() { return m_cameraUBO; }
+    const CameraUBO& GetUBO() const { return m_cameraUBO; }
     virtual void Control() = 0;
     void Init();
     void Update(const vk::CommandBuffer& commandBuffer);
@@ -76,6 +76,7 @@ public:
 
 class SubCamera : public Camera
 {
+
 public:
     SubCamera(uint64_t meshInstanceID);
     void Control() override;
