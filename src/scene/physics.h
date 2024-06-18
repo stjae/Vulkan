@@ -15,8 +15,6 @@
 
 class Physics
 {
-    friend class Viewport;
-
     inline static btDefaultCollisionConfiguration* s_collisionConfiguration;
     inline static btCollisionDispatcher* s_dispatcher;
     inline static btBroadphaseInterface* s_overlappingPairCache;
@@ -32,6 +30,7 @@ public:
     static void DeleteRigidBody(MeshInstance& instance);
     static void UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
     static void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static btDiscreteDynamicsWorld* GetDynamicsWorld() { return s_dynamicsWorld; }
     ~Physics();
 };
 

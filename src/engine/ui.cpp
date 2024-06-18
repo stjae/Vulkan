@@ -30,7 +30,7 @@ void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene
     init_info.Queue = vkn::Device::Get().graphicsQueue;
     init_info.DescriptorPool = m_descriptorPool;
     init_info.Subpass = 0;
-    init_info.MinImageCount = vkn::Swapchain::Get().surfaceCapabilities.minImageCount;
+    init_info.MinImageCount = 2;
     init_info.ImageCount = vkn::Swapchain::Get().frameImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
@@ -95,7 +95,7 @@ void UI::Draw(Scene& scene, Viewport& viewport, bool& init)
     DrawViewport(scene, viewport);
     DrawSceneAttribWindow(scene);
     DrawResourceWindow(scene);
-    ShowInformationOverlay(scene);
+    ShowInformationOverlay();
     ImGui::PopItemFlag();
 
     ImGui::EndFrame();
@@ -276,14 +276,11 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
     ImGui::Image(m_viewportImageDescriptorSet, ImVec2{ viewport.m_panelSize.x, viewport.m_panelSize.y });
     viewport.m_isMouseHovered = ImGui::IsItemHovered();
     if (ImGui::BeginDragDropTarget()) {
-
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("RESOURCE_WINDOW_ITEM", ImGuiDragDropFlags_AcceptBeforeDelivery);
         Resource* data = nullptr;
         if (payload)
             data = (Resource*)payload->Data;
-
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && data) {
-
             double mouseX, mouseY;
             glfwGetCursorPos(Window::GetWindow(), &mouseX, &mouseY);
             s_dragDropMouseX = mouseX;
@@ -473,6 +470,8 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 }
                 for (auto& scriptClass : Script::s_scriptClasses) {
                     if (ImGui::MenuItem(scriptClass.first.c_str())) {
+                        if (Script::InstanceExists(meshInstance.UUID))
+                            Script::s_scriptInstances.erase(meshInstance.UUID);
                         Script::s_scriptInstances.emplace(meshInstance.UUID, std::make_shared<ScriptInstance>(scriptClass.second, meshInstance.UUID));
                     }
                 }
@@ -611,6 +610,11 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 }
             }
         }
+        ImGui::SeparatorText("Post Effect");
+        bool useMotionBlur = postProcessPushConstants.useMotionBlur > 0;
+        if (ImGui::Checkbox("Motion Blur", &useMotionBlur)) {
+            postProcessPushConstants.useMotionBlur = useMotionBlur ? 1 : -1;
+        }
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -635,9 +639,17 @@ void UI::DrawResourceWindow(Scene& scene)
         }
         ImGui::NextColumn();
 
-        for (int i = 0; i < scene.m_resources.size(); i++) {
+        int meshIndexToDelete = -1;
+        for (int i = 0; i < scene.m_meshes.size(); i++) {
             ImGui::PushID(i);
             ImGui::ImageButton(m_cubeIconDescriptorSet, { GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)), GetIconSize(resourceButtonSize, GetButtonPadding(resourceButtonSize, 0.4f)) }, ImVec2(0, 0), ImVec2(1, 1), GetButtonPadding(resourceButtonSize, 0.4f), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1));
+
+            if (ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Delete")) {
+                    meshIndexToDelete = i;
+                }
+                ImGui::EndPopup();
+            }
 
             // Send Drag Drop
             if (ImGui::BeginDragDropSource()) {
@@ -650,6 +662,10 @@ void UI::DrawResourceWindow(Scene& scene)
             ImGui::NextColumn();
         }
         ImGui::Columns(1);
+        if (meshIndexToDelete > -1) {
+            scene.DeleteMesh(meshIndexToDelete);
+            scene.m_resources.erase(scene.m_resources.begin() + meshIndexToDelete);
+        }
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -696,15 +712,11 @@ void UI::DrawCameraIcon(const Scene& scene, const Viewport& viewport)
     }
 }
 
-void UI::ShowInformationOverlay(const Scene& scene)
+void UI::ShowInformationOverlay()
 {
-    const ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
-
-    ImGui::SetNextWindowPos(ImVec2(imguiViewport->Size.x, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDocking;
-    ImGui::Begin("Information", nullptr, window_flags);
-    ImGui::Text("%s", std::to_string(Time::GetFrameCount()).c_str());
-    ImGui::Text("Camera Control: %s [press C]", scene.m_mainCamera.IsControllable() ? "on" : "off");
+    ImGui::Begin("Information");
+    ImGui::Text("FPS: %s", std::to_string(Time::GetFrameCount()).c_str());
+    ImGui::TextWrapped("Instruction: press W S A D to move camera, press C to turn camera control on / off");
     ImGui::End();
 }
 

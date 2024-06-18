@@ -22,20 +22,21 @@ else ()
     message(unsupported OS)
 endif ()
 
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+    set(VKAPP_BINARY_DIR "${PROJECT_BINARY_DIR}/$<CONFIG>")
+endif ()
+
 add_executable(${PROJECT_NAME}
         src/path.h
         src/main.cpp
         src/common.h src/common.cpp
         src/engine/app.h src/engine/app.cpp
         src/engine/engine.h src/engine/engine.cpp
-
         src/scene/scene.h src/scene/scene.cpp
         src/scene/meshBase.h src/scene/meshBase.cpp
         src/scene/mesh.h src/scene/mesh.cpp
         src/scene/camera.h src/scene/camera.cpp
         src/engine/ui.h src/engine/ui.cpp
-
-        # vulkan
         src/window.h src/window.cpp
         src/vulkan/instance.h src/vulkan/instance.cpp
         src/vulkan/debugMessenger.h src/vulkan/debugMessenger.cpp
@@ -117,9 +118,17 @@ if (WIN32)
     include_directories(${MONO_INCLUDE_DIR})
     target_link_directories(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR})
     target_link_libraries(${PROJECT_NAME} PUBLIC ${MONO_LIB_DIR}/mono-2.0-sgen.lib)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/bin/mono-2.0-sgen.dll" ${PROJECT_BINARY_DIR}
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Program Files/Mono/lib/mono/4.5" ${PROJECT_BINARY_DIR}/mono/lib/mono/4.5)
+    if (CMAKE_GENERATOR MATCHES "Visual Studio")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/bin/mono-2.0-sgen.dll" ${VKAPP_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/lib/mono/4.5/System.Numerics.dll" ${VKAPP_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Program Files/Mono/lib/mono/4.5" ${VKAPP_BINARY_DIR}/mono/lib/mono/4.5)
+    else ()
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/bin/mono-2.0-sgen.dll" ${PROJECT_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E copy "C:/Program Files/Mono/lib/mono/4.5/System.Numerics.dll" ${PROJECT_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Program Files/Mono/lib/mono/4.5" ${PROJECT_BINARY_DIR}/mono/lib/mono/4.5)
+    endif ()
 elseif (APPLE)
     set(MONO_INCLUDE_DIR "/opt/homebrew/include/mono-2.0")
     set(MONO_LIB_DIR "/opt/homebrew/lib")
@@ -147,12 +156,6 @@ endforeach ()
 
 include(Shader.cmake)
 add_dependencies(${PROJECT_NAME} ${DEP_LIST} shader)
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_BINARY_DIR}/shaders"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
-)
 
 # Create config.h contains project directory
 if (APPLE)

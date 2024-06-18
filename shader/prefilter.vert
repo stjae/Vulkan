@@ -11,8 +11,7 @@ layout (location = 1) out float roughness;
 
 layout (push_constant) uniform PushConsts
 {
-    mat4 view;
-    mat4 proj;
+    mat4 viewProj;
     float roughness;
 } pushConsts;
 
@@ -20,5 +19,5 @@ void main()
 {
     localPos = inPos;
     roughness = pushConsts.roughness;
-    gl_Position = pushConsts.proj * pushConsts.view * vec4(localPos, 1.0);
+    gl_Position = pushConsts.viewProj * vec4(localPos, 1.0);
 }

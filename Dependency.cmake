@@ -4,6 +4,7 @@ set(DEP_INSTALL_DIR ${PROJECT_BINARY_DIR}/install)
 set(DEP_INCLUDE_DIR ${DEP_INSTALL_DIR}/include)
 set(DEP_LIB_DIR ${DEP_INSTALL_DIR}/lib)
 
+#spdlog
 ExternalProject_Add(
         dep-spdlog
         GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
@@ -12,7 +13,9 @@ ExternalProject_Add(
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
         TEST_COMMAND ""
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
+        CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
 )
 
 set(DEP_LIST ${DEP_LIST} dep-spdlog)
@@ -119,6 +122,7 @@ ExternalProject_Add(
         PATCH_COMMAND ""
         TEST_COMMAND ""
         CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
         -DASSIMP_WARNINGS_AS_ERRORS=OFF
 )
@@ -149,6 +153,7 @@ ExternalProject_Add(
         PATCH_COMMAND ""
         TEST_COMMAND ""
         CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
         -DYAML_BUILD_SHARED_LIBS=ON
 )

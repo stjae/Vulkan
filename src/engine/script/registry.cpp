@@ -1,15 +1,12 @@
 #include "registry.h"
-#include "script.h"
-#include "../../scene/scene.h"
-#include "../../keycode.h"
 
-static void GetTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
+void Registry::GetTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     *outTranslation = instance.translation;
 }
 
-static void SetTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
+void Registry::SetTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     instance.translation = *inTranslation;
@@ -17,13 +14,13 @@ static void SetTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
     Script::s_scene->GetMeshes()[instance.UBO.meshColorID]->UpdateUBO(instance);
 }
 
-static void GetRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
+void Registry::GetRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     *outRotation = instance.rotation;
 }
 
-static void SetRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
+void Registry::SetRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     instance.rotation = *inRotation;
@@ -31,26 +28,26 @@ static void SetRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
     Script::s_scene->GetMeshes()[instance.UBO.meshColorID]->UpdateUBO(instance);
 }
 
-static void GetForward(uint64_t meshInstanceID, glm::vec3* outForward)
+void Registry::GetForward(uint64_t meshInstanceID, glm::vec3* outForward)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     *outForward = glm::normalize(instance.UBO.model * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 }
 
-static void GetRight(uint64_t meshInstanceID, glm::vec3* outRight)
+void Registry::GetRight(uint64_t meshInstanceID, glm::vec3* outRight)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     glm::vec3 forward = glm::normalize(instance.UBO.model * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
     *outRight = glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
-static void GetMatrix(uint64_t meshInstanceID, glm::mat4* outMatrix)
+void Registry::GetMatrix(uint64_t meshInstanceID, glm::mat4* outMatrix)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     *outMatrix = instance.UBO.model;
 }
 
-static void GetCameraTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
+void Registry::GetCameraTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
@@ -58,15 +55,15 @@ static void GetCameraTranslation(uint64_t meshInstanceID, glm::vec3* outTranslat
     }
 }
 
-static void SetCameraTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
+void Registry::SetCameraTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
-        instance.camera.lock()->GetTranslation() = *inTranslation;
+        instance.camera.lock()->SetTranslation(*inTranslation);
     }
 }
 
-static void GetCameraRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
+void Registry::GetCameraRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
@@ -74,15 +71,15 @@ static void GetCameraRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
     }
 }
 
-static void SetCameraRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
+void Registry::SetCameraRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
-        instance.camera.lock()->GetRotation() = *inRotation;
+        instance.camera.lock()->SetRotation(*inRotation);
     }
 }
 
-static void GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection)
+void Registry::GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
@@ -90,30 +87,30 @@ static void GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection)
     }
 }
 
-static void SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirection)
+void Registry::SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirection)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.camera.lock()) {
-        instance.camera.lock()->GetDirection() = *inDirection;
+        instance.camera.lock()->SetDirection(*inDirection);
     }
 }
 
-static bool IsKeyDown(Keycode keycode)
+bool Registry::IsKeyDown(Keycode keycode)
 {
     return Window::IsKeyDown(keycode);
 }
 
-static float GetMouseX()
+float Registry::GetMouseX()
 {
     return Window::GetMousePosNormalizedX();
 }
 
-static float GetMouseY()
+float Registry::GetMouseY()
 {
     return Window::GetMousePosNormalizedY();
 }
 
-static void ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse)
+void Registry::ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
@@ -122,24 +119,51 @@ static void ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse)
     }
 }
 
-static void SetVelocity(uint64_t meshInstanceID, btVector3* velocity)
+void Registry::GetVelocity(uint64_t meshInstanceID, btVector3* outVelocity)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setLinearVelocity(*velocity);
+        *outVelocity = instance.physicsInfo->rigidBodyPtr->getLinearVelocity();
     }
 }
 
-static void SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity)
+void Registry::SetVelocity(uint64_t meshInstanceID, btVector3* inVelocity)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        // TODO: option
+        instance.physicsInfo->rigidBodyPtr->setLinearVelocity(*inVelocity);
+    }
+}
+
+void Registry::SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.physicsInfo) {
+        instance.physicsInfo->rigidBodyPtr->activate(true);
         instance.physicsInfo->rigidBodyPtr->setAngularFactor(btVector3(0, 0, 0));
         instance.physicsInfo->rigidBodyPtr->setAngularVelocity(*velocity);
     }
+}
+
+void Registry::SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.physicsInfo) {
+        instance.physicsInfo->rigidBodyPtr->activate(true);
+        btTransform transform;
+        transform.setFromOpenGLMatrix(glm::value_ptr(*matrix));
+        instance.physicsInfo->rigidBodyPtr->setWorldTransform(transform);
+    }
+}
+
+void Registry::GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3* hitPosition)
+{
+    btCollisionWorld::ClosestRayResultCallback result(*rayFrom, *rayTo);
+    Physics::GetDynamicsWorld()->rayTest(*rayFrom, *rayTo, result);
+    if (result.hasHit())
+        *hitPosition = result.m_hitPointWorld;
 }
 
 void Registry::RegisterFunctions()
@@ -164,6 +188,9 @@ void Registry::RegisterFunctions()
     mono_add_internal_call("vkApp.InternalCall::GetMouseY", (const void*)GetMouseY);
 
     mono_add_internal_call("vkApp.InternalCall::ApplyImpulse", (const void*)ApplyImpulse);
+    mono_add_internal_call("vkApp.InternalCall::GetVelocity", (const void*)GetVelocity);
     mono_add_internal_call("vkApp.InternalCall::SetVelocity", (const void*)SetVelocity);
     mono_add_internal_call("vkApp.InternalCall::SetAngularVelocity", (const void*)SetAngularVelocity);
+    mono_add_internal_call("vkApp.InternalCall::SetRigidBodyTransform", (const void*)SetRigidBodyTransform);
+    mono_add_internal_call("vkApp.InternalCall::GetRayHitPosition", (const void*)GetRayHitPosition);
 }

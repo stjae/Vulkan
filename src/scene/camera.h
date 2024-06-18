@@ -34,7 +34,7 @@ class Camera
 
 protected:
     bool m_isControllable = false;
-    bool m_startControl = true; // prevent sudden camera move
+    bool m_isInitialCameraMove = true; // prevent sudden camera move
 
     float m_zNear = 0.1f;
     float m_zFar = 1024.0f;
@@ -57,12 +57,16 @@ public:
     const CameraUBO& GetUBO() const { return m_cameraUBO; }
     virtual void Control() = 0;
     void Init();
+    void Reset();
     void Update(const vk::CommandBuffer& commandBuffer);
     float GetCascadeDepth(int index);
     glm::mat4 GetCascadeProj(int index);
     glm::vec3& GetDirection() { return m_dir; }
+    void SetDirection(const glm::vec3& direction);
     glm::vec3& GetTranslation() { return m_pos; }
+    void SetTranslation(const glm::vec3& translation);
     glm::vec3& GetRotation() { return m_rotation; }
+    void SetRotation(const glm::vec3& rotation);
     uint64_t GetAssignedMeshInstanceID();
 };
 

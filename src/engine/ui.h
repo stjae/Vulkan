@@ -17,6 +17,7 @@
 #include "sceneSerializer.h"
 #include "../engine/script/script.h"
 #include "../time.h"
+#include <typeinfo>
 
 class UI
 {
@@ -52,7 +53,7 @@ class UI
     void DrawLightGuizmo(Scene& scene, const Viewport& viewport);
     void DrawSceneAttribWindow(Scene& scene);
     void DrawResourceWindow(Scene& scene);
-    void ShowInformationOverlay(const Scene& scene);
+    void ShowInformationOverlay();
     void DrawLightIcon(const Scene& scene, const Viewport& viewport);
     void DrawCameraIcon(const Scene& scene, const Viewport& viewport);
 

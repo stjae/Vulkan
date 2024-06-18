@@ -199,7 +199,8 @@ void Mesh::CreateSphere(float scale, const char* name, const char* texture)
 Mesh::Mesh(int32_t meshColorID, const std::string& filePath) : m_meshColorID(meshColorID)
 {
     if (!filePath.empty()) {
-        m_filepath = filePath;
+        m_filePath = filePath;
+        m_name = filePath.substr(filePath.find_last_of("/\\") + 1, filePath.rfind('.') - filePath.find_last_of("/\\") - 1);
         LoadModel(filePath);
     }
 }
@@ -337,6 +338,14 @@ void Mesh::UpdateUBO(MeshInstance& instance)
         instance.camera.lock()->GetTranslation() = instance.translation;
 }
 
+void Mesh::UpdateColorID()
+{
+    for (auto& instance : m_meshInstances) {
+        instance->UBO.meshColorID = m_meshColorID;
+        UpdateUBO(*instance);
+    }
+}
+
 MeshInstanceUBO::MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos, glm::vec3 scale)
     : meshColorID(meshColorID), instanceColorID(instanceColorID)
 {
@@ -353,6 +362,8 @@ MeshInstance::MeshInstance(uint64_t UUID, MeshInstanceUBO&& UBO)
 
 MeshInstance& MeshInstance::operator=(const MeshInstance& other)
 {
+    if (&other == this)
+        return *this;
     this->translation = other.translation;
     this->rotation = other.rotation;
     this->scale = other.scale;

@@ -10,6 +10,11 @@ layout (set = 0, binding = 1) uniform Camera {
 layout (set = 0, binding = 2) uniform sampler2D renderImage;
 layout (set = 0, binding = 3) uniform sampler2D depthMap;
 
+layout (push_constant) uniform PushConsts
+{
+    int useMotionBlur;
+} pushConsts;
+
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outColor;
 
@@ -29,7 +34,7 @@ void main() {
     vec2 texCoord = inTexCoord;
     texCoord += velocity;
 
-    int numSamples = 10;
+    int numSamples = pushConsts.useMotionBlur > 0 ? 10 : 1;
     for (int i = 1; i < numSamples; i++) {
         texCoord += velocity;
         vec4 currentColor = texture(renderImage, texCoord);

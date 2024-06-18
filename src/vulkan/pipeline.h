@@ -86,9 +86,13 @@ struct CubemapPushConstants
 
 struct PrefilteredCubemapPushConstants
 {
-    glm::mat4 view;
-    glm::mat4 proj;
+    glm::mat4 viewProj;
     float roughness;
 };
+
+struct PostProcessPushConstants
+{
+    int useMotionBlur = 0;
+} inline postProcessPushConstants;
 
 #endif

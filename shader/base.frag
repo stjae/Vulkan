@@ -57,13 +57,12 @@ layout (location = 5) in vec4 inViewPos;
 layout (location = 6) flat in int instanceIndex;
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out ivec2 outID;
 
 const mat4 biasMat = mat4(
-    0.5, 0.0, 0.0, 0.0,
-    0.0, 0.5, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.5, 0.5, 0.0, 1.0
+0.5, 0.0, 0.0, 0.0,
+0.0, 0.5, 0.0, 0.0,
+0.0, 0.0, 1.0, 0.0,
+0.5, 0.5, 0.0, 1.0
 );
 
 const vec2 offsets[9] =
@@ -255,23 +254,20 @@ void main() {
     vec3 color = ambient + Lo;
     outColor.rgb = color;
 
-    outID.r = meshInstance.meshID;
-    outID.g = meshInstance.instanceID;
-
     if (cascade.debug > 0) {
         switch (cascadeIndex) {
             case 0:
-                outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
-                break;
+            outColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+            break;
             case 1:
-                outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
-                break;
+            outColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+            break;
             case 2:
-                outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
-                break;
+            outColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+            break;
             case 3:
-                outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
-                break;
+            outColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+            break;
         }
     }
 }

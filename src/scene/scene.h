@@ -123,6 +123,7 @@ class Scene
     void Stop();
     void Update();
     void UpdatePhysicsDebug();
+    void DeleteMesh(int index);
 
 public:
     void Init();

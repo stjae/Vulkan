@@ -235,6 +235,10 @@ void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
     DeletePhysics(instance);
     Script::s_scriptInstances.erase(instance.UUID);
+    if (instance.camera.lock()) {
+        m_subCameras.erase(instance.UUID);
+        m_playCamera = &m_mainCamera;
+    }
     mesh.DeleteInstance(instance.UBO.instanceColorID);
     m_meshInstanceMap.erase(instance.UUID);
     UnselectAll();
@@ -473,6 +477,7 @@ void Scene::RevertMeshInstances()
             if (m_meshCopies[i].m_meshInstances[j]->camera.lock()) {
                 m_meshes[i]->m_meshInstances.back()->camera = m_meshCopies[i].m_meshInstances[j]->camera;
                 m_meshes[i]->m_meshInstances.back()->camera.lock()->GetTranslation() = m_meshes[i]->m_meshInstances.back()->translation;
+                m_meshes[i]->m_meshInstances.back()->camera.lock()->Reset();
             }
         }
     }
@@ -490,10 +495,13 @@ void Scene::Play()
         m_isStartUp = false;
         Physics::UpdateRigidBodies(m_meshes);
         CopyMeshInstances();
+        Script::Reset();
+        for (auto& scriptClass : Script::s_scriptClasses)
+            scriptClass.second->Init();
         for (auto& scriptInstance : Script::s_scriptInstances) {
+            scriptInstance.second->Init();
             scriptInstance.second->InvokeOnCreate();
         }
-        m_playCamera->Init();
         UpdateCameraDescriptor(m_playCamera);
     }
 
@@ -542,6 +550,17 @@ void Scene::AddCamera(MeshInstance& instance)
     m_subCameras.emplace(instance.UUID, std::make_shared<SubCamera>(instance.UUID));
     instance.camera = m_subCameras[instance.UUID];
     instance.camera.lock()->GetTranslation() = instance.translation;
+}
+
+void Scene::DeleteMesh(int index)
+{
+    for (int i = 0; i < m_meshes[index]->m_meshInstances.size();)
+        DeleteMeshInstance(*m_meshes[index], *m_meshes[index]->m_meshInstances[i]);
+    m_meshes.erase(m_meshes.begin() + index);
+    for (int32_t i = index; i < m_meshes.size(); i++) {
+        m_meshes[index]->m_meshColorID--;
+        m_meshes[index]->UpdateColorID();
+    }
 }
 
 Resource::Resource(std::string& path)

@@ -69,8 +69,7 @@ void PrefilteredCubemap::DrawPrefilteredCubemapFace(float roughness, uint32_t fa
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, cubemapPipeline.m_pipelineLayout, 0, 1, &cubemapPipeline.m_descriptorSets[0], 0, nullptr);
 
     vk::DeviceSize vertexOffsets[]{ 0 };
-    m_pushConstants.view = viewMatrix;
-    m_pushConstants.proj = projMatrix;
+    m_pushConstants.viewProj = projMatrix * viewMatrix;
     m_pushConstants.roughness = roughness;
     commandBuffer.pushConstants(
         cubemapPipeline.m_pipelineLayout,

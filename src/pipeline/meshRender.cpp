@@ -111,11 +111,11 @@ void MeshRenderPipeline::CreateRenderPass()
     // Color Resolve
     attachments[1].format = vk::Format::eB8G8R8A8Srgb;
     attachments[1].samples = vk::SampleCountFlagBits::e1;
-    attachments[1].loadOp = vk::AttachmentLoadOp::eLoad;
+    attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[1].storeOp = vk::AttachmentStoreOp::eStore;
     attachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     attachments[1].stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    attachments[1].initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    attachments[1].initialLayout = vk::ImageLayout::eUndefined;
     attachments[1].finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     // Depth

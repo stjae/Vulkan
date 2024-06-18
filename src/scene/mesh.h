@@ -21,14 +21,16 @@ struct MaterialFilePath;
 
 class Mesh : public MeshBase
 {
+    friend class UI;
     friend class Scene;
+    friend class SceneSerializer;
     friend class Physics;
 
     void CreateSquare(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateCube(float scale = 1.0f, const char* texturePath = nullptr);
     void CreateSphere(float scale = 1.0f, const char* name = nullptr, const char* texturePath = nullptr);
 
-    std::string m_filepath;
+    std::string m_filePath;
     std::string m_name;
 
     // id used for mouse picking
@@ -59,6 +61,7 @@ public:
     const std::vector<MeshPart>& GetMeshParts() const { return m_meshParts; }
     btTriangleIndexVertexArray* GetBulletVertexArray() { return &m_bulletVertexArray; }
     void UpdateUBO(MeshInstance& instance);
+    void UpdateColorID();
 };
 
 struct MeshPart

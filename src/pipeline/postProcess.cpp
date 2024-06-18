@@ -13,7 +13,7 @@ void PostProcessPipeline::CreatePipeline()
 
     SetUpDescriptors();
 
-    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshRenderPushConstants));
+    vk::PushConstantRange pushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(PostProcessPushConstants));
     vk::PipelineLayoutCreateInfo pipelineLayoutInfoCI({}, m_descriptorSetLayouts.size(), m_descriptorSetLayouts.data(), 1, &pushConstantRange);
 
     m_pipelineCI.stageCount = (uint32_t)shaderStageInfos.size();

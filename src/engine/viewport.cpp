@@ -36,7 +36,6 @@ void Viewport::CreateImage()
     m_imageResolved.CreateImageView();
     vk::DescriptorImageInfo imageInfo(vkn::Image::s_clampSampler, m_imageResolved.Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     postProcessPipeline.UpdateRenderImage(imageInfo);
-    vkn::Command::ChangeImageLayout(m_commandBuffer, m_imageResolved.Get().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     m_imageFinal.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_imageFinal.CreateImageView();
@@ -228,12 +227,7 @@ void Viewport::Draw(const Scene& scene)
                     m_commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
                     m_commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
                     meshRenderPushConsts.materialID = materialOffset + part.materialID;
-                    m_commandBuffer.pushConstants(
-                        meshRenderPipeline.m_pipelineLayout,
-                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-                        0,
-                        sizeof(MeshRenderPushConstants),
-                        &meshRenderPushConsts);
+                    m_commandBuffer.pushConstants(meshRenderPipeline.m_pipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshRenderPushConstants), &meshRenderPushConsts);
                     m_commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
                 }
             }
@@ -251,7 +245,10 @@ void Viewport::Draw(const Scene& scene)
             m_commandBuffer.drawIndexed(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_lineIndices.size(), 1, 0, 0, 0);
         }
     }
+
+    // Post Process
     m_commandBuffer.nextSubpass(vk::SubpassContents::eInline);
+    m_commandBuffer.pushConstants(postProcessPipeline.m_pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(PostProcessPushConstants), &postProcessPushConstants);
     m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, postProcessPipeline.m_pipeline);
     m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, postProcessPipeline.m_pipelineLayout, 0, postProcessPipeline.m_descriptorSets.size(), postProcessPipeline.m_descriptorSets.data(), 0, nullptr);
     m_commandBuffer.bindVertexBuffers(0, 1, &scene.m_square.m_vertexBuffers[0]->Get().buffer, vertexOffsets);

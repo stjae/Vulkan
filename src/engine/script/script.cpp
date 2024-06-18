@@ -10,8 +10,8 @@ void Script::Init(Scene* scene)
     Registry::RegisterFunctions();
 
     // Base
-    MonoAssembly* baseAssembly = monoUtils::LoadAssembly(PROJECT_DIR "script/vkApp.dll");
-    s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "MeshInstance", "");
+    s_baseScriptClass = std::make_unique<ScriptClass>("vkApp", "MeshInstance", "vkApp.dll");
+    s_baseScriptClass->Init();
 }
 
 void Script::LoadDll(const std::string& sceneFolderPath)
@@ -39,6 +39,15 @@ void Script::InitMono()
     mono_domain_set(s_appDomain, true);
 }
 
+void Script::Reset()
+{
+    s_appDomain = mono_domain_create_appdomain("vkAppDomain", nullptr);
+    mono_domain_set(s_appDomain, true);
+
+    s_baseScriptClass = std::make_unique<ScriptClass>("vkApp", "MeshInstance", "vkApp.dll");
+    s_baseScriptClass->Init();
+}
+
 void Script::LoadAssemblyClasses(const std::string& filePath)
 {
     MonoAssembly* assembly = monoUtils::LoadAssembly(filePath);
@@ -60,8 +69,16 @@ void Script::LoadAssemblyClasses(const std::string& filePath)
         }
 
         if (s_baseScriptClass->IsParentOf(monoClass)) {
-            auto scriptClass = std::make_shared<ScriptClass>(assembly, nameSpace, name, filePath);
+            auto scriptClass = std::make_shared<ScriptClass>(nameSpace, name, filePath);
             s_scriptClasses.emplace(scriptClass->m_fullName, scriptClass);
+            std::string dllPath = filePath.substr(0, filePath.find_last_of("/\\") + 1);
+            std::string baseDllName = "vkApp.dll";
+            std::string numericsDllName = "System.Numerics.dll";
+            auto copyOptions = std::filesystem::copy_options::update_existing;
+            std::error_code ec;
+            std::filesystem::copy_file(baseDllName, dllPath + baseDllName, copyOptions, ec);
+            std::filesystem::copy_file(numericsDllName, dllPath + numericsDllName, copyOptions, ec);
+            Log(DEBUG, fmt::terminal_color::bright_black, "Error copying script dll: {0}", ec.message());
         }
     }
 }
@@ -71,28 +88,6 @@ void Script::InvokeMethod(MonoMethod* method, MonoObject* instance, void** param
     mono_runtime_invoke(method, instance, params, nullptr);
 }
 
-// void Script::Reload()
-// {
-//     s_appDomain = mono_domain_create_appdomain("vkAppDomain", nullptr);
-//     mono_domain_set(s_appDomain, true);
-//
-//     s_scriptClasses.clear();
-//     for (auto& scriptClass : s_scriptClasses) {
-//         scriptClass.reset();
-//     }
-//
-//     MonoAssembly* baseAssembly = monoUtils::LoadAssembly(PROJECT_DIR "script/vkApp.dll");
-//     s_baseScriptClass = std::make_shared<ScriptClass>(baseAssembly, "vkApp", "MeshInstance");
-//
-//     MonoAssembly* playerAssembly = monoUtils::LoadAssembly("C:/Users/stjae/Desktop/player/bin/Debug/player.dll");
-//     LoadAssemblyClasses(playerAssembly);
-//
-//     auto& sc = s_scriptClasses;
-//     MonoObject* playerInstance = s_scriptClasses[0]->Instantiate();
-//     MonoMethod* printFunc = s_scriptClasses[0]->GetMethodByName("OnCreate", 0);
-//     InvokeMethod(printFunc, playerInstance, nullptr);
-// }
-
 std::string Script::GetScriptClassName(uint64_t UUID)
 {
     std::string className = "None";
@@ -101,6 +96,7 @@ std::string Script::GetScriptClassName(uint64_t UUID)
     else
         return className;
 }
+
 bool Script::InstanceExists(uint64_t UUID)
 {
     if (s_scriptInstances.find(UUID) != s_scriptInstances.end())
@@ -110,12 +106,16 @@ bool Script::InstanceExists(uint64_t UUID)
 }
 
 // ScriptClass
-ScriptClass::ScriptClass(MonoAssembly* assembly, const char* nameSpace, const char* name, const std::string& filePath)
-    : m_monoAssembly(assembly), m_classNameSpace(nameSpace), m_className(name), m_filePath(filePath)
+ScriptClass::ScriptClass(const char* nameSpace, const char* name, const std::string& filePath)
+    : m_classNameSpace(nameSpace), m_className(name), m_filePath(filePath)
 {
+    m_fullName = m_classNameSpace.empty() ? m_className : m_classNameSpace + "::" + m_className;
+}
+void ScriptClass::Init()
+{
+    MonoAssembly* assembly = monoUtils::LoadAssembly(m_filePath);
     m_monoImage = mono_assembly_get_image(assembly);
     m_monoClass = mono_class_from_name(m_monoImage, m_classNameSpace.c_str(), m_className.c_str());
-    m_fullName = m_classNameSpace.empty() ? m_className : m_classNameSpace + "::" + m_className;
 }
 MonoObject* ScriptClass::Instantiate()
 {
@@ -136,33 +136,38 @@ bool ScriptClass::IsParentOf(MonoClass* monoClass)
 }
 
 // ScriptInstance
-ScriptInstance::ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, uint64_t meshInstanceID) : m_scriptClass(scriptClass)
+ScriptInstance::ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, uint64_t meshInstanceID)
+    : m_scriptClass(scriptClass), m_meshInstanceID(meshInstanceID) {}
+void ScriptInstance::Init()
 {
-    m_instance = scriptClass->Instantiate();
+    m_instance = m_scriptClass->Instantiate();
     m_constructor = Script::s_baseScriptClass->GetMethodByName(".ctor", 1);
-    m_onCreateMethod = scriptClass->GetMethodByName("OnCreate", 0);
-    m_onUpdateMethod = scriptClass->GetMethodByName("OnUpdate", 1);
-    m_onDestroyMethod = scriptClass->GetMethodByName("OnDestroy", 0);
+    m_onCreateMethod = m_scriptClass->GetMethodByName("OnCreate", 0);
+    m_onUpdateMethod = m_scriptClass->GetMethodByName("OnUpdate", 1);
+    m_onDestroyMethod = m_scriptClass->GetMethodByName("OnDestroy", 0);
 
     // call constructor
-    void* param = &meshInstanceID;
-    Script::InvokeMethod(m_constructor, m_instance, &param);
+    void* param = &m_meshInstanceID;
+    if (m_instance)
+        Script::InvokeMethod(m_constructor, m_instance, &param);
 }
-
 void ScriptInstance::InvokeOnCreate()
 {
-    Script::InvokeMethod(m_onCreateMethod, m_instance, nullptr);
+    if (m_instance)
+        Script::InvokeMethod(m_onCreateMethod, m_instance, nullptr);
 }
 
 void ScriptInstance::InvokeOnUpdate(float dt)
 {
     void* param = &dt;
-    Script::InvokeMethod(m_onUpdateMethod, m_instance, &param);
+    if (m_instance)
+        Script::InvokeMethod(m_onUpdateMethod, m_instance, &param);
 }
 
 void ScriptInstance::InvokeOnDestroy()
 {
-    Script::InvokeMethod(m_onDestroyMethod, m_instance, nullptr);
+    if (m_instance)
+        Script::InvokeMethod(m_onDestroyMethod, m_instance, nullptr);
 }
 
 namespace monoUtils {

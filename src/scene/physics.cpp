@@ -107,7 +107,8 @@ void Physics::Simulate(std::vector<std::shared_ptr<Mesh>>& meshes)
             instance->UpdateTransform();
         }
         // update buffer
-        mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
+        if (!mesh->m_meshInstanceUBOs.empty())
+            mesh->m_meshInstanceUBOBuffer->Copy(mesh->m_meshInstanceUBOs.data());
     }
 }
 

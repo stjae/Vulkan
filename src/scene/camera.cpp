@@ -1,5 +1,4 @@
 #include "camera.h"
-#include "../vulkan/swapchain.h"
 #include "../engine/viewport.h"
 
 Camera::Camera()
@@ -14,9 +13,9 @@ Camera::Camera()
 
 void Camera::Init()
 {
-    m_isControllable = true;
-    glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    // m_isControllable = true;
+    // glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
 }
 
 void Camera::Update(const vk::CommandBuffer& commandBuffer)
@@ -44,7 +43,7 @@ void Camera::SetControl()
             ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         }
 
-        m_startControl = true;
+        m_isInitialCameraMove = true;
     }
 }
 
@@ -72,6 +71,33 @@ uint64_t Camera::GetAssignedMeshInstanceID()
     return m_assignedMeshInstanceID;
 }
 
+void Camera::Reset()
+{
+    m_dir = { 0.0f, 0.0f, 1.0f };
+    m_at = m_pos + m_dir;
+    m_up = { 0.0f, 1.0f, 0.0f };
+    m_right = { 0.0f, 0.0f, 0.0f };
+    m_rotation = { 0.0f, 0.0f, 0.0f };
+}
+
+void Camera::SetDirection(const glm::vec3& direction)
+{
+    if (m_isControllable)
+        m_dir = direction;
+}
+
+void Camera::SetTranslation(const glm::vec3& translation)
+{
+    if (m_isControllable)
+        m_pos = translation;
+}
+
+void Camera::SetRotation(const glm::vec3& rotation)
+{
+    if (m_isControllable)
+        m_rotation = rotation;
+}
+
 void MainCamera::Control()
 {
     SetControl();
@@ -83,10 +109,10 @@ void MainCamera::Control()
         mouseX = Window::GetMousePosNormalizedX();
         mouseY = Window::GetMousePosNormalizedY();
 
-        if (m_startControl) {
+        if (m_isInitialCameraMove) {
             prevMouseX = mouseX;
             prevMouseY = mouseY;
-            m_startControl = false;
+            m_isInitialCameraMove = false;
         }
 
         glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f), (float)(prevMouseX - mouseX), m_up);
@@ -133,12 +159,14 @@ void SubCamera::Control()
 {
     SetControl();
 
-    m_right = glm::cross(m_dir, m_up);
-    auto rotateX = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.x), m_right);
-    m_dir = rotateX * glm::vec4(m_dir, 0.0f);
-    auto rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.y), m_up);
-    m_dir = rotateY * glm::vec4(m_dir, 0.0f);
-    auto rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.z), m_dir);
-    m_dir = rotateZ * glm::vec4(m_dir, 0.0f);
-    m_at = m_pos + m_dir;
+    if (m_isControllable) {
+        m_right = glm::cross(m_dir, m_up);
+        auto rotateX = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.x), m_right);
+        m_dir = rotateX * glm::vec4(m_dir, 0.0f);
+        auto rotateY = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.y), m_up);
+        m_dir = rotateY * glm::vec4(m_dir, 0.0f);
+        auto rotateZ = glm::rotate(glm::mat4(1.0f), glm::radians(m_rotation.z), m_dir);
+        m_dir = rotateZ * glm::vec4(m_dir, 0.0f);
+        m_at = m_pos + m_dir;
+    }
 }

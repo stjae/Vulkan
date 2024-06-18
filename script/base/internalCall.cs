@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Numerics;
 
 namespace vkApp
 {
@@ -17,7 +18,7 @@ namespace vkApp
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetRight(ulong meshInstanceID, out Vector3 right);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4 matrix);
+        internal extern static void GetMatrix(ulong meshInstanceID, out Matrix4x4 matrix);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetCameraTranslation(ulong meshInstanceID, out Vector3 translation);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -39,8 +40,14 @@ namespace vkApp
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void ApplyImpulse(ulong meshInstanceID, ref Vector3 impulse);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void GetVelocity(ulong meshInstanceID, out Vector3 velocity);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SetVelocity(ulong meshInstanceID, ref Vector3 velocity);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SetAngularVelocity(ulong meshInstanceID, ref Vector3 velocity);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetRigidBodyTransform(ulong meshInstanceID, ref Matrix4x4 transform);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void GetRayHitPosition(ref Vector3 rayFrom, ref Vector3 rayTo, out Vector3 hitPosition);
     }
 }

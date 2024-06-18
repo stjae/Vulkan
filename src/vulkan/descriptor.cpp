@@ -12,8 +12,9 @@ vk::DescriptorSetLayout vkn::Descriptor::CreateDescriptorSetLayout(const std::ve
             bindingFlags.emplace_back(descriptorBindings[i].bindingFlags);
     }
     vk::DescriptorSetLayoutBindingFlagsCreateInfo layoutBindingFlagsCreateInfo(bindingFlags.size(), bindingFlags.data());
+    vk::DescriptorSetLayoutCreateInfo layoutCreateInfo(layoutCreateFlags, layoutBindings.size(), layoutBindings.data());
+    layoutCreateInfo.pNext = bindingFlags.empty() ? nullptr : &layoutBindingFlagsCreateInfo;
 
-    vk::DescriptorSetLayoutCreateInfo layoutCreateInfo(layoutCreateFlags, descriptorBindings.size(), layoutBindings.data(), &layoutBindingFlagsCreateInfo);
     return vkn::Device::Get().device.createDescriptorSetLayout(layoutCreateInfo);
 }
 

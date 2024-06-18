@@ -128,11 +128,12 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
     out << YAML::Key << "Position" << YAML::Value << camera.m_pos;
-    out << YAML::Key << "Dir" << YAML::Value << camera.m_dir;
-    out << YAML::Key << "Cascade Range 1" << YAML::Value << camera.m_cascadeRanges[0];
-    out << YAML::Key << "Cascade Range 2" << YAML::Value << camera.m_cascadeRanges[1];
-    out << YAML::Key << "Cascade Range 3" << YAML::Value << camera.m_cascadeRanges[2];
-    out << YAML::Key << "Cascade Range 4" << YAML::Value << camera.m_cascadeRanges[3];
+    out << YAML::Key << "Direction" << YAML::Value << camera.m_dir;
+    out << YAML::Key << "CascadeRange1" << YAML::Value << camera.m_cascadeRanges[0];
+    out << YAML::Key << "CascadeRange2" << YAML::Value << camera.m_cascadeRanges[1];
+    out << YAML::Key << "CascadeRange3" << YAML::Value << camera.m_cascadeRanges[2];
+    out << YAML::Key << "CascadeRange4" << YAML::Value << camera.m_cascadeRanges[3];
+    out << YAML::Key << "UseMotionBlur" << YAML::Value << postProcessPushConstants.useMotionBlur;
     out << YAML::EndMap;
 }
 
@@ -157,6 +158,7 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
         out << YAML::Value << YAML::BeginSeq;
         for (auto& mesh : meshes) {
             out << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << mesh->m_name;
             out << YAML::Key << "Instance";
             out << YAML::Value << YAML::BeginSeq;
             for (const auto& instance : mesh->GetInstances()) {
@@ -182,10 +184,10 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
                     out << YAML::BeginMap;
                     if (scene.m_playCamera == instance->camera.lock().get())
                         out << YAML::Key << "Selected" << YAML::Value << true;
-                    out << YAML::Key << "Cascade Range 1" << YAML::Value << instance->camera.lock()->m_cascadeRanges[0];
-                    out << YAML::Key << "Cascade Range 2" << YAML::Value << instance->camera.lock()->m_cascadeRanges[1];
-                    out << YAML::Key << "Cascade Range 3" << YAML::Value << instance->camera.lock()->m_cascadeRanges[2];
-                    out << YAML::Key << "Cascade Range 4" << YAML::Value << instance->camera.lock()->m_cascadeRanges[3];
+                    out << YAML::Key << "CascadeRange1" << YAML::Value << instance->camera.lock()->m_cascadeRanges[0];
+                    out << YAML::Key << "CascadeRange2" << YAML::Value << instance->camera.lock()->m_cascadeRanges[1];
+                    out << YAML::Key << "CascadeRange3" << YAML::Value << instance->camera.lock()->m_cascadeRanges[2];
+                    out << YAML::Key << "CascadeRange4" << YAML::Value << instance->camera.lock()->m_cascadeRanges[3];
                     out << YAML::EndMap;
                 }
                 out << YAML::EndMap;
@@ -200,11 +202,11 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
 void SceneSerializer::SerializeScriptClass(YAML::Emitter& out)
 {
     if (!Script::s_scriptClasses.empty()) {
-        out << YAML::Key << "Script Class";
+        out << YAML::Key << "ScriptClass";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& klass : Script::s_scriptClasses) {
             out << YAML::BeginMap;
-            out << YAML::Key << "Script File Path" << YAML::Value << klass.second->m_filePath;
+            out << YAML::Key << "ScriptFilePath" << YAML::Value << klass.second->m_filePath;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -214,12 +216,12 @@ void SceneSerializer::SerializeScriptClass(YAML::Emitter& out)
 void SceneSerializer::SerializeScriptInstance(YAML::Emitter& out)
 {
     if (!Script::s_scriptInstances.empty()) {
-        out << YAML::Key << "Script Instance";
+        out << YAML::Key << "ScriptInstance";
         out << YAML::Value << YAML::BeginSeq;
         for (auto& instance : Script::s_scriptInstances) {
             out << YAML::BeginMap;
-            out << YAML::Key << "Class Name" << YAML::Value << instance.second->m_scriptClass->m_fullName;
-            out << YAML::Key << "Mesh Instance ID" << YAML::Value << instance.first;
+            out << YAML::Key << "ClassName" << YAML::Value << instance.second->m_scriptClass->m_fullName;
+            out << YAML::Key << "MeshInstanceID" << YAML::Value << instance.first;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -241,12 +243,13 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     auto camera = data["Camera"];
     scene.m_mainCamera.m_pos = camera["Position"].as<glm::vec3>();
-    scene.m_mainCamera.m_dir = camera["Dir"].as<glm::vec3>();
-    scene.m_mainCamera.m_cascadeRanges[0] = camera["Cascade Range 1"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[1] = camera["Cascade Range 2"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[2] = camera["Cascade Range 3"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[3] = camera["Cascade Range 4"].as<float>();
+    scene.m_mainCamera.m_dir = camera["Direction"].as<glm::vec3>();
+    scene.m_mainCamera.m_cascadeRanges[0] = camera["CascadeRange1"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[1] = camera["CascadeRange2"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[2] = camera["CascadeRange3"].as<float>();
+    scene.m_mainCamera.m_cascadeRanges[3] = camera["CascadeRange4"].as<float>();
     scene.m_mainCamera.m_at = scene.m_mainCamera.m_pos + scene.m_mainCamera.m_dir;
+    postProcessPushConstants.useMotionBlur = camera["UseMotionBlur"].as<int>();
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
@@ -310,10 +313,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                 auto subCamera = instance["Camera"];
                 if (subCamera) {
                     scene.AddCamera(*meshInstance);
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[0] = subCamera["Cascade Range 1"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[1] = subCamera["Cascade Range 2"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[2] = subCamera["Cascade Range 3"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[3] = subCamera["Cascade Range 4"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[0] = subCamera["CascadeRange1"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[1] = subCamera["CascadeRange2"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[2] = subCamera["CascadeRange3"].as<float>();
+                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[3] = subCamera["CascadeRange4"].as<float>();
                     if (subCamera["Selected"])
                         scene.m_playCamera = scene.m_subCameras[meshInstance->UUID].get();
                 }
@@ -322,18 +325,18 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
         scene.UpdateMeshBuffer();
     }
 
-    auto scriptClasses = data["Script Class"];
+    auto scriptClasses = data["ScriptClass"];
     if (scriptClasses) {
         for (auto&& scriptClass : scriptClasses) {
-            Script::LoadAssemblyClasses(scriptClass["Script File Path"].as<std::string>());
+            Script::LoadAssemblyClasses(scriptClass["ScriptFilePath"].as<std::string>());
         }
     }
 
-    auto scriptInstances = data["Script Instance"];
+    auto scriptInstances = data["ScriptInstance"];
     if (scriptInstances) {
         for (auto&& scriptInstance : scriptInstances) {
-            auto scriptClassName = scriptInstance["Class Name"].as<std::string>();
-            auto meshInstanceID = scriptInstance["Mesh Instance ID"].as<uint64_t>();
+            auto scriptClassName = scriptInstance["ClassName"].as<std::string>();
+            auto meshInstanceID = scriptInstance["MeshInstanceID"].as<uint64_t>();
             Script::s_scriptInstances.emplace(meshInstanceID, std::make_shared<ScriptInstance>(Script::s_scriptClasses[scriptClassName], meshInstanceID));
         }
     }

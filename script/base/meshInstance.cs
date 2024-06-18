@@ -1,4 +1,6 @@
-﻿using vkApp;
+﻿using System;
+using vkApp;
+using System.Numerics;
 
 namespace vkApp
 {
@@ -54,11 +56,11 @@ namespace vkApp
                 return right;
             }
         }
-        public Matrix4 Matrix
+        public Matrix4x4 Matrix
         {
             get
             {
-                InternalCall.GetMatrix(ID, out Matrix4 matrix);
+                InternalCall.GetMatrix(ID, out Matrix4x4 matrix);
                 return matrix;
             }
         }
@@ -107,6 +109,11 @@ namespace vkApp
         }
         public Vector3 Velocity
         {
+            get
+            {
+                InternalCall.GetVelocity(ID, out Vector3 velocity);
+                return velocity;
+            }
             set
             {
                 InternalCall.SetVelocity(ID, ref value);
@@ -118,6 +125,18 @@ namespace vkApp
             {
                 InternalCall.SetAngularVelocity(ID, ref value);
             }
+        }
+        public Matrix4x4 RigidBodyTransform
+        {
+            set
+            {
+                InternalCall.SetRigidBodyTransform(ID, ref value);
+            }
+        }
+        public Vector3 GetRayHitPosition(ref Vector3 rayFrom, ref Vector3 rayTo)
+        {
+            InternalCall.GetRayHitPosition(ref rayFrom, ref rayTo, out Vector3 hitPosition);
+            return hitPosition;
         }
     }
 }
