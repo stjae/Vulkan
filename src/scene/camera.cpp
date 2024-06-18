@@ -1,6 +1,6 @@
 #include "camera.h"
 #include "../vulkan/swapchain.h"
-#include "mesh.h"
+#include "../engine/viewport.h"
 
 Camera::Camera()
 {
@@ -23,7 +23,7 @@ void Camera::Update(const vk::CommandBuffer& commandBuffer)
 {
     m_prevCameraStagingBuffer->Copy(&m_cameraUBO);
     m_cameraUBO.view = glm::lookAt(m_pos, m_at, m_up);
-    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_zNear, m_zFar);
+    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_zNear, m_zFar);
     m_cameraUBO.pos = m_pos;
     m_cameraStagingBuffer->Copy(&m_cameraUBO);
 
@@ -57,13 +57,13 @@ glm::mat4 Camera::GetCascadeProj(int index)
 {
     switch (index) {
     case 0:
-        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_zNear, m_cascadeRanges[0]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_zNear, m_cascadeRanges[0]);
     case 1:
-        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[0], m_cascadeRanges[1]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[0], m_cascadeRanges[1]);
     case 2:
-        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[1], m_cascadeRanges[2]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[1], m_cascadeRanges[2]);
     default:
-        return glm::perspective(glm::radians(45.0f), static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width) / static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height), m_cascadeRanges[2], m_cascadeRanges[3]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[2], m_cascadeRanges[3]);
     }
 }
 

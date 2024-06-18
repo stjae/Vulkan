@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_debug_printf: enable
 #include "common.glsl"
 
 layout (set = 0, binding = 0) uniform PrevCamera {

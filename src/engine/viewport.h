@@ -38,15 +38,14 @@ class Viewport
     vk::CommandBuffer m_pickColorCommandBuffer;
 
     vkn::Image m_pickedColor;
-
-public:
-    vk::Extent2D m_extent;
     ImVec2 m_panelPos;
     ImVec2 m_panelSize;
-    float m_panelRatio;
+    vk::Extent2D m_extent;
+    inline static float s_panelRatio;
     bool m_outDated;
     bool m_isMouseHovered;
 
+public:
     Viewport();
     void CreateImage();
     void DestroyImage();
@@ -54,6 +53,7 @@ public:
     void Draw(const Scene& scene);
     ~Viewport();
     void UpdateImage();
+    static float GetRatio() { return s_panelRatio; }
 };
 
 #endif

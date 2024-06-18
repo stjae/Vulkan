@@ -1,6 +1,6 @@
 ﻿#include "viewport.h"
 
-Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(false)
+Viewport::Viewport() : m_outDated(false), m_isMouseHovered(false)
 {
     m_extent = vk::Extent2D((uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height);
 
@@ -25,14 +25,14 @@ Viewport::Viewport() : m_panelRatio(0.0f), m_outDated(false), m_isMouseHovered(f
 
 void Viewport::CreateImage()
 {
-    m_imageSampled.CreateImage({ (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_repeatSampler, 1, vkn::Device::Get().maxSampleCount);
+    m_imageSampled.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_repeatSampler, 1, vkn::Device::Get().maxSampleCount);
     m_imageSampled.CreateImageView();
 
-    m_depthSampled.CreateImage({ (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_repeatSampler, 1, vkn::Device::Get().maxSampleCount);
+    m_depthSampled.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_repeatSampler, 1, vkn::Device::Get().maxSampleCount);
     m_depthSampled.m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
     m_depthSampled.CreateImageView();
 
-    m_imageResolved.CreateImage({ (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_imageResolved.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eB8G8R8A8Srgb, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_imageResolved.CreateImageView();
     vk::DescriptorImageInfo imageInfo(vkn::Image::s_clampSampler, m_imageResolved.Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
     postProcessPipeline.UpdateRenderImage(imageInfo);
@@ -58,10 +58,10 @@ void Viewport::CreateImage()
 
     m_framebuffer = vkn::Device::Get().device.createFramebuffer(framebufferInfo);
 
-    m_colorID.CreateImage({ (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_colorID.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_colorID.CreateImageView();
 
-    m_depth.CreateImage({ (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.width, (uint32_t)vkn::Swapchain::Get().swapchainImageExtent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_depth.CreateImage({ m_extent.width, m_extent.height, 1 }, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
     m_depth.m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
     m_depth.CreateImageView();
     imageInfo = { vkn::Image::s_repeatSampler, m_depth.Get().imageView, vk::ImageLayout::eShaderReadOnlyOptimal };
@@ -113,7 +113,7 @@ void Viewport::DestroyImage()
 
 void Viewport::UpdateImage()
 {
-    m_panelRatio = m_panelSize.x / m_panelSize.y;
+    s_panelRatio = m_panelSize.x / m_panelSize.y;
 
     m_extent.width = (uint32_t)(m_panelSize.x);
     m_extent.height = (uint32_t)(m_panelSize.y);
@@ -179,7 +179,21 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 void Viewport::Draw(const Scene& scene)
 {
     vkn::Command::BeginRenderPass(m_commandBuffer, meshRenderPipeline.m_renderPass, m_framebuffer, { {}, m_extent }, meshRenderPipeline.m_clearValues);
-    vkn::Command::SetViewport(m_commandBuffer);
+    // vkn::Command::SetViewport(m_commandBuffer);
+    vk::Viewport viewport;
+    viewport.x = 0.0f;
+    viewport.y = (float)m_extent.height;
+    viewport.width = (float)m_extent.width;
+    viewport.height = -1.0f * (float)m_extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    vk::Rect2D scissor;
+    scissor.offset = vk::Offset2D(0, 0);
+    scissor.extent = m_extent;
+
+    m_commandBuffer.setViewport(0, viewport);
+    m_commandBuffer.setScissor(0, scissor);
     vk::DeviceSize vertexOffsets[]{ 0 };
     {
         // Skybox

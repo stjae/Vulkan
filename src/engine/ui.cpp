@@ -260,9 +260,9 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
     viewport.m_panelSize = ImGui::GetContentRegionAvail();
     // debugMode: drawRect
     // ImGui::GetForegroundDrawList()->AddRect(viewport.m_panelPos, viewport.m_panelPos + viewport.m_panelSize, IM_COL32(255, 0, 0, 255));
-    float viewportPanelRatio = viewport.m_panelSize.x / viewport.m_panelSize.y;
+    float currentRatio = viewport.m_panelSize.x / viewport.m_panelSize.y;
 
-    if (viewport.m_panelRatio != viewportPanelRatio || viewport.m_outDated) {
+    if ((Viewport::s_panelRatio != currentRatio) || viewport.m_outDated) {
         vkn::Device::Get().device.waitIdle();
         viewport.UpdateImage();
         RecreateViewportDescriptorSet(viewport);
@@ -297,8 +297,8 @@ void UI::DrawViewport(Scene& scene, Viewport& viewport)
         pos /= pos.w;
         pos.x = (pos.x + 1.0f) * 0.5f;
         pos.y = 1.0f - (pos.y + 1.0f) * 0.5f;
-        pos.x *= width;
-        pos.y *= height;
+        pos.x *= (float)width;
+        pos.y *= (float)height;
         ImVec2 screenPos(pos.x, pos.y);
         ImVec2 offset(300, 300);
         offset /= posZ;
@@ -687,7 +687,6 @@ void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
     if (!s_dragDropped)
         return;
 
-    // const int32_t* pickColor = viewport.PickColor(s_dragDropMouseX, s_dragDropMouseY);
     scene.AddMeshInstance(*std::static_pointer_cast<Mesh>(s_dragDropResource->ptr.lock()));
     s_dragDropped = false;
 }
