@@ -129,10 +129,10 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
     out << YAML::BeginMap;
     out << YAML::Key << "Position" << YAML::Value << camera.m_pos;
     out << YAML::Key << "Direction" << YAML::Value << camera.m_dir;
-    out << YAML::Key << "CascadeRange1" << YAML::Value << camera.m_cascadeRanges[0];
-    out << YAML::Key << "CascadeRange2" << YAML::Value << camera.m_cascadeRanges[1];
-    out << YAML::Key << "CascadeRange3" << YAML::Value << camera.m_cascadeRanges[2];
-    out << YAML::Key << "CascadeRange4" << YAML::Value << camera.m_cascadeRanges[3];
+    out << YAML::Key << "CascadeRange1" << YAML::Value << Camera::s_cascadeRanges[0];
+    out << YAML::Key << "CascadeRange2" << YAML::Value << Camera::s_cascadeRanges[1];
+    out << YAML::Key << "CascadeRange3" << YAML::Value << Camera::s_cascadeRanges[2];
+    out << YAML::Key << "CascadeRange4" << YAML::Value << Camera::s_cascadeRanges[3];
     out << YAML::Key << "UseMotionBlur" << YAML::Value << postProcessPushConstants.useMotionBlur;
     out << YAML::EndMap;
 }
@@ -184,10 +184,6 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
                     out << YAML::BeginMap;
                     if (scene.m_playCamera == instance->camera.lock().get())
                         out << YAML::Key << "Selected" << YAML::Value << true;
-                    out << YAML::Key << "CascadeRange1" << YAML::Value << instance->camera.lock()->m_cascadeRanges[0];
-                    out << YAML::Key << "CascadeRange2" << YAML::Value << instance->camera.lock()->m_cascadeRanges[1];
-                    out << YAML::Key << "CascadeRange3" << YAML::Value << instance->camera.lock()->m_cascadeRanges[2];
-                    out << YAML::Key << "CascadeRange4" << YAML::Value << instance->camera.lock()->m_cascadeRanges[3];
                     out << YAML::EndMap;
                 }
                 out << YAML::EndMap;
@@ -244,10 +240,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto camera = data["Camera"];
     scene.m_mainCamera.m_pos = camera["Position"].as<glm::vec3>();
     scene.m_mainCamera.m_dir = camera["Direction"].as<glm::vec3>();
-    scene.m_mainCamera.m_cascadeRanges[0] = camera["CascadeRange1"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[1] = camera["CascadeRange2"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[2] = camera["CascadeRange3"].as<float>();
-    scene.m_mainCamera.m_cascadeRanges[3] = camera["CascadeRange4"].as<float>();
+    Camera::s_cascadeRanges[0] = camera["CascadeRange1"].as<float>();
+    Camera::s_cascadeRanges[1] = camera["CascadeRange2"].as<float>();
+    Camera::s_cascadeRanges[2] = camera["CascadeRange3"].as<float>();
+    Camera::s_cascadeRanges[3] = camera["CascadeRange4"].as<float>();
     scene.m_mainCamera.m_at = scene.m_mainCamera.m_pos + scene.m_mainCamera.m_dir;
     postProcessPushConstants.useMotionBlur = camera["UseMotionBlur"].as<int>();
 
@@ -313,10 +309,6 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                 auto subCamera = instance["Camera"];
                 if (subCamera) {
                     scene.AddCamera(*meshInstance);
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[0] = subCamera["CascadeRange1"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[1] = subCamera["CascadeRange2"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[2] = subCamera["CascadeRange3"].as<float>();
-                    scene.m_subCameras[meshInstance->UUID]->m_cascadeRanges[3] = subCamera["CascadeRange4"].as<float>();
                     if (subCamera["Selected"])
                         scene.m_playCamera = scene.m_subCameras[meshInstance->UUID].get();
                 }

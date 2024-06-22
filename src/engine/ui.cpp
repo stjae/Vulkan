@@ -538,14 +538,6 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     light.range = std::max(0.0f, light.range);
                 ImGui::SliderFloat3("Color##_POINTLIGHT", &light.color[0], 0.0f, 1.0f);
             }
-            ImGui::SeparatorText("Shadow Map");
-            ImGui::SliderFloat("Cascade Range 1", &scene.m_mainCamera.m_cascadeRanges[0], scene.m_mainCamera.m_zNear, scene.m_mainCamera.m_cascadeRanges[1]);
-            ImGui::SliderFloat("Cascade Range 2", &scene.m_mainCamera.m_cascadeRanges[1], scene.m_mainCamera.m_cascadeRanges[0], scene.m_mainCamera.m_cascadeRanges[2]);
-            ImGui::SliderFloat("Cascade Range 3", &scene.m_mainCamera.m_cascadeRanges[2], scene.m_mainCamera.m_cascadeRanges[1], scene.m_mainCamera.m_cascadeRanges[3]);
-            ImGui::SliderFloat("Cascade Range 4", &scene.m_mainCamera.m_cascadeRanges[3], scene.m_mainCamera.m_cascadeRanges[2], scene.m_mainCamera.m_zFar);
-            bool cascadeDebug = scene.m_cascadedShadowMap.m_UBO.debug > 0;
-            if (ImGui::Checkbox("Debug", &cascadeDebug))
-                scene.m_cascadedShadowMap.m_UBO.debug = cascadeDebug ? 1 : -1;
             ImGui::SeparatorText("Directional Light");
             ImGui::DragFloat3("Position", &scene.m_dirLight.pos[0], 0.1f);
             ImGui::SliderFloat3("Color", &scene.m_dirLight.color[0], 0.0f, 1.0f);
@@ -577,39 +569,13 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("Camera")) {
-        static std::weak_ptr<SubCamera> subCamera;
-        if (ImGui::BeginListBox("##Camera", ImVec2(-FLT_MIN, 0.0f))) {
-            int i = 0;
-            for (auto& camera : scene.m_subCameras) {
-                std::string name(std::string("Camera ") + std::to_string(i));
-                ImGui::PushID(i);
-                if (ImGui::Selectable(name.c_str())) {
-                    subCamera = camera.second;
-                }
-                i++;
-                ImGui::PopID();
-            }
-            ImGui::EndListBox();
-            if (subCamera.lock()) {
-                ImGui::SliderFloat("Cascade Range 1", &subCamera.lock()->m_cascadeRanges[0], subCamera.lock()->m_zNear, subCamera.lock()->m_cascadeRanges[1]);
-                ImGui::SliderFloat("Cascade Range 2", &subCamera.lock()->m_cascadeRanges[1], subCamera.lock()->m_cascadeRanges[0], subCamera.lock()->m_cascadeRanges[2]);
-                ImGui::SliderFloat("Cascade Range 3", &subCamera.lock()->m_cascadeRanges[2], subCamera.lock()->m_cascadeRanges[1], subCamera.lock()->m_cascadeRanges[3]);
-                ImGui::SliderFloat("Cascade Range 4", &subCamera.lock()->m_cascadeRanges[3], subCamera.lock()->m_cascadeRanges[2], subCamera.lock()->m_zFar);
-                if (scene.m_playCamera->GetAssignedMeshInstanceID() != subCamera.lock()->m_assignedMeshInstanceID) {
-                    if (ImGui::Button("Select##_CAMERA")) {
-                        scene.m_playCamera = subCamera.lock().get();
-                    }
-                } else {
-                    if (ImGui::Button("Unselect##_CAMERA")) {
-                        scene.m_playCamera = &scene.m_mainCamera;
-                    }
-                }
-                if (ImGui::Button("Delete##_CAMERA")) {
-                    scene.m_subCameras.erase(subCamera.lock()->m_assignedMeshInstanceID);
-                    scene.m_playCamera = &scene.m_mainCamera;
-                }
-            }
-        }
+        ImGui::SliderFloat("Cascade Range 1", &Camera::s_cascadeRanges[0], Camera::s_zNear, Camera::s_cascadeRanges[1]);
+        ImGui::SliderFloat("Cascade Range 2", &Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[0], Camera::s_cascadeRanges[2]);
+        ImGui::SliderFloat("Cascade Range 3", &Camera::s_cascadeRanges[2], Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[3]);
+        ImGui::SliderFloat("Cascade Range 4", &Camera::s_cascadeRanges[3], Camera::s_cascadeRanges[2], Camera::s_zFar);
+        bool cascadeDebug = scene.m_cascadedShadowMap.m_UBO.debug > 0;
+        if (ImGui::Checkbox("Show Cascade Division", &cascadeDebug))
+            scene.m_cascadedShadowMap.m_UBO.debug = cascadeDebug ? 1 : -1;
         ImGui::SeparatorText("Post Effect");
         bool useMotionBlur = postProcessPushConstants.useMotionBlur > 0;
         if (ImGui::Checkbox("Motion Blur", &useMotionBlur)) {

@@ -22,7 +22,7 @@ void Camera::Update(const vk::CommandBuffer& commandBuffer)
 {
     m_prevCameraStagingBuffer->Copy(&m_cameraUBO);
     m_cameraUBO.view = glm::lookAt(m_pos, m_at, m_up);
-    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_zNear, m_zFar);
+    m_cameraUBO.proj = glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), s_zNear, s_zFar);
     m_cameraUBO.pos = m_pos;
     m_cameraStagingBuffer->Copy(&m_cameraUBO);
 
@@ -49,20 +49,20 @@ void Camera::SetControl()
 
 float Camera::GetCascadeDepth(int index)
 {
-    return m_cascadeRanges[index];
+    return s_cascadeRanges[index];
 }
 
 glm::mat4 Camera::GetCascadeProj(int index)
 {
     switch (index) {
     case 0:
-        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_zNear, m_cascadeRanges[0]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), s_zNear, s_cascadeRanges[0]);
     case 1:
-        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[0], m_cascadeRanges[1]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), s_cascadeRanges[0], s_cascadeRanges[1]);
     case 2:
-        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[1], m_cascadeRanges[2]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), s_cascadeRanges[1], s_cascadeRanges[2]);
     default:
-        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), m_cascadeRanges[2], m_cascadeRanges[3]);
+        return glm::perspective(glm::radians(45.0f), Viewport::GetRatio(), s_cascadeRanges[2], s_cascadeRanges[3]);
     }
 }
 
@@ -82,20 +82,17 @@ void Camera::Reset()
 
 void Camera::SetDirection(const glm::vec3& direction)
 {
-    if (m_isControllable)
-        m_dir = direction;
+    m_dir = direction;
 }
 
 void Camera::SetTranslation(const glm::vec3& translation)
 {
-    if (m_isControllable)
-        m_pos = translation;
+    m_pos = translation;
 }
 
 void Camera::SetRotation(const glm::vec3& rotation)
 {
-    if (m_isControllable)
-        m_rotation = rotation;
+    m_rotation = rotation;
 }
 
 void MainCamera::Control()
