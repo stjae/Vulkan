@@ -1,7 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include "../common.h"
+#include "grid.h"
 #include "camera.h"
 #include "mesh.h"
 #include "light.h"
@@ -10,21 +10,9 @@
 #include "shadowCubemap.h"
 #include "envCubemap.h"
 #include "prefilteredCubemap.h"
-#include "../vulkan/swapchain.h"
 #include "../vulkan/command.h"
-#include "../pipeline/postProcess.h"
-#include "../pipeline/colorID.h"
-#include "../pipeline/shadowMap.h"
-#include "../pipeline/envCubemap.h"
-#include "../pipeline/irradianceCubemap.h"
-#include "../pipeline/prefilteredCubemap.h"
-#include "../pipeline/brdfLut.h"
-#include "../pipeline/skyboxRender.h"
-#include "../pipeline/lineRender.h"
 #include "../vulkan/image.h"
-#include "../../imgui/imgui_impl_vulkan.h"
 #include "physics.h"
-#include "../time.h"
 
 struct Resource;
 
@@ -41,6 +29,10 @@ class Scene
     std::array<vk::CommandBuffer, 4> m_imageLoadCommandBuffers;
     std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
 
+    Grid m_grid;
+    int m_gridWidth = 10;
+    bool m_showGrid = true;
+
     // Shadow
     DirLight m_dirLight;
     CascadedShadowMap m_cascadedShadowMap;
@@ -50,7 +42,6 @@ class Scene
     std::vector<std::shared_ptr<Mesh>> m_meshes;
     std::vector<Mesh> m_meshCopies;                                // store meshes for scene resetting
     std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap; // to search by uuid
-    // TODO: consider storing physics here
 
     // Environment Map
     Mesh m_cube;
@@ -88,6 +79,7 @@ class Scene
     bool m_isStartUp = true;
 
     void CreateCommandBuffers();
+    void CreateGrid();
     void CreateMainCamera();
     void CreateShadowMap();
     void CreateEnvironmentMap();

@@ -11,13 +11,6 @@ Camera::Camera()
     m_cameraBuffer = std::make_unique<vkn::Buffer>(bufferInput);
 }
 
-void Camera::Init()
-{
-    // m_isControllable = true;
-    // glfwSetInputMode(Window::GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    // ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
-}
-
 void Camera::Update(const vk::CommandBuffer& commandBuffer)
 {
     m_prevCameraStagingBuffer->Copy(&m_cameraUBO);

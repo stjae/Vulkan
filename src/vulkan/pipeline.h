@@ -46,10 +46,10 @@ public:
 
 } // namespace vkn
 
-struct LineRenderPushConstants
+struct PhysicsDebugPushConstants
 {
     int meshIndex;
-} inline lineRenderPushConsts;
+} inline physicsDebugPushConstants;
 
 struct MeshRenderPushConstants
 {

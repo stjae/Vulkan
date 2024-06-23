@@ -88,6 +88,9 @@ void SceneSerializer::Serialize(const Scene& scene)
     SerializeScriptClass(out, scene);
     SerializeScriptInstance(out);
 
+    out << YAML::Key << "GridWidth" << YAML::Value << scene.m_gridWidth;
+    out << YAML::Key << "ShowGrid" << YAML::Value << scene.m_showGrid;
+
     out << YAML::EndMap;
 
     std::ofstream fout(scene.m_sceneFilePath);
@@ -333,4 +336,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
             Script::s_scriptInstances.emplace(meshInstanceID, std::make_shared<ScriptInstance>(Script::s_scriptClasses[scriptClassName], meshInstanceID));
         }
     }
+
+    scene.m_gridWidth = data["GridWidth"].as<int>();
+    scene.m_showGrid = data["ShowGrid"].as<bool>();
 }

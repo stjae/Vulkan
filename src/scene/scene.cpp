@@ -1,4 +1,13 @@
 #include "scene.h"
+#include "../pipeline/postProcess.h"
+#include "../pipeline/colorID.h"
+#include "../pipeline/envCubemap.h"
+#include "../pipeline/irradianceCubemap.h"
+#include "../pipeline/prefilteredCubemap.h"
+#include "../pipeline/brdfLut.h"
+#include "../pipeline/skyboxRender.h"
+#include "../pipeline/lineRender.h"
+#include "../pipeline/physicsDebug.h"
 #include "../engine/script/script.h"
 #include <filesystem>
 
@@ -17,8 +26,17 @@ void Scene::Init()
     CreateDummyEnvMap();
     SelectDummyEnvMap();
     Physics::InitPhysics();
+    CreateGrid();
     vkn::Command::End(m_commandBuffer);
     vkn::Command::SubmitAndWait(m_commandBuffer);
+}
+
+void Scene::CreateGrid()
+{
+    m_gridWidth = std::max(2, m_gridWidth);
+    m_grid.CreateGrid(m_gridWidth);
+    m_grid.CreateBuffer();
+    m_grid.CopyBuffer(m_commandBuffer);
 }
 
 void Scene::CreateCommandBuffers()
@@ -31,9 +49,9 @@ void Scene::CreateCommandBuffers()
 
 void Scene::CreateMainCamera()
 {
-    m_mainCamera.m_dir = { 0.5, -0.3, -0.7 };
-    m_mainCamera.m_pos = { -3.0, 3.3, 8.0 };
-    m_mainCamera.m_at = { -2.5, 3.0, 7.3 };
+    m_mainCamera.m_dir = { 0.5f, 0.0f, -1.0f };
+    m_mainCamera.m_pos = { -3.0f, 3.0f, 8.0f };
+    m_mainCamera.m_at = { 0.0f, 0.0f, 0.0f };
     UpdateCameraDescriptor(&m_mainCamera);
 }
 
@@ -71,6 +89,7 @@ void Scene::UpdateCameraDescriptor(Camera* camera)
     colorIDPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     skyboxRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
     lineRenderPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
+    physicsDebugPipeline.UpdateCameraUBO(camera->m_cameraBuffer->Get().descriptorBufferInfo);
 }
 
 void Scene::AddResource(std::string& filePath)
@@ -427,7 +446,7 @@ void Scene::UpdatePhysicsDebug()
 {
     if (m_selectedMeshID > -1 && m_selectedMeshInstanceID > -1) {
         GetSelectedMeshInstance().physicsDebugUBOBuffer->Copy(&GetSelectedMeshInstance().physicsDebugUBO);
-        lineRenderPipeline.UpdateMeshUBO(GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo);
+        physicsDebugPipeline.UpdateMeshUBO(GetSelectedMeshInstance().physicsDebugUBOBuffer->Get().descriptorBufferInfo);
     }
 }
 

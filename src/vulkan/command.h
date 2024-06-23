@@ -18,7 +18,6 @@ public:
     static void SubmitAndWait(const vk::CommandBuffer& commandBuffer);
     static void SubmitAndWait(uint32_t count, vk::CommandBuffer* commandBuffers);
     static void BeginRenderPass(const vk::CommandBuffer& commandBuffer, vk::RenderPass& renderPass, vk::Framebuffer& frameBuffer, vk::Rect2D renderArea, std::vector<vk::ClearValue>& clearValues);
-    static void SetViewport(const vk::CommandBuffer& commandBuffer);
 
     template <size_t SIZE>
     static void AllocateCommandBuffer(const vk::CommandPool& commandPool, std::array<vk::CommandBuffer, SIZE>& commandBuffers)

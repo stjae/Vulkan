@@ -56,7 +56,6 @@ public:
     bool IsControllable() const { return m_isControllable; }
     const CameraUBO& GetUBO() const { return m_cameraUBO; }
     virtual void Control() = 0;
-    void Init();
     void Reset();
     void Update(const vk::CommandBuffer& commandBuffer);
     float GetCascadeDepth(int index);

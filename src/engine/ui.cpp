@@ -636,6 +636,15 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         }
         ImGui::EndTabItem();
     }
+    if (ImGui::BeginTabItem("etc")) {
+        if (ImGui::SliderInt("Grid Size", &scene.m_gridWidth, 2, 100)) {
+            if (scene.m_gridWidth % 2 != 0)
+                scene.m_gridWidth++;
+            scene.CreateGrid();
+        }
+        ImGui::Checkbox("Show Grid", &scene.m_showGrid);
+        ImGui::EndTabItem();
+    }
     ImGui::EndTabBar();
     ImGui::End();
 }
@@ -735,7 +744,7 @@ void UI::ShowInformationOverlay()
 {
     ImGui::Begin("Information");
     ImGui::Text("FPS: %s", std::to_string(Time::GetFrameCount()).c_str());
-    ImGui::TextWrapped("Instruction: press W S A D to move camera, press C to turn camera control on / off");
+    ImGui::TextWrapped("Instruction: press W S A D Q E to move camera, press C to turn camera control on / off");
     ImGui::End();
 }
 

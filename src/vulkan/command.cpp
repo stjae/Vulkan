@@ -162,21 +162,3 @@ void vkn::Command::BeginRenderPass(const vk::CommandBuffer& commandBuffer, vk::R
 
     commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 }
-
-void vkn::Command::SetViewport(const vk::CommandBuffer& commandBuffer)
-{
-    vk::Viewport viewport;
-    viewport.x = 0.0f;
-    viewport.y = static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height);
-    viewport.width = static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.width);
-    viewport.height = -1.0f * static_cast<float>(vkn::Swapchain::Get().swapchainImageExtent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    vk::Rect2D scissor;
-    scissor.offset = vk::Offset2D(0, 0);
-    scissor.extent = vkn::Swapchain::Get().swapchainImageExtent;
-
-    commandBuffer.setViewport(0, viewport);
-    commandBuffer.setScissor(0, scissor);
-}

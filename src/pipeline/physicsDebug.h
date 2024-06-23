@@ -1,11 +1,12 @@
-#ifndef LINERENDERPIPELINE_H
-#define LINERENDERPIPELINE_H
+#ifndef PHYSICSDEBUGPIPELINE_H
+#define PHYSICSDEBUGPIPELINE_H
 
+#include <btBulletCollisionCommon.h>
 #include "../vulkan/pipeline.h"
-#include "../scene/line.h"
+#include "../scene/physicsDebugDrawer.h"
 #include "../pipeline/meshRender.h"
 
-class LineRenderPipeline : public vkn::Pipeline
+class PhysicsDebugPipeline : public vkn::Pipeline
 {
     vk::VertexInputBindingDescription m_bindingDesc;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribDesc;
@@ -14,10 +15,11 @@ class LineRenderPipeline : public vkn::Pipeline
     void CreateRenderPass() override{};
 
 public:
-    LineRenderPipeline();
+    PhysicsDebugPipeline();
     void CreatePipeline() override;
     void UpdateCameraUBO(const vk::DescriptorBufferInfo& bufferInfo);
+    void UpdateMeshUBO(const vk::DescriptorBufferInfo& bufferInfo);
 
-} inline lineRenderPipeline;
+} inline physicsDebugPipeline;
 
 #endif

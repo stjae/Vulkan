@@ -82,8 +82,8 @@ add_executable(${PROJECT_NAME}
         src/scene/shadowMap.h
         src/scene/physics.cpp
         src/scene/physics.h
-        src/pipeline/lineRender.cpp
-        src/pipeline/lineRender.h
+        src/pipeline/physicsDebug.cpp
+        src/pipeline/physicsDebug.h
         src/enum.h
         src/scene/physicsDebugDrawer.h
         src/vulkan/sync.cpp
@@ -103,6 +103,12 @@ add_executable(${PROJECT_NAME}
         src/pipeline/colorID.h
         src/pipeline/postProcess.cpp
         src/pipeline/postProcess.h
+        src/scene/grid.cpp
+        src/scene/grid.h
+        src/scene/line.h
+        src/scene/physicsDebugDrawer.cpp
+        src/pipeline/lineRender.cpp
+        src/pipeline/lineRender.h
 )
 
 if (WIN32)

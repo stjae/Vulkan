@@ -19,6 +19,7 @@ Viewport::Viewport() : m_outDated(false), m_isMouseHovered(false)
     brdfLutPipeline.CreatePipeline();
     skyboxRenderPipeline.CreatePipeline();
     lineRenderPipeline.CreatePipeline();
+    physicsDebugPipeline.CreatePipeline();
 
     m_pickedColor.CreateImage({ 1, 1, 1 }, vk::Format::eR32G32Sint, vk::ImageUsageFlagBits::eTransferDst, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 }
@@ -178,7 +179,6 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
 void Viewport::Draw(const Scene& scene)
 {
     vkn::Command::BeginRenderPass(m_commandBuffer, meshRenderPipeline.m_renderPass, m_framebuffer, { {}, m_extent }, meshRenderPipeline.m_clearValues);
-    // vkn::Command::SetViewport(m_commandBuffer);
     vk::Viewport viewport;
     viewport.x = 0.0f;
     viewport.y = (float)m_extent.height;
@@ -235,11 +235,20 @@ void Viewport::Draw(const Scene& scene)
         }
     }
 
+    // Grid
+    if (scene.m_showGrid && !scene.IsPlaying()) {
+        m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
+        m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
+        m_commandBuffer.bindVertexBuffers(0, 1, &scene.m_grid.m_vertexBuffer->Get().buffer, vertexOffsets);
+        m_commandBuffer.bindIndexBuffer(scene.m_grid.m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
+        m_commandBuffer.drawIndexed(scene.m_grid.m_lineIndices.size(), 1, 0, 0, 0);
+    }
+
     // Physics Debug
     if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {
         if (scene.GetSelectedMeshInstance().physicsInfo) {
-            m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipeline);
-            m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, lineRenderPipeline.m_pipelineLayout, 0, lineRenderPipeline.m_descriptorSets.size(), lineRenderPipeline.m_descriptorSets.data(), 0, nullptr);
+            m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, physicsDebugPipeline.m_pipeline);
+            m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, physicsDebugPipeline.m_pipelineLayout, 0, physicsDebugPipeline.m_descriptorSets.size(), physicsDebugPipeline.m_descriptorSets.data(), 0, nullptr);
             m_commandBuffer.bindVertexBuffers(0, 1, &scene.GetSelectedMeshInstance().physicsDebugDrawer->m_vertexBuffer->Get().buffer, vertexOffsets);
             m_commandBuffer.bindIndexBuffer(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_indexBuffer->Get().buffer, 0, vk::IndexType::eUint32);
             m_commandBuffer.drawIndexed(scene.GetSelectedMeshInstance().physicsDebugDrawer->m_lineIndices.size(), 1, 0, 0, 0);
@@ -300,4 +309,5 @@ Viewport::~Viewport()
     brdfLutPipeline.Destroy();
     skyboxRenderPipeline.Destroy();
     lineRenderPipeline.Destroy();
+    physicsDebugPipeline.Destroy();
 }

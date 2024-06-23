@@ -13,9 +13,11 @@
 #include "../pipeline/shadowCubemap.h"
 #include "../pipeline/envCubemap.h"
 #include "../pipeline/irradianceCubemap.h"
+#include "../pipeline/prefilteredCubemap.h"
 #include "../pipeline/brdfLut.h"
 #include "../pipeline/skyboxRender.h"
 #include "../pipeline/lineRender.h"
+#include "../pipeline/physicsDebug.h"
 #include "../scene/mesh.h"
 
 class Viewport
