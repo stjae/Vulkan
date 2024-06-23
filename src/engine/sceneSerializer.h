@@ -15,7 +15,7 @@ public:
     void SerializeCamera(YAML::Emitter& out, const Camera& camera);
     void SerializePointLight(YAML::Emitter& out, const PointLight& pointLight);
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
-    void SerializeScriptClass(YAML::Emitter& out);
+    void SerializeScriptClass(YAML::Emitter& out, const Scene& scene);
     void SerializeScriptInstance(YAML::Emitter& out);
     void Deserialize(Scene& scene, const std::string& filePath);
 };

@@ -55,6 +55,7 @@ class ScriptClass
     std::string m_className;
     std::string m_fullName;
     std::string m_filePath;
+    std::string m_relativePath;
 
 public:
     ScriptClass(const char* nameSpace, const char* name, const std::string& filePath);

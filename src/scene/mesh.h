@@ -52,7 +52,7 @@ class Mesh : public MeshBase
 public:
     Mesh() = default;
     Mesh(int meshColorID) : m_meshColorID(meshColorID) {}
-    Mesh(int meshColorID, const std::string& filePath);
+    Mesh(int meshColorID, const std::string& filePath, const std::string& fileName);
     const std::string& GetName() { return m_name; }
     int32_t GetMeshColorID() const { return m_meshColorID; }
     size_t GetInstanceCount() const { return m_meshInstances.size(); }

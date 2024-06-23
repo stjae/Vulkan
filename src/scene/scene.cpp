@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "../engine/script/script.h"
+#include <filesystem>
 
 void Scene::Init()
 {
@@ -74,18 +75,29 @@ void Scene::UpdateCameraDescriptor(Camera* camera)
 
 void Scene::AddResource(std::string& filePath)
 {
-    m_resources.emplace_back(filePath);
-    m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), m_resources.back().filePath));
+    std::string resourceName = filePath.substr(filePath.find_last_of("/\\") + 1, filePath.rfind('.') - filePath.find_last_of("/\\") - 1);
+    std::string resourcePath = "\\resource\\" + resourceName + filePath.substr(filePath.find_last_of("/\\"), filePath.length() - 1);
+    m_resources.emplace_back(resourcePath, resourceName);
+
+    std::error_code ec;
+    std::filesystem::create_directory(m_sceneFolderPath + "\\resource\\" + resourceName);
+    std::filesystem::copy(filePath, m_sceneFolderPath + "\\resource\\" + resourceName, ec);
+    Log(DEBUG, fmt::terminal_color::bright_black, "copy resource: {0}, {1}", filePath, ec.message());
+    std::string binPath = filePath.substr(0, filePath.rfind('.')) + ".bin";
+    std::filesystem::copy(binPath, m_sceneFolderPath + "\\resource\\" + resourceName, ec);
+    Log(DEBUG, fmt::terminal_color::bright_black, "copy resource: {0}, {1}", binPath, ec.message());
+
+    m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), filePath, resourceName));
     m_meshes.back()->CreateBuffers(m_commandBuffer);
     m_resources.back().ptr = m_meshes.back();
 
     if (!m_meshes.back()->m_materials.empty()) {
-        LoadMaterials(filePath, m_meshes.back()->m_materials);
+        LoadMaterials(m_meshes.back()->m_filePath, m_meshes.back()->m_name, m_meshes.back()->m_materials);
         UpdateTextureDescriptors();
     }
 }
 
-void Scene::LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials)
+void Scene::LoadMaterials(const std::string& modelPath, const std::string& modelName, const std::vector<MaterialFilePath>& materials)
 {
     for (int i = 0; i < 4; i++)
         vkn::Command::Begin(m_imageLoadCommandBuffers[i]);
@@ -94,28 +106,48 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::vector<Materi
         for (auto& material : materials) {
             m_albedoTextures.emplace_back();
             m_albedoTextures.back() = std::make_unique<vkn::Image>();
-            m_albedoTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[0]);
+            if (m_albedoTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[0])) {
+                std::error_code ec;
+                auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo;
+                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                Log(DEBUG, fmt::terminal_color::bright_black, "copy albedo texture: {0}, {1}", texturePath, ec.message());
+            }
         }
     });
     std::thread t1 = std::thread([&]() {
         for (auto& material : materials) {
             m_normalTextures.emplace_back();
             m_normalTextures.back() = std::make_unique<vkn::Image>();
-            m_normalTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[1]);
+            if (m_normalTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[1])) {
+                std::error_code ec;
+                auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal;
+                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                Log(DEBUG, fmt::terminal_color::bright_black, "copy normal texture: {0}, {1}", texturePath, ec.message());
+            }
         }
     });
     std::thread t2 = std::thread([&]() {
         for (auto& material : materials) {
             m_metallicTextures.emplace_back();
             m_metallicTextures.back() = std::make_unique<vkn::Image>();
-            m_metallicTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[2]);
+            if (m_metallicTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[2])) {
+                std::error_code ec;
+                auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic;
+                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                Log(DEBUG, fmt::terminal_color::bright_black, "copy metallic texture: {0}, {1}", texturePath, ec.message());
+            }
         }
     });
     std::thread t3 = std::thread([&]() {
         for (auto& material : materials) {
             m_roughnessTextures.emplace_back();
             m_roughnessTextures.back() = std::make_unique<vkn::Image>();
-            m_roughnessTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[3]);
+            if (m_roughnessTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[3])) {
+                std::error_code ec;
+                auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness;
+                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                Log(DEBUG, fmt::terminal_color::bright_black, "copy roughness texture: {0}, {1}", texturePath, ec.message());
+            }
         }
     });
 
@@ -186,9 +218,15 @@ void Scene::AddPointLight()
 
 void Scene::AddEnvironmentMap(const std::string& hdriFilePath)
 {
-    m_hdriFilePath = hdriFilePath;
+    std::error_code ec;
+    std::filesystem::create_directory(m_sceneFolderPath + "\\hdri", ec);
+    Log(DEBUG, fmt::terminal_color::bright_black, "create directory for hdri: {0}, {1}", m_sceneFolderPath + "\\hdri", ec.message());
+    std::filesystem::copy(hdriFilePath, m_sceneFolderPath + "\\hdri", ec);
+    Log(DEBUG, fmt::terminal_color::bright_black, "copy hdri file: {0}, {1}", hdriFilePath, ec.message());
+
+    m_hdriFilePath = "\\hdri" + hdriFilePath.substr(hdriFilePath.find_last_of("/\\"), hdriFilePath.length() - 1);
     m_envMap = std::make_unique<vkn::Image>();
-    m_envMap->InsertHDRImage(hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffer);
+    m_envMap->InsertHDRImage(m_sceneFolderPath + m_hdriFilePath, vk::Format::eR32G32B32A32Sfloat, m_commandBuffer);
     envCubemapPipeline.UpdateHDRimage(m_envMap->Get().descriptorImageInfo);
     UpdateEnvCubemaps();
 }
@@ -561,10 +599,4 @@ void Scene::DeleteMesh(int index)
         m_meshes[index]->m_meshColorID--;
         m_meshes[index]->UpdateColorID();
     }
-}
-
-Resource::Resource(std::string& path)
-{
-    this->filePath = path;
-    this->fileName = path.substr(path.find_last_of("/\\") + 1, path.rfind('.') - path.find_last_of("/\\") - 1);
 }

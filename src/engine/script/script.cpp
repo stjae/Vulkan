@@ -18,7 +18,7 @@ void Script::LoadDll(const std::string& sceneFolderPath)
 {
     for (auto& dir : std::filesystem::recursive_directory_iterator(sceneFolderPath)) {
         if (dir.path().extension() == ".dll") {
-            Log(DEBUG, fmt::terminal_color::white, "Found dll: {0}", dir.path().string());
+            Log(DEBUG, fmt::terminal_color::white, "found dll: {0}", dir.path().string());
             MonoAssembly* loadedAssembly = monoUtils::LoadAssembly(dir.path().string());
             if (loadedAssembly != nullptr)
                 LoadAssemblyClasses(dir.path().string());
@@ -72,13 +72,12 @@ void Script::LoadAssemblyClasses(const std::string& filePath)
             auto scriptClass = std::make_shared<ScriptClass>(nameSpace, name, filePath);
             s_scriptClasses.emplace(scriptClass->m_fullName, scriptClass);
             std::string dllPath = filePath.substr(0, filePath.find_last_of("/\\") + 1);
-            std::string baseDllName = "vkApp.dll";
-            std::string numericsDllName = "System.Numerics.dll";
             auto copyOptions = std::filesystem::copy_options::update_existing;
             std::error_code ec;
-            std::filesystem::copy_file(baseDllName, dllPath + baseDllName, copyOptions, ec);
-            std::filesystem::copy_file(numericsDllName, dllPath + numericsDllName, copyOptions, ec);
-            Log(DEBUG, fmt::terminal_color::bright_black, "Error copying script dll: {0}", ec.message());
+            std::filesystem::copy("vkApp.dll", dllPath, copyOptions, ec);
+            Log(DEBUG, fmt::terminal_color::bright_black, "copy reference script dll: {0}, {1}", "vkApp", ec.message());
+            std::filesystem::copy("System.Numerics.dll", dllPath, copyOptions, ec);
+            Log(DEBUG, fmt::terminal_color::bright_black, "copy reference script dll: {0}, {1}", "System.Numerics.dll", ec.message());
         }
     }
 }
@@ -111,6 +110,7 @@ ScriptClass::ScriptClass(const char* nameSpace, const char* name, const std::str
 {
     m_fullName = m_classNameSpace.empty() ? m_className : m_classNameSpace + "::" + m_className;
 }
+
 void ScriptClass::Init()
 {
     MonoAssembly* assembly = monoUtils::LoadAssembly(m_filePath);

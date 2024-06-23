@@ -94,7 +94,7 @@ class Scene
     void CreateDummyEnvMap();
     void UpdateEnvCubemaps();
     void AddResource(std::string& filePath);
-    void LoadMaterials(const std::string& modelPath, const std::vector<MaterialFilePath>& materials);
+    void LoadMaterials(const std::string& modelPath, const std::string& modelName, const std::vector<MaterialFilePath>& materials);
     void AddMeshInstance(Mesh& mesh, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddMeshInstance(Mesh& mesh, uint64_t UUID);
     void AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo);
@@ -132,6 +132,7 @@ public:
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
     MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
     MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstanceMap[UUID]; }
+    const std::string& GetSceneFolderPath() { return m_sceneFolderPath; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void UnselectAll();
     bool IsPlaying() const { return m_isPlaying; }
@@ -143,7 +144,7 @@ struct Resource
     std::string filePath;
     std::string fileName;
     std::weak_ptr<void> ptr;
-    Resource(std::string& path);
+    Resource(std::string& path, std::string& name) : filePath(path), fileName(name) {}
 };
 
 #endif

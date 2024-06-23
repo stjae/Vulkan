@@ -196,11 +196,11 @@ void Mesh::CreateSphere(float scale, const char* name, const char* texture)
     m_meshParts.emplace_back(0, -1);
 }
 
-Mesh::Mesh(int32_t meshColorID, const std::string& filePath) : m_meshColorID(meshColorID)
+Mesh::Mesh(int meshColorID, const std::string& filePath, const std::string& fileName) : m_meshColorID(meshColorID)
 {
     if (!filePath.empty()) {
         m_filePath = filePath;
-        m_name = filePath.substr(filePath.find_last_of("/\\") + 1, filePath.rfind('.') - filePath.find_last_of("/\\") - 1);
+        m_name = fileName;
         LoadModel(filePath);
     }
 }
@@ -239,9 +239,6 @@ void Mesh::LoadModel(const std::string& filepath)
             m_materials.back().roughness = path.C_Str();
         }
     }
-
-    // TODO:
-    m_name = filepath.substr(filepath.find_last_of("/\\") + 1, filepath.rfind('.') - filepath.find_last_of("/\\") - 1);
 }
 
 void Mesh::ProcessNode(aiNode* node, const aiScene* scene)

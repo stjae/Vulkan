@@ -1,5 +1,7 @@
 #include "ui.h"
 #include "font/IconsFontAwesome5.h"
+#include <filesystem>
+#include "../../imgui/imgui_stdlib.h"
 
 void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
 {
@@ -111,9 +113,13 @@ void UI::DrawInitPopup(bool& init, Scene& scene)
 
     if (ImGui::BeginPopupModal("Welcome", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::Button("New Scene", ImVec2(120, 0))) {
-            std::string saveFolderPath = nfdPickFolder();
-            scene.m_sceneFolderPath = saveFolderPath;
-            if (!saveFolderPath.empty()) {
+            std::string sceneFilePath = nfdSave({ "Scene", "scn" });
+            if (!sceneFilePath.empty()) {
+                scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.rfind('.'));
+                std::filesystem::create_directory(scene.m_sceneFolderPath);
+                scene.m_sceneFilePath = scene.m_sceneFolderPath + sceneFilePath.substr(sceneFilePath.find_last_of("/\\"), sceneFilePath.length() - 1);
+                SceneSerializer serializer;
+                serializer.Serialize(scene);
                 init = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -165,10 +171,11 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
     // Top Menu Bar
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 10, 10 });
     if (ImGui::BeginMenuBar()) {
-        bool openNewScene = false;
+        bool openNewScenePopup = false;
+        bool openSaveAsPopup = false;
         if (ImGui::BeginMenu("Scene")) {
             if (ImGui::MenuItem("New")) {
-                openNewScene = true;
+                openNewScenePopup = true;
             }
             if (ImGui::MenuItem("Open")) {
                 std::string sceneFilePath = nfdOpen({ "Scene", "scn" });
@@ -190,11 +197,7 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
                 }
             }
             if (ImGui::MenuItem("Save as")) {
-                std::string sceneFilePath = nfdSave({ "Scene", "scn" });
-                scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.find_last_of("/\\"));
-                scene.m_sceneFilePath = sceneFilePath;
-                SceneSerializer serializer;
-                serializer.Serialize(scene);
+                openSaveAsPopup = true;
             }
             ImGui::EndMenu();
         }
@@ -218,8 +221,12 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
         ImGui::EndMenuBar();
 
         // open new scene popup modal
-        if (openNewScene)
+        if (openNewScenePopup)
             ImGui::OpenPopup("New Scene");
+
+        // open save as popup modal
+        if (openSaveAsPopup)
+            ImGui::OpenPopup("Save As");
 
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -233,12 +240,58 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
 
             if (ImGui::Button("OK", ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
-                scene.Clear();
+                std::string sceneFilePath = nfdSave({ "Scene", "scn" });
+                if (!sceneFilePath.empty()) {
+                    scene.Clear();
+                    scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.find_last_of("/\\"));
+                    scene.m_sceneFilePath = sceneFilePath;
+                    SceneSerializer serializer;
+                    serializer.Serialize(scene);
+                    scene.SelectDummyEnvMap();
+                }
             }
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        if (ImGui::BeginPopupModal("Save As", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            static std::string sceneName;
+            static std::string message;
+            ImGui::PushItemWidth(248);
+            ImGui::InputTextWithHint("##SceneName", "Scene Name", &sceneName);
+            ImGui::PopItemWidth();
+            ImGui::Separator();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::PopStyleVar();
+
+            if (!message.empty())
+                ImGui::TextWrapped("%s", message.c_str());
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+                if (!sceneName.empty()) {
+                    scene.m_sceneFilePath = scene.m_sceneFolderPath + "\\" + sceneName + ".scn";
+                    if (!std::filesystem::exists(scene.m_sceneFilePath)) {
+                        SceneSerializer serializer;
+                        serializer.Serialize(scene);
+                        sceneName = "";
+                        message = "";
+                        ImGui::CloseCurrentPopup();
+                    } else {
+                        message = "Scene file with the same name exists";
+                    }
+                } else {
+                    message = "Please insert name";
+                }
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                sceneName = "";
+                message = "";
             }
             ImGui::EndPopup();
         }

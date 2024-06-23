@@ -34,7 +34,7 @@ void Image::CreateImageView()
     m_bundle.descriptorImageInfo.imageView = m_bundle.imageView;
 }
 
-void Image::InsertImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer)
+bool Image::InsertImage(const std::string& filePath, vk::Format format, const vk::CommandBuffer& commandBuffer)
 {
     stbi_set_flip_vertically_on_load(false);
     int width = 0, height = 0, channel = 0;
@@ -47,7 +47,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, const vk
     if (!imageData) {
         spdlog::error("failed to load texture from [{}]", filePath.c_str());
         InsertDummyImage(commandBuffer);
-        return;
+        return false;
     }
     spdlog::info("load texture from [{}]", filePath.c_str());
 
@@ -63,6 +63,7 @@ void Image::InsertImage(const std::string& filePath, vk::Format format, const vk
     ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     Command::CopyBufferToImage(commandBuffer, m_stagingBuffer->Get().buffer, m_bundle.image, width, height);
     ChangeImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    return true;
 }
 
 // TODO: reuse dummy

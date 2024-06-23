@@ -61,7 +61,8 @@ set(imgui_src
         ${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp
         ${PROJECT_SOURCE_DIR}/imgui/imgui.cpp
         ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_glfw.cpp
-        ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_vulkan.cpp)
+        ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_vulkan.cpp
+        ${PROJECT_SOURCE_DIR}/imgui/imgui_stdlib.cpp)
 if (WIN32)
     add_library(imgui ${imgui_src} ${PROJECT_SOURCE_DIR}/imgui/imgui_impl_win32.cpp)
 else ()

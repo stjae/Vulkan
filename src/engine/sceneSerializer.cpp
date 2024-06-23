@@ -75,8 +75,6 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     out << YAML::BeginMap;
 
-    out << YAML::Key << "SceneFolderPath" << YAML::Value << scene.m_sceneFolderPath;
-    out << YAML::Key << "SceneFilePath" << YAML::Value << scene.m_sceneFilePath;
     if (!scene.m_hdriFilePath.empty()) {
         out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.m_hdriFilePath;
     }
@@ -87,7 +85,7 @@ void SceneSerializer::Serialize(const Scene& scene)
     SerializeCamera(out, scene.m_mainCamera);
     SerializeResource(out, scene.m_resources);
     SerializeMesh(out, scene, scene.m_meshes);
-    SerializeScriptClass(out);
+    SerializeScriptClass(out, scene);
     SerializeScriptInstance(out);
 
     out << YAML::EndMap;
@@ -195,14 +193,16 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
     }
 }
 
-void SceneSerializer::SerializeScriptClass(YAML::Emitter& out)
+void SceneSerializer::SerializeScriptClass(YAML::Emitter& out, const Scene& scene)
 {
     if (!Script::s_scriptClasses.empty()) {
         out << YAML::Key << "ScriptClass";
         out << YAML::Value << YAML::BeginSeq;
-        for (auto& klass : Script::s_scriptClasses) {
+        for (auto& scriptClass : Script::s_scriptClasses) {
             out << YAML::BeginMap;
-            out << YAML::Key << "ScriptFilePath" << YAML::Value << klass.second->m_filePath;
+            auto& filePath = scriptClass.second->m_filePath;
+            auto relativePath = filePath.substr(scene.m_sceneFolderPath.length(), filePath.length());
+            out << YAML::Key << "ScriptFilePath" << YAML::Value << relativePath;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -234,8 +234,8 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     YAML::Node data = YAML::Load(strStream.str());
 
-    scene.m_sceneFolderPath = data["SceneFolderPath"].as<std::string>();
-    scene.m_sceneFilePath = data["SceneFilePath"].as<std::string>();
+    scene.m_sceneFolderPath = filePath.substr(0, filePath.find_last_of("/\\"));
+    scene.m_sceneFilePath = filePath;
 
     auto camera = data["Camera"];
     scene.m_mainCamera.m_pos = camera["Position"].as<glm::vec3>();
@@ -279,8 +279,9 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto resources = data["Resource"];
     if (resources) {
         for (auto resource : resources) {
-            auto filePath = resource["FilePath"].as<std::string>();
-            scene.AddResource(filePath);
+            auto relativePath = resource["FilePath"].as<std::string>();
+            auto fullPath = scene.m_sceneFolderPath + relativePath;
+            scene.AddResource(fullPath);
         }
     }
 
@@ -320,7 +321,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto scriptClasses = data["ScriptClass"];
     if (scriptClasses) {
         for (auto&& scriptClass : scriptClasses) {
-            Script::LoadAssemblyClasses(scriptClass["ScriptFilePath"].as<std::string>());
+            Script::LoadAssemblyClasses(scene.m_sceneFolderPath + scriptClass["ScriptFilePath"].as<std::string>());
         }
     }
 
