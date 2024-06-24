@@ -760,12 +760,12 @@ void UI::RecreateViewportDescriptorSet(const Viewport& viewport)
     m_viewportImageDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, viewport.m_imageFinal.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void UI::AcceptDragDrop(Viewport& viewport, Scene& scene)
+void UI::AcceptDragDrop(Scene& scene)
 {
     if (!s_dragDropped)
         return;
 
-    scene.AddMeshInstance(*std::static_pointer_cast<Mesh>(s_dragDropResource->ptr.lock()));
+    scene.AddMeshInstance(*(Mesh*)s_dragDropResource->ptr);
     s_dragDropped = false;
 }
 

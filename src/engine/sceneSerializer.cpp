@@ -84,10 +84,10 @@ void SceneSerializer::Serialize(const Scene& scene)
     out << YAML::Key << "IBLExposure" << YAML::Value << scene.m_iblExposure;
 
     SerializeDirLight(out, scene);
-    SerializePointLight(out, scene.m_pointLight);
+    SerializePointLight(out, scene);
     SerializeCamera(out, scene);
-    SerializeResource(out, scene.m_resources);
-    SerializeMesh(out, scene, scene.m_meshes);
+    SerializeResource(out, scene);
+    SerializeMesh(out, scene);
     SerializeScriptClass(out, scene);
     SerializeScriptInstance(out);
 
@@ -107,12 +107,12 @@ void SceneSerializer::SerializeDirLight(YAML::Emitter& out, const Scene& scene)
     out << YAML::EndMap;
 }
 
-void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& pointLight)
+void SceneSerializer::SerializePointLight(YAML::Emitter& out, const Scene& scene)
 {
-    if (pointLight.Size() > 0) {
+    if (scene.m_pointLight.Size() > 0) {
         out << YAML::Key << "PointLight";
         out << YAML::Value << YAML::BeginSeq;
-        for (auto& UBO : pointLight.Get()) {
+        for (auto& UBO : scene.m_pointLight.GetUBOs()) {
             out << YAML::BeginMap;
             out << YAML::Key << "Position" << YAML::Value << UBO.pos;
             out << YAML::Key << "Color" << YAML::Value << UBO.color;
@@ -139,12 +139,12 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Scene& scene)
     out << YAML::EndMap;
 }
 
-void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources)
+void SceneSerializer::SerializeResource(YAML::Emitter& out, const Scene& scene)
 {
-    if (!resources.empty()) {
+    if (!scene.m_resources.empty()) {
         out << YAML::Key << "Resource";
         out << YAML::Value << YAML::BeginSeq;
-        for (auto& resource : resources) {
+        for (auto& resource : scene.m_resources) {
             out << YAML::BeginMap;
             out << YAML::Key << "FilePath" << YAML::Value << resource.filePath;
             out << YAML::EndMap;
@@ -153,12 +153,12 @@ void SceneSerializer::SerializeResource(YAML::Emitter& out, const std::vector<Re
     }
 }
 
-void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, const std::vector<std::shared_ptr<Mesh>>& meshes)
+void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene)
 {
-    if (!meshes.empty()) {
+    if (!scene.m_meshes.empty()) {
         out << YAML::Key << "Mesh";
         out << YAML::Value << YAML::BeginSeq;
-        for (auto& mesh : meshes) {
+        for (auto& mesh : scene.m_meshes) {
             out << YAML::BeginMap;
             out << YAML::Key << "Name" << YAML::Value << mesh->m_name;
             out << YAML::Key << "Instance";

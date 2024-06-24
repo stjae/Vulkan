@@ -38,7 +38,7 @@ void ShadowCubemap::CreateFramebuffer()
     }
 }
 
-void ShadowCubemap::DrawShadowMap(int lightIndex, PointLight& light, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
+void ShadowCubemap::DrawShadowMap(int lightIndex, PointLight& light, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
     vk::Viewport viewport({}, {}, (float)shadowCubemapSize, (float)shadowCubemapSize, 0.0f, 1.0f);
     commandBuffer.setViewport(0, 1, &viewport);
@@ -51,7 +51,7 @@ void ShadowCubemap::DrawShadowMap(int lightIndex, PointLight& light, std::vector
     }
 }
 
-void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointLight& light, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
+void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointLight& light, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
     std::array<vk::ClearValue, 2> clearValues;
     clearValues[0] = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -60,7 +60,7 @@ void ShadowCubemap::UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointL
     vk::RenderPassBeginInfo renderPassBI(shadowCubemapPipeline.m_renderPass, m_framebuffers[faceIndex], { { 0, 0 }, { shadowCubemapSize, shadowCubemapSize } }, 2, clearValues.data());
 
     glm::mat4 viewMatrix;
-    glm::vec3 lightPos = light.Get()[lightIndex].pos;
+    glm::vec3 lightPos = light.GetUBOs()[lightIndex].pos;
     switch (faceIndex) {
     case 0: // POS X
         viewMatrix = glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));

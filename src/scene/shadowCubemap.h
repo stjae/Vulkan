@@ -22,13 +22,13 @@ class ShadowCubemap : public vkn::Cubemap
     inline static std::unique_ptr<vkn::Buffer> s_shadowCubemapProjBuffer;
     inline static glm::mat4 s_shadowCubemapProj;
 
-    void UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointLight& lights, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
+    void UpdateCubemapFace(uint32_t faceIndex, int lightIndex, PointLight& light, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
     void CreateFramebuffer();
     void CreateDepthImage(const vk::CommandBuffer& commandBuffer);
 
 public:
     void CreateShadowMap(const vk::CommandBuffer& commandBuffer);
-    void DrawShadowMap(int lightIndex, PointLight& light, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
+    void DrawShadowMap(int lightIndex, PointLight& light, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
     static void CreateProjBuffer();
     static void DestroyBuffer();
 };

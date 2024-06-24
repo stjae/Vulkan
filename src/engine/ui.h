@@ -69,7 +69,7 @@ public:
     void Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
     void Draw(Scene& scene, Viewport& viewport, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
-    void AcceptDragDrop(Viewport& viewport, Scene& scene);
+    void AcceptDragDrop(Scene& scene);
     void DrawInitPopup(bool& init, Scene& scene);
     ~UI();
 };

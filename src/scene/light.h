@@ -40,7 +40,7 @@ public:
     void Delete(int index) { m_UBOs.erase(m_UBOs.begin() + index); }
     void Clear() { m_UBOs.clear(); }
     size_t Size() const { return m_UBOs.size(); }
-    const std::vector<PointLightUBO>& Get() const { return m_UBOs; }
+    const std::vector<PointLightUBO>& GetUBOs() const { return m_UBOs; }
     void Update(const vk::CommandBuffer& commandBuffer);
     void UpdateBuffer();
 };

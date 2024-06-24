@@ -107,9 +107,9 @@ void Scene::AddResource(std::string& filePath)
     std::filesystem::copy(binPath, m_sceneFolderPath + "\\resource\\" + resourceName, ec);
     Log(DEBUG, fmt::terminal_color::bright_black, "copy resource: {0}, {1}", binPath, ec.message());
 
-    m_meshes.push_back(std::make_shared<Mesh>(m_meshes.size(), filePath, resourceName));
+    m_meshes.push_back(std::make_unique<Mesh>(m_meshes.size(), filePath, resourceName));
     m_meshes.back()->CreateBuffers(m_commandBuffer);
-    m_resources.back().ptr = m_meshes.back();
+    m_resources.back().ptr = m_meshes.back().get();
 
     if (!m_meshes.back()->m_materials.empty()) {
         LoadMaterials(m_meshes.back()->m_filePath, m_meshes.back()->m_name, m_meshes.back()->m_materials);

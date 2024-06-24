@@ -12,7 +12,7 @@ void Cascade::Create(int index, const vkn::Image& depthImage)
     CreateFramebuffer(shadowMapPipeline, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 }
 
-void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
+void Cascade::Draw(int index, vkn::Image& depthImage, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
     vkn::Command::ChangeImageLayout(commandBuffer,
                                     depthImage.Get().image,
@@ -166,7 +166,7 @@ void CascadedShadowMap::UpdateUBO(const DirLight& dirLight, const vk::CommandBuf
     vkn::Command::CopyBufferToBuffer(commandBuffer, m_UBOStagingBuffer->Get().buffer, m_UBOBuffer->Get().buffer, m_UBOStagingBuffer->Get().bufferInfo.size);
 }
 
-void CascadedShadowMap::Draw(std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
+void CascadedShadowMap::Draw(std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer)
 {
     for (int i = 0; i < m_cascades.size(); i++) {
         m_cascades[i].Draw(i, m_depthImage, meshes, commandBuffer);

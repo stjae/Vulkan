@@ -27,7 +27,7 @@ void Engine::Render()
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene.IsPlaying()) {
         m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), m_scene);
     }
-    m_imGui.AcceptDragDrop(m_viewport, m_scene);
+    m_imGui.AcceptDragDrop(m_scene);
 
     m_scene.Play();
     m_scene.Update();

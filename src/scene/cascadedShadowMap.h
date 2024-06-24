@@ -32,7 +32,7 @@ class Cascade : public vkn::Image
 
 public:
     void Create(int index, const vkn::Image& depthImage);
-    void Draw(int index, vkn::Image& depthImage, std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
+    void Draw(int index, vkn::Image& depthImage, std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
 };
 
 class CascadedShadowMap
@@ -51,7 +51,7 @@ public:
     void Create();
     void UpdateCascades(Camera* camera, const DirLight& dirLight);
     void UpdateUBO(const DirLight& dirLight, const vk::CommandBuffer& commandBuffer);
-    void Draw(std::vector<std::shared_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
+    void Draw(std::vector<std::unique_ptr<Mesh>>& meshes, const vk::CommandBuffer& commandBuffer);
 };
 
 #endif

@@ -39,7 +39,7 @@ class Scene
     PointLight m_pointLight;
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
     // Mesh
-    std::vector<std::shared_ptr<Mesh>> m_meshes;
+    std::vector<std::unique_ptr<Mesh>> m_meshes;
     std::vector<Mesh> m_meshCopies;                              // store meshes for scene resetting
     std::unordered_map<uint64_t, MeshInstance*> m_meshInstances; // to search by uuid
 
@@ -120,11 +120,10 @@ class Scene
 public:
     void Init();
     size_t GetInstanceCount();
-    const std::vector<std::shared_ptr<Mesh>>& GetMeshes() { return m_meshes; }
+    const std::vector<std::unique_ptr<Mesh>>& GetMeshes() { return m_meshes; }
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
     MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
     MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstances[UUID]; }
-    const std::string& GetSceneFolderPath() { return m_sceneFolderPath; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void UnselectAll();
     bool IsPlaying() const { return m_isPlaying; }
@@ -135,7 +134,7 @@ struct Resource
 {
     std::string filePath;
     std::string fileName;
-    std::weak_ptr<void> ptr;
+    void* ptr;
     Resource(std::string& path, std::string& name) : filePath(path), fileName(name) {}
 };
 

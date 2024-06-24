@@ -28,8 +28,8 @@ public:
     static void InitPhysics();
     static void AddRigidBody(Mesh& mesh, MeshInstance& meshInstance);
     static void DeleteRigidBody(MeshInstance& instance);
-    static void UpdateRigidBodies(std::vector<std::shared_ptr<Mesh>>& meshes);
-    static void Simulate(std::vector<std::shared_ptr<Mesh>>& meshes);
+    static void UpdateRigidBodies(std::vector<std::unique_ptr<Mesh>>& meshes);
+    static void Simulate(std::vector<std::unique_ptr<Mesh>>& meshes);
     static btDiscreteDynamicsWorld* GetDynamicsWorld() { return s_dynamicsWorld; }
     ~Physics();
 };
