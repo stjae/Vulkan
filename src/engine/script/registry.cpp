@@ -50,48 +50,48 @@ void Registry::GetMatrix(uint64_t meshInstanceID, glm::mat4* outMatrix)
 void Registry::GetCameraTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        *outTranslation = instance.camera.lock()->GetTranslation();
+    if (instance.camera) {
+        *outTranslation = instance.camera->GetTranslation();
     }
 }
 
 void Registry::SetCameraTranslation(uint64_t meshInstanceID, glm::vec3* inTranslation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        instance.camera.lock()->SetTranslation(*inTranslation);
+    if (instance.camera) {
+        instance.camera->SetTranslation(*inTranslation);
     }
 }
 
 void Registry::GetCameraRotation(uint64_t meshInstanceID, glm::vec3* outRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        *outRotation = instance.camera.lock()->GetRotation();
+    if (instance.camera) {
+        *outRotation = instance.camera->GetRotation();
     }
 }
 
 void Registry::SetCameraRotation(uint64_t meshInstanceID, glm::vec3* inRotation)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        instance.camera.lock()->SetRotation(*inRotation);
+    if (instance.camera) {
+        instance.camera->SetRotation(*inRotation);
     }
 }
 
 void Registry::GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        *outDirection = instance.camera.lock()->GetDirection();
+    if (instance.camera) {
+        *outDirection = instance.camera->GetDirection();
     }
 }
 
 void Registry::SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirection)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    if (instance.camera.lock()) {
-        instance.camera.lock()->SetDirection(*inDirection);
+    if (instance.camera) {
+        instance.camera->SetDirection(*inDirection);
     }
 }
 

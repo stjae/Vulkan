@@ -75,6 +75,9 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     out << YAML::BeginMap;
 
+    out << YAML::Key << "GridWidth" << YAML::Value << scene.m_gridWidth;
+    out << YAML::Key << "ShowGrid" << YAML::Value << scene.m_showGrid;
+
     if (!scene.m_hdriFilePath.empty()) {
         out << YAML::Key << "HDRIFilePath" << YAML::Value << scene.m_hdriFilePath;
     }
@@ -82,14 +85,11 @@ void SceneSerializer::Serialize(const Scene& scene)
 
     SerializeDirLight(out, scene);
     SerializePointLight(out, scene.m_pointLight);
-    SerializeCamera(out, scene.m_mainCamera);
+    SerializeCamera(out, scene);
     SerializeResource(out, scene.m_resources);
     SerializeMesh(out, scene, scene.m_meshes);
     SerializeScriptClass(out, scene);
     SerializeScriptInstance(out);
-
-    out << YAML::Key << "GridWidth" << YAML::Value << scene.m_gridWidth;
-    out << YAML::Key << "ShowGrid" << YAML::Value << scene.m_showGrid;
 
     out << YAML::EndMap;
 
@@ -124,12 +124,13 @@ void SceneSerializer::SerializePointLight(YAML::Emitter& out, const PointLight& 
     }
 }
 
-void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Camera& camera)
+void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Scene& scene)
 {
     out << YAML::Key << "Camera" << YAML::Value;
     out << YAML::BeginMap;
-    out << YAML::Key << "Position" << YAML::Value << camera.m_pos;
-    out << YAML::Key << "Direction" << YAML::Value << camera.m_dir;
+    out << YAML::Key << "PlayCameraID" << YAML::Value << scene.m_playCamera->GetID();
+    out << YAML::Key << "Position" << YAML::Value << scene.m_mainCamera.m_pos;
+    out << YAML::Key << "Direction" << YAML::Value << scene.m_mainCamera.m_dir;
     out << YAML::Key << "CascadeRange1" << YAML::Value << Camera::s_cascadeRanges[0];
     out << YAML::Key << "CascadeRange2" << YAML::Value << Camera::s_cascadeRanges[1];
     out << YAML::Key << "CascadeRange3" << YAML::Value << Camera::s_cascadeRanges[2];
@@ -180,12 +181,8 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene, cons
                     out << YAML::Key << "RigidBodyScale" << YAML::Value << instance->physicsInfo->scale;
                     out << YAML::EndMap;
                 }
-                if (instance->camera.lock()) {
-                    out << YAML::Key << "Camera" << YAML::Value;
-                    out << YAML::BeginMap;
-                    if (scene.m_playCamera == instance->camera.lock().get())
-                        out << YAML::Key << "Selected" << YAML::Value << true;
-                    out << YAML::EndMap;
+                if (instance->camera) {
+                    out << YAML::Key << "Camera" << YAML::Value << true;
                 }
                 out << YAML::EndMap;
             }
@@ -313,8 +310,8 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                 auto subCamera = instance["Camera"];
                 if (subCamera) {
                     scene.AddCamera(*meshInstance);
-                    if (subCamera["Selected"])
-                        scene.m_playCamera = scene.m_subCameras[meshInstance->UUID].get();
+                    if (camera["PlayCameraID"].as<uint64_t>() == meshInstance->UUID)
+                        scene.m_playCamera = meshInstance->camera.get();
                 }
             }
         }

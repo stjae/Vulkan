@@ -49,9 +49,9 @@ void Scene::CreateCommandBuffers()
 
 void Scene::CreateMainCamera()
 {
-    m_mainCamera.m_dir = { 0.5f, 0.0f, -1.0f };
-    m_mainCamera.m_pos = { -3.0f, 3.0f, 8.0f };
-    m_mainCamera.m_at = { 0.0f, 0.0f, 0.0f };
+    m_mainCamera.m_dir = { 0.555799, -0.441097, -0.864014 };
+    m_mainCamera.m_pos = { -5.282600, 4.001135, 9.885192 };
+    m_mainCamera.m_at = { -4.726801, 3.560038, 9.021178 };
     UpdateCameraDescriptor(&m_mainCamera);
 }
 
@@ -99,7 +99,8 @@ void Scene::AddResource(std::string& filePath)
     m_resources.emplace_back(resourcePath, resourceName);
 
     std::error_code ec;
-    std::filesystem::create_directory(m_sceneFolderPath + "\\resource\\" + resourceName);
+    std::filesystem::create_directories(m_sceneFolderPath + "\\resource\\" + resourceName, ec);
+    Log(DEBUG, fmt::terminal_color::bright_black, "create resource directory: {0}, {1}", m_sceneFolderPath + "\\resource\\" + resourceName, ec.message());
     std::filesystem::copy(filePath, m_sceneFolderPath + "\\resource\\" + resourceName, ec);
     Log(DEBUG, fmt::terminal_color::bright_black, "copy resource: {0}, {1}", filePath, ec.message());
     std::string binPath = filePath.substr(0, filePath.rfind('.')) + ".bin";
@@ -184,14 +185,14 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::string& model
 void Scene::AddMeshInstance(Mesh& mesh, glm::vec3 pos, glm::vec3 scale)
 {
     mesh.AddInstance(pos, scale);
-    m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
+    m_meshInstances[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
     UpdateMeshBuffer();
 }
 
 void Scene::AddMeshInstance(Mesh& mesh, const uint64_t UUID)
 {
     mesh.AddInstance(UUID);
-    m_meshInstanceMap[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
+    m_meshInstances[mesh.m_meshInstances.back()->UUID] = mesh.m_meshInstances.back().get();
     UpdateMeshBuffer();
 }
 
@@ -199,7 +200,6 @@ void Scene::AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& phys
 {
     meshInstance.physicsDebugDrawer = std::make_unique<PhysicsDebugDrawer>(m_commandBuffer, physicsInfo, mesh.m_indexContainers, mesh.m_vertexContainers);
     meshInstance.physicsInfo = std::make_unique<PhysicsInfo>(physicsInfo);
-    meshInstance.physicsDebugUBO.havePhysicsInfo = 1;
     Physics::AddRigidBody(mesh, meshInstance);
     meshInstance.physicsDebugUBO.model = meshInstance.UBO.model;
 }
@@ -292,12 +292,9 @@ void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
     DeletePhysics(instance);
     Script::s_scriptInstances.erase(instance.UUID);
-    if (instance.camera.lock()) {
-        m_subCameras.erase(instance.UUID);
-        m_playCamera = &m_mainCamera;
-    }
     mesh.DeleteInstance(instance.UBO.instanceColorID);
-    m_meshInstanceMap.erase(instance.UUID);
+    m_meshInstances.erase(instance.UUID);
+    m_cameras.erase(instance.UUID);
     UnselectAll();
     UpdateMeshBuffer();
 }
@@ -504,14 +501,13 @@ void Scene::CopyMeshInstances()
     for (auto& mesh : m_meshes) {
         m_meshCopies.emplace_back(mesh->m_meshColorID);
         m_meshCopies.back().m_meshInstances.reserve(mesh->m_meshInstances.size());
-        for (auto& instance : mesh->m_meshInstances) {
-            AddMeshInstance(m_meshCopies.back(), instance->UUID);
-            *m_meshCopies.back().m_meshInstances.back() = *instance;
-            m_meshInstanceMap[instance->UUID] = instance.get();
-            if (instance->physicsInfo)
-                m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*instance->physicsInfo);
-            if (instance->camera.lock())
-                m_meshCopies.back().m_meshInstances.back()->camera = instance->camera;
+        for (auto& meshInstance : mesh->m_meshInstances) {
+            m_meshCopies.back().AddInstance(meshInstance->UUID);
+            *m_meshCopies.back().m_meshInstances.back() = *meshInstance;
+            if (meshInstance->physicsInfo)
+                m_meshCopies.back().m_meshInstances.back()->physicsInfo = std::make_unique<PhysicsInfo>(*meshInstance->physicsInfo);
+            if (meshInstance->camera)
+                m_meshCopies.back().m_meshInstances.back()->camera = std::make_unique<SubCamera>(meshInstance->UUID);
         }
     }
 }
@@ -520,21 +516,22 @@ void Scene::RevertMeshInstances()
 {
     if (m_meshCopies.empty())
         return;
-
+    uint64_t playCameraID = m_playCamera->GetID();
     for (int i = 0; i < m_meshes.size(); i++) {
         m_meshes[i]->m_meshInstances.clear();
         for (int j = 0; j < m_meshCopies[i].m_meshInstances.size(); j++) {
             AddMeshInstance(*m_meshes[i], m_meshCopies[i].m_meshInstances[j]->UUID);
-            *m_meshes[i]->m_meshInstances.back() = *m_meshCopies[i].m_meshInstances[j];
-            m_meshInstanceMap[m_meshCopies[i].m_meshInstances[j]->UUID] = m_meshCopies[i].m_meshInstances[j].get();
-            if (m_meshCopies[i].m_meshInstances[j]->physicsInfo) {
-                AddPhysics(*m_meshes[i], *m_meshes[i]->m_meshInstances.back(), *m_meshCopies[i].m_meshInstances[j]->physicsInfo);
-                m_meshes[i]->m_meshInstances.back()->physicsDebugUBO.scale = m_meshCopies[i].m_meshInstances[j]->physicsInfo->scale;
+            auto& meshInstance = m_meshes[i]->m_meshInstances.back();
+            auto& meshInstanceCopy = m_meshCopies[i].m_meshInstances[j];
+            *meshInstance = *meshInstanceCopy;
+            if (meshInstanceCopy->physicsInfo) {
+                AddPhysics(*m_meshes[i], *meshInstance, *meshInstanceCopy->physicsInfo);
+                meshInstance->physicsDebugUBO.scale = meshInstanceCopy->physicsInfo->scale;
             }
-            if (m_meshCopies[i].m_meshInstances[j]->camera.lock()) {
-                m_meshes[i]->m_meshInstances.back()->camera = m_meshCopies[i].m_meshInstances[j]->camera;
-                m_meshes[i]->m_meshInstances.back()->camera.lock()->GetTranslation() = m_meshes[i]->m_meshInstances.back()->translation;
-                m_meshes[i]->m_meshInstances.back()->camera.lock()->Reset();
+            if (meshInstanceCopy->camera) {
+                AddCamera(*meshInstance);
+                if (playCameraID == meshInstance->UUID)
+                    m_playCamera = meshInstance->camera.get();
             }
         }
     }
@@ -604,9 +601,10 @@ Scene::~Scene()
 
 void Scene::AddCamera(MeshInstance& instance)
 {
-    m_subCameras.emplace(instance.UUID, std::make_shared<SubCamera>(instance.UUID));
-    instance.camera = m_subCameras[instance.UUID];
-    instance.camera.lock()->GetTranslation() = instance.translation;
+    instance.camera = std::make_unique<SubCamera>(instance.UUID);
+    m_cameras[instance.UUID] = instance.camera.get();
+    instance.camera->GetTranslation() = instance.translation;
+    instance.camera->Reset();
 }
 
 void Scene::DeleteMesh(int index)

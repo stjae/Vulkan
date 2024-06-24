@@ -440,7 +440,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::EndListBox();
         }
         // Mesh Attributes
-        if (scene.m_selectedMeshID > -1) {
+        if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {
             auto& mesh = scene.GetSelectedMesh();
             auto& meshInstance = scene.GetSelectedMeshInstance();
 
@@ -533,14 +533,14 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             // Add Camera
             ImGui::SeparatorText("Camera");
-            if (!meshInstance.camera.lock()) {
+            if (!meshInstance.camera) {
                 if (ImGui::Button("Add##_CAMERA")) {
                     scene.AddCamera(meshInstance);
                 }
             } else {
-                if (scene.m_playCamera->GetAssignedMeshInstanceID() != meshInstance.UUID) {
+                if (scene.m_playCamera->GetID() != meshInstance.UUID) {
                     if (ImGui::Button("Select##_CAMERA")) {
-                        scene.m_playCamera = meshInstance.camera.lock().get();
+                        scene.m_playCamera = meshInstance.camera.get();
                     }
                 } else {
                     if (ImGui::Button("Unselect##_CAMERA")) {
@@ -548,8 +548,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     }
                 }
                 if (ImGui::Button("Delete##_CAMERA")) {
-                    scene.m_subCameras.erase(meshInstance.UUID);
-                    scene.m_playCamera = &scene.m_mainCamera;
+                    meshInstance.camera.reset();
                 }
             }
         }
@@ -622,6 +621,13 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("Camera")) {
+        ImGui::Text("Selected Camera:");
+        ImGui::SameLine();
+        if (scene.m_playCamera->GetID() == 0) {
+            ImGui::Text("Main");
+        } else {
+            ImGui::Text("%s", std::to_string(scene.m_playCamera->GetID()).c_str());
+        }
         ImGui::SliderFloat("Cascade Range 1", &Camera::s_cascadeRanges[0], Camera::s_zNear, Camera::s_cascadeRanges[1]);
         ImGui::SliderFloat("Cascade Range 2", &Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[0], Camera::s_cascadeRanges[2]);
         ImGui::SliderFloat("Cascade Range 3", &Camera::s_cascadeRanges[2], Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[3]);
@@ -720,7 +726,7 @@ void UI::DrawLightIcon(const Scene& scene, const Viewport& viewport)
 
 void UI::DrawCameraIcon(const Scene& scene, const Viewport& viewport)
 {
-    for (auto& camera : scene.m_subCameras) {
+    for (auto& camera : scene.m_cameras) {
         glm::vec4 pos = scene.m_mainCamera.GetUBO().proj * scene.m_mainCamera.GetUBO().view * glm::vec4(camera.second->m_pos, 1.0f);
         float posZ = pos.z;
         pos /= pos.w;
@@ -732,7 +738,7 @@ void UI::DrawCameraIcon(const Scene& scene, const Viewport& viewport)
         ImVec2 offset(300, 300);
         offset /= posZ;
         if (posZ > 1.0f && scene.m_showLightIcon && !scene.IsPlaying()) {
-            if (scene.m_playCamera == camera.second.get())
+            if (scene.m_playCamera == camera.second)
                 ImGui::GetWindowDrawList()->AddImage(m_cameraIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);
             else
                 ImGui::GetWindowDrawList()->AddImage(m_noCameraIconDescriptorSet, viewport.m_panelPos + screenPos - offset, viewport.m_panelPos + screenPos + offset, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_BLACK);

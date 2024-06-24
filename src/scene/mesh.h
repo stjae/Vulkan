@@ -93,8 +93,6 @@ struct PhysicsDebugUBO
 {
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 scale = glm::vec3(1.0f);
-    // flag for shader
-    int32_t havePhysicsInfo = 0;
 };
 
 struct MeshInstance
@@ -108,7 +106,7 @@ struct MeshInstance
     std::unique_ptr<PhysicsInfo> physicsInfo;
     PhysicsDebugUBO physicsDebugUBO;
     std::unique_ptr<vkn::Buffer> physicsDebugUBOBuffer;
-    std::weak_ptr<SubCamera> camera;
+    std::unique_ptr<SubCamera> camera;
 
     MeshInstance(uint64_t UUID, MeshInstanceUBO&& UBO);
     MeshInstance& operator=(const MeshInstance& other);

@@ -59,11 +59,6 @@ glm::mat4 Camera::GetCascadeProj(int index)
     }
 }
 
-uint64_t Camera::GetAssignedMeshInstanceID()
-{
-    return m_assignedMeshInstanceID;
-}
-
 void Camera::Reset()
 {
     m_dir = { 0.0f, 0.0f, 1.0f };
@@ -142,7 +137,7 @@ void MainCamera::Control()
 
 SubCamera::SubCamera(uint64_t meshInstanceID)
 {
-    m_assignedMeshInstanceID = meshInstanceID;
+    m_ID = meshInstanceID;
 }
 
 void SubCamera::Control()

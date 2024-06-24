@@ -12,7 +12,7 @@ public:
     void Serialize(const Scene& scene);
     void SerializeMesh(YAML::Emitter& out, const Scene& scene, const std::vector<std::shared_ptr<Mesh>>& meshes);
     void SerializeResource(YAML::Emitter& out, const std::vector<Resource>& resources);
-    void SerializeCamera(YAML::Emitter& out, const Camera& camera);
+    void SerializeCamera(YAML::Emitter& out, const Scene& scene);
     void SerializePointLight(YAML::Emitter& out, const PointLight& pointLight);
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
     void SerializeScriptClass(YAML::Emitter& out, const Scene& scene);

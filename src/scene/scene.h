@@ -40,8 +40,8 @@ class Scene
     std::vector<std::unique_ptr<ShadowCubemap>> m_shadowCubemaps;
     // Mesh
     std::vector<std::shared_ptr<Mesh>> m_meshes;
-    std::vector<Mesh> m_meshCopies;                                // store meshes for scene resetting
-    std::unordered_map<uint64_t, MeshInstance*> m_meshInstanceMap; // to search by uuid
+    std::vector<Mesh> m_meshCopies;                              // store meshes for scene resetting
+    std::unordered_map<uint64_t, MeshInstance*> m_meshInstances; // to search by uuid
 
     // Environment Map
     Mesh m_cube;
@@ -63,7 +63,7 @@ class Scene
 
     // Camera
     MainCamera m_mainCamera;
-    std::unordered_map<uint64_t, std::shared_ptr<SubCamera>> m_subCameras;
+    std::unordered_map<uint64_t, SubCamera*> m_cameras;
     Camera* m_viewportCamera = nullptr;
     Camera* m_playCamera = nullptr;
 
@@ -123,7 +123,7 @@ public:
     const std::vector<std::shared_ptr<Mesh>>& GetMeshes() { return m_meshes; }
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }
     MeshInstance& GetSelectedMeshInstance() const { return *m_meshes[m_selectedMeshID]->m_meshInstances[m_selectedMeshInstanceID]; }
-    MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstanceMap[UUID]; }
+    MeshInstance& GetMeshInstanceByID(uint64_t UUID) { return *m_meshInstances[UUID]; }
     const std::string& GetSceneFolderPath() { return m_sceneFolderPath; }
     void SelectByColorID(int32_t meshID, int32_t instanceID);
     void UnselectAll();

@@ -331,8 +331,8 @@ void Mesh::UpdateUBO(MeshInstance& instance)
     m_meshInstanceUBOs[instance.UBO.instanceColorID] = instance.UBO;
     m_meshInstanceUBOBuffer->Copy(m_meshInstanceUBOs.data());
     instance.physicsDebugUBO.model = instance.UBO.model;
-    if (instance.camera.lock())
-        instance.camera.lock()->GetTranslation() = instance.translation;
+    if (instance.camera)
+        instance.camera->GetTranslation() = instance.translation;
 }
 
 void Mesh::UpdateColorID()

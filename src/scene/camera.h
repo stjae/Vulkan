@@ -47,7 +47,7 @@ protected:
     glm::vec3 m_right = { 0.0f, 0.0f, 0.0f };
     glm::vec3 m_rotation = { 0.0f, 0.0f, 0.0f };
 
-    uint64_t m_assignedMeshInstanceID = 0;
+    uint64_t m_ID = 0;
 
     void SetControl();
 
@@ -66,7 +66,7 @@ public:
     void SetTranslation(const glm::vec3& translation);
     glm::vec3& GetRotation() { return m_rotation; }
     void SetRotation(const glm::vec3& rotation);
-    uint64_t GetAssignedMeshInstanceID();
+    uint64_t GetID() { return m_ID; }
 };
 
 class MainCamera : public Camera
@@ -79,7 +79,6 @@ public:
 
 class SubCamera : public Camera
 {
-
 public:
     SubCamera(uint64_t meshInstanceID);
     void Control() override;
