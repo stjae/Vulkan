@@ -548,6 +548,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                     }
                 }
                 if (ImGui::Button("Delete##_CAMERA")) {
+                    scene.DeleteCamera(meshInstance.UUID);
                     meshInstance.camera.reset();
                 }
             }
@@ -621,13 +622,13 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("Camera")) {
-        ImGui::Text("Selected Camera:");
-        ImGui::SameLine();
+        ImGui::SeparatorText("Play Camera");
         if (scene.m_playCamera->GetID() == 0) {
-            ImGui::Text("Main");
+            ImGui::Text("Main Camera");
         } else {
-            ImGui::Text("%s", std::to_string(scene.m_playCamera->GetID()).c_str());
+            ImGui::Text("ID:%s", std::to_string(scene.m_playCamera->GetID()).c_str());
         }
+        ImGui::SeparatorText("Cascade");
         ImGui::SliderFloat("Cascade Range 1", &Camera::s_cascadeRanges[0], Camera::s_zNear, Camera::s_cascadeRanges[1]);
         ImGui::SliderFloat("Cascade Range 2", &Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[0], Camera::s_cascadeRanges[2]);
         ImGui::SliderFloat("Cascade Range 3", &Camera::s_cascadeRanges[2], Camera::s_cascadeRanges[1], Camera::s_cascadeRanges[3]);

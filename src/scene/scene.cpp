@@ -291,10 +291,10 @@ void Scene::UpdateEnvCubemaps()
 void Scene::DeleteMeshInstance(Mesh& mesh, MeshInstance& instance)
 {
     DeletePhysics(instance);
+    DeleteCamera(instance.UUID);
     Script::s_scriptInstances.erase(instance.UUID);
     mesh.DeleteInstance(instance.UBO.instanceColorID);
     m_meshInstances.erase(instance.UUID);
-    m_cameras.erase(instance.UUID);
     UnselectAll();
     UpdateMeshBuffer();
 }
@@ -616,4 +616,11 @@ void Scene::DeleteMesh(int index)
         m_meshes[index]->m_meshColorID--;
         m_meshes[index]->UpdateColorID();
     }
+}
+
+void Scene::DeleteCamera(const uint64_t ID)
+{
+    if (m_playCamera->GetID() == ID)
+        m_playCamera = &m_mainCamera;
+    m_cameras.erase(ID);
 }

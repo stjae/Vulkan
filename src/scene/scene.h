@@ -128,6 +128,7 @@ public:
     void UnselectAll();
     bool IsPlaying() const { return m_isPlaying; }
     ~Scene();
+    void DeleteCamera(const uint64_t ID);
 };
 
 struct Resource
