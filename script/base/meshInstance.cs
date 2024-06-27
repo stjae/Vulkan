@@ -100,6 +100,31 @@ namespace vkApp
                 InternalCall.SetCameraDirection(ID, ref value);
             }
         }
+        public bool IsCameraControllable()
+        {
+            return InternalCall.IsCameraControllable(ID);
+        }
+        public Vector3 Gravity
+        {
+            set
+            {
+                InternalCall.SetGravity(ID, ref value);
+            }
+        }
+        public Vector3 LinearFactor
+        {
+            set
+            {
+                InternalCall.SetLinearFactor(ID, ref value);
+            }
+        }
+        public Vector3 AngularFactor
+        {
+            set
+            {
+                InternalCall.SetAngularFactor(ID, ref value);
+            }
+        }
         public Vector3 Impulse
         {
             set
@@ -137,6 +162,10 @@ namespace vkApp
         {
             InternalCall.GetRayHitPosition(ref rayFrom, ref rayTo, out Vector3 hitPosition);
             return hitPosition;
+        }
+        public void DuplicateMeshInstance()
+        {
+            InternalCall.DuplicateMeshInstance(ID);
         }
     }
 }

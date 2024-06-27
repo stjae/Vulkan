@@ -55,6 +55,11 @@ bool Window::IsKeyDown(Keycode keycode)
     return glfwGetKey(Window::GetWindow(), keycode);
 }
 
+bool Window::IsMouseButtonDown(MouseButton mouseButton)
+{
+    return glfwGetMouseButton(Window::GetWindow(), mouseButton);
+}
+
 Window::~Window()
 {
     glfwDestroyWindow(s_glfwWindow);

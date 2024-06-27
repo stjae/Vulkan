@@ -25,15 +25,21 @@ class Registry
     static void SetCameraRotation(uint64_t meshInstanceID, glm::vec3* inRotation);
     static void GetCameraDirection(uint64_t meshInstanceID, glm::vec3* outDirection);
     static void SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirection);
+    static bool IsCameraControllable(uint64_t meshInstanceID);
     static bool IsKeyDown(Keycode keycode);
+    static bool IsMouseButtonDown(MouseButton mouseButton);
     static float GetMouseX();
     static float GetMouseY();
+    static void SetGravity(uint64_t meshInstanceID, btVector3* acceleration);
+    static void SetLinearFactor(uint64_t meshInstanceID, btVector3* factor);
+    static void SetAngularFactor(uint64_t meshInstanceID, btVector3* factor);
     static void ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse);
     static void GetVelocity(uint64_t meshInstanceID, btVector3* outVelocity);
     static void SetVelocity(uint64_t meshInstanceID, btVector3* inVelocity);
     static void SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity);
     static void SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix);
     static void GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3* hitPosition);
+    static void DuplicateMeshInstance(uint64_t meshInstanceID);
 
 public:
     static void RegisterFunctions();

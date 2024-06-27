@@ -6,6 +6,10 @@
         {
             return InternalCall.IsKeyDown(keycode);
         }
+        public static bool IsMouseButtonDown(MouseButton mouseButton)
+        {
+            return InternalCall.IsMouseButtonDown(mouseButton);
+        }
         public static float GetMouseX()
         {
             return InternalCall.GetMouseX();

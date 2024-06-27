@@ -95,9 +95,23 @@ void Registry::SetCameraDirection(uint64_t meshInstanceID, glm::vec3* inDirectio
     }
 }
 
+bool Registry::IsCameraControllable(uint64_t meshInstanceID)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.camera) {
+        return instance.camera->IsControllable();
+    }
+    return false;
+}
+
 bool Registry::IsKeyDown(Keycode keycode)
 {
     return Window::IsKeyDown(keycode);
+}
+
+bool Registry::IsMouseButtonDown(MouseButton mouseButton)
+{
+    return Window::IsMouseButtonDown(mouseButton);
 }
 
 float Registry::GetMouseX()
@@ -108,6 +122,33 @@ float Registry::GetMouseX()
 float Registry::GetMouseY()
 {
     return Window::GetMousePosNormalizedY();
+}
+
+void Registry::SetGravity(uint64_t meshInstanceID, btVector3* acceleration)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.physicsInfo) {
+        instance.physicsInfo->rigidBodyPtr->activate(true);
+        instance.physicsInfo->rigidBodyPtr->setGravity(*acceleration);
+    }
+}
+
+void Registry::SetLinearFactor(uint64_t meshInstanceID, btVector3* factor)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.physicsInfo) {
+        instance.physicsInfo->rigidBodyPtr->activate(true);
+        instance.physicsInfo->rigidBodyPtr->setLinearFactor(*factor);
+    }
+}
+
+void Registry::SetAngularFactor(uint64_t meshInstanceID, btVector3* factor)
+{
+    auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    if (instance.physicsInfo) {
+        instance.physicsInfo->rigidBodyPtr->activate(true);
+        instance.physicsInfo->rigidBodyPtr->setAngularFactor(*factor);
+    }
 }
 
 void Registry::ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse)
@@ -142,7 +183,6 @@ void Registry::SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity)
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setAngularFactor(btVector3(0, 0, 0));
         instance.physicsInfo->rigidBodyPtr->setAngularVelocity(*velocity);
     }
 }
@@ -166,6 +206,12 @@ void Registry::GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3
         *hitPosition = result.m_hitPointWorld;
 }
 
+void Registry::DuplicateMeshInstance(uint64_t meshInstanceID)
+{
+    auto& meshInstance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
+    Script::s_scene->DuplicateMeshInstance(meshInstance.UBO.meshColorID, meshInstance.UBO.instanceColorID);
+}
+
 void Registry::RegisterFunctions()
 {
     mono_add_internal_call("vkApp.InternalCall::GetTranslation", (const void*)GetTranslation);
@@ -182,15 +228,22 @@ void Registry::RegisterFunctions()
     mono_add_internal_call("vkApp.InternalCall::SetCameraRotation", (const void*)SetCameraRotation);
     mono_add_internal_call("vkApp.InternalCall::GetCameraDirection", (const void*)GetCameraDirection);
     mono_add_internal_call("vkApp.InternalCall::SetCameraDirection", (const void*)SetCameraDirection);
+    mono_add_internal_call("vkApp.InternalCall::IsCameraControllable", (const void*)IsCameraControllable);
 
+    mono_add_internal_call("vkApp.InternalCall::IsMouseButtonDown", (const void*)IsMouseButtonDown);
     mono_add_internal_call("vkApp.InternalCall::IsKeyDown", (const void*)IsKeyDown);
     mono_add_internal_call("vkApp.InternalCall::GetMouseX", (const void*)GetMouseX);
     mono_add_internal_call("vkApp.InternalCall::GetMouseY", (const void*)GetMouseY);
 
+    mono_add_internal_call("vkApp.InternalCall::SetGravity", (const void*)SetGravity);
+    mono_add_internal_call("vkApp.InternalCall::SetLinearFactor", (const void*)SetLinearFactor);
+    mono_add_internal_call("vkApp.InternalCall::SetAngularFactor", (const void*)SetAngularFactor);
     mono_add_internal_call("vkApp.InternalCall::ApplyImpulse", (const void*)ApplyImpulse);
     mono_add_internal_call("vkApp.InternalCall::GetVelocity", (const void*)GetVelocity);
     mono_add_internal_call("vkApp.InternalCall::SetVelocity", (const void*)SetVelocity);
     mono_add_internal_call("vkApp.InternalCall::SetAngularVelocity", (const void*)SetAngularVelocity);
     mono_add_internal_call("vkApp.InternalCall::SetRigidBodyTransform", (const void*)SetRigidBodyTransform);
     mono_add_internal_call("vkApp.InternalCall::GetRayHitPosition", (const void*)GetRayHitPosition);
+
+    mono_add_internal_call("vkApp.InternalCall::DuplicateMeshInstance", (const void*)DuplicateMeshInstance);
 }

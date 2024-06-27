@@ -18,6 +18,7 @@ public:
     static float GetMousePosNormalizedX();
     static float GetMousePosNormalizedY();
     static bool IsKeyDown(Keycode keycode);
+    static bool IsMouseButtonDown(MouseButton mouseButton);
     static void FramebufferResizeCallback(GLFWwindow* window, int width, int height) { s_resized = true; }
     ~Window();
 };

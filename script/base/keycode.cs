@@ -125,4 +125,10 @@
         KEY_RIGHT_SUPER = 347,
         KEY_MENU = 348,
     }
+    public enum MouseButton
+    {
+        MOUSE_LEFT = 0,
+        MOUSE_RIGHT = 1,
+        MOUSE_MIDDLE = 2,
+    }
 }

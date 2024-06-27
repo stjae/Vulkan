@@ -126,4 +126,10 @@ enum Keycode {
     KEY_MENU = 348,
 };
 
+enum MouseButton {
+    MOUSE_LEFT = 0,
+    MOUSE_RIGHT = 1,
+    MOUSE_MIDDLE = 2,
+};
+
 #endif

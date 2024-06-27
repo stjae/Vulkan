@@ -32,11 +32,21 @@ namespace vkApp
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void SetCameraDirection(ulong meshInstanceID, ref Vector3 direction);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool IsCameraControllable(ulong meshInstanceID);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool IsKeyDown(Keycode keycode);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool IsMouseButtonDown(MouseButton mouseButton);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float GetMouseX();
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float GetMouseY();
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetGravity(ulong meshInstanceID, ref Vector3 acceleration);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetLinearFactor(ulong meshInstanceID, ref Vector3 factor);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SetAngularFactor(ulong meshInstanceID, ref Vector3 factor);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void ApplyImpulse(ulong meshInstanceID, ref Vector3 impulse);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -49,5 +59,7 @@ namespace vkApp
         internal extern static void SetRigidBodyTransform(ulong meshInstanceID, ref Matrix4x4 transform);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void GetRayHitPosition(ref Vector3 rayFrom, ref Vector3 rayTo, out Vector3 hitPosition);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void DuplicateMeshInstance(ulong meshInstanceID);
     }
 }
