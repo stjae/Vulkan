@@ -221,48 +221,59 @@ void Mesh::LoadModel(const std::string& filepath)
         return;
     }
 
-    aiNode* node = scene->mRootNode;
-    ProcessNode(node, scene);
+    const aiNode* node = scene->mRootNode;
+    ProcessNode(scene, node);
 
     if (scene->HasMaterials()) {
         m_materials.reserve(scene->mNumMaterials);
         for (unsigned int m = 0; m < scene->mNumMaterials; m++) {
             aiString path;
             m_materials.emplace_back();
-            scene->mMaterials[m]->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &path);
+            scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
             m_materials.back().albedo = path.C_Str();
             scene->mMaterials[m]->GetTexture(aiTextureType_NORMALS, 0, &path);
             m_materials.back().normal = path.C_Str();
-            scene->mMaterials[m]->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path);
+            scene->mMaterials[m]->GetTexture(aiTextureType_METALNESS, 0, &path);
             m_materials.back().metallic = path.C_Str();
-            scene->mMaterials[m]->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &path);
+            scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &path);
             m_materials.back().roughness = path.C_Str();
         }
     }
 }
 
-void Mesh::ProcessNode(aiNode* node, const aiScene* scene)
+void Mesh::GetTransformation(const aiNode* node, aiMatrix4x4& transformation)
 {
+    if (node->mParent) {
+        transformation = node->mParent->mTransformation * transformation;
+        GetTransformation(node->mParent, transformation);
+    } else
+        return;
+}
+
+void Mesh::ProcessNode(const aiScene* scene, const aiNode* node)
+{
+    auto transformation = node->mTransformation;
+    GetTransformation(node, transformation);
+    transformation.Transpose();
+    glm::mat4 modelMat(1.0f);
+    modelMat[0] = { transformation.a1, transformation.a2, transformation.a3, transformation.a4 };
+    modelMat[1] = { transformation.b1, transformation.b2, transformation.b3, transformation.b4 };
+    modelMat[2] = { transformation.c1, transformation.c2, transformation.c3, transformation.c4 };
+    modelMat[3] = { transformation.d1, transformation.d2, transformation.d3, transformation.d4 };
+
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        node->mTransformation.Transpose();
-        glm::mat4 modelMat(1.0f);
-        modelMat[0] = { node->mTransformation.a1, node->mTransformation.a2, node->mTransformation.a3, node->mTransformation.a4 };
-        modelMat[1] = { node->mTransformation.b1, node->mTransformation.b2, node->mTransformation.b3, node->mTransformation.b4 };
-        modelMat[2] = { node->mTransformation.c1, node->mTransformation.c2, node->mTransformation.c3, node->mTransformation.c4 };
-        modelMat[3] = { node->mTransformation.d1, node->mTransformation.d2, node->mTransformation.d3, node->mTransformation.d4 };
-
-        ProcessLoadedMesh(mesh, modelMat);
+        ProcessLoadedMesh(scene, mesh, modelMat);
     }
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        ProcessNode(node->mChildren[i], scene);
+        ProcessNode(scene, node->mChildren[i]);
     }
     for (auto& bulletMesh : m_bulletMeshes) {
         m_bulletVertexArray.addIndexedMesh(bulletMesh);
     }
 }
 
-void Mesh::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
+void Mesh::ProcessLoadedMesh(const aiScene* scene, const aiMesh* mesh, glm::mat4& modelMat)
 {
     m_vertexContainers.emplace_back();
     m_indexContainers.emplace_back();
@@ -279,10 +290,11 @@ void Mesh::ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat)
     for (unsigned int v = 0; v < mesh->mNumVertices; v++) {
         glm::vec4 pos(mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z, 1.0f);
         pos = modelMat * pos;
-
         glm::vec3 normal(0.0f);
-        if (mesh->HasNormals())
+        if (mesh->HasNormals()) {
             normal = { mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z };
+            normal = modelMat * glm::vec4(normal, 0.0f);
+        }
         glm::vec2 texcoord(0.0f);
         if (mesh->HasTextureCoords(0))
             texcoord = { mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y };

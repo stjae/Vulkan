@@ -3,7 +3,7 @@
 
 int main()
 {
-    Application app(1920 * 1.5, 1080 * 1.5, "vulkan");
+    Application app(1920, 1080, "vulkan");
 
     app.Run();
 

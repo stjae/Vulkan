@@ -42,8 +42,9 @@ class Mesh : public MeshBase
     std::vector<MaterialFilePath> m_materials;
 
     void LoadModel(const std::string& filepath);
-    void ProcessNode(aiNode* node, const aiScene* scene);
-    void ProcessLoadedMesh(aiMesh* mesh, glm::mat4& modelMat);
+    void GetTransformation(const aiNode* node, aiMatrix4x4& transformation);
+    void ProcessNode(const aiScene* scene, const aiNode* node);
+    void ProcessLoadedMesh(const aiScene* scene, const aiMesh* mesh, glm::mat4& modelMat);
     void CreateBuffers(const vk::CommandBuffer& commandBuffer);
     void AddInstance(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddInstance(uint64_t UUID);
@@ -67,24 +68,29 @@ public:
 struct MeshPart
 {
     int32_t bufferIndex;
-    int32_t materialID;
+    int32_t materialIndex;
 
-    MeshPart(int32_t bufferIndex, int32_t materialID)
-        : bufferIndex(bufferIndex), materialID(materialID) {}
+    MeshPart(int32_t bufferIndex, int32_t materialIndex)
+        : bufferIndex(bufferIndex), materialIndex(materialIndex) {}
 };
 
 struct MeshInstanceUBO
 {
     glm::mat4 model = glm::mat4(1.0f);
-    // Color ID for mouse picking
-    int32_t meshColorID = -1;
-    int32_t textureID = 0;
+
+    int32_t meshColorID = -1; // Color ID for mouse picking
     int32_t instanceColorID = -1;
-    int32_t useTexture = true;
+    int32_t useAlbedoTexture = 1;
+    int32_t useNormalTexture = 1;
+
+    int32_t useMetallicTexture = 1;
+    int32_t useRoughnessTexture = 1;
+    float padding0[2];
+
     glm::vec3 albedo = glm::vec3(0.5f);
     float metallic = 0.0f;
     float roughness = 1.0f;
-    float padding[3];
+    float padding1[3];
 
     MeshInstanceUBO(int32_t meshColorID, int32_t instanceColorID, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
 };
