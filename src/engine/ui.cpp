@@ -413,6 +413,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
     ImGui::BeginTabBar("Scene");
     // Mesh List
     if (ImGui::BeginTabItem("Mesh")) {
+        bool openCreateInstancePopup = false;
         if (ImGui::BeginListBox("##Mesh", ImVec2(-FLT_MIN, 0.0f))) {
             for (int i = 0; i < scene.m_meshes.size(); i++) {
                 std::string name(scene.m_meshes[i]->GetName());
@@ -424,6 +425,12 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                             scene.UnselectAll();
                             scene.m_selectedMeshID = i;
                             scene.m_selectedMeshInstanceID = j;
+                        }
+                        if (ImGui::BeginPopupContextItem()) {
+                            if (ImGui::MenuItem("Create Instance")) {
+                                openCreateInstancePopup = true;
+                            }
+                            ImGui::EndPopup();
                         }
                         if (ImGui::BeginPopupContextItem()) {
                             if (ImGui::MenuItem("Delete")) {
@@ -440,6 +447,42 @@ void UI::DrawSceneAttribWindow(Scene& scene)
                 ImGui::PopID();
             }
             ImGui::EndListBox();
+        }
+        if (openCreateInstancePopup)
+            ImGui::OpenPopup("Create Instance");
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("Create Instance", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            static float offset[3] = { 1.0f, 1.0f, 1.0f };
+            static int amount[3] = { 1, 1, 1 };
+            ImGui::PushItemWidth(100);
+            ImGui::InputInt("Amount X", &amount[0]);
+            ImGui::SameLine();
+            ImGui::InputFloat("Offset X", &offset[0]);
+            ImGui::InputInt("Amount Y", &amount[1]);
+            ImGui::SameLine();
+            ImGui::InputFloat("Offset Y", &offset[1]);
+            ImGui::InputInt("Amount Z", &amount[2]);
+            ImGui::SameLine();
+            ImGui::InputFloat("Offset Z", &offset[2]);
+            ImGui::Separator();
+            if (ImGui::Button("Create", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
+                for (int z = 0; z < amount[2]; z++) {
+                    for (int y = 0; y < amount[1]; y++) {
+                        for (int x = 0; x < amount[0]; x++) {
+                            if (x == 0 && y == 0 && z == 0)
+                                continue;
+                            scene.DuplicateMeshInstance(scene.m_selectedMeshID, scene.m_selectedMeshInstanceID, { offset[0] * x, offset[1] * y, offset[2] * z });
+                        }
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
         // Mesh Attributes
         if (scene.m_selectedMeshID > -1 && scene.m_selectedMeshInstanceID > -1) {

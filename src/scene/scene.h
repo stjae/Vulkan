@@ -98,7 +98,7 @@ class Scene
     void DeleteMeshInstance(Mesh& mesh, MeshInstance& instance);
     void DeletePointLight();
     void DuplicatePointLight(int index);
-    void DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID);
+    void DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID, glm::vec3 offset = { 0.0f, 0.0f, 0.0f });
     void CopyMeshInstances();
     void RevertMeshInstances();
     void UpdateViewportCamera();

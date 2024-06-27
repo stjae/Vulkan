@@ -334,6 +334,8 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
 
 void Scene::DuplicatePointLight(int index)
 {
+    if (index < 0)
+        return;
     m_pointLight.Duplicate(index);
     m_selectedLightIndex = (int)m_pointLight.Size() - 1;
     m_shadowCubemaps.emplace_back();
@@ -342,15 +344,18 @@ void Scene::DuplicatePointLight(int index)
     UpdatePointLightBuffer();
 }
 
-void Scene::DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID)
+void Scene::DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID, glm::vec3 offset)
 {
+    if (meshID < 0 || meshInstanceID < 0)
+        return;
     auto& mesh = *m_meshes[meshID];
     auto& srcInstance = *mesh.m_meshInstances[meshInstanceID];
-
     AddMeshInstance(mesh);
     auto& newInstance = *mesh.m_meshInstances.back();
     int32_t newColorID = newInstance.UBO.instanceColorID;
     newInstance = srcInstance;
+    newInstance.translation += offset;
+    newInstance.UpdateMatrix();
     // Copy except for color id
     newInstance.UBO.instanceColorID = newColorID;
     // Copy physics information
