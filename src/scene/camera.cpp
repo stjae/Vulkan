@@ -83,6 +83,13 @@ void Camera::SetRotation(const glm::vec3& rotation)
     m_rotation = rotation;
 }
 
+void MainCamera::SetInitPos()
+{
+    m_dir = { 0.555799, -0.441097, -0.864014 };
+    m_pos = { -5.282600, 4.001135, 9.885192 };
+    m_at = { -4.726801, 3.560038, 9.021178 };
+}
+
 void MainCamera::Control()
 {
     SetControl();

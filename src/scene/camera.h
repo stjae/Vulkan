@@ -74,6 +74,7 @@ class MainCamera : public Camera
     float m_speed = 4.0f;
 
 public:
+    void SetInitPos();
     void Control() override;
 };
 

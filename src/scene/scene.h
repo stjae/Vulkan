@@ -21,6 +21,7 @@ class Scene
     friend class Engine;
     friend class UI;
     friend class Viewport;
+    friend class Registry;
     friend class SceneSerializer;
 
     vk::CommandPool m_commandPool;
@@ -96,8 +97,8 @@ class Scene
     void SelectDummyEnvMap();
     void DeleteMeshInstance(Mesh& mesh, MeshInstance& instance);
     void DeletePointLight();
-    void HandlePointLightDuplication();
-    void HandleMeshDuplication();
+    void DuplicatePointLight(int index);
+    void DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID);
     void CopyMeshInstances();
     void RevertMeshInstances();
     void UpdateViewportCamera();
@@ -129,6 +130,7 @@ public:
     bool IsPlaying() const { return m_isPlaying; }
     ~Scene();
     void DeleteCamera(const uint64_t ID);
+    void DeleteMatrials(int index);
 };
 
 struct Resource

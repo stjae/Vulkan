@@ -243,8 +243,10 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
                 std::string sceneFilePath = nfdSave({ "Scene", "scn" });
                 if (!sceneFilePath.empty()) {
                     scene.Clear();
-                    scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.find_last_of("/\\"));
-                    scene.m_sceneFilePath = sceneFilePath;
+                    scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.rfind('.'));
+                    std::filesystem::create_directory(scene.m_sceneFolderPath);
+                    scene.m_sceneFilePath = scene.m_sceneFolderPath + sceneFilePath.substr(sceneFilePath.find_last_of("/\\"), sceneFilePath.length() - 1);
+                    scene.m_mainCamera.SetInitPos();
                     SceneSerializer serializer;
                     serializer.Serialize(scene);
                     scene.SelectDummyEnvMap();
@@ -446,16 +448,38 @@ void UI::DrawSceneAttribWindow(Scene& scene)
 
             ImGui::SeparatorText((std::string("ID: ") + std::to_string(meshInstance.UUID)).c_str());
             ImGui::Separator();
-            ImGui::DragFloat3("Translation##_INSTANCE", &meshInstance.translation[0], 0.1f);
-            ImGui::DragFloat3("Rotation##_INSTANCE", &meshInstance.rotation[0], 0.1f);
-            ImGui::DragFloat3("Scale##_INSTANCE", &meshInstance.scale[0], 0.1f);
-            meshInstance.UpdateMatrix();
-            mesh.UpdateUBO(meshInstance);
+            if (ImGui::DragFloat3("Translation##_INSTANCE", &meshInstance.translation[0], 0.1f)) {
+                meshInstance.UpdateMatrix();
+                mesh.UpdateUBO(meshInstance);
+            }
+            if (ImGui::DragFloat3("Rotation##_INSTANCE", &meshInstance.rotation[0], 0.1f)) {
+                meshInstance.UpdateMatrix();
+                mesh.UpdateUBO(meshInstance);
+            }
+            if (ImGui::DragFloat3("Scale##_INSTANCE", &meshInstance.scale[0], 0.1f)) {
+                meshInstance.UpdateMatrix();
+                mesh.UpdateUBO(meshInstance);
+            }
 
             ImGui::SeparatorText("Texture");
-            bool useTexture = meshInstance.UBO.useTexture > 0;
-            if (ImGui::Checkbox("Use Texture", &useTexture)) {
-                meshInstance.UBO.useTexture = useTexture ? 1 : -1;
+            bool useAlbedoTexture = meshInstance.UBO.useAlbedoTexture > 0;
+            if (ImGui::Checkbox("Use Albedo Texture", &useAlbedoTexture)) {
+                meshInstance.UBO.useAlbedoTexture = useAlbedoTexture ? 1 : -1;
+                mesh.UpdateUBO(meshInstance);
+            }
+            bool useNormalTexture = meshInstance.UBO.useNormalTexture > 0;
+            if (ImGui::Checkbox("Use Normal Texture", &useNormalTexture)) {
+                meshInstance.UBO.useNormalTexture = useNormalTexture ? 1 : -1;
+                mesh.UpdateUBO(meshInstance);
+            }
+            bool useMetallicTexture = meshInstance.UBO.useMetallicTexture > 0;
+            if (ImGui::Checkbox("Use Metallic Texture", &useMetallicTexture)) {
+                meshInstance.UBO.useMetallicTexture = useMetallicTexture ? 1 : -1;
+                mesh.UpdateUBO(meshInstance);
+            }
+            bool useRoughnessTexture = meshInstance.UBO.useRoughnessTexture > 0;
+            if (ImGui::Checkbox("Use Roughness Texture", &useRoughnessTexture)) {
+                meshInstance.UBO.useRoughnessTexture = useRoughnessTexture ? 1 : -1;
                 mesh.UpdateUBO(meshInstance);
             }
 

@@ -223,12 +223,12 @@ void Viewport::Draw(const Scene& scene)
                 meshRenderPushConsts.meshIndex = meshIndex;
                 meshRenderPushConsts.lightCount = (int)scene.m_pointLight.Size();
                 meshIndex++;
-                for (const auto& part : mesh->GetMeshParts()) {
-                    m_commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[part.bufferIndex]->Get().buffer, vertexOffsets);
-                    m_commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[part.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
-                    meshRenderPushConsts.materialID = materialOffset + part.materialID;
+                for (const auto& meshPart : mesh->GetMeshParts()) {
+                    m_commandBuffer.bindVertexBuffers(0, 1, &mesh->m_vertexBuffers[meshPart.bufferIndex]->Get().buffer, vertexOffsets);
+                    m_commandBuffer.bindIndexBuffer(mesh->m_indexBuffers[meshPart.bufferIndex]->Get().buffer, 0, vk::IndexType::eUint32);
+                    meshRenderPushConsts.materialIndex = materialOffset + meshPart.materialIndex;
                     m_commandBuffer.pushConstants(meshRenderPipeline.m_pipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(MeshRenderPushConstants), &meshRenderPushConsts);
-                    m_commandBuffer.drawIndexed(mesh->GetIndicesCount(part.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
+                    m_commandBuffer.drawIndexed(mesh->GetIndicesCount(meshPart.bufferIndex), mesh->GetInstanceCount(), 0, 0, 0);
                 }
             }
             materialOffset += (int)mesh->GetMaterialCount();

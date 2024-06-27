@@ -49,9 +49,7 @@ void Scene::CreateCommandBuffers()
 
 void Scene::CreateMainCamera()
 {
-    m_mainCamera.m_dir = { 0.555799, -0.441097, -0.864014 };
-    m_mainCamera.m_pos = { -5.282600, 4.001135, 9.885192 };
-    m_mainCamera.m_at = { -4.726801, 3.560038, 9.021178 };
+    m_mainCamera.SetInitPos();
     UpdateCameraDescriptor(&m_mainCamera);
 }
 
@@ -129,7 +127,9 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::string& model
             if (m_albedoTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[0])) {
                 std::error_code ec;
                 auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.albedo;
-                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                auto textureFolderPath = m_sceneFolderPath + "\\resource\\" + modelName + "\\" + material.albedo.substr(0, material.albedo.find_last_of("/\\") + 1);
+                std::filesystem::create_directories(textureFolderPath);
+                std::filesystem::copy(texturePath, textureFolderPath, ec);
                 Log(DEBUG, fmt::terminal_color::bright_black, "copy albedo texture: {0}, {1}", texturePath, ec.message());
             }
         }
@@ -141,7 +141,9 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::string& model
             if (m_normalTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[1])) {
                 std::error_code ec;
                 auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.normal;
-                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                auto textureFolderPath = m_sceneFolderPath + "\\resource\\" + modelName + "\\" + material.normal.substr(0, material.normal.find_last_of("/\\") + 1);
+                std::filesystem::create_directories(textureFolderPath);
+                std::filesystem::copy(texturePath, textureFolderPath, ec);
                 Log(DEBUG, fmt::terminal_color::bright_black, "copy normal texture: {0}, {1}", texturePath, ec.message());
             }
         }
@@ -153,7 +155,9 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::string& model
             if (m_metallicTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[2])) {
                 std::error_code ec;
                 auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.metallic;
-                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                auto textureFolderPath = m_sceneFolderPath + "\\resource\\" + modelName + "\\" + material.metallic.substr(0, material.metallic.find_last_of("/\\") + 1);
+                std::filesystem::create_directories(textureFolderPath);
+                std::filesystem::copy(texturePath, textureFolderPath, ec);
                 Log(DEBUG, fmt::terminal_color::bright_black, "copy metallic texture: {0}, {1}", texturePath, ec.message());
             }
         }
@@ -165,7 +169,9 @@ void Scene::LoadMaterials(const std::string& modelPath, const std::string& model
             if (m_roughnessTextures.back()->InsertImage(modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness, vk::Format::eR8G8B8A8Unorm, m_imageLoadCommandBuffers[3])) {
                 std::error_code ec;
                 auto texturePath = modelPath.substr(0, modelPath.find_last_of("/\\") + 1) + material.roughness;
-                std::filesystem::copy(texturePath, m_sceneFolderPath + "\\resource\\" + modelName, ec);
+                auto textureFolderPath = m_sceneFolderPath + "\\resource\\" + modelName + "\\" + material.roughness.substr(0, material.roughness.find_last_of("/\\") + 1);
+                std::filesystem::create_directories(textureFolderPath);
+                std::filesystem::copy(texturePath, textureFolderPath, ec);
                 Log(DEBUG, fmt::terminal_color::bright_black, "copy roughness texture: {0}, {1}", texturePath, ec.message());
             }
         }
@@ -216,8 +222,12 @@ void Scene::DeletePhysics(MeshInstance& meshInstance)
 
 void Scene::Update()
 {
-    HandlePointLightDuplication();
-    HandleMeshDuplication();
+    if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable)
+        DuplicatePointLight(m_selectedLightIndex);
+    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable) {
+        DuplicateMeshInstance(m_selectedMeshID, m_selectedMeshInstanceID);
+        m_selectedMeshInstanceID = m_meshes[m_selectedMeshID]->m_meshInstances.back()->UBO.instanceColorID;
+    }
 
     UpdateViewportCamera();
     UpdatePlayCamera();
@@ -322,39 +332,32 @@ void Scene::SelectByColorID(int32_t meshID, int32_t instanceID)
     m_selectedMeshInstanceID = instanceID;
 }
 
-void Scene::HandlePointLightDuplication()
+void Scene::DuplicatePointLight(int index)
 {
-    if (m_selectedLightIndex > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable) {
-        m_pointLight.Duplicate(m_selectedLightIndex);
-        m_selectedLightIndex = (int)m_pointLight.Size() - 1;
-        m_shadowCubemaps.emplace_back();
-        m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
-        m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffer);
-        UpdatePointLightBuffer();
-    }
+    m_pointLight.Duplicate(index);
+    m_selectedLightIndex = (int)m_pointLight.Size() - 1;
+    m_shadowCubemaps.emplace_back();
+    m_shadowCubemaps.back() = std::make_unique<ShadowCubemap>();
+    m_shadowCubemaps.back()->CreateShadowMap(m_commandBuffer);
+    UpdatePointLightBuffer();
 }
 
-void Scene::HandleMeshDuplication()
+void Scene::DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID)
 {
-    if (m_selectedMeshID > -1 && ImGui::IsKeyPressed(ImGuiKey_D, false) && !m_mainCamera.m_isControllable) {
-        auto& mesh = GetSelectedMesh();
-        auto& srcInstance = GetSelectedMeshInstance();
+    auto& mesh = *m_meshes[meshID];
+    auto& srcInstance = *mesh.m_meshInstances[meshInstanceID];
 
-        AddMeshInstance(mesh);
-        auto& newInstance = *mesh.m_meshInstances.back();
-        int32_t newColorID = newInstance.UBO.instanceColorID;
-        newInstance = srcInstance;
-        // Copy except for color id
-        newInstance.UBO.instanceColorID = newColorID;
-        // Copy physics information
-        if (srcInstance.physicsInfo) {
-            AddPhysics(mesh, newInstance, *srcInstance.physicsInfo);
-        }
-        // Select new instance
-        m_selectedMeshInstanceID = newInstance.UBO.instanceColorID;
-        // Update
-        mesh.UpdateUBO(GetSelectedMeshInstance());
+    AddMeshInstance(mesh);
+    auto& newInstance = *mesh.m_meshInstances.back();
+    int32_t newColorID = newInstance.UBO.instanceColorID;
+    newInstance = srcInstance;
+    // Copy except for color id
+    newInstance.UBO.instanceColorID = newColorID;
+    // Copy physics information
+    if (srcInstance.physicsInfo) {
+        AddPhysics(mesh, newInstance, *srcInstance.physicsInfo);
     }
+    m_meshes[meshID]->UpdateUBO(newInstance);
 }
 
 void Scene::UpdateViewportCamera()
@@ -486,6 +489,7 @@ void Scene::Clear()
     m_irradianceCubemap.reset();
     m_prefilteredCubemap.reset();
     m_meshes.clear();
+    m_cameras.clear();
     m_resources.clear();
     m_pointLight.Clear();
     m_shadowCubemaps.clear();
@@ -493,6 +497,8 @@ void Scene::Clear()
     m_normalTextures.clear();
     m_metallicTextures.clear();
     m_roughnessTextures.clear();
+    Script::s_scriptClasses.clear();
+    Script::s_scriptInstances.clear();
 }
 
 void Scene::CopyMeshInstances()
@@ -611,6 +617,7 @@ void Scene::DeleteMesh(int index)
 {
     for (int i = 0; i < m_meshes[index]->m_meshInstances.size();)
         DeleteMeshInstance(*m_meshes[index], *m_meshes[index]->m_meshInstances[i]);
+    DeleteMatrials(index);
     m_meshes.erase(m_meshes.begin() + index);
     for (int32_t i = index; i < m_meshes.size(); i++) {
         m_meshes[index]->m_meshColorID--;
@@ -623,4 +630,19 @@ void Scene::DeleteCamera(const uint64_t ID)
     if (m_playCamera->GetID() == ID)
         m_playCamera = &m_mainCamera;
     m_cameras.erase(ID);
+}
+
+void Scene::DeleteMatrials(int index)
+{
+    uint32_t pos = 0;
+    for (int i = 0; i < index; i++) {
+        pos += m_meshes[i]->m_materials.size();
+    }
+    for (int i = 0; i < m_meshes[index]->m_materials.size(); i++) {
+        m_albedoTextures.erase(m_albedoTextures.begin() + pos);
+        m_roughnessTextures.erase(m_roughnessTextures.begin() + pos);
+        m_metallicTextures.erase(m_metallicTextures.begin() + pos);
+        m_normalTextures.erase(m_normalTextures.begin() + pos);
+    }
+    UpdateTextureDescriptors();
 }

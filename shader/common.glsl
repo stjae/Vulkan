@@ -9,12 +9,16 @@ struct MeshInstanceData
 {
     mat4 model;
     int meshID;
-    int textureID;
     int instanceID;
-    int useTexture;
+    int useAlbedoTexture;
+    int useNormalTexture;
+    int useMetallicTexture;
+    int useRoughnessTexture;
+    float padding0[2];
     vec3 albedo;
     float metallic;
     float roughness;
+    float padding1[3];
 };
 
 struct LightData

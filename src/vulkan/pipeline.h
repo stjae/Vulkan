@@ -54,7 +54,7 @@ struct PhysicsDebugPushConstants
 struct MeshRenderPushConstants
 {
     int meshIndex;
-    int materialID;
+    int materialIndex;
     int lightCount;
     float iblExposure;
 } inline meshRenderPushConsts;

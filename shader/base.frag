@@ -30,7 +30,7 @@ layout (set = 3, binding = 0) uniform Cascade {
 layout (push_constant) uniform PushConsts
 {
     int meshIndex;
-    int materialID;
+    int materialIndex;
     int lightCount;
     float iblExposure;
 } pushConsts;
@@ -163,17 +163,17 @@ void main() {
     outColor = vec4(meshInstance.albedo, 1.0);
     vec3 normalWorld = inNormal.xyz;
 
-    if (pushConsts.materialID > -1 && meshInstance.useTexture > 0) {
-        vec4 texColor = texture(sampler2D(albedoTex[pushConsts.materialID], repeatSampler), inTexcoord);
+    if (pushConsts.materialIndex > -1) {
+        vec4 texColor = texture(sampler2D(albedoTex[pushConsts.materialIndex], repeatSampler), inTexcoord);
         if (texColor.a < 1.0) {
             discard;
         }
         texColor.rgb = pow(texColor.rgb, vec3(2.2));
-        if (length(texColor.rgb) != 0.0) {
+        if (length(texColor.rgb) != 0.0 && meshInstance.useAlbedoTexture > 0) {
             albedo = texColor.rgb;
         }
-        vec3 texNormal = texture(sampler2D(normalTex[pushConsts.materialID], repeatSampler), inTexcoord).rgb;
-        if (length(texNormal.rgb) != 0.0) {
+        vec3 texNormal = texture(sampler2D(normalTex[pushConsts.materialIndex], repeatSampler), inTexcoord).rgb;
+        if (length(texNormal.rgb) != 0.0 && meshInstance.useNormalTexture > 0) {
             texNormal = 2.0 * texNormal - 1.0;
 
             vec3 N = inNormal.xyz;
@@ -184,14 +184,14 @@ void main() {
             normalWorld = TBN * normalize(texNormal);
         }
 
-        vec4 texMetallic = texture(sampler2D(metallicTex[pushConsts.materialID], repeatSampler), inTexcoord);
+        vec4 texMetallic = texture(sampler2D(metallicTex[pushConsts.materialIndex], repeatSampler), inTexcoord);
         // check if it's dummy texture
-        if (length(texMetallic.rgb) != 0.0) {
+        if (length(texMetallic.rgb) != 0.0 && meshInstance.useMetallicTexture > 0) {
             metallic = texMetallic.b;
         }
-        vec4 texRoughness = texture(sampler2D(roughnessTex[pushConsts.materialID], repeatSampler), inTexcoord);
+        vec4 texRoughness = texture(sampler2D(roughnessTex[pushConsts.materialIndex], repeatSampler), inTexcoord);
         // check if it's dummy texture
-        if (length(texRoughness.rgb) != 0.0) {
+        if (length(texRoughness.rgb) != 0.0 && meshInstance.useRoughnessTexture > 0) {
             roughness = texRoughness.g;
         }
     }

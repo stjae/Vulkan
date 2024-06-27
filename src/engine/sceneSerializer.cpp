@@ -170,6 +170,10 @@ void SceneSerializer::SerializeMesh(YAML::Emitter& out, const Scene& scene)
                 out << YAML::Key << "Rotation" << YAML::Value << instance->rotation;
                 out << YAML::Key << "Scale" << YAML::Value << instance->scale;
                 out << YAML::Key << "Transform" << YAML::Value << instance->UBO.model;
+                out << YAML::Key << "UseAlbedoTexture" << YAML::Value << instance->UBO.useAlbedoTexture;
+                out << YAML::Key << "UseNormalTexture" << YAML::Value << instance->UBO.useNormalTexture;
+                out << YAML::Key << "UseMetallicTexture" << YAML::Value << instance->UBO.useMetallicTexture;
+                out << YAML::Key << "UseRoughnessTexture" << YAML::Value << instance->UBO.useRoughnessTexture;
                 out << YAML::Key << "Albedo" << YAML::Value << instance->UBO.albedo;
                 out << YAML::Key << "Metallic" << YAML::Value << instance->UBO.metallic;
                 out << YAML::Key << "Roughness" << YAML::Value << instance->UBO.roughness;
@@ -296,6 +300,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                 meshInstance->rotation = instance["Rotation"].as<glm::vec3>();
                 meshInstance->scale = instance["Scale"].as<glm::vec3>();
                 meshInstance->UBO.model = instance["Transform"].as<glm::mat4>();
+                meshInstance->UBO.useAlbedoTexture = instance["UseAlbedoTexture"].as<int32_t>();
+                meshInstance->UBO.useNormalTexture = instance["UseNormalTexture"].as<int32_t>();
+                meshInstance->UBO.useMetallicTexture = instance["UseMetallicTexture"].as<int32_t>();
+                meshInstance->UBO.useRoughnessTexture = instance["UseRoughnessTexture"].as<int32_t>();
                 meshInstance->UBO.albedo = instance["Albedo"].as<glm::vec3>();
                 meshInstance->UBO.metallic = instance["Metallic"].as<float>();
                 meshInstance->UBO.roughness = instance["Roughness"].as<float>();
