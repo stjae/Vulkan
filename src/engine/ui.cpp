@@ -1,9 +1,8 @@
 #include "ui.h"
-#include "font/IconsFontAwesome5.h"
 #include <filesystem>
 #include "../../imgui/imgui_stdlib.h"
 
-void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene)
+void UI::Init(const vk::RenderPass& renderPass)
 {
     vkn::Command::CreateCommandPool(m_commandPool);
     vkn::Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
@@ -22,6 +21,7 @@ void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.Fonts->AddFontDefault();
 
     ImGui_ImplGlfw_InitForVulkan(Window::GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
@@ -37,32 +37,19 @@ void UI::Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&init_info, renderPass);
 
-    io.Fonts->AddFontDefault();
-    float baseFontSize = 13.0f;
-    float iconFontSize = baseFontSize * 2.0f;
-
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.PixelSnapH = true;
-    icons_config.GlyphMinAdvanceX = iconFontSize;
-    std::string path(PROJECT_DIR "font/");
-    path.append(FONT_ICON_FILE_NAME_FAS);
-    io.Fonts->AddFontFromFileTTF(path.c_str(), iconFontSize, &icons_config, icons_ranges);
-
-    m_plusIcon.InsertImage(PROJECT_DIR "image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_plusIcon.InsertImage("image/icon/plus.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_plusIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_plusIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_lightIcon.InsertImage(PROJECT_DIR "image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_lightIcon.InsertImage("image/icon/lightbulb.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_lightIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_lightIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_cameraIcon.InsertImage(PROJECT_DIR "image/icon/camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_cameraIcon.InsertImage("image/icon/camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_cameraIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cameraIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_noCameraIcon.InsertImage(PROJECT_DIR "image/icon/no_camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_noCameraIcon.InsertImage("image/icon/no_camera.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_noCameraIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_noCameraIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_cubeIcon.InsertImage(PROJECT_DIR "image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_cubeIcon.InsertImage("image/icon/cube.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_cubeIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_cubeIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_playIcon.InsertImage(PROJECT_DIR "image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_playIcon.InsertImage("image/icon/play.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_playIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_playIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_stopIcon.InsertImage(PROJECT_DIR "image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
+    m_stopIcon.InsertImage("image/icon/stop.png", vk::Format::eR8G8B8A8Srgb, m_commandBuffer);
     m_stopIconDescriptorSet = ImGui_ImplVulkan_AddTexture(vkn::Image::s_repeatSampler, m_stopIcon.Get().imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     s_dragDropped = false;
@@ -232,24 +219,35 @@ void UI::DrawDockSpace(Scene& scene, bool& init)
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
         if (ImGui::BeginPopupModal("New Scene", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Are you sure to open a new scene?\nUnsaved work will be lost.");
+            static std::string sceneName;
+            static std::string message;
+            ImGui::PushItemWidth(248);
+            ImGui::InputTextWithHint("##SceneName", "Scene Name", &sceneName);
+            ImGui::PopItemWidth();
             ImGui::Separator();
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
             ImGui::PopStyleVar();
 
+            if (!message.empty())
+                ImGui::TextWrapped("%s", message.c_str());
             if (ImGui::Button("OK", ImVec2(120, 0))) {
-                ImGui::CloseCurrentPopup();
-                std::string sceneFilePath = nfdSave({ "Scene", "scn" });
-                if (!sceneFilePath.empty()) {
-                    scene.Clear();
-                    scene.m_sceneFolderPath = sceneFilePath.substr(0, sceneFilePath.rfind('.'));
-                    std::filesystem::create_directory(scene.m_sceneFolderPath);
-                    scene.m_sceneFilePath = scene.m_sceneFolderPath + sceneFilePath.substr(sceneFilePath.find_last_of("/\\"), sceneFilePath.length() - 1);
-                    scene.m_mainCamera.SetInitPos();
-                    SceneSerializer serializer;
-                    serializer.Serialize(scene);
-                    scene.SelectDummyEnvMap();
+                if (!sceneName.empty()) {
+                    auto newSceneFilePath = scene.m_sceneFolderPath + "\\" + sceneName + ".scn";
+                    if (!std::filesystem::exists(newSceneFilePath)) {
+                        scene.Clear();
+                        scene.m_sceneFilePath = newSceneFilePath;
+                        SceneSerializer serializer;
+                        serializer.Serialize(scene);
+                        scene.SelectDummyEnvMap();
+                        sceneName = "";
+                        message = "";
+                        ImGui::CloseCurrentPopup();
+                    } else {
+                        message = "Scene file with the same name exists";
+                    }
+                } else {
+                    message = "Please insert name";
                 }
             }
             ImGui::SetItemDefaultFocus();
@@ -380,9 +378,11 @@ void UI::DrawMeshGuizmo(Scene& scene, const Viewport& viewport)
     auto& mesh = scene.GetSelectedMesh();
     auto& meshInstance = scene.GetSelectedMeshInstance();
 
-    if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
-        meshInstance.UpdateTransform();
-        mesh.UpdateUBO(meshInstance);
+    if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
+        if (ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(meshInstance.UBO.model))) {
+            meshInstance.UpdateTransform();
+            mesh.UpdateUBO(meshInstance);
+        }
     }
 }
 
@@ -403,8 +403,10 @@ void UI::DrawLightGuizmo(Scene& scene, const Viewport& viewport)
 
     auto& light = scene.m_pointLight.m_UBOs[scene.m_selectedLightIndex];
     glm::mat4 lightTranslation = glm::translate(glm::mat4(1.0f), light.pos);
-    ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightTranslation));
-    light.pos = lightTranslation * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
+        ImGuizmo::Manipulate(glm::value_ptr(scene.m_mainCamera.GetUBO().view), glm::value_ptr(scene.m_mainCamera.GetUBO().proj), OP, ImGuizmo::LOCAL, glm::value_ptr(lightTranslation));
+        light.pos = lightTranslation * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
 }
 
 void UI::DrawSceneAttribWindow(Scene& scene)
@@ -694,6 +696,8 @@ void UI::DrawSceneAttribWindow(Scene& scene)
             ImGui::Text("Main Camera");
         } else {
             ImGui::Text("ID:%s", std::to_string(scene.m_playCamera->GetID()).c_str());
+            if (ImGui::Button("Unselect"))
+                scene.m_playCamera = &scene.m_mainCamera;
         }
         ImGui::SeparatorText("Cascade");
         ImGui::SliderFloat("Cascade Range 1", &Camera::s_cascadeRanges[0], Camera::s_zNear, Camera::s_cascadeRanges[1]);
@@ -708,6 +712,7 @@ void UI::DrawSceneAttribWindow(Scene& scene)
         if (ImGui::Checkbox("Motion Blur", &useMotionBlur)) {
             postProcessPushConstants.useMotionBlur = useMotionBlur ? 1 : -1;
         }
+        ImGui::SliderFloat("Divisor", &postProcessPushConstants.divisor, 2.0f, 200.0f);
         ImGui::EndTabItem();
     }
     if (ImGui::BeginTabItem("etc")) {

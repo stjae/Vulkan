@@ -93,6 +93,7 @@ struct PrefilteredCubemapPushConstants
 struct PostProcessPushConstants
 {
     int useMotionBlur = 0;
+    float divisor = 20.0f;
 } inline postProcessPushConstants;
 
 #endif

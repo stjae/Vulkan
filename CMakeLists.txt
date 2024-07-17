@@ -160,6 +160,9 @@ foreach (DLL ${DLLS})
     )
 endforeach ()
 
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/image ${PROJECT_BINARY_DIR}/image)
+
 include(Shader.cmake)
 add_dependencies(${PROJECT_NAME} ${DEP_LIST} shader)
 

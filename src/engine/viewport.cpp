@@ -149,7 +149,6 @@ void Viewport::PickColor(double mouseX, double mouseY, Scene& scene)
         offsetX = (int32_t)((mouseX - m_panelPos.x));
     if (mouseY > m_panelPos.y)
         offsetY = (int32_t)((mouseY - m_panelPos.y));
-        // TODO:
 #if defined(__APPLE__)
     if (mouseX > m_panelPos.x)
         offsetX = (int32_t)((mouseX - m_panelPos.x) * scaleX);

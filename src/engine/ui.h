@@ -66,7 +66,7 @@ public:
     inline static double s_dragDropMouseY;
     inline static std::unique_ptr<Resource> s_dragDropResource;
 
-    void Init(const vk::RenderPass& renderPass, Viewport& viewport, Scene& scene);
+    void Init(const vk::RenderPass& renderPass);
     void Draw(Scene& scene, Viewport& viewport, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Scene& scene);

@@ -153,20 +153,20 @@ void ScriptInstance::Init()
 }
 void ScriptInstance::InvokeOnCreate()
 {
-    if (m_instance)
+    if (m_instance && m_onCreateMethod)
         Script::InvokeMethod(m_onCreateMethod, m_instance, nullptr);
 }
 
 void ScriptInstance::InvokeOnUpdate(float dt)
 {
     void* param = &dt;
-    if (m_instance)
+    if (m_instance && m_onUpdateMethod)
         Script::InvokeMethod(m_onUpdateMethod, m_instance, &param);
 }
 
 void ScriptInstance::InvokeOnDestroy()
 {
-    if (m_instance)
+    if (m_instance && m_onDestroyMethod)
         Script::InvokeMethod(m_onDestroyMethod, m_instance, nullptr);
 }
 

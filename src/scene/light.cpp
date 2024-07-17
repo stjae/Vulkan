@@ -1,5 +1,12 @@
 #include "light.h"
 
+void DirLight::Init()
+{
+    pos = { 0.1, 10.0f, 0.1f };
+    intensity = 1.0f;
+    color = { 1.0f, 1.0f, 1.0f };
+}
+
 void PointLight::Duplicate(int index)
 {
     Add();

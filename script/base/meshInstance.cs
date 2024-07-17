@@ -158,10 +158,9 @@ namespace vkApp
                 InternalCall.SetRigidBodyTransform(ID, ref value);
             }
         }
-        public Vector3 GetRayHitPosition(ref Vector3 rayFrom, ref Vector3 rayTo)
+        public void GetRayHitPosition(ref Vector3 rayFrom, ref Vector3 rayTo, ref Vector3 hitPosition)
         {
-            InternalCall.GetRayHitPosition(ref rayFrom, ref rayTo, out Vector3 hitPosition);
-            return hitPosition;
+            InternalCall.GetRayHitPosition(ref rayFrom, ref rayTo, ref hitPosition);
         }
         public void DuplicateMeshInstance()
         {

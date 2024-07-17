@@ -14,6 +14,8 @@ struct DirLight
     glm::vec3 pos{ 0.1, 10.0f, 0.1f };
     float intensity = 1.0f;
     glm::vec3 color{ 1.0f };
+
+    void Init();
 };
 
 struct PointLightUBO

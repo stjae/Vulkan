@@ -354,8 +354,10 @@ void Scene::DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID, glm::v
     auto& newInstance = *mesh.m_meshInstances.back();
     int32_t newColorID = newInstance.UBO.instanceColorID;
     newInstance = srcInstance;
-    newInstance.translation += offset;
-    newInstance.UpdateMatrix();
+    float m[16];
+    ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(newInstance.translation + offset), glm::value_ptr(newInstance.rotation), glm::value_ptr(newInstance.scale), m);
+    newInstance.UBO.model = glm::make_mat4(m);
+    newInstance.UpdateTransform();
     // Copy except for color id
     newInstance.UBO.instanceColorID = newColorID;
     // Copy physics information
@@ -504,6 +506,14 @@ void Scene::Clear()
     m_roughnessTextures.clear();
     Script::s_scriptClasses.clear();
     Script::s_scriptInstances.clear();
+    m_playCamera = &m_mainCamera;
+    m_mainCamera.SetInitPos();
+    m_dirLight.Init();
+    m_showLightIcon = true;
+    m_showGrid = true;
+    m_iblExposure = 1.0f;
+    postProcessPushConstants.useMotionBlur = 0;
+    postProcessPushConstants.divisor = 20.0f;
 }
 
 void Scene::CopyMeshInstances()

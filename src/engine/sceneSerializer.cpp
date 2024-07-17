@@ -136,6 +136,7 @@ void SceneSerializer::SerializeCamera(YAML::Emitter& out, const Scene& scene)
     out << YAML::Key << "CascadeRange3" << YAML::Value << Camera::s_cascadeRanges[2];
     out << YAML::Key << "CascadeRange4" << YAML::Value << Camera::s_cascadeRanges[3];
     out << YAML::Key << "UseMotionBlur" << YAML::Value << postProcessPushConstants.useMotionBlur;
+    out << YAML::Key << "Divisor" << YAML::Value << postProcessPushConstants.divisor;
     out << YAML::EndMap;
 }
 
@@ -250,6 +251,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     Camera::s_cascadeRanges[3] = camera["CascadeRange4"].as<float>();
     scene.m_mainCamera.m_at = scene.m_mainCamera.m_pos + scene.m_mainCamera.m_dir;
     postProcessPushConstants.useMotionBlur = camera["UseMotionBlur"].as<int>();
+    postProcessPushConstants.divisor = camera["Divisor"].as<float>();
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {

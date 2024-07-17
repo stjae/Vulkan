@@ -25,7 +25,7 @@ void Camera::Update(const vk::CommandBuffer& commandBuffer)
 
 void Camera::SetControl()
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_C) && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) {
         m_isControllable = !m_isControllable;
 
         if (m_isControllable) {

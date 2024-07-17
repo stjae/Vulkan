@@ -3,7 +3,7 @@
 Engine::Engine() : m_init(true)
 {
     m_scene.Init();
-    m_imGui.Init(vkn::Swapchain::Get().renderPass, m_viewport, m_scene);
+    m_imGui.Init(vkn::Swapchain::Get().renderPass);
     m_commandBuffers = { m_scene.m_commandBuffer, m_viewport.m_commandBuffer, m_swapchain.m_commandBuffer };
 }
 
@@ -24,7 +24,7 @@ void Engine::Render()
         vkn::Command::Begin(cb);
 
     m_imGui.Draw(m_scene, m_viewport, m_init);
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && m_viewport.m_isMouseHovered && !m_scene.IsPlaying()) {
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsUsing() && m_viewport.m_isMouseHovered && !m_scene.IsPlaying()) {
         m_viewport.PickColor(Window::GetMousePosX(), Window::GetMousePosY(), m_scene);
     }
     m_imGui.AcceptDragDrop(m_scene);

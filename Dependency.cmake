@@ -8,7 +8,7 @@ set(DEP_LIB_DIR ${DEP_INSTALL_DIR}/lib)
 ExternalProject_Add(
         dep-spdlog
         GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
-        GIT_TAG "v1.x"
+        GIT_TAG "v1.14.1"
         GIT_SHALLOW 1
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
@@ -78,23 +78,6 @@ add_library(imguizmo ${PROJECT_SOURCE_DIR}/imgui/ImGuizmo.cpp)
 add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
 target_include_directories(imguizmo PRIVATE ${PROJECT_SOURCE_DIR}/imgui)
 set(DEP_LIBS ${DEP_LIBS} imguizmo)
-
-# IconFontCppHeaders
-ExternalProject_Add(
-        dep-iconfontcppheaders
-        GIT_REPOSITORY "https://github.com/juliettef/IconFontCppHeaders.git"
-        GIT_TAG "main"
-        GIT_SHALLOW 1
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        TEST_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_BINARY_DIR}/dep-iconfontcppheaders-prefix/src/dep-iconfontcppheaders
-        ${DEP_INSTALL_DIR}/include/font
-)
-set(DEP_LIST ${DEP_LIST} dep-iconfontcppheaders)
 
 # stb
 ExternalProject_Add(

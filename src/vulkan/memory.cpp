@@ -16,7 +16,7 @@ uint32_t vkn::Memory::FindMemoryTypeIndex(uint32_t supportedMemoryIndices, vk::M
         }
     }
 
-    throw std::runtime_error("failed to find suitable m_memory type");
+    throw std::runtime_error("failed to find suitable memory type");
 }
 void vkn::Memory::AllocateMemory(const vk::Buffer& buffer, vk::MemoryPropertyFlags properties)
 {

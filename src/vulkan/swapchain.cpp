@@ -249,12 +249,12 @@ void Swapchain::ChooseExtent()
         if (extent.width > s_bundle.surfaceCapabilities.maxImageExtent.width) {
 
             extent.width = s_bundle.surfaceCapabilities.maxImageExtent.width;
-            Log(DEBUG, fmt::terminal_color::yellow, "m_extent width is clamped");
+            Log(DEBUG, fmt::terminal_color::yellow, "extent width is clamped");
         }
         if (extent.height > s_bundle.surfaceCapabilities.maxImageExtent.height) {
 
             extent.height = s_bundle.surfaceCapabilities.maxImageExtent.height;
-            Log(DEBUG, fmt::terminal_color::yellow, "m_extent height is clamped");
+            Log(DEBUG, fmt::terminal_color::yellow, "extent height is clamped");
         }
 
         s_bundle.swapchainImageExtent = extent;

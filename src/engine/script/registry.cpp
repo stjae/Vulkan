@@ -201,7 +201,7 @@ void Registry::SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix)
 void Registry::GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3* hitPosition)
 {
     btCollisionWorld::ClosestRayResultCallback result(*rayFrom, *rayTo);
-    Physics::GetDynamicsWorld()->rayTest(*rayFrom, *rayTo, result);
+    Physics::GetDynamicsWorld()->rayTest(*rayFrom, *rayTo, result); 
     if (result.hasHit())
         *hitPosition = result.m_hitPointWorld;
 }
