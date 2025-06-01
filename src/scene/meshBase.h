@@ -2,7 +2,7 @@
 #define MESHDATA_H
 
 #include "../vulkan/buffer.h"
-#include <btBulletCollisionCommon.h>
+#include "bullet/btBulletCollisionCommon.h"
 
 struct Vertex
 {

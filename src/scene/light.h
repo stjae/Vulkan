@@ -5,7 +5,7 @@
 #include <memory>
 #include "../vulkan/buffer.h"
 #include "../pipeline/meshRender.h"
-#include "../pipeline/shadowCubemap.h"
+#include "../pipeline/shadowCubemapPipeline.h"
 #include "../vulkan/command.h"
 #include "../vulkan/sync.h"
 

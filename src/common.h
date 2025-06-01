@@ -11,9 +11,7 @@ const bool DEBUG = true;
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
-#if defined(__APPLE__)
-#include <MoltenVK/vk_mvk_moltenvk.h>
-#endif
+#include <vulkan/vulkan.h>
 
 // std library
 #include <iostream>
@@ -26,12 +24,11 @@ const bool DEBUG = true;
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <nfd.h>
+#include <nfd/nfd.h>
 
 #include "path.h"
 
 const int MAX_FRAME = 2;
-
 template <typename... T>
 void Log(bool debugMode, fmt::terminal_color color, T... args)
 {

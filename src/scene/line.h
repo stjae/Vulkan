@@ -1,8 +1,8 @@
 #ifndef LINE_H
 #define LINE_H
 
-#include <glm/glm.hpp>
-#include <btBulletCollisionCommon.h>
+#include "glm/glm.hpp"
+#include "bullet/btBulletCollisionCommon.h"
 
 struct LinePoint
 {

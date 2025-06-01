@@ -1,14 +1,13 @@
 #ifndef IMGUI_H
 #define IMGUI_H
 
-#include "../../imgui/imgui.h"
-#include "../../imgui/imgui_impl_glfw.h"
-#include "../../imgui/imgui_impl_vulkan.h"
-#if defined(_WIN32)
-#include "../../imgui/imgui_impl_win32.h"
-#endif
-#include "../../imgui/ImGuizmo.h"
-#include "../../imgui/imgui_internal.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
+#include "imgui/backends/imgui_impl_win32.h"
+#include "imgui/imgui_internal.h"
+#include "ImGuizmo/ImGuizmo.h"
 
 #include "../common.h"
 #include "../scene/camera.h"
@@ -16,7 +15,7 @@
 #include "viewport.h"
 #include "sceneSerializer.h"
 #include "../engine/script/script.h"
-#include "../time.h"
+#include "../myTime.h"
 #include <typeinfo>
 
 class UI

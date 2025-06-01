@@ -1,17 +1,16 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include <btBulletCollisionCommon.h>
-#include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
-#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include "bullet/btBulletCollisionCommon.h"
+#include "bullet/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h"
+#include "bullet/BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h"
 #include "../scene/mesh.h"
-#include "../../imgui/imgui.h"
-#include "../../imgui/imgui_impl_glfw.h"
-#include "../../imgui/imgui_impl_vulkan.h"
-#if defined(_WIN32)
-#include "../../imgui/imgui_impl_win32.h"
-#endif
-#include "../../imgui/imgui_internal.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
+#include "imgui/backends/imgui_impl_win32.h"
+#include "imgui/imgui_internal.h"
 
 class Physics
 {

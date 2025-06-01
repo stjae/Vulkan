@@ -13,6 +13,7 @@ public:
 
     static vk::ShaderModule CreateModule(const std::string& filepath);
 };
+
 } // namespace vkn
 
 #endif

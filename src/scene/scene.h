@@ -11,7 +11,7 @@
 #include "envCubemap.h"
 #include "prefilteredCubemap.h"
 #include "../vulkan/command.h"
-#include "../vulkan/image.h"
+#include "../vulkan/vulkanImage.h"
 #include "physics.h"
 
 struct Resource;

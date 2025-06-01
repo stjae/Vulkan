@@ -340,7 +340,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
         for (auto&& scriptInstance : scriptInstances) {
             auto scriptClassName = scriptInstance["ClassName"].as<std::string>();
             auto meshInstanceID = scriptInstance["MeshInstanceID"].as<uint64_t>();
-            Script::s_scriptInstances.emplace(meshInstanceID, std::make_shared<ScriptInstance>(Script::s_scriptClasses[scriptClassName], meshInstanceID));
+
+            // Add script instance only if script class was successfully loaded
+            if (Script::s_scriptClasses.find(scriptClassName) != Script::s_scriptClasses.end())
+                Script::s_scriptInstances.emplace(meshInstanceID, std::make_shared<ScriptInstance>(Script::s_scriptClasses[scriptClassName], meshInstanceID));
         }
     }
 

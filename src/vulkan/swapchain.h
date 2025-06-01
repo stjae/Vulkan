@@ -8,8 +8,9 @@
 #include "descriptor.h"
 #include "memory.h"
 #include "sync.h"
-#include "../../imgui/imgui.h"
-#include "../../imgui/imgui_impl_vulkan.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
 
 namespace vkn {
 class Swapchain

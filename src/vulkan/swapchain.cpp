@@ -2,7 +2,7 @@
 #include "instance.h"
 #include "device.h"
 #include "command.h"
-#include "image.h"
+#include "vulkanImage.h"
 
 namespace vkn {
 Swapchain::Swapchain()

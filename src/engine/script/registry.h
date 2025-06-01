@@ -10,6 +10,11 @@
 #include "../../scene/scene.h"
 #include "../../keycode.h"
 
+inline btVector3 ToBtVector3(const float* v)
+{
+    return btVector3(v[0], v[1], v[2]);
+}
+
 class Registry
 {
     static void GetTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation);
@@ -30,15 +35,15 @@ class Registry
     static bool IsMouseButtonDown(MouseButton mouseButton);
     static float GetMouseX();
     static float GetMouseY();
-    static void SetGravity(uint64_t meshInstanceID, btVector3* acceleration);
-    static void SetLinearFactor(uint64_t meshInstanceID, btVector3* factor);
-    static void SetAngularFactor(uint64_t meshInstanceID, btVector3* factor);
-    static void ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse);
-    static void GetVelocity(uint64_t meshInstanceID, btVector3* outVelocity);
-    static void SetVelocity(uint64_t meshInstanceID, btVector3* inVelocity);
-    static void SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity);
+    static void SetGravity(uint64_t meshInstanceID, const float* inAcceleration);
+    static void SetLinearFactor(uint64_t meshInstanceID, const float* inFactor);
+    static void SetAngularFactor(uint64_t meshInstanceID, const float* inFactor);
+    static void ApplyImpulse(uint64_t meshInstanceID, const float* inImpulse);
+    static void GetVelocity(uint64_t meshInstanceID, const float* outVelocity);
+    static void SetVelocity(uint64_t meshInstanceID, const float* inVelocity);
+    static void SetAngularVelocity(uint64_t meshInstanceID, const float* inVelocity);
     static void SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix);
-    static void GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3* hitPosition);
+    static void GetRayHitPosition(const float* rayFrom, const float* rayTo, float* hitPosition);
     static void DuplicateMeshInstance(uint64_t meshInstanceID);
 
 public:

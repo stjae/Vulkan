@@ -4,8 +4,8 @@ void IrradianceCubemapPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/irradiance.vert.spv");
-    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/irradiance.frag.spv");
+    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/spv/irradiance.vert.spv");
+    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/spv/irradiance.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, m_shaderModule.m_vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);

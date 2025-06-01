@@ -61,7 +61,7 @@ void vkn::Instance::CreateSurface()
 vkn::Instance::~Instance()
 {
     if (DEBUG) {
-        s_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger.m_messenger, nullptr, m_debugMessenger.m_loader);
+        // s_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger.m_messenger, nullptr, m_debugMessenger.m_loader);
     }
     s_instance.destroySurfaceKHR(s_surface);
     s_instance.destroy();

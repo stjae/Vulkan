@@ -2,9 +2,9 @@
 #define SHADOWMAP_H
 
 #include "../vulkan/sync.h"
-#include "../vulkan/image.h"
+#include "../vulkan/vulkanImage.h"
 #include "../scene/mesh.h"
-#include "../pipeline/shadowMap.h"
+#include "../pipeline/shadowMapPipeline.h"
 
 const uint16_t SHADOW_MAP_SIZE = 4096;
 

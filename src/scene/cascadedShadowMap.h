@@ -2,9 +2,9 @@
 #define CASCADED_SHADOW_MAP_H
 
 #include "../vulkan/sync.h"
-#include "../vulkan/image.h"
+#include "../vulkan/vulkanImage.h"
 #include "../scene/mesh.h"
-#include "../pipeline/shadowMap.h"
+#include "../pipeline/shadowMapPipeline.h"
 #include "shadowMap.h"
 #include "light.h"
 

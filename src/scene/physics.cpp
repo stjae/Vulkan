@@ -29,7 +29,7 @@ void Physics::AddRigidBody(Mesh& mesh, MeshInstance& instance)
         instance.physicsInfo->collisionShapePtr = new btConeShape({ 1.0f, 1.0f });
         break;
     case (eColliderShape::MESH):
-        instance.physicsInfo->collisionShapePtr = new btBvhTriangleMeshShape(mesh.GetBulletVertexArray(), true);
+        instance.physicsInfo->collisionShapePtr = new btBvhTriangleMeshShape(mesh.GetBulletVertexArray(), false);
         break;
     default:
         return;
@@ -91,7 +91,7 @@ void Physics::UpdateRigidBodies(std::vector<std::unique_ptr<Mesh>>& meshes)
 
 void Physics::Simulate(std::vector<std::unique_ptr<Mesh>>& meshes)
 {
-    s_dynamicsWorld->stepSimulation(1.0f / 60.0f);
+    s_dynamicsWorld->stepSimulation(Time::GetDeltaTime());
 
     for (auto& mesh : meshes) {
         for (auto& instance : mesh->GetInstances()) {

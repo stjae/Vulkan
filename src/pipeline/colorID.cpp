@@ -4,8 +4,8 @@ void ColorIDPipeline::CreatePipeline()
 {
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStageInfos;
     vk::PipelineColorBlendAttachmentState attachmentState;
-    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/colorID.vert.spv");
-    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/colorID.frag.spv");
+    m_shaderModule.m_vertexShaderModule = vkn::Shader::CreateModule("shader/spv/colorID.vert.spv");
+    m_shaderModule.m_fragmentShaderModule = vkn::Shader::CreateModule("shader/spv/colorID.frag.spv");
     shaderStageInfos[0] = { {}, vk::ShaderStageFlagBits::eVertex, m_shaderModule.m_vertexShaderModule, "main" };
     shaderStageInfos[1] = { {}, vk::ShaderStageFlagBits::eFragment, m_shaderModule.m_fragmentShaderModule, "main" };
     attachmentState = vk::PipelineColorBlendAttachmentState(vk::False);

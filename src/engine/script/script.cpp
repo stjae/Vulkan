@@ -51,6 +51,10 @@ void Script::Reset()
 void Script::LoadAssemblyClasses(const std::string& filePath)
 {
     MonoAssembly* assembly = monoUtils::LoadAssembly(filePath);
+    if (!assembly) {
+        spdlog::error("{} was not found!", filePath);
+        return;
+    }
     MonoImage* image = mono_assembly_get_image(assembly);
     const MonoTableInfo* typeDefinitionsTable = mono_image_get_table_info(image, MONO_TABLE_TYPEDEF);
     int32_t numTypes = mono_table_info_get_rows(typeDefinitionsTable);

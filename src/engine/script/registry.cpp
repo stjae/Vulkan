@@ -124,66 +124,66 @@ float Registry::GetMouseY()
     return Window::GetMousePosNormalizedY();
 }
 
-void Registry::SetGravity(uint64_t meshInstanceID, btVector3* acceleration)
+void Registry::SetGravity(uint64_t meshInstanceID, const float* inAcceleration)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setGravity(*acceleration);
+        instance.physicsInfo->rigidBodyPtr->setGravity(ToBtVector3(inAcceleration));
     }
 }
 
-void Registry::SetLinearFactor(uint64_t meshInstanceID, btVector3* factor)
+void Registry::SetLinearFactor(uint64_t meshInstanceID, const float* inFactor)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setLinearFactor(*factor);
+        instance.physicsInfo->rigidBodyPtr->setLinearFactor(ToBtVector3(inFactor));
     }
 }
 
-void Registry::SetAngularFactor(uint64_t meshInstanceID, btVector3* factor)
+void Registry::SetAngularFactor(uint64_t meshInstanceID, const float* inFactor)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setAngularFactor(*factor);
+        instance.physicsInfo->rigidBodyPtr->setAngularFactor(ToBtVector3(inFactor));
     }
 }
 
-void Registry::ApplyImpulse(uint64_t meshInstanceID, btVector3* impulse)
+void Registry::ApplyImpulse(uint64_t meshInstanceID, const float* inImpulse)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->applyCentralImpulse(*impulse);
+        instance.physicsInfo->rigidBodyPtr->applyCentralImpulse(ToBtVector3(inImpulse));
     }
 }
 
-void Registry::GetVelocity(uint64_t meshInstanceID, btVector3* outVelocity)
+void Registry::GetVelocity(uint64_t meshInstanceID, const float* outVelocity)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        *outVelocity = instance.physicsInfo->rigidBodyPtr->getLinearVelocity();
+        outVelocity = instance.physicsInfo->rigidBodyPtr->getLinearVelocity();
     }
 }
 
-void Registry::SetVelocity(uint64_t meshInstanceID, btVector3* inVelocity)
+void Registry::SetVelocity(uint64_t meshInstanceID, const float* inVelocity)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setLinearVelocity(*inVelocity);
+        instance.physicsInfo->rigidBodyPtr->setLinearVelocity(ToBtVector3(inVelocity));
     }
 }
 
-void Registry::SetAngularVelocity(uint64_t meshInstanceID, btVector3* velocity)
+void Registry::SetAngularVelocity(uint64_t meshInstanceID, const float* inVelocity)
 {
     auto& instance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
     if (instance.physicsInfo) {
         instance.physicsInfo->rigidBodyPtr->activate(true);
-        instance.physicsInfo->rigidBodyPtr->setAngularVelocity(*velocity);
+        instance.physicsInfo->rigidBodyPtr->setAngularVelocity(ToBtVector3(inVelocity));
     }
 }
 
@@ -198,12 +198,15 @@ void Registry::SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix)
     }
 }
 
-void Registry::GetRayHitPosition(btVector3* rayFrom, btVector3* rayTo, btVector3* hitPosition)
+void Registry::GetRayHitPosition(const float* rayFrom, const float* rayTo, float* hitPosition)
 {
-    btCollisionWorld::ClosestRayResultCallback result(*rayFrom, *rayTo);
-    Physics::GetDynamicsWorld()->rayTest(*rayFrom, *rayTo, result); 
-    if (result.hasHit())
-        *hitPosition = result.m_hitPointWorld;
+    btCollisionWorld::ClosestRayResultCallback result(ToBtVector3(rayFrom), ToBtVector3(rayTo));
+    Physics::GetDynamicsWorld()->rayTest(ToBtVector3(rayFrom), ToBtVector3(rayTo), result);
+    if (result.hasHit()) {
+        *(&hitPosition[0]) = result.m_hitPointWorld[0];
+        *(&hitPosition[1]) = result.m_hitPointWorld[1];
+        *(&hitPosition[2]) = result.m_hitPointWorld[2];
+    }
 }
 
 void Registry::DuplicateMeshInstance(uint64_t meshInstanceID)

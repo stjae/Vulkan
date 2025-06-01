@@ -9,8 +9,9 @@
 #include "assimp/postprocess.h"
 #include "physicsDebugDrawer.h"
 #include "id.h"
-#include "../../imgui/imgui.h"
-#include "../../imgui/ImGuizmo.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui/imgui.h"
+#include "ImGuizmo/ImGuizmo.h"
 #include "camera.h"
 
 struct MeshPart;

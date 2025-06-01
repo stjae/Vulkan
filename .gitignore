@@ -6,3 +6,4 @@ script/obj/
 script/Properties/
 .vs/
 *.pdb
+bin/

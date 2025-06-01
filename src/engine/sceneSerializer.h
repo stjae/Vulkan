@@ -3,7 +3,8 @@
 
 #include "../common.h"
 #include "../scene/scene.h"
-#include <yaml-cpp/yaml.h>
+#define YAML_CPP_STATIC_DEFINE
+#include "yaml-cpp/yaml.h"
 #include <fstream>
 
 class SceneSerializer

@@ -31,7 +31,7 @@ void DebugMessenger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createIn
         vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
         vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
         vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-    createInfo.pfnUserCallback = DebugCallback;
+    // createInfo.pfnUserCallback = DebugCallback;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

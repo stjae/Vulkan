@@ -5,7 +5,7 @@
 #include "mesh.h"
 #include "../vulkan/cubemap.h"
 #include "../pipeline/meshRender.h"
-#include "../pipeline/shadowCubemap.h"
+#include "../pipeline/shadowCubemapPipeline.h"
 #include "../vulkan/command.h"
 #include "light.h"
 

@@ -1,0 +1,1382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{3936BEEE-0235-2D90-15B7-25271DFE7CBC}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)\$(Configuration)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)\$(Configuration)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)\$(Configuration)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)\$(Configuration)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btAxisSweep3.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btBroadphaseProxy.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDbvt.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDbvtBroadphase.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDispatcher.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btOverlappingPairCache.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btQuantizedBvh.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btSimpleBroadphase.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btActivatingCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBox2dBox2dCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBoxBoxCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBoxBoxDetector.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionDispatcher.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionDispatcherMt.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionObject.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionWorld.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionWorldImporter.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCompoundCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCompoundCompoundCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvex2dConvex2dAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexConcaveCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexConvexAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexPlaneCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btDefaultCollisionConfiguration.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btEmptyCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btGhostObject.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btHashedSimplePairCache.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btManifoldResult.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSimulationIslandManager.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereBoxCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereSphereCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereTriangleCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btUnionFind.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\SphereTriangleDetector.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBox2dShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBoxShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBvhTriangleMeshShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCapsuleShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCollisionShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCompoundShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConcaveShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConeShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvex2dShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexHullShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexInternalShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexPointCloudShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexPolyhedron.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexTriangleMeshShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCylinderShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btEmptyShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btHeightfieldTerrainShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMiniSDF.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMinkowskiSumShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMultimaterialTriangleMeshShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMultiSphereShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btOptimizedBvh.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btPolyhedralConvexShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btScaledBvhTriangleMeshShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btSdfCollisionShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btShapeHull.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btSphereShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btStaticPlaneShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btStridingMeshInterface.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTetrahedronShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleBuffer.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleCallback.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleIndexVertexArray.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleIndexVertexMaterialArray.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleMesh.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleMeshShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btUniformScalingShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btContactProcessing.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btGenericPoolAllocator.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactBvh.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactCollisionAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactQuantizedBvh.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactShape.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\btTriangleShapeEx.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_box_set.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_contact.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_memory.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_tri_collision.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btContinuousConvexCollision.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btConvexCast.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkConvexCast.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkEpa2.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkEpaPenetrationDepthSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkPairDetector.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btMinkowskiPenetrationDepthSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btPersistentManifold.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btPolyhedralContactClipping.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btRaycastCallback.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btSubSimplexConvexCast.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btVoronoiSimplexSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Character\btKinematicCharacterController.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btBatchedConstraints.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btConeTwistConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btContactConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btFixedConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGearConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofSpring2Constraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofSpringConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btHinge2Constraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btHingeConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btNNCGConstraintSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btPoint2PointConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSequentialImpulseConstraintSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSequentialImpulseConstraintSolverMt.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSliderConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSolve2LinearConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btTypedConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btUniversalConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Dynamics\btDiscreteDynamicsWorld.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Dynamics\btDiscreteDynamicsWorldMt.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Dynamics\btRigidBody.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Dynamics\btSimpleDynamicsWorld.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Dynamics\btSimulationIslandManagerMt.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBody.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyConstraintSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyDynamicsWorld.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyFixedConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyGearConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyJointLimitConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyJointMotor.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyMLCPConstraintSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyPoint2Point.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySliderConstraint.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySphericalJointLimit.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySphericalJointMotor.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btDantzigLCP.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btLemkeAlgorithm.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btMLCPSolver.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Vehicle\btRaycastVehicle.cpp" />
+    <ClCompile Include="externalLibrary\bullet\BulletDynamics\Vehicle\btWheelInfo.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btAlignedAllocator.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btConvexHull.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btConvexHullComputer.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btGeometryUtil.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btPolarDecomposition.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btQuickprof.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btReducedVector.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btSerializer.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btSerializer64.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btThreads.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\btVector3.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\TaskScheduler\btTaskScheduler.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\TaskScheduler\btThreadSupportPosix.cpp" />
+    <ClCompile Include="externalLibrary\bullet\LinearMath\TaskScheduler\btThreadSupportWin32.cpp" />
+    <ClCompile Include="externalLibrary\glm\detail\glm.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\CInterface\glslang_c_interface.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\GenericCodeGen\CodeGen.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\GenericCodeGen\Link.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\attribute.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\Constant.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\glslang_tab.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\InfoSink.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\Initialize.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\Intermediate.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\intermOut.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\IntermTraverse.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\iomapper.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\limits.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\linkValidate.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\parseConst.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\ParseContextBase.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\ParseHelper.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\PoolAlloc.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\Pp.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpAtom.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpContext.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpScanner.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpTokens.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\propagateNoContraction.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\reflection.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\RemoveTree.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\Scan.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\ShaderLang.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\SpirvIntrinsics.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\SymbolTable.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\MachineIndependent\Versions.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\ResourceLimits\ResourceLimits.cpp" />
+    <ClCompile Include="externalLibrary\glslang\glslang\ResourceLimits\resource_limits_c.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\CInterface\spirv_c_interface.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\disassemble.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\doc.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\GlslangToSpv.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\InReadableOrder.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\Logger.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\SpvBuilder.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\SpvPostProcess.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\SPVRemapper.cpp" />
+    <ClCompile Include="externalLibrary\glslang\SPIRV\SpvTools.cpp" />
+    <ClCompile Include="externalLibrary\ImGuizmo\ImGuizmo.cpp" />
+    <ClCompile Include="externalLibrary\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="externalLibrary\imgui\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="externalLibrary\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="externalLibrary\imgui\imgui.cpp" />
+    <ClCompile Include="externalLibrary\imgui\imgui_demo.cpp" />
+    <ClCompile Include="externalLibrary\imgui\imgui_draw.cpp" />
+    <ClCompile Include="externalLibrary\imgui\imgui_tables.cpp" />
+    <ClCompile Include="externalLibrary\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="externalLibrary\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="src\common.cpp" />
+    <ClCompile Include="src\engine\app.cpp" />
+    <ClCompile Include="src\engine\engine.cpp" />
+    <ClCompile Include="src\engine\sceneSerializer.cpp" />
+    <ClCompile Include="src\engine\script\registry.cpp" />
+    <ClCompile Include="src\engine\script\script.cpp" />
+    <ClCompile Include="src\engine\ui.cpp" />
+    <ClCompile Include="src\engine\viewport.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\pipeline\brdfLut.cpp" />
+    <ClCompile Include="src\pipeline\colorID.cpp" />
+    <ClCompile Include="src\pipeline\envCubemapPipeline.cpp" />
+    <ClCompile Include="src\pipeline\irradianceCubemap.cpp" />
+    <ClCompile Include="src\pipeline\lineRender.cpp" />
+    <ClCompile Include="src\pipeline\meshRender.cpp" />
+    <ClCompile Include="src\pipeline\physicsDebug.cpp" />
+    <ClCompile Include="src\pipeline\postProcess.cpp" />
+    <ClCompile Include="src\pipeline\prefilteredCubemapPipeline.cpp" />
+    <ClCompile Include="src\pipeline\shadowCubemapPipeline.cpp" />
+    <ClCompile Include="src\pipeline\shadowMapPipeline.cpp" />
+    <ClCompile Include="src\pipeline\skyboxRender.cpp" />
+    <ClCompile Include="src\scene\camera.cpp" />
+    <ClCompile Include="src\scene\cascadedShadowMap.cpp" />
+    <ClCompile Include="src\scene\envCubemap.cpp" />
+    <ClCompile Include="src\scene\grid.cpp" />
+    <ClCompile Include="src\scene\id.cpp" />
+    <ClCompile Include="src\scene\light.cpp" />
+    <ClCompile Include="src\scene\mesh.cpp" />
+    <ClCompile Include="src\scene\meshBase.cpp" />
+    <ClCompile Include="src\scene\physics.cpp" />
+    <ClCompile Include="src\scene\physicsDebugDrawer.cpp" />
+    <ClCompile Include="src\scene\prefilteredCubemap.cpp" />
+    <ClCompile Include="src\scene\scene.cpp" />
+    <ClCompile Include="src\scene\shadowCubemap.cpp" />
+    <ClCompile Include="src\scene\shadowMap.cpp" />
+    <ClCompile Include="src\vulkan\buffer.cpp" />
+    <ClCompile Include="src\vulkan\command.cpp" />
+    <ClCompile Include="src\vulkan\cubemap.cpp" />
+    <ClCompile Include="src\vulkan\debugMessenger.cpp" />
+    <ClCompile Include="src\vulkan\descriptor.cpp" />
+    <ClCompile Include="src\vulkan\device.cpp" />
+    <ClCompile Include="src\vulkan\vulkanImage.cpp" />
+    <ClCompile Include="src\vulkan\instance.cpp" />
+    <ClCompile Include="src\vulkan\memory.cpp" />
+    <ClCompile Include="src\vulkan\pipeline.cpp" />
+    <ClCompile Include="src\vulkan\shader.cpp" />
+    <ClCompile Include="src\vulkan\swapchain.cpp" />
+    <ClCompile Include="src\vulkan\sync.cpp" />
+    <ClCompile Include="src\window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="externalLibrary\assimp\aabb.h" />
+    <ClInclude Include="externalLibrary\assimp\ai_assert.h" />
+    <ClInclude Include="externalLibrary\assimp\anim.h" />
+    <ClInclude Include="externalLibrary\assimp\AssertHandler.h" />
+    <ClInclude Include="externalLibrary\assimp\Base64.hpp" />
+    <ClInclude Include="externalLibrary\assimp\BaseImporter.h" />
+    <ClInclude Include="externalLibrary\assimp\Bitmap.h" />
+    <ClInclude Include="externalLibrary\assimp\BlobIOSystem.h" />
+    <ClInclude Include="externalLibrary\assimp\ByteSwapper.h" />
+    <ClInclude Include="externalLibrary\assimp\camera.h" />
+    <ClInclude Include="externalLibrary\assimp\cexport.h" />
+    <ClInclude Include="externalLibrary\assimp\cfileio.h" />
+    <ClInclude Include="externalLibrary\assimp\cimport.h" />
+    <ClInclude Include="externalLibrary\assimp\ColladaMetaData.h" />
+    <ClInclude Include="externalLibrary\assimp\color4.h" />
+    <ClInclude Include="externalLibrary\assimp\commonMetaData.h" />
+    <ClInclude Include="externalLibrary\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="externalLibrary\assimp\Compiler\pstdint.h" />
+    <ClInclude Include="externalLibrary\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="externalLibrary\assimp\config.h" />
+    <ClInclude Include="externalLibrary\assimp\CreateAnimMesh.h" />
+    <ClInclude Include="externalLibrary\assimp\DefaultIOStream.h" />
+    <ClInclude Include="externalLibrary\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="externalLibrary\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="externalLibrary\assimp\defs.h" />
+    <ClInclude Include="externalLibrary\assimp\Exceptional.h" />
+    <ClInclude Include="externalLibrary\assimp\Exporter.hpp" />
+    <ClInclude Include="externalLibrary\assimp\fast_atof.h" />
+    <ClInclude Include="externalLibrary\assimp\GenericProperty.h" />
+    <ClInclude Include="externalLibrary\assimp\GltfMaterial.h" />
+    <ClInclude Include="externalLibrary\assimp\Hash.h" />
+    <ClInclude Include="externalLibrary\assimp\Importer.hpp" />
+    <ClInclude Include="externalLibrary\assimp\importerdesc.h" />
+    <ClInclude Include="externalLibrary\assimp\IOStream.hpp" />
+    <ClInclude Include="externalLibrary\assimp\IOStreamBuffer.h" />
+    <ClInclude Include="externalLibrary\assimp\IOSystem.hpp" />
+    <ClInclude Include="externalLibrary\assimp\light.h" />
+    <ClInclude Include="externalLibrary\assimp\LineSplitter.h" />
+    <ClInclude Include="externalLibrary\assimp\LogAux.h" />
+    <ClInclude Include="externalLibrary\assimp\Logger.hpp" />
+    <ClInclude Include="externalLibrary\assimp\LogStream.hpp" />
+    <ClInclude Include="externalLibrary\assimp\material.h" />
+    <ClInclude Include="externalLibrary\assimp\MathFunctions.h" />
+    <ClInclude Include="externalLibrary\assimp\matrix3x3.h" />
+    <ClInclude Include="externalLibrary\assimp\matrix4x4.h" />
+    <ClInclude Include="externalLibrary\assimp\MemoryIOWrapper.h" />
+    <ClInclude Include="externalLibrary\assimp\mesh.h" />
+    <ClInclude Include="externalLibrary\assimp\metadata.h" />
+    <ClInclude Include="externalLibrary\assimp\NullLogger.hpp" />
+    <ClInclude Include="externalLibrary\assimp\ObjMaterial.h" />
+    <ClInclude Include="externalLibrary\assimp\ParsingUtils.h" />
+    <ClInclude Include="externalLibrary\assimp\pbrmaterial.h" />
+    <ClInclude Include="externalLibrary\assimp\port\AndroidJNI\AndroidJNIIOSystem.h" />
+    <ClInclude Include="externalLibrary\assimp\port\AndroidJNI\BundledAssetIOSystem.h" />
+    <ClInclude Include="externalLibrary\assimp\postprocess.h" />
+    <ClInclude Include="externalLibrary\assimp\Profiler.h" />
+    <ClInclude Include="externalLibrary\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="externalLibrary\assimp\qnan.h" />
+    <ClInclude Include="externalLibrary\assimp\quaternion.h" />
+    <ClInclude Include="externalLibrary\assimp\RemoveComments.h" />
+    <ClInclude Include="externalLibrary\assimp\scene.h" />
+    <ClInclude Include="externalLibrary\assimp\SceneCombiner.h" />
+    <ClInclude Include="externalLibrary\assimp\SGSpatialSort.h" />
+    <ClInclude Include="externalLibrary\assimp\SkeletonMeshBuilder.h" />
+    <ClInclude Include="externalLibrary\assimp\SmallVector.h" />
+    <ClInclude Include="externalLibrary\assimp\SmoothingGroups.h" />
+    <ClInclude Include="externalLibrary\assimp\SpatialSort.h" />
+    <ClInclude Include="externalLibrary\assimp\StandardShapes.h" />
+    <ClInclude Include="externalLibrary\assimp\StreamReader.h" />
+    <ClInclude Include="externalLibrary\assimp\StreamWriter.h" />
+    <ClInclude Include="externalLibrary\assimp\StringComparison.h" />
+    <ClInclude Include="externalLibrary\assimp\StringUtils.h" />
+    <ClInclude Include="externalLibrary\assimp\Subdivision.h" />
+    <ClInclude Include="externalLibrary\assimp\texture.h" />
+    <ClInclude Include="externalLibrary\assimp\TinyFormatter.h" />
+    <ClInclude Include="externalLibrary\assimp\types.h" />
+    <ClInclude Include="externalLibrary\assimp\vector2.h" />
+    <ClInclude Include="externalLibrary\assimp\vector3.h" />
+    <ClInclude Include="externalLibrary\assimp\version.h" />
+    <ClInclude Include="externalLibrary\assimp\Vertex.h" />
+    <ClInclude Include="externalLibrary\assimp\XmlParser.h" />
+    <ClInclude Include="externalLibrary\assimp\XMLTools.h" />
+    <ClInclude Include="externalLibrary\assimp\ZipArchiveIOSystem.h" />
+    <ClInclude Include="externalLibrary\bullet\btBulletCollisionCommon.h" />
+    <ClInclude Include="externalLibrary\bullet\btBulletDynamicsCommon.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btAxisSweep3.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btAxisSweep3Internal.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btBroadphaseInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btBroadphaseProxy.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDbvt.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDbvtBroadphase.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btDispatcher.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btOverlappingPairCache.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btOverlappingPairCallback.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btQuantizedBvh.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\BroadphaseCollision\btSimpleBroadphase.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btActivatingCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBox2dBox2dCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBoxBoxCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btBoxBoxDetector.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionConfiguration.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionCreateFunc.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionDispatcher.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionDispatcherMt.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionObject.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionObjectWrapper.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionWorld.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCollisionWorldImporter.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCompoundCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btCompoundCompoundCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvex2dConvex2dAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexConcaveCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexConvexAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btConvexPlaneCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btDefaultCollisionConfiguration.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btEmptyCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btGhostObject.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btHashedSimplePairCache.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btInternalEdgeUtility.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btManifoldResult.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSimulationIslandManager.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereBoxCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereSphereCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btSphereTriangleCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\btUnionFind.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionDispatch\SphereTriangleDetector.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBox2dShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBoxShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btBvhTriangleMeshShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCapsuleShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCollisionMargin.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCollisionShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCompoundShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConcaveShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConeShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvex2dShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexHullShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexInternalShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexPointCloudShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexPolyhedron.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btConvexTriangleMeshShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btCylinderShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btEmptyShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btHeightfieldTerrainShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMaterial.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMiniSDF.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMinkowskiSumShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMultimaterialTriangleMeshShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btMultiSphereShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btOptimizedBvh.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btPolyhedralConvexShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btScaledBvhTriangleMeshShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btSdfCollisionShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btShapeHull.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btSphereShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btStaticPlaneShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btStridingMeshInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTetrahedronShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleBuffer.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleCallback.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleIndexVertexArray.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleIndexVertexMaterialArray.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleInfoMap.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleMesh.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleMeshShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btTriangleShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\CollisionShapes\btUniformScalingShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btBoxCollision.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btClipPolygon.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btCompoundFromGimpact.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btContactProcessing.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btContactProcessingStructs.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGenericPoolAllocator.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGeometryOperations.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactBvh.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactBvhStructs.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactCollisionAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactMassUtil.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactQuantizedBvh.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactQuantizedBvhStructs.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btGImpactShape.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btQuantization.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\btTriangleShapeEx.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_array.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_basic_geometry_operations.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_bitset.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_box_collision.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_box_set.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_clip_polygon.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_contact.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_geometry.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_geom_types.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_hash_table.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_linear_math.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_math.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_memory.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_pair.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_radixsort.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\Gimpact\gim_tri_collision.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btComputeGjkEpaPenetration.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btContinuousConvexCollision.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btConvexCast.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btConvexPenetrationDepthSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btDiscreteCollisionDetectorInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkCollisionDescription.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkConvexCast.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkEpa2.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkEpa3.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkEpaPenetrationDepthSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btGjkPairDetector.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btManifoldPoint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btMinkowskiPenetrationDepthSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btMprPenetration.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btPersistentManifold.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btPointCollector.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btPolyhedralContactClipping.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btRaycastCallback.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btSimplexSolverInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btSubSimplexConvexCast.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletCollision\NarrowPhaseCollision\btVoronoiSimplexSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Character\btCharacterControllerInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Character\btKinematicCharacterController.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btBatchedConstraints.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btConeTwistConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btConstraintSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btContactConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btContactSolverInfo.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btFixedConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGearConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofSpring2Constraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btGeneric6DofSpringConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btHinge2Constraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btHingeConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btJacobianEntry.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btNNCGConstraintSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btPoint2PointConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSequentialImpulseConstraintSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSequentialImpulseConstraintSolverMt.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSliderConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSolve2LinearConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSolverBody.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btSolverConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btTypedConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\ConstraintSolver\btUniversalConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btActionInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btDiscreteDynamicsWorld.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btDiscreteDynamicsWorldMt.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btDynamicsWorld.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btRigidBody.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btSimpleDynamicsWorld.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Dynamics\btSimulationIslandManagerMt.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBody.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyConstraintSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyDynamicsWorld.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyFixedConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyGearConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyInplaceSolverIslandCallback.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyJointFeedback.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyJointLimitConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyJointMotor.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyLink.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyLinkCollider.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyMLCPConstraintSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodyPoint2Point.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySliderConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySolverConstraint.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySphericalJointLimit.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Featherstone\btMultiBodySphericalJointMotor.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btDantzigLCP.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btDantzigSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btLemkeAlgorithm.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btLemkeSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btMLCPSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btMLCPSolverInterface.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btPATHSolver.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\MLCPSolvers\btSolveProjectedGaussSeidel.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Vehicle\btRaycastVehicle.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Vehicle\btVehicleRaycaster.h" />
+    <ClInclude Include="externalLibrary\bullet\BulletDynamics\Vehicle\btWheelInfo.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btAabbUtil2.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btAlignedAllocator.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btAlignedObjectArray.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btConvexHull.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btConvexHullComputer.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btCpuFeatureUtility.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btDefaultMotionState.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btGeometryUtil.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btGrahamScan2dConvexHull.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btHashMap.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btIDebugDraw.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btImplicitQRSVD.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btList.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btMatrix3x3.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btMatrixX.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btMinMax.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btModifiedGramSchmidt.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btMotionState.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btPolarDecomposition.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btPoolAllocator.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btQuadWord.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btQuaternion.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btQuickprof.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btRandom.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btReducedVector.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btScalar.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btSerializer.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btSpatialAlgebra.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btStackAlloc.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btThreads.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btTransform.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btTransformUtil.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\btVector3.h" />
+    <ClInclude Include="externalLibrary\bullet\LinearMath\TaskScheduler\btThreadSupportInterface.h" />
+    <ClInclude Include="externalLibrary\GLFW\glfw3.h" />
+    <ClInclude Include="externalLibrary\GLFW\glfw3native.h" />
+    <ClInclude Include="externalLibrary\glm\common.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\compute_common.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\compute_vector_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\qualifier.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\setup.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_float.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_half.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_mat4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_quat.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_vec1.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_vec2.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_vec3.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\type_vec4.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_features.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_fixes.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_noise.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_swizzle.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_swizzle_func.hpp" />
+    <ClInclude Include="externalLibrary\glm\detail\_vectorize.hpp" />
+    <ClInclude Include="externalLibrary\glm\exponential.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_clip_space.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_common.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double2x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double3x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_double4x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float2x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float3x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_float4x4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int2x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int3x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_int4x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_projection.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_transform.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint2x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint3x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\matrix_uint4x4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_common.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_double.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_double_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_exponential.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_float.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_float_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_geometric.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_transform.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\quaternion_trigonometric.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_common.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_constants.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_int_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_packing.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_uint_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\scalar_ulp.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool1.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool1_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_bool4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_common.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double1.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double1_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_double4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float1.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float1_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float2_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float3_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_float4_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int1.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int1_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_int4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_packing.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint1.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint1_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint2.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint2_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint3.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint3_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint4.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_uint4_sized.hpp" />
+    <ClInclude Include="externalLibrary\glm\ext\vector_ulp.hpp" />
+    <ClInclude Include="externalLibrary\glm\fwd.hpp" />
+    <ClInclude Include="externalLibrary\glm\geometric.hpp" />
+    <ClInclude Include="externalLibrary\glm\glm.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\bitfield.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\color_space.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\constants.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\epsilon.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\matrix_access.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\matrix_integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\matrix_inverse.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\matrix_transform.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\noise.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\packing.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\quaternion.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\random.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\reciprocal.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\round.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\type_aligned.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\type_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\type_ptr.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\ulp.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtc\vec1.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\associated_min_max.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\bit.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\closest_point.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\color_encoding.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\color_space.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\color_space_YCoCg.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\common.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\compatibility.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\component_wise.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\dual_quaternion.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\easing.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\euler_angles.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\extend.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\extended_min_max.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\exterior_product.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\fast_exponential.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\fast_square_root.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\fast_trigonometry.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\functions.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\gradient_paint.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\handed_coordinate_space.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\hash.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\intersect.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\io.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\log_base.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_cross_product.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_decompose.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_factorisation.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_interpolation.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_major_storage.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_operation.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_query.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\matrix_transform_2d.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\mixed_product.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\norm.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\normal.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\normalize_dot.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\number_precision.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\optimum_pow.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\orthonormalize.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\perpendicular.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\polar_coordinates.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\projection.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\quaternion.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\range.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\raw_data.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\rotate_normalized_axis.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\rotate_vector.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\scalar_multiplication.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\scalar_relational.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\spline.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\std_based_type.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\string_cast.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\texture.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\transform.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\transform2.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\type_aligned.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\type_trait.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\vector_angle.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\vector_query.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\vec_swizzle.hpp" />
+    <ClInclude Include="externalLibrary\glm\gtx\wrap.hpp" />
+    <ClInclude Include="externalLibrary\glm\integer.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat2x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat2x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat2x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat3x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat3x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat3x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat4x2.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat4x3.hpp" />
+    <ClInclude Include="externalLibrary\glm\mat4x4.hpp" />
+    <ClInclude Include="externalLibrary\glm\matrix.hpp" />
+    <ClInclude Include="externalLibrary\glm\packing.hpp" />
+    <ClInclude Include="externalLibrary\glm\simd\common.h" />
+    <ClInclude Include="externalLibrary\glm\simd\exponential.h" />
+    <ClInclude Include="externalLibrary\glm\simd\geometric.h" />
+    <ClInclude Include="externalLibrary\glm\simd\integer.h" />
+    <ClInclude Include="externalLibrary\glm\simd\matrix.h" />
+    <ClInclude Include="externalLibrary\glm\simd\neon.h" />
+    <ClInclude Include="externalLibrary\glm\simd\packing.h" />
+    <ClInclude Include="externalLibrary\glm\simd\platform.h" />
+    <ClInclude Include="externalLibrary\glm\simd\trigonometric.h" />
+    <ClInclude Include="externalLibrary\glm\simd\vector_relational.h" />
+    <ClInclude Include="externalLibrary\glm\trigonometric.hpp" />
+    <ClInclude Include="externalLibrary\glm\vec2.hpp" />
+    <ClInclude Include="externalLibrary\glm\vec3.hpp" />
+    <ClInclude Include="externalLibrary\glm\vec4.hpp" />
+    <ClInclude Include="externalLibrary\glm\vector_relational.hpp" />
+    <ClInclude Include="externalLibrary\glslang\glslang\build_info.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\glsl_intrinsic_header.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\arrays.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\BaseTypes.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\Common.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\ConstantUnion.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\glslang_c_interface.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\glslang_c_shader_types.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\InfoSink.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\InitializeGlobals.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\intermediate.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\PoolAlloc.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\ResourceLimits.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\ShHandle.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\SpirvIntrinsics.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Include\Types.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\attribute.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\glslang_tab.cpp.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\gl_types.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\Initialize.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\iomapper.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\LiveTraverser.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\localintermediate.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\ParseHelper.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\parseVersions.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\pch.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpContext.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\preprocessor\PpTokens.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\propagateNoContraction.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\reflection.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\RemoveTree.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\Scan.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\ScanContext.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\SymbolTable.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\MachineIndependent\Versions.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\OSDependent\osinclude.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Public\ResourceLimits.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Public\resource_limits_c.h" />
+    <ClInclude Include="externalLibrary\glslang\glslang\Public\ShaderLang.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\bitutils.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\disassemble.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\doc.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.ext.AMD.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.ext.ARM.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.ext.EXT.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.ext.KHR.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.ext.NV.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GLSL.std.450.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\GlslangToSpv.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\hex_float.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\Logger.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\NonSemanticDebugPrintf.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\NonSemanticShaderDebugInfo100.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\spirv.hpp" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\SpvBuilder.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\spvIR.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\SPVRemapper.h" />
+    <ClInclude Include="externalLibrary\glslang\SPIRV\SpvTools.h" />
+    <ClInclude Include="externalLibrary\ImGuizmo\ImGuizmo.h" />
+    <ClInclude Include="externalLibrary\imgui\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="externalLibrary\imgui\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="externalLibrary\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="externalLibrary\imgui\imconfig.h" />
+    <ClInclude Include="externalLibrary\imgui\imgui.h" />
+    <ClInclude Include="externalLibrary\imgui\imgui_internal.h" />
+    <ClInclude Include="externalLibrary\imgui\imstb_rectpack.h" />
+    <ClInclude Include="externalLibrary\imgui\imstb_textedit.h" />
+    <ClInclude Include="externalLibrary\imgui\imstb_truetype.h" />
+    <ClInclude Include="externalLibrary\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="externalLibrary\nfd\nfd.h" />
+    <ClInclude Include="externalLibrary\nfd\nfd.hpp" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codecs_common.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h264std.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h264std_decode.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h264std_encode.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h265std.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h265std_decode.h" />
+    <ClInclude Include="externalLibrary\vk_video\vulkan_video_codec_h265std_encode.h" />
+    <ClInclude Include="externalLibrary\vulkan\vulkan.h" />
+    <ClInclude Include="externalLibrary\vulkan\vulkan.hpp" />
+    <ClInclude Include="externalLibrary\yaml-cpp\anchor.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\binary.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\contrib\anchordict.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\contrib\graphbuilder.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\depthguard.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\dll.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\emitfromevents.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\emitter.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\emitterdef.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\emittermanip.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\emitterstyle.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\eventhandler.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\exceptions.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\mark.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\convert.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\impl.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\iterator.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\iterator_fwd.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\memory.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\node.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\node_data.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\node_iterator.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\detail\node_ref.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\emit.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\impl.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\iterator.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\node.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\parse.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\ptr.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\node\type.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\noexcept.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\null.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\ostream_wrapper.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\parser.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\stlemitter.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\traits.h" />
+    <ClInclude Include="externalLibrary\yaml-cpp\yaml.h" />
+    <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\engine\app.h" />
+    <ClInclude Include="src\engine\engine.h" />
+    <ClInclude Include="src\engine\sceneSerializer.h" />
+    <ClInclude Include="src\engine\script\registry.h" />
+    <ClInclude Include="src\engine\script\script.h" />
+    <ClInclude Include="src\engine\ui.h" />
+    <ClInclude Include="src\engine\viewport.h" />
+    <ClInclude Include="src\enum.h" />
+    <ClInclude Include="src\keycode.h" />
+    <ClInclude Include="src\path.h" />
+    <ClInclude Include="src\pipeline\brdfLut.h" />
+    <ClInclude Include="src\pipeline\colorID.h" />
+    <ClInclude Include="src\pipeline\envCubemapPipeline.h" />
+    <ClInclude Include="src\pipeline\irradianceCubemap.h" />
+    <ClInclude Include="src\pipeline\lineRender.h" />
+    <ClInclude Include="src\pipeline\meshRender.h" />
+    <ClInclude Include="src\pipeline\physicsDebug.h" />
+    <ClInclude Include="src\pipeline\postProcess.h" />
+    <ClInclude Include="src\pipeline\prefilteredCubemapPipeline.h" />
+    <ClInclude Include="src\pipeline\shadowCubemapPipeline.h" />
+    <ClInclude Include="src\pipeline\shadowMapPipeline.h" />
+    <ClInclude Include="src\pipeline\skyboxRender.h" />
+    <ClInclude Include="src\scene\camera.h" />
+    <ClInclude Include="src\scene\cascadedShadowMap.h" />
+    <ClInclude Include="src\scene\envCubemap.h" />
+    <ClInclude Include="src\scene\grid.h" />
+    <ClInclude Include="src\scene\id.h" />
+    <ClInclude Include="src\scene\light.h" />
+    <ClInclude Include="src\scene\line.h" />
+    <ClInclude Include="src\scene\mesh.h" />
+    <ClInclude Include="src\scene\meshBase.h" />
+    <ClInclude Include="src\scene\physics.h" />
+    <ClInclude Include="src\scene\physicsDebugDrawer.h" />
+    <ClInclude Include="src\scene\prefilteredCubemap.h" />
+    <ClInclude Include="src\scene\scene.h" />
+    <ClInclude Include="src\scene\shadowCubemap.h" />
+    <ClInclude Include="src\scene\shadowMap.h" />
+    <ClInclude Include="src\myTime.h" />
+    <ClInclude Include="src\vulkan\buffer.h" />
+    <ClInclude Include="src\vulkan\command.h" />
+    <ClInclude Include="src\vulkan\cubemap.h" />
+    <ClInclude Include="src\vulkan\debugMessenger.h" />
+    <ClInclude Include="src\vulkan\descriptor.h" />
+    <ClInclude Include="src\vulkan\device.h" />
+    <ClInclude Include="src\vulkan\vulkanImage.h" />
+    <ClInclude Include="src\vulkan\instance.h" />
+    <ClInclude Include="src\vulkan\memory.h" />
+    <ClInclude Include="src\vulkan\pipeline.h" />
+    <ClInclude Include="src\vulkan\shader.h" />
+    <ClInclude Include="src\vulkan\swapchain.h" />
+    <ClInclude Include="src\vulkan\sync.h" />
+    <ClInclude Include="src\window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="asset\primitive\cube.bin" />
+    <None Include="asset\primitive\sphere.bin" />
+    <None Include="externalLibrary\assimp\color4.inl" />
+    <None Include="externalLibrary\assimp\material.inl" />
+    <None Include="externalLibrary\assimp\matrix3x3.inl" />
+    <None Include="externalLibrary\assimp\matrix4x4.inl" />
+    <None Include="externalLibrary\assimp\quaternion.inl" />
+    <None Include="externalLibrary\assimp\SmoothingGroups.inl" />
+    <None Include="externalLibrary\assimp\vector2.inl" />
+    <None Include="externalLibrary\assimp\vector3.inl" />
+    <None Include="externalLibrary\glm\detail\func_common.inl" />
+    <None Include="externalLibrary\glm\detail\func_common_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_exponential.inl" />
+    <None Include="externalLibrary\glm\detail\func_exponential_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_geometric.inl" />
+    <None Include="externalLibrary\glm\detail\func_geometric_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_integer.inl" />
+    <None Include="externalLibrary\glm\detail\func_integer_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_matrix.inl" />
+    <None Include="externalLibrary\glm\detail\func_matrix_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_packing.inl" />
+    <None Include="externalLibrary\glm\detail\func_packing_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_trigonometric.inl" />
+    <None Include="externalLibrary\glm\detail\func_trigonometric_simd.inl" />
+    <None Include="externalLibrary\glm\detail\func_vector_relational.inl" />
+    <None Include="externalLibrary\glm\detail\func_vector_relational_simd.inl" />
+    <None Include="externalLibrary\glm\detail\type_half.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat2x2.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat2x3.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat2x4.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat3x2.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat3x3.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat3x4.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat4x2.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat4x3.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat4x4.inl" />
+    <None Include="externalLibrary\glm\detail\type_mat4x4_simd.inl" />
+    <None Include="externalLibrary\glm\detail\type_quat.inl" />
+    <None Include="externalLibrary\glm\detail\type_quat_simd.inl" />
+    <None Include="externalLibrary\glm\detail\type_vec1.inl" />
+    <None Include="externalLibrary\glm\detail\type_vec2.inl" />
+    <None Include="externalLibrary\glm\detail\type_vec3.inl" />
+    <None Include="externalLibrary\glm\detail\type_vec4.inl" />
+    <None Include="externalLibrary\glm\detail\type_vec4_simd.inl" />
+    <None Include="externalLibrary\glm\ext\matrix_clip_space.inl" />
+    <None Include="externalLibrary\glm\ext\matrix_common.inl" />
+    <None Include="externalLibrary\glm\ext\matrix_projection.inl" />
+    <None Include="externalLibrary\glm\ext\matrix_relational.inl" />
+    <None Include="externalLibrary\glm\ext\matrix_transform.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_common.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_common_simd.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_exponential.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_geometric.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_relational.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_transform.inl" />
+    <None Include="externalLibrary\glm\ext\quaternion_trigonometric.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_common.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_constants.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_integer.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_packing.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_relational.inl" />
+    <None Include="externalLibrary\glm\ext\scalar_ulp.inl" />
+    <None Include="externalLibrary\glm\ext\vector_common.inl" />
+    <None Include="externalLibrary\glm\ext\vector_integer.inl" />
+    <None Include="externalLibrary\glm\ext\vector_packing.inl" />
+    <None Include="externalLibrary\glm\ext\vector_relational.inl" />
+    <None Include="externalLibrary\glm\ext\vector_ulp.inl" />
+    <None Include="externalLibrary\glm\gtc\bitfield.inl" />
+    <None Include="externalLibrary\glm\gtc\color_space.inl" />
+    <None Include="externalLibrary\glm\gtc\constants.inl" />
+    <None Include="externalLibrary\glm\gtc\epsilon.inl" />
+    <None Include="externalLibrary\glm\gtc\integer.inl" />
+    <None Include="externalLibrary\glm\gtc\matrix_access.inl" />
+    <None Include="externalLibrary\glm\gtc\matrix_inverse.inl" />
+    <None Include="externalLibrary\glm\gtc\matrix_transform.inl" />
+    <None Include="externalLibrary\glm\gtc\noise.inl" />
+    <None Include="externalLibrary\glm\gtc\packing.inl" />
+    <None Include="externalLibrary\glm\gtc\quaternion.inl" />
+    <None Include="externalLibrary\glm\gtc\quaternion_simd.inl" />
+    <None Include="externalLibrary\glm\gtc\random.inl" />
+    <None Include="externalLibrary\glm\gtc\reciprocal.inl" />
+    <None Include="externalLibrary\glm\gtc\round.inl" />
+    <None Include="externalLibrary\glm\gtc\type_precision.inl" />
+    <None Include="externalLibrary\glm\gtc\type_ptr.inl" />
+    <None Include="externalLibrary\glm\gtc\ulp.inl" />
+    <None Include="externalLibrary\glm\gtx\associated_min_max.inl" />
+    <None Include="externalLibrary\glm\gtx\bit.inl" />
+    <None Include="externalLibrary\glm\gtx\closest_point.inl" />
+    <None Include="externalLibrary\glm\gtx\color_encoding.inl" />
+    <None Include="externalLibrary\glm\gtx\color_space.inl" />
+    <None Include="externalLibrary\glm\gtx\color_space_YCoCg.inl" />
+    <None Include="externalLibrary\glm\gtx\common.inl" />
+    <None Include="externalLibrary\glm\gtx\compatibility.inl" />
+    <None Include="externalLibrary\glm\gtx\component_wise.inl" />
+    <None Include="externalLibrary\glm\gtx\dual_quaternion.inl" />
+    <None Include="externalLibrary\glm\gtx\easing.inl" />
+    <None Include="externalLibrary\glm\gtx\euler_angles.inl" />
+    <None Include="externalLibrary\glm\gtx\extend.inl" />
+    <None Include="externalLibrary\glm\gtx\extended_min_max.inl" />
+    <None Include="externalLibrary\glm\gtx\exterior_product.inl" />
+    <None Include="externalLibrary\glm\gtx\fast_exponential.inl" />
+    <None Include="externalLibrary\glm\gtx\fast_square_root.inl" />
+    <None Include="externalLibrary\glm\gtx\fast_trigonometry.inl" />
+    <None Include="externalLibrary\glm\gtx\float_notmalize.inl" />
+    <None Include="externalLibrary\glm\gtx\functions.inl" />
+    <None Include="externalLibrary\glm\gtx\gradient_paint.inl" />
+    <None Include="externalLibrary\glm\gtx\handed_coordinate_space.inl" />
+    <None Include="externalLibrary\glm\gtx\hash.inl" />
+    <None Include="externalLibrary\glm\gtx\integer.inl" />
+    <None Include="externalLibrary\glm\gtx\intersect.inl" />
+    <None Include="externalLibrary\glm\gtx\io.inl" />
+    <None Include="externalLibrary\glm\gtx\log_base.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_cross_product.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_decompose.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_factorisation.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_interpolation.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_major_storage.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_operation.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_query.inl" />
+    <None Include="externalLibrary\glm\gtx\matrix_transform_2d.inl" />
+    <None Include="externalLibrary\glm\gtx\mixed_product.inl" />
+    <None Include="externalLibrary\glm\gtx\norm.inl" />
+    <None Include="externalLibrary\glm\gtx\normal.inl" />
+    <None Include="externalLibrary\glm\gtx\normalize_dot.inl" />
+    <None Include="externalLibrary\glm\gtx\number_precision.inl" />
+    <None Include="externalLibrary\glm\gtx\optimum_pow.inl" />
+    <None Include="externalLibrary\glm\gtx\orthonormalize.inl" />
+    <None Include="externalLibrary\glm\gtx\perpendicular.inl" />
+    <None Include="externalLibrary\glm\gtx\polar_coordinates.inl" />
+    <None Include="externalLibrary\glm\gtx\projection.inl" />
+    <None Include="externalLibrary\glm\gtx\quaternion.inl" />
+    <None Include="externalLibrary\glm\gtx\raw_data.inl" />
+    <None Include="externalLibrary\glm\gtx\rotate_normalized_axis.inl" />
+    <None Include="externalLibrary\glm\gtx\rotate_vector.inl" />
+    <None Include="externalLibrary\glm\gtx\scalar_relational.inl" />
+    <None Include="externalLibrary\glm\gtx\spline.inl" />
+    <None Include="externalLibrary\glm\gtx\std_based_type.inl" />
+    <None Include="externalLibrary\glm\gtx\string_cast.inl" />
+    <None Include="externalLibrary\glm\gtx\texture.inl" />
+    <None Include="externalLibrary\glm\gtx\transform.inl" />
+    <None Include="externalLibrary\glm\gtx\transform2.inl" />
+    <None Include="externalLibrary\glm\gtx\type_aligned.inl" />
+    <None Include="externalLibrary\glm\gtx\type_trait.inl" />
+    <None Include="externalLibrary\glm\gtx\vector_angle.inl" />
+    <None Include="externalLibrary\glm\gtx\vector_query.inl" />
+    <None Include="externalLibrary\glm\gtx\wrap.inl" />
+    <None Include="shader\base.frag" />
+    <None Include="shader\base.vert" />
+    <None Include="shader\brdflut.frag" />
+    <None Include="shader\brdflut.vert" />
+    <None Include="shader\colorID.frag" />
+    <None Include="shader\colorID.vert" />
+    <None Include="shader\common.glsl" />
+    <None Include="shader\dirlightshadow.frag" />
+    <None Include="shader\dirlightshadow.vert" />
+    <None Include="shader\environment.frag" />
+    <None Include="shader\environment.vert" />
+    <None Include="shader\irradiance.frag" />
+    <None Include="shader\irradiance.vert" />
+    <None Include="shader\lineRender.frag" />
+    <None Include="shader\lineRender.vert" />
+    <None Include="shader\pbr.glsl" />
+    <None Include="shader\physicsDebug.frag" />
+    <None Include="shader\physicsDebug.vert" />
+    <None Include="shader\pointlightshadow.frag" />
+    <None Include="shader\pointlightshadow.vert" />
+    <None Include="shader\postProcess.frag" />
+    <None Include="shader\postProcess.vert" />
+    <None Include="shader\prefilter.frag" />
+    <None Include="shader\prefilter.vert" />
+    <None Include="shader\skybox.frag" />
+    <None Include="shader\skybox.vert" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

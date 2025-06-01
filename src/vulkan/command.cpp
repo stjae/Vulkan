@@ -1,6 +1,6 @@
 #include "command.h"
 #include "device.h"
-#include "image.h"
+#include "vulkanImage.h"
 #include "swapchain.h"
 
 void vkn::Command::CreateCommandPool(vk::CommandPool& commandPool)

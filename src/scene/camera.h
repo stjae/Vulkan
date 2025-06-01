@@ -7,9 +7,10 @@
 #include "../pipeline/meshRender.h"
 #include "../vulkan/sync.h"
 #include "../vulkan/command.h"
-#include "../../imgui/imgui.h"
-#include "../../imgui/ImGuizmo.h"
-#include "../time.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui/imgui.h"
+#include "ImGuizmo/ImGuizmo.h"
+#include "../myTime.h"
 
 const uint8_t SHADOW_MAP_CASCADE_COUNT = 4;
 
