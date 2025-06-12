@@ -1,46 +1,57 @@
 #include "command.h"
 #include "device.h"
-#include "vulkanImage.h"
+#include "image.h"
 #include "swapchain.h"
 
-void vkn::Command::CreateCommandPool(vk::CommandPool& commandPool)
+void vkn::Command::CreateCommandPools()
 {
-    vk::CommandPoolCreateInfo poolInfo;
-    poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    poolInfo.queueFamilyIndex = vkn::Device::Get().graphicsFamilyIndex.value();
-
-    commandPool = vkn::Device::Get().device.createCommandPool(poolInfo);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+        poolInfo.queueFamilyIndex = vkn::Device::Get().graphicsFamilyIndex.value();
+        s_commandPools[i] = vkn::Device::Get().device.createCommandPool(poolInfo);
+    }
 }
 
-void vkn::Command::AllocateCommandBuffer(const vk::CommandPool& commandPool, vk::CommandBuffer& commandBuffer)
+void vkn::Command::DestroyCommandPools()
 {
-    vk::CommandBufferAllocateInfo allocateInfo;
-    allocateInfo.commandPool = commandPool;
-    allocateInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocateInfo.commandBufferCount = 1;
-
-    commandBuffer = vkn::Device::Get().device.allocateCommandBuffers(allocateInfo)[0];
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkn::Device::Get().device.destroyCommandPool(s_commandPools[i]);
+    }
 }
 
-void vkn::Command::AllocateCommandBuffer(const vk::CommandPool& commandPool, std::vector<vk::CommandBuffer>& commandBuffers)
+void vkn::Command::AllocateCommandBuffers()
 {
-    vk::CommandBufferAllocateInfo allocateInfo;
-    allocateInfo.commandPool = commandPool;
-    allocateInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocateInfo.commandBufferCount = commandBuffers.size();
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vk::CommandBufferAllocateInfo allocateInfo;
+        allocateInfo.commandPool = s_commandPools[i];
+        allocateInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocateInfo.commandBufferCount = 1;
 
-    commandBuffers = vkn::Device::Get().device.allocateCommandBuffers(allocateInfo);
+        s_commandBuffers[i] = vkn::Device::Get().device.allocateCommandBuffers(allocateInfo)[0];
+    }
 }
 
 void vkn::Command::Begin(const vk::CommandBuffer& commandBuffer, vk::CommandBufferUsageFlags flag)
 {
     vk::CommandBufferBeginInfo beginInfo(flag, {});
-    vkn::CheckResult(commandBuffer.begin(&beginInfo));
+    vkn::CHECK_RESULT(commandBuffer.begin(&beginInfo));
+}
+
+void vkn::Command::Begin(int currentFrame, vk::CommandBufferUsageFlags flag)
+{
+    vk::CommandBufferBeginInfo beginInfo(flag, {});
+    vkn::CHECK_RESULT(s_commandBuffers[currentFrame].begin(&beginInfo));
 }
 
 void vkn::Command::End(const vk::CommandBuffer& commandBuffer)
 {
     commandBuffer.end();
+}
+
+void vkn::Command::End(int currentFrame)
+{
+    s_commandBuffers[currentFrame].end();
 }
 
 void vkn::Command::CopyBufferToBuffer(const vk::CommandBuffer& commandBuffer, const vk::Buffer& srcBuffer, const vk::Buffer& dstBuffer, size_t size)
@@ -138,17 +149,17 @@ void vkn::Command::ChangeImageLayout(const vk::CommandBuffer& commandBuffer, con
 void vkn::Command::SubmitAndWait(const vk::CommandBuffer& commandBuffer)
 {
     vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &commandBuffer);
-    vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
-    vkn::CheckResult(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
-    vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
+    vkn::CHECK_RESULT(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
+    vkn::CHECK_RESULT(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
+    vkn::CHECK_RESULT(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
 }
 
-void vkn::Command::SubmitAndWait(uint32_t count, vk::CommandBuffer* commandBuffers)
+void vkn::Command::SubmitAndWait(int currentFrame)
 {
-    vk::SubmitInfo submitInfo(0, nullptr, nullptr, count, commandBuffers);
-    vkn::CheckResult(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
-    vkn::CheckResult(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
-    vkn::CheckResult(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
+    vk::SubmitInfo submitInfo(0, nullptr, nullptr, 1, &s_commandBuffers[currentFrame]);
+    vkn::CHECK_RESULT(vkn::Device::Get().device.resetFences(1, &vkn::Sync::GetCommandFence()));
+    vkn::CHECK_RESULT(vkn::Device::Get().graphicsQueue.submit(1, &submitInfo, vkn::Sync::GetCommandFence()));
+    vkn::CHECK_RESULT(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetCommandFence(), VK_TRUE, UINT64_MAX));
 }
 
 void vkn::Command::BeginRenderPass(const vk::CommandBuffer& commandBuffer, vk::RenderPass& renderPass, vk::Framebuffer& framebuffer, vk::Rect2D renderArea, std::vector<vk::ClearValue>& clearValues)

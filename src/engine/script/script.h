@@ -10,7 +10,6 @@
 #include "spdlog/spdlog.h"
 #include "glm/glm.hpp"
 #include "glm/gtx/string_cast.hpp"
-#include "../../path.h"
 #include "../../scene/mesh.h"
 #include "../../scene/scene.h"
 #include "../sceneSerializer.h"
@@ -91,7 +90,6 @@ public:
 namespace monoUtils {
 static char* ReadBytes(const std::string& filepath, uint32_t* outSize);
 static MonoAssembly* LoadAssembly(const std::string& assemblyPath);
-static void CheckAssemblyTypes(MonoAssembly* assembly);
 static void PrintAssemblyTypes(MonoAssembly* assembly);
 } // namespace monoUtils
 

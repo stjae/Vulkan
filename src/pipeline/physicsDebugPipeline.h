@@ -4,7 +4,7 @@
 #include "bullet/btBulletCollisionCommon.h"
 #include "../vulkan/pipeline.h"
 #include "../scene/physicsDebugDrawer.h"
-#include "../pipeline/meshRender.h"
+#include "../pipeline/meshRenderPipeline.h"
 
 class PhysicsDebugPipeline : public vkn::Pipeline
 {

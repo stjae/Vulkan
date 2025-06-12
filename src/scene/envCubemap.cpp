@@ -16,7 +16,7 @@ void EnvCubemap::CreateFramebuffer(const vkn::Pipeline& cubemapPipeline)
 
     for (uint32_t i = 0; i < 6; i++) {
         attachment = m_cubemapFaceImageViews[i];
-        vkn::CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffers[i]));
+        vkn::CHECK_RESULT(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffers[i]));
     }
 }
 

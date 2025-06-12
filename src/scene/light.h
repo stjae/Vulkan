@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include "../vulkan/buffer.h"
-#include "../pipeline/meshRender.h"
+#include "../pipeline/meshRenderPipeline.h"
 #include "../pipeline/shadowCubemapPipeline.h"
 #include "../vulkan/command.h"
 #include "../vulkan/sync.h"

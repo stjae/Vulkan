@@ -4,20 +4,12 @@ namespace vkn {
 Device::Device()
 {
     PickPhysicalDevice();
+    s_bundle.maxSampleCount = GetSupportedMaxSampleCount();
     m_instance.CreateSurface();
     FindQueueFamilies(Instance::GetSurface());
 
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     SetDeviceQueueCreateInfo(deviceQueueCreateInfos);
-
-#if defined(__APPLE__)
-    // enable argument buffers
-    MVKConfiguration mvkConfig;
-    size_t configurationSize = sizeof(MVKConfiguration);
-    vkGetMoltenVKConfigurationMVK(Instance::GetInstance(), &mvkConfig, &configurationSize);
-    mvkConfig.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
-    vkSetMoltenVKConfigurationMVK(Instance::GetInstance(), &mvkConfig, &configurationSize);
-#endif
 
     vk::PhysicalDeviceVulkan12Features features12;
     features12.descriptorIndexing = VK_TRUE;
@@ -38,38 +30,35 @@ Device::Device()
 
 void Device::PickPhysicalDevice()
 {
-    auto deviceList = Instance::GetInstance().enumeratePhysicalDevices();
+    uint32_t deviceCount;
+    CHECK_RESULT(Instance::GetInstance().enumeratePhysicalDevices(&deviceCount, nullptr));
+    std::vector<vk::PhysicalDevice> physicalDeviceList(deviceCount);
+    CHECK_RESULT(Instance::GetInstance().enumeratePhysicalDevices(&deviceCount, physicalDeviceList.data()));
 
-    for (auto& device : deviceList) {
-        if (IsDeviceSuitable(device)) {
-            s_bundle.physicalDevice = device;
-            s_bundle.maxSampleCount = GetSupportedMaxSampleCount();
+    const std::vector<const char*> deviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    };
+    std::set<std::string> extensionSets(deviceExtensions.begin(), deviceExtensions.end());
+
+    for (auto& physicalDevice : physicalDeviceList) {
+        bool isDeviceSupported = [&]() {
+            for (auto& supportedExtension : physicalDevice.enumerateDeviceExtensionProperties()) {
+                extensionSets.erase(supportedExtension.extensionName);
+            }
+            return extensionSets.empty();
+        }();
+        if (isDeviceSupported) {
+            s_bundle.physicalDevice = physicalDevice;
             break;
         }
     }
 
-    if (s_bundle.physicalDevice == nullptr) {
-        spdlog::error("no suitable device found");
-    }
-    Log(DEBUG, fmt::terminal_color::white, "physical device: {}", std::string(s_bundle.physicalDevice.getProperties().deviceName.data()));
-}
-
-bool Device::IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice)
-{
-#if defined(__APPLE__)
-    m_deviceExtensions.push_back("VK_KHR_portability_subset");
-#endif
-    m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    m_deviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    m_deviceExtensions.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-
-    std::set<std::string> extensionSets(m_deviceExtensions.begin(), m_deviceExtensions.end());
-
-    for (vk::ExtensionProperties& extension : vkPhysicalDevice.enumerateDeviceExtensionProperties()) {
-        extensionSets.erase(extension.extensionName);
+    if (!s_bundle.physicalDevice) {
+        spdlog::error("no suitable device was found");
+        exit(1);
     }
 
-    return extensionSets.empty();
+    m_deviceExtensions = deviceExtensions;
 }
 
 vk::SampleCountFlagBits Device::GetSupportedMaxSampleCount()

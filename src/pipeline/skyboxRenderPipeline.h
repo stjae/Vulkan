@@ -2,7 +2,7 @@
 #define SKYBOXRENDERPIPELINE_H
 
 #include "../vulkan/pipeline.h"
-#include "../pipeline/meshRender.h"
+#include "../pipeline/meshRenderPipeline.h"
 
 class SkyboxRenderPipeline : public vkn::Pipeline
 {

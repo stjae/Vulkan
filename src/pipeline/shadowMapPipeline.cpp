@@ -80,7 +80,7 @@ void ShadowMapPipeline::CreateRenderPass()
     renderPassCI.subpassCount = 1;
     renderPassCI.pSubpasses = &subpassDesc;
 
-    vkn::CheckResult(vkn::Device::Get().device.createRenderPass(&renderPassCI, nullptr, &m_renderPass));
+    vkn::CHECK_RESULT(vkn::Device::Get().device.createRenderPass(&renderPassCI, nullptr, &m_renderPass));
 }
 
 void ShadowMapPipeline::UpdateViewProjBuffer(const vk::DescriptorBufferInfo& bufferInfo)

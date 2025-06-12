@@ -2,7 +2,7 @@
 #define SHADOWMAP_H
 
 #include "../vulkan/sync.h"
-#include "../vulkan/vulkanImage.h"
+#include "../vulkan/image.h"
 #include "../scene/mesh.h"
 #include "../pipeline/shadowMapPipeline.h"
 

@@ -3,9 +3,22 @@
 
 #include "bullet/btBulletCollisionCommon.h"
 #include "../vulkan/command.h"
-#include "../enum.h"
 #include "meshBase.h"
 #include "line.h"
+
+enum class eRigidBodyType {
+    STATIC,
+    DYNAMIC
+};
+
+enum class eColliderShape {
+    BOX,
+    SPHERE,
+    CAPSULE,
+    CYLINDER,
+    CONE,
+    MESH
+};
 
 struct PhysicsInfo
 {

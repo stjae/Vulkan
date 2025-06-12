@@ -18,7 +18,7 @@ public:
     void SerializeDirLight(YAML::Emitter& out, const Scene& scene);
     void SerializeScriptClass(YAML::Emitter& out, const Scene& scene);
     void SerializeScriptInstance(YAML::Emitter& out);
-    void Deserialize(Scene& scene, const std::string& filePath);
+    void Deserialize(const vk::CommandBuffer& commandBuffer, Scene& scene, const std::string& filePath);
 };
 
 #endif

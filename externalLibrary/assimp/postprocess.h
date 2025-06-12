@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-/** @file postprocess.h
+/** @file postProcessPipeline.h
  *  @brief Definitions for import post processing steps
  */
 #pragma once

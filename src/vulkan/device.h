@@ -26,7 +26,6 @@ class Device
     void FindQueueFamilies(const VkSurfaceKHR& surface);
     void SetDeviceQueueCreateInfo(std::vector<vk::DeviceQueueCreateInfo>& deviceQueueCreateInfos);
     void PickPhysicalDevice();
-    bool IsDeviceSuitable(vk::PhysicalDevice vkPhysicalDevice);
     vk::SampleCountFlagBits GetSupportedMaxSampleCount();
 
 public:

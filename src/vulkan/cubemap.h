@@ -1,7 +1,7 @@
 #ifndef CUBEMAP_H
 #define CUBEMAP_H
 
-#include "vulkanImage.h"
+#include "image.h"
 
 namespace vkn {
 class Cubemap : public Image

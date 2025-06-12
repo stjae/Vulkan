@@ -25,7 +25,7 @@ void Cubemap::CreateCubemap(uint32_t imageSize, vk::Format format, vk::ImageUsag
     m_imageViewCreateInfo.subresourceRange.layerCount = 1;
     for (uint32_t i = 0; i < 6; i++) {
         m_imageViewCreateInfo.subresourceRange.baseArrayLayer = i;
-        vkn::CheckResult(vkn::Device::Get().device.createImageView(&m_imageViewCreateInfo, nullptr, &m_cubemapFaceImageViews[i]));
+        vkn::CHECK_RESULT(vkn::Device::Get().device.createImageView(&m_imageViewCreateInfo, nullptr, &m_cubemapFaceImageViews[i]));
     }
 }
 
@@ -85,7 +85,7 @@ void Cubemap::CreateMipmapSampler()
     samplerCI.maxLod = static_cast<float>(m_numMips);
     samplerCI.borderColor = vk::BorderColor::eFloatOpaqueWhite;
 
-    vkn::CheckResult(vkn::Device::Get().device.createSampler(&samplerCI, nullptr, &m_mipmapSampler));
+    vkn::CHECK_RESULT(vkn::Device::Get().device.createSampler(&samplerCI, nullptr, &m_mipmapSampler));
 }
 
 void Cubemap::ChangeImageLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout oldImageLayout, vk::ImageLayout newImageLayout)

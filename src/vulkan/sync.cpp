@@ -7,27 +7,36 @@ Sync::Sync()
 }
 void Sync::Create()
 {
-    s_commandFence = CreateVkFence();
-    s_inFlightFence = CreateVkFence();
-    s_imageAvailableSemaphore = CreateVkSemaphore();
-    s_renderFinishedSemaphore = CreateVkSemaphore();
+    CreateFences();
+    CreateSemaphores();
 }
 void Sync::Destroy()
 {
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        Device::Get().device.destroy(s_inFlightFences[i]);
+        Device::Get().device.destroy(s_imageAvailableSemaphores[i]);
+        Device::Get().device.destroy(s_renderFinishedSemaphores[i]);
+    }
     Device::Get().device.destroy(s_commandFence);
-    Device::Get().device.destroy(s_inFlightFence);
-    Device::Get().device.destroy(s_imageAvailableSemaphore);
-    Device::Get().device.destroy(s_renderFinishedSemaphore);
 }
-vk::Semaphore Sync::CreateVkSemaphore()
+void Sync::CreateSemaphores()
 {
-    vk::SemaphoreCreateInfo semaphoreInfo;
-    return Device::Get().device.createSemaphore(semaphoreInfo);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vk::SemaphoreCreateInfo semaphoreInfo;
+        s_imageAvailableSemaphores[i] = Device::Get().device.createSemaphore(semaphoreInfo);
+        s_renderFinishedSemaphores[i] = Device::Get().device.createSemaphore(semaphoreInfo);
+    }
 }
-vk::Fence Sync::CreateVkFence()
+void Sync::CreateFences()
 {
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vk::FenceCreateInfo fenceInfo;
+        fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+        s_inFlightFences[i] = Device::Get().device.createFence(fenceInfo);
+    }
+
     vk::FenceCreateInfo fenceInfo;
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-    return Device::Get().device.createFence(fenceInfo);
+    s_commandFence = Device::Get().device.createFence(fenceInfo);
 }
 }; // namespace vkn

@@ -1,6 +1,8 @@
 #ifndef IMGUI_H
 #define IMGUI_H
 
+#define VK_USE_PLATFORM_WIN32_KHR
+#define NOMINMAX
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_glfw.h"
@@ -20,9 +22,6 @@
 
 class UI
 {
-    vk::CommandPool m_commandPool;
-    vk::CommandBuffer m_commandBuffer;
-
     vk::DescriptorPool m_descriptorPool;
     std::vector<vkn::DescriptorBinding> m_descriptorBindings;
     std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
@@ -46,12 +45,12 @@ class UI
     // vk::DescriptorSet m_hdriThumbnailDescriptorSet;
     // vk::DescriptorSet m_shadowMapDescriptorSet;
 
-    void DrawDockSpace(Scene& scene, bool& init);
+    void DrawDockSpace(const vk::CommandBuffer& commandBuffer, Scene& scene, bool& init);
     void DrawViewport(Scene& scene, Viewport& viewport);
     void DrawMeshGuizmo(Scene& scene, const Viewport& viewport);
     void DrawLightGuizmo(Scene& scene, const Viewport& viewport);
-    void DrawSceneAttribWindow(Scene& scene);
-    void DrawResourceWindow(Scene& scene);
+    void DrawSceneAttribWindow(const vk::CommandBuffer& commandBuffer, Scene& scene);
+    void DrawResourceWindow(const vk::CommandBuffer& commandBuffer, Scene& scene);
     void ShowInformationOverlay();
     void DrawLightIcon(const Scene& scene, const Viewport& viewport);
     void DrawCameraIcon(const Scene& scene, const Viewport& viewport);
@@ -65,11 +64,11 @@ public:
     inline static double s_dragDropMouseY;
     inline static std::unique_ptr<Resource> s_dragDropResource;
 
-    void Init(const vk::RenderPass& renderPass);
-    void Draw(Scene& scene, Viewport& viewport, bool& init);
+    void Init(const vk::CommandBuffer& commandBuffer, const vk::RenderPass& renderPass);
+    void Draw(const vk::CommandBuffer& commandBuffer, Scene& scene, Viewport& viewport, bool& init);
     void RecreateViewportDescriptorSet(const Viewport& viewport);
     void AcceptDragDrop(Scene& scene);
-    void DrawInitPopup(bool& init, Scene& scene);
+    void DrawInitPopup(const vk::CommandBuffer& commandBuffer, bool& init, Scene& scene);
     ~UI();
 };
 

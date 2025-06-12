@@ -12,14 +12,12 @@ void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)
 {
     CreateImage({ SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1 }, shadowMapDepthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
 
-    vkn::Command::Begin(commandBuffer);
     vkn::Command::ChangeImageLayout(commandBuffer,
                                     m_bundle.image,
                                     {},
                                     vk::ImageLayout::eDepthStencilAttachmentOptimal,
                                     { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 });
     commandBuffer.end();
-    vkn::Command::SubmitAndWait(commandBuffer);
 
     m_imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
 

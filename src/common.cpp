@@ -93,10 +93,9 @@ std::string nfdPickFolder()
     return pathStr;
 }
 
-void vkn::CheckResult(vk::Result result)
+void vkn::CheckResult(vk::Result result, const char* file, int line)
 {
     if (result != vk::Result::eSuccess) {
-        Log(DEBUG, fmt::terminal_color::red, "VkResult: ", vk::to_string(result), __FILE__, __LINE__);
-        assert(result == vk::Result::eSuccess);
+        Log(DEBUG, fmt::terminal_color::red, "{0}, in file {1}, line {2}", vk::to_string(result), file, line);
     }
 }

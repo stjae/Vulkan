@@ -11,7 +11,7 @@
 #include "envCubemap.h"
 #include "prefilteredCubemap.h"
 #include "../vulkan/command.h"
-#include "../vulkan/vulkanImage.h"
+#include "../vulkan/image.h"
 #include "physics.h"
 
 struct Resource;
@@ -24,8 +24,6 @@ class Scene
     friend class Registry;
     friend class SceneSerializer;
 
-    vk::CommandPool m_commandPool;
-    vk::CommandBuffer m_commandBuffer;
     std::array<vk::CommandPool, 4> m_imageLoadCommandPools;
     std::array<vk::CommandBuffer, 4> m_imageLoadCommandBuffers;
     std::unique_ptr<vkn::Buffer> m_meshInstanceDataBuffer;
@@ -79,47 +77,47 @@ class Scene
     bool m_isPlaying = false;
     bool m_isStartUp = true;
 
-    void CreateCommandBuffers();
-    void CreateGrid();
+    void CreateImageLoadCommandBuffers();
+    void CreateGrid(const vk::CommandBuffer& commandBuffer);
     void CreateMainCamera();
     void CreateShadowMap();
-    void CreateEnvironmentMap();
-    void CreateDummyEnvMap();
-    void UpdateEnvCubemaps();
-    void AddResource(std::string& filePath);
+    void CreateEnvironmentMap(const vk::CommandBuffer& commandBuffer);
+    void CreateDummyEnvMap(const vk::CommandBuffer& commandBuffer);
+    void UpdateEnvCubemaps(const vk::CommandBuffer& commandBuffer);
+    void AddResource(const vk::CommandBuffer& commandBuffer, std::string& filePath);
     void LoadMaterials(const std::string& modelPath, const std::string& modelName, const std::vector<MaterialFilePath>& materials);
     void AddMeshInstance(Mesh& mesh, glm::vec3 pos = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f));
     void AddMeshInstance(Mesh& mesh, uint64_t UUID);
-    void AddPhysics(Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo);
+    void AddPhysics(const vk::CommandBuffer& commandBuffer, Mesh& mesh, MeshInstance& meshInstance, PhysicsInfo& physicsInfo);
     void DeletePhysics(MeshInstance& meshInstance);
-    void AddPointLight();
-    void AddEnvironmentMap(const std::string& hdriFilePath);
-    void SelectDummyEnvMap();
+    void AddPointLight(const vk::CommandBuffer& commandBuffer);
+    void AddEnvironmentMap(const vk::CommandBuffer& commandBuffer, const std::string& hdriFilePath);
+    void SelectDummyEnvMap(const vk::CommandBuffer& commandBuffer);
     void DeleteMeshInstance(Mesh& mesh, MeshInstance& instance);
     void DeletePointLight();
-    void DuplicatePointLight(int index);
-    void DuplicateMeshInstance(int32_t meshID, int32_t meshInstanceID, glm::vec3 offset = { 0.0f, 0.0f, 0.0f });
+    void DuplicatePointLight(const vk::CommandBuffer& commandBuffer, int lightIndex);
+    void DuplicateMeshInstance(const vk::CommandBuffer& commandBuffer, int32_t meshID, int32_t meshInstanceID, glm::vec3 offset = { 0.0f, 0.0f, 0.0f });
     void CopyMeshInstances();
-    void RevertMeshInstances();
-    void UpdateViewportCamera();
-    void UpdatePlayCamera();
+    void RevertMeshInstances(const vk::CommandBuffer& commandBuffer);
+    void UpdateViewportCamera(const vk::CommandBuffer& commandBuffer);
+    void UpdatePlayCamera(const vk::CommandBuffer& commandBuffer);
     void UpdateCameraDescriptor(Camera* camera);
-    void UpdatePointLight();
+    void UpdatePointLight(const vk::CommandBuffer& commandBuffer);
     void UpdatePointLightBuffer();
     void UpdateMeshBuffer();
-    void UpdateShadowMap();
+    void UpdateShadowMap(const vk::CommandBuffer& commandBuffer);
     void UpdateShadowCubemaps();
     void UpdateTextureDescriptors();
-    void Clear();
+    void Clear(const vk::CommandBuffer& commandBuffer);
     void AddCamera(MeshInstance& instance);
     void Play();
-    void Stop();
-    void Update();
+    void Stop(const vk::CommandBuffer& commandBuffer);
+    void Update(const vk::CommandBuffer& commandBuffer);
     void UpdatePhysicsDebug();
     void DeleteMesh(int index);
 
 public:
-    void Init();
+    void Init(const vk::CommandBuffer& commandBuffer);
     size_t GetInstanceCount();
     const std::vector<std::unique_ptr<Mesh>>& GetMeshes() { return m_meshes; }
     Mesh& GetSelectedMesh() { return *m_meshes[m_selectedMeshID]; }

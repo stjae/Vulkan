@@ -8,10 +8,13 @@ const bool DEBUG = true;
 #endif
 
 // glfw, vulkan library
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
+#define NOMINMAX
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 // std library
 #include <iostream>
@@ -26,9 +29,7 @@ const bool DEBUG = true;
 #include <glm/gtx/quaternion.hpp>
 #include <nfd/nfd.h>
 
-#include "path.h"
-
-const int MAX_FRAME = 2;
+const int MAX_FRAMES_IN_FLIGHT = 2;
 template <typename... T>
 void Log(bool debugMode, fmt::terminal_color color, T... args)
 {
@@ -44,7 +45,8 @@ std::string nfdSave(nfdu8filteritem_t filterItem);
 std::string nfdPickFolder();
 
 namespace vkn {
-void CheckResult(vk::Result result);
+void CheckResult(vk::Result result, const char* file, int line);
 }
+#define CHECK_RESULT(result) CheckResult(result, __FILE__, __LINE__)
 
 #endif

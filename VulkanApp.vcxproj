@@ -109,6 +109,7 @@
       <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -388,18 +389,18 @@
     <ClCompile Include="src\engine\ui.cpp" />
     <ClCompile Include="src\engine\viewport.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\pipeline\brdfLut.cpp" />
-    <ClCompile Include="src\pipeline\colorID.cpp" />
+    <ClCompile Include="src\pipeline\brdfLutPipeline.cpp" />
+    <ClCompile Include="src\pipeline\colorIDPipeline.cpp" />
     <ClCompile Include="src\pipeline\envCubemapPipeline.cpp" />
-    <ClCompile Include="src\pipeline\irradianceCubemap.cpp" />
-    <ClCompile Include="src\pipeline\lineRender.cpp" />
-    <ClCompile Include="src\pipeline\meshRender.cpp" />
-    <ClCompile Include="src\pipeline\physicsDebug.cpp" />
-    <ClCompile Include="src\pipeline\postProcess.cpp" />
+    <ClCompile Include="src\pipeline\irradianceCubemapPipeline.cpp" />
+    <ClCompile Include="src\pipeline\lineRenderPipeline.cpp" />
+    <ClCompile Include="src\pipeline\meshRenderPipeline.cpp" />
+    <ClCompile Include="src\pipeline\physicsDebugPipeline.cpp" />
+    <ClCompile Include="src\pipeline\postProcessPipeline.cpp" />
     <ClCompile Include="src\pipeline\prefilteredCubemapPipeline.cpp" />
     <ClCompile Include="src\pipeline\shadowCubemapPipeline.cpp" />
     <ClCompile Include="src\pipeline\shadowMapPipeline.cpp" />
-    <ClCompile Include="src\pipeline\skyboxRender.cpp" />
+    <ClCompile Include="src\pipeline\skyboxRenderPipeline.cpp" />
     <ClCompile Include="src\scene\camera.cpp" />
     <ClCompile Include="src\scene\cascadedShadowMap.cpp" />
     <ClCompile Include="src\scene\envCubemap.cpp" />
@@ -420,7 +421,7 @@
     <ClCompile Include="src\vulkan\debugMessenger.cpp" />
     <ClCompile Include="src\vulkan\descriptor.cpp" />
     <ClCompile Include="src\vulkan\device.cpp" />
-    <ClCompile Include="src\vulkan\vulkanImage.cpp" />
+    <ClCompile Include="src\vulkan\image.cpp" />
     <ClCompile Include="src\vulkan\instance.cpp" />
     <ClCompile Include="src\vulkan\memory.cpp" />
     <ClCompile Include="src\vulkan\pipeline.cpp" />
@@ -1156,21 +1157,19 @@
     <ClInclude Include="src\engine\script\script.h" />
     <ClInclude Include="src\engine\ui.h" />
     <ClInclude Include="src\engine\viewport.h" />
-    <ClInclude Include="src\enum.h" />
     <ClInclude Include="src\keycode.h" />
-    <ClInclude Include="src\path.h" />
-    <ClInclude Include="src\pipeline\brdfLut.h" />
-    <ClInclude Include="src\pipeline\colorID.h" />
+    <ClInclude Include="src\pipeline\brdfLutPipeline.h" />
+    <ClInclude Include="src\pipeline\colorIDPipeline.h" />
     <ClInclude Include="src\pipeline\envCubemapPipeline.h" />
-    <ClInclude Include="src\pipeline\irradianceCubemap.h" />
-    <ClInclude Include="src\pipeline\lineRender.h" />
-    <ClInclude Include="src\pipeline\meshRender.h" />
-    <ClInclude Include="src\pipeline\physicsDebug.h" />
-    <ClInclude Include="src\pipeline\postProcess.h" />
+    <ClInclude Include="src\pipeline\irradianceCubemapPipeline.h" />
+    <ClInclude Include="src\pipeline\lineRenderPipeline.h" />
+    <ClInclude Include="src\pipeline\meshRenderPipeline.h" />
+    <ClInclude Include="src\pipeline\physicsDebugPipeline.h" />
+    <ClInclude Include="src\pipeline\postProcessPipeline.h" />
     <ClInclude Include="src\pipeline\prefilteredCubemapPipeline.h" />
     <ClInclude Include="src\pipeline\shadowCubemapPipeline.h" />
     <ClInclude Include="src\pipeline\shadowMapPipeline.h" />
-    <ClInclude Include="src\pipeline\skyboxRender.h" />
+    <ClInclude Include="src\pipeline\skyboxRenderPipeline.h" />
     <ClInclude Include="src\scene\camera.h" />
     <ClInclude Include="src\scene\cascadedShadowMap.h" />
     <ClInclude Include="src\scene\envCubemap.h" />
@@ -1193,7 +1192,7 @@
     <ClInclude Include="src\vulkan\debugMessenger.h" />
     <ClInclude Include="src\vulkan\descriptor.h" />
     <ClInclude Include="src\vulkan\device.h" />
-    <ClInclude Include="src\vulkan\vulkanImage.h" />
+    <ClInclude Include="src\vulkan\image.h" />
     <ClInclude Include="src\vulkan\instance.h" />
     <ClInclude Include="src\vulkan\memory.h" />
     <ClInclude Include="src\vulkan\pipeline.h" />

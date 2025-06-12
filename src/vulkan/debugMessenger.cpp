@@ -1,37 +1,17 @@
 #include "debugMessenger.h"
 
 namespace vkn {
-void DebugMessenger::Create(const vk::Instance& instance)
+void DebugMessenger::Create(const vk::Instance& instance, const vk::DispatchLoaderDynamic& dispatchLoaderDynamic)
 {
-    if (!DEBUG) {
-        return;
-    }
+    vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo;
+    debugUtilsCreateInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+                                           vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+    debugUtilsCreateInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                       vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+    debugUtilsCreateInfo.pfnUserCallback = DebugCallback;
 
-    vk::DebugUtilsMessageSeverityFlagsEXT severityFlags(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-                                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
-
-    vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                                       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                                       vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-
-    vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo({}, severityFlags, messageTypeFlags, DebugCallback);
-
-    m_loader = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
-    m_messenger = instance.createDebugUtilsMessengerEXT(debugMessengerCreateInfo, nullptr, m_loader);
-}
-
-void DebugMessenger::SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
-{
-    createInfo.messageSeverity =
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-    createInfo.messageType =
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-        vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-        vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-    // createInfo.pfnUserCallback = DebugCallback;
+    m_messenger = instance.createDebugUtilsMessengerEXT(debugUtilsCreateInfo, nullptr, dispatchLoaderDynamic);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -39,17 +19,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBits
                                              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                              void* pUserData)
 {
+    std::string message = pCallbackData->pMessage;
+
     switch (messageSeverity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        spdlog::error(fmt::format(fmt::fg(fmt::terminal_color::red), pCallbackData->pMessage));
+        spdlog::error(message);
         break;
 
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        spdlog::warn(fmt::format(fmt::fg(fmt::terminal_color::yellow), pCallbackData->pMessage));
+        spdlog::warn(message);
         break;
 
     default:
-        spdlog::info(fmt::format(fmt::fg(fmt::terminal_color::black), pCallbackData->pMessage));
+        spdlog::info(message);
         break;
     }
 

@@ -3,7 +3,7 @@
 
 #include "../vulkan/pipeline.h"
 #include "../scene/line.h"
-#include "../pipeline/meshRender.h"
+#include "../pipeline/meshRenderPipeline.h"
 
 class LineRenderPipeline : public vkn::Pipeline
 {

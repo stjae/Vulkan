@@ -229,9 +229,9 @@ void SceneSerializer::SerializeScriptInstance(YAML::Emitter& out)
     }
 }
 
-void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
+void SceneSerializer::Deserialize(const vk::CommandBuffer& commandBuffer, Scene& scene, const std::string& filePath)
 {
-    scene.Clear();
+    scene.Clear(commandBuffer);
 
     std::ifstream stream(filePath);
     std::stringstream strStream;
@@ -255,10 +255,10 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
 
     auto hdriFilePath = data["HDRIFilePath"];
     if (hdriFilePath) {
-        scene.AddEnvironmentMap(hdriFilePath.as<std::string>());
+        scene.AddEnvironmentMap(commandBuffer, hdriFilePath.as<std::string>());
         scene.m_hdriFilePath = hdriFilePath.as<std::string>();
     } else {
-        scene.SelectDummyEnvMap();
+        scene.SelectDummyEnvMap(commandBuffer);
     }
 
     auto iblExposure = data["IBLExposure"];
@@ -274,7 +274,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
     auto pointLights = data["PointLight"];
     if (pointLights) {
         for (auto pointLight : pointLights) {
-            scene.AddPointLight();
+            scene.AddPointLight(commandBuffer);
             scene.m_pointLight.m_UBOs.back().pos = pointLight["Position"].as<glm::vec3>();
             scene.m_pointLight.m_UBOs.back().color = pointLight["Color"].as<glm::vec3>();
             scene.m_pointLight.m_UBOs.back().intensity = pointLight["Intensity"].as<float>();
@@ -287,7 +287,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
         for (auto resource : resources) {
             auto relativePath = resource["FilePath"].as<std::string>();
             auto fullPath = scene.m_sceneFolderPath + relativePath;
-            scene.AddResource(fullPath);
+            scene.AddResource(commandBuffer, fullPath);
         }
     }
 
@@ -314,7 +314,7 @@ void SceneSerializer::Deserialize(Scene& scene, const std::string& filePath)
                     PhysicsInfo pInfo;
                     pInfo.rigidBodyType = (eRigidBodyType)physicsInfo["Type"].as<int>();
                     pInfo.colliderShape = (eColliderShape)physicsInfo["Shape"].as<int>();
-                    scene.AddPhysics(*scene.m_meshes[i], *meshInstance, pInfo);
+                    scene.AddPhysics(commandBuffer, *scene.m_meshes[i], *meshInstance, pInfo);
                     meshInstance->physicsInfo->scale = physicsInfo["RigidBodyScale"].as<glm::vec3>();
                 }
                 auto subCamera = instance["Camera"];

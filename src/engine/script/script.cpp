@@ -108,7 +108,6 @@ bool Script::InstanceExists(uint64_t UUID)
         return false;
 }
 
-// ScriptClass
 ScriptClass::ScriptClass(const char* nameSpace, const char* name, const std::string& filePath)
     : m_classNameSpace(nameSpace), m_className(name), m_filePath(filePath)
 {
@@ -139,7 +138,6 @@ bool ScriptClass::IsParentOf(MonoClass* monoClass)
     return mono_class_is_subclass_of(monoClass, m_monoClass, true);
 }
 
-// ScriptInstance
 ScriptInstance::ScriptInstance(std::shared_ptr<ScriptClass>& scriptClass, uint64_t meshInstanceID)
     : m_scriptClass(scriptClass), m_meshInstanceID(meshInstanceID) {}
 void ScriptInstance::Init()

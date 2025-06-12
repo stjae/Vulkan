@@ -2,16 +2,14 @@
 #include "instance.h"
 #include "device.h"
 #include "command.h"
-#include "vulkanImage.h"
+#include "image.h"
 
 namespace vkn {
-Swapchain::Swapchain()
-{
-    Command::CreateCommandPool(m_commandPool);
-    Command::AllocateCommandBuffer(m_commandPool, m_commandBuffer);
 
+void Swapchain::Init(const vk::CommandBuffer& commandBuffer)
+{
     CreateSwapchain();
-    InitSwapchain();
+    InitSwapchainLayout(commandBuffer);
     CreateRenderPass();
     CreateFrameBuffer();
 }
@@ -64,14 +62,11 @@ void Swapchain::CreateSwapchain()
     }
 }
 
-void Swapchain::InitSwapchain()
+void vkn::Swapchain::InitSwapchainLayout(const vk::CommandBuffer& commandBuffer)
 {
-    vkn::Command::Begin(m_commandBuffer);
     for (auto& swapchainImage : m_swapchainImages) {
-        vkn::Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+        vkn::Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
     }
-    m_commandBuffer.end();
-    vkn::Command::SubmitAndWait(m_commandBuffer);
 }
 
 void Swapchain::CreateRenderPass()
@@ -125,11 +120,11 @@ void Swapchain::CreateFrameBuffer()
     }
 }
 
-void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
+void Swapchain::Draw(const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, ImDrawData* imDrawData)
 {
     auto& swapchainImage = m_swapchainImages[imageIndex];
 
-    Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eColorAttachmentOptimal);
+    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::RenderPassBeginInfo renderPassInfo;
     renderPassInfo.renderPass = s_bundle.renderPass;
@@ -145,7 +140,7 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
     vk::ClearValue clearValues[] = { clearValue, depthClear };
     renderPassInfo.pClearValues = &clearValues[0];
 
-    m_commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+    commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
 
     vk::Viewport viewport;
     viewport.x = 0.0f;
@@ -158,14 +153,14 @@ void Swapchain::Draw(uint32_t imageIndex, ImDrawData* imDrawData)
     vk::Rect2D scissor;
     scissor.offset = vk::Offset2D(0, 0);
     scissor.extent = s_bundle.swapchainImageExtent;
-    m_commandBuffer.setViewport(0, viewport);
-    m_commandBuffer.setScissor(0, scissor);
+    commandBuffer.setViewport(0, viewport);
+    commandBuffer.setScissor(0, scissor);
 
-    ImGui_ImplVulkan_RenderDrawData(imDrawData, m_commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(imDrawData, commandBuffer);
 
-    m_commandBuffer.endRenderPass();
+    commandBuffer.endRenderPass();
 
-    Command::ChangeImageLayout(m_commandBuffer, swapchainImage.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
+    Command::ChangeImageLayout(commandBuffer, swapchainImage.image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 }
 
 void Swapchain::Destroy()
@@ -180,7 +175,6 @@ void Swapchain::Destroy()
 Swapchain::~Swapchain()
 {
     Destroy();
-    Device::Get().device.destroyCommandPool(m_commandPool);
     Device::Get().device.destroyRenderPass(s_bundle.renderPass);
 }
 

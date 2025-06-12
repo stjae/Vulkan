@@ -1,4 +1,4 @@
-#include "vulkanImage.h"
+#include "image.h"
 
 namespace vkn {
 Image::Image()
@@ -131,12 +131,12 @@ void Image::CreateSampler()
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
-    CheckResult(Device::Get().device.createSampler(&samplerInfo, nullptr, &s_repeatSampler));
+    CHECK_RESULT(Device::Get().device.createSampler(&samplerInfo, nullptr, &s_repeatSampler));
 
     samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    CheckResult(Device::Get().device.createSampler(&samplerInfo, nullptr, &s_clampSampler));
+    CHECK_RESULT(Device::Get().device.createSampler(&samplerInfo, nullptr, &s_clampSampler));
 }
 
 void Image::DestroyImage()
@@ -156,7 +156,7 @@ void Image::CreateFramebuffer(const Pipeline& pipeline)
     vk::ImageView attachment = m_bundle.imageView;
     vk::FramebufferCreateInfo frameBufferCI({}, pipeline.m_renderPass, 1, &attachment, m_imageCreateInfo.extent.width, m_imageCreateInfo.extent.height, 1);
 
-    CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
+    CHECK_RESULT(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }
 
 void Image::CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t height)
@@ -164,7 +164,7 @@ void Image::CreateFramebuffer(const Pipeline& pipeline, uint32_t width, uint32_t
     vk::ImageView attachment = m_bundle.imageView;
     vk::FramebufferCreateInfo frameBufferCI({}, pipeline.m_renderPass, 1, &attachment, width, height, 1);
 
-    CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
+    CHECK_RESULT(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffer));
 }
 
 void Image::Draw(const vk::CommandBuffer& commandBuffer, const Mesh& square, const Pipeline& pipeline)

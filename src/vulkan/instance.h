@@ -11,14 +11,16 @@ class Instance
     friend class Device;
     inline static VkSurfaceKHR s_surface;
     inline static vk::Instance s_instance;
+    vk::DispatchLoaderDynamic m_dispatchLoaderDynamic;
     DebugMessenger m_debugMessenger;
     std::vector<const char*> m_extensions;
     std::vector<const char*> m_layers;
+    bool m_isDebugUtilsAvailable;
 
     Instance();
     ~Instance();
-    void SetExtensions(std::vector<const char*>& extensions, vk::InstanceCreateInfo& createInfo);
-    void SetLayers(std::vector<const char*>& layers, vk::InstanceCreateInfo& createInfo, vk::DebugUtilsMessengerCreateInfoEXT& debugInfo);
+    void SetExtensions(vk::InstanceCreateInfo& createInfo);
+    void SetLayers(vk::InstanceCreateInfo& createInfo);
     void CreateSurface();
 
 public:

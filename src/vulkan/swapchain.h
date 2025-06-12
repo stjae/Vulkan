@@ -36,25 +36,22 @@ class Swapchain
     std::vector<vk::PresentModeKHR> m_supportedPresentModes;
     std::vector<Image> m_swapchainImages;
 
-    vk::CommandPool m_commandPool;
-
     void QuerySwapchainSupport();
     void ChooseSurfaceFormat();
     void ChoosePresentMode();
     void ChooseExtent();
 
 public:
-    Swapchain();
     ~Swapchain();
+    void Init(const vk::CommandBuffer& commandBuffer);
     void CreateSwapchain();
-    void InitSwapchain();
+    void InitSwapchainLayout(const vk::CommandBuffer& commandBuffer);
     void CreateRenderPass();
     void CreateFrameBuffer();
-    void Draw(uint32_t imageIndex, ImDrawData* imDrawData);
+    void Draw(const vk::CommandBuffer& commandBuffer, uint32_t imageIndex, ImDrawData* imDrawData);
     void Destroy();
 
     static const Bundle& Get() { return s_bundle; }
-    vk::CommandBuffer m_commandBuffer;
 };
 } // namespace vkn
 

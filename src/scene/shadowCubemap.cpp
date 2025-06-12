@@ -34,7 +34,7 @@ void ShadowCubemap::CreateFramebuffer()
 
     for (uint32_t i = 0; i < 6; i++) {
         attachments[0] = m_cubemapFaceImageViews[i];
-        vkn::CheckResult(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffers[i]));
+        vkn::CHECK_RESULT(vkn::Device::Get().device.createFramebuffer(&frameBufferCI, nullptr, &m_framebuffers[i]));
     }
 }
 

@@ -15,6 +15,7 @@ inline btVector3 ToBtVector3(const float* v)
     return btVector3(v[0], v[1], v[2]);
 }
 
+// Internal calls exposed to Mono (C#)
 class Registry
 {
     static void GetTranslation(uint64_t meshInstanceID, glm::vec3* outTranslation);
@@ -44,7 +45,7 @@ class Registry
     static void SetAngularVelocity(uint64_t meshInstanceID, const float* inVelocity);
     static void SetRigidBodyTransform(uint64_t meshInstanceID, glm::mat4* matrix);
     static void GetRayHitPosition(const float* rayFrom, const float* rayTo, float* hitPosition);
-    static void DuplicateMeshInstance(uint64_t meshInstanceID);
+    static void DuplicateMeshInstance(const vk::CommandBuffer& commandBuffer, uint64_t meshInstanceID);
 
 public:
     static void RegisterFunctions();

@@ -209,12 +209,13 @@ void Registry::GetRayHitPosition(const float* rayFrom, const float* rayTo, float
     }
 }
 
-void Registry::DuplicateMeshInstance(uint64_t meshInstanceID)
+void Registry::DuplicateMeshInstance(const vk::CommandBuffer& commandBuffer, uint64_t meshInstanceID)
 {
     auto& meshInstance = Script::s_scene->GetMeshInstanceByID(meshInstanceID);
-    Script::s_scene->DuplicateMeshInstance(meshInstance.UBO.meshColorID, meshInstance.UBO.instanceColorID);
+    Script::s_scene->DuplicateMeshInstance(commandBuffer, meshInstance.UBO.meshColorID, meshInstance.UBO.instanceColorID, { 0.0f, 0.0f, 0.0f });
 }
 
+// Register native functions to be called from C# via Mono
 void Registry::RegisterFunctions()
 {
     mono_add_internal_call("vkApp.InternalCall::GetTranslation", (const void*)GetTranslation);

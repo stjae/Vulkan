@@ -2,7 +2,7 @@
 #define POSTPROCESSPIPELINE_H
 
 #include "../vulkan/pipeline.h"
-#include "../pipeline/meshRender.h"
+#include "../pipeline/meshRenderPipeline.h"
 
 class PostProcessPipeline : public vkn::Pipeline
 {

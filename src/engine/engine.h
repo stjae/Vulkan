@@ -53,11 +53,11 @@ class Engine
     Viewport m_viewport;
     UI m_imGui;
     Scene m_scene;
-    bool m_init;
-    std::vector<vk::CommandBuffer> m_commandBuffers;
+    bool m_init = true;
+    int m_currentFrame = 0;
 
-    void UpdateSwapchain();
-    void RecreateSwapchain();
+    void UpdateSwapchain(const vk::CommandBuffer& commandBuffer);
+    void RecreateSwapchain(const vk::CommandBuffer& commandBuffer);
 
 public:
     Engine();

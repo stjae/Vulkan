@@ -8,10 +8,9 @@ class DebugMessenger
 {
     friend class Instance;
 
-    void Create(const vk::Instance& instance);
+    void Create(const vk::Instance& instance, const vk::DispatchLoaderDynamic& dispatchLoaderDynamic);
     void SetDebugInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
 
-    vk::DispatchLoaderDynamic m_loader;
     vk::DebugUtilsMessengerEXT m_messenger;
 };
 

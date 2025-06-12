@@ -3,21 +3,21 @@
 
 #include "../common.h"
 #include "../scene/scene.h"
-#include "../vulkan/vulkanImage.h"
+#include "../vulkan/image.h"
 #include "../vulkan/command.h"
 #include "../vulkan/swapchain.h"
-#include "../pipeline/meshRender.h"
-#include "../pipeline/postProcess.h"
-#include "../pipeline/colorID.h"
+#include "../pipeline/meshRenderPipeline.h"
+#include "../pipeline/postProcessPipeline.h"
+#include "../pipeline/colorIDPipeline.h"
 #include "../pipeline/shadowMapPipeline.h"
 #include "../pipeline/shadowCubemapPipeline.h"
 #include "../pipeline/envCubemapPipeline.h"
-#include "../pipeline/irradianceCubemap.h"
+#include "../pipeline/irradianceCubemapPipeline.h"
 #include "../pipeline/prefilteredCubemapPipeline.h"
-#include "../pipeline/brdfLut.h"
-#include "../pipeline/skyboxRender.h"
-#include "../pipeline/lineRender.h"
-#include "../pipeline/physicsDebug.h"
+#include "../pipeline/brdfLutPipeline.h"
+#include "../pipeline/skyboxRenderPipeline.h"
+#include "../pipeline/lineRenderPipeline.h"
+#include "../pipeline/physicsDebugPipeline.h"
 #include "../scene/mesh.h"
 
 class Viewport
@@ -35,10 +35,6 @@ class Viewport
     vkn::Image m_colorID;
     vkn::Image m_depth;
 
-    vk::CommandPool m_commandPool;
-    vk::CommandBuffer m_commandBuffer;
-    vk::CommandBuffer m_pickColorCommandBuffer;
-
     vkn::Image m_pickedColor;
     ImVec2 m_panelPos;
     ImVec2 m_panelSize;
@@ -51,8 +47,8 @@ public:
     Viewport();
     void CreateImage();
     void DestroyImage();
-    void PickColor(double mouseX, double mouseY, Scene& scene);
-    void Draw(const Scene& scene);
+    void PickColor(const vk::CommandBuffer& commandBuffer, double mouseX, double mouseY, Scene& scene);
+    void Draw(const vk::CommandBuffer& commandBuffer, const Scene& scene);
     ~Viewport();
     void UpdateImage();
     static float GetRatio() { return s_panelRatio; }

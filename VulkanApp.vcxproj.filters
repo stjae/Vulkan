@@ -45,28 +45,28 @@
     <ClCompile Include="src\engine\script\script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\brdfLut.cpp">
+    <ClCompile Include="src\pipeline\brdfLutPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\colorID.cpp">
+    <ClCompile Include="src\pipeline\colorIDPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pipeline\envCubemapPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\irradianceCubemap.cpp">
+    <ClCompile Include="src\pipeline\irradianceCubemapPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\lineRender.cpp">
+    <ClCompile Include="src\pipeline\lineRenderPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\meshRender.cpp">
+    <ClCompile Include="src\pipeline\meshRenderPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\physicsDebug.cpp">
+    <ClCompile Include="src\pipeline\physicsDebugPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\postProcess.cpp">
+    <ClCompile Include="src\pipeline\postProcessPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pipeline\prefilteredCubemapPipeline.cpp">
@@ -78,7 +78,7 @@
     <ClCompile Include="src\pipeline\shadowMapPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\skyboxRender.cpp">
+    <ClCompile Include="src\pipeline\skyboxRenderPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\camera.cpp">
@@ -141,7 +141,7 @@
     <ClCompile Include="src\vulkan\device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\vulkan\vulkanImage.cpp">
+    <ClCompile Include="src\vulkan\image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vulkan\instance.cpp">
@@ -788,13 +788,7 @@
     <ClInclude Include="src\common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\enum.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\keycode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\path.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\myTime.h">
@@ -824,28 +818,28 @@
     <ClInclude Include="src\engine\script\script.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\brdfLut.h">
+    <ClInclude Include="src\pipeline\brdfLutPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\colorID.h">
+    <ClInclude Include="src\pipeline\colorIDPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pipeline\envCubemapPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\irradianceCubemap.h">
+    <ClInclude Include="src\pipeline\irradianceCubemapPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\lineRender.h">
+    <ClInclude Include="src\pipeline\lineRenderPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\meshRender.h">
+    <ClInclude Include="src\pipeline\meshRenderPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\physicsDebug.h">
+    <ClInclude Include="src\pipeline\physicsDebugPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\postProcess.h">
+    <ClInclude Include="src\pipeline\postProcessPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pipeline\prefilteredCubemapPipeline.h">
@@ -857,7 +851,7 @@
     <ClInclude Include="src\pipeline\shadowMapPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pipeline\skyboxRender.h">
+    <ClInclude Include="src\pipeline\skyboxRenderPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scene\camera.h">
@@ -923,7 +917,7 @@
     <ClInclude Include="src\vulkan\device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\vulkan\vulkanImage.h">
+    <ClInclude Include="src\vulkan\image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\vulkan\instance.h">
