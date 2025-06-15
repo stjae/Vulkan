@@ -1,3 +1,6 @@
+// UI creation using the ImGui library
+// ImGuiライブラリを用いたUI構築
+
 #ifndef IMGUI_H
 #define IMGUI_H
 

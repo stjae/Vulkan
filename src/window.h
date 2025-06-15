@@ -1,3 +1,6 @@
+// Class for creating windows, receiving mouse and keyboard input, and handling resize events using GLFW
+// GLFWを利用してウィンドウの生成、マウスやキーボードの入力取得、リサイズイベントの処理を行うクラス
+
 #ifndef WINDOW_H
 #define WINDOW_H
 

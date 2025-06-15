@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan descriptors
+// Vulkanのディスクリプタのラッパークラス
+
 #ifndef DESCRIPTOR_H
 #define DESCRIPTOR_H
 

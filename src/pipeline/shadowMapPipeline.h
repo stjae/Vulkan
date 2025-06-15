@@ -1,3 +1,6 @@
+// Shadow cubemap rendering pipeline for directional light
+// ディレクショナルライト用シャドウキューブマップパイプライン
+
 #ifndef SHADOWMAPPIPELINE_H
 #define SHADOWMAPPIPELINE_H
 

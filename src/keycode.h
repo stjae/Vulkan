@@ -1,3 +1,6 @@
+// Enum class to define keyboard and mouse input keys
+// キーボードやマウスの入力キーを定義するenumクラス
+
 #ifndef KEYCODE_H
 #define KEYCODE_H
 

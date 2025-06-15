@@ -1,3 +1,6 @@
+// Rendering pipeline for Color ID drawing used for object selection
+// オブジェクト選択用Color ID描画パイプライン
+
 #ifndef COLORIDPIPELINE_H
 #define COLORIDPIPELINE_H
 

@@ -1,3 +1,6 @@
+// Program entry point
+// プログラムのエントリーポイント
+
 #include <windows.h>
 #include "engine/app.h"
 #include "common.h"

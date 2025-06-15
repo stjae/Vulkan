@@ -1,3 +1,6 @@
+// Definition of C++ functions called from C# scripts
+// C#スクリプトから呼び出されるC++関数の定義
+
 #ifndef REGISTRY_H
 #define REGISTRY_H
 

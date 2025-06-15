@@ -1,3 +1,6 @@
+// Scene load and save
+// シーンのロード・セーブ機能
+
 #ifndef SCENESERIALIZER_H
 #define SCENESERIALIZER_H
 

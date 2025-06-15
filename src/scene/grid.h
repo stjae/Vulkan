@@ -1,3 +1,6 @@
+// Grid creation and update
+// グリッドの生成と更新
+
 #ifndef GRID_H
 #define GRID_H
 

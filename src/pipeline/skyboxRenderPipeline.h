@@ -1,3 +1,6 @@
+// Rendering pipeline for background skybox drawing
+// 背景描画用スカイボックスパイプライン
+
 #ifndef SKYBOXRENDERPIPELINE_H
 #define SKYBOXRENDERPIPELINE_H
 
@@ -7,7 +10,7 @@
 class SkyboxRenderPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;
-    void CreateRenderPass() override{};
+    void CreateRenderPass() override {};
 
 public:
     void CreatePipeline() override;

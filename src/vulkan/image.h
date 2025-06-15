@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan Image
+// Vulkan Imageのラッパークラス
+
 #ifndef IMAGE_H
 #define IMAGE_H
 

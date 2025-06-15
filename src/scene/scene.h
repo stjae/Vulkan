@@ -1,3 +1,6 @@
+// All functions related to the scene and their update process
+// シーンに関わる全機能とその更新処理
+
 #ifndef SCENE_H
 #define SCENE_H
 

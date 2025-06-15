@@ -1,3 +1,6 @@
+// Parent class of mesh.h: Creation of vertex/index data and buffers
+// mesh.hの親クラス：頂点・インデックスデータとバッファの生成
+
 #ifndef MESHDATA_H
 #define MESHDATA_H
 

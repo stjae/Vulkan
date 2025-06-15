@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan device
+// Vulkanデバイスのラッパークラス
+
 #ifndef DEVICE_H
 #define DEVICE_H
 

@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan Debug Utils Messenger
+// VulkanのDebug Utils Messengerのラッパークラス
+
 #ifndef DEBUGMESSENGER_H
 #define DEBUGMESSENGER_H
 

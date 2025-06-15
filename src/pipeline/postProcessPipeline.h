@@ -1,3 +1,6 @@
+// Rendering pipeline for post-processing effects
+// ポストプロセス用レンダーパイプライン
+
 #ifndef POSTPROCESSPIPELINE_H
 #define POSTPROCESSPIPELINE_H
 
@@ -7,7 +10,7 @@
 class PostProcessPipeline : public vkn::Pipeline
 {
     void SetUpDescriptors() override;
-    void CreateRenderPass() override{};
+    void CreateRenderPass() override {};
 
 public:
     void CreatePipeline() override;

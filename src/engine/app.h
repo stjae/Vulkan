@@ -1,3 +1,6 @@
+// Handling user input, updating time, and executing the engine's rendering loop
+// ユーザー入力の処理、時間の更新、エンジンのレンダリングループの実行
+
 #ifndef BASEAPP_H
 #define BASEAPP_H
 

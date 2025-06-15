@@ -1,3 +1,6 @@
+// Camera creation and update
+// カメラの生成と更新
+
 #ifndef CAMERA_H
 #define CAMERA_H
 

@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan memory
+// Vulkan Memoryのラッパークラス
+
 #ifndef MEMORY_H
 #define MEMORY_H
 

@@ -1,3 +1,6 @@
+// Vulkan fence and semaphore creation
+// Vulkan フェンス／セマフォ生成
+
 #ifndef SYNC_H
 #define SYNC_H
 

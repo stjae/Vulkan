@@ -1,3 +1,6 @@
+// Definition and update of time variables such as delta time and FPS
+// デルタタイムやFPSなどの時間変数の定義と更新
+
 #ifndef TIME_H
 #define TIME_H
 

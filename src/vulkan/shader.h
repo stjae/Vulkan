@@ -1,3 +1,6 @@
+// Vulkan shader module creation
+// Vulkan シェーダーモジュールの生成
+
 #ifndef SHADER_H
 #define SHADER_H
 

@@ -1,3 +1,6 @@
+// Shadow map creation and update
+// シャドウマップの生成と更新
+
 #ifndef SHADOWMAP_H
 #define SHADOWMAP_H
 

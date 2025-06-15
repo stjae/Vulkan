@@ -1,3 +1,6 @@
+// Update handling for click, drawing, and resizing in the viewport
+// ビューポートでのクリック・描画・リサイズ対応更新
+
 #ifndef VIEWPORT_H
 #define VIEWPORT_H
 

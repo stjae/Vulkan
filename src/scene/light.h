@@ -1,3 +1,6 @@
+// Creation and update of directional and point lights
+// ディレクショナルライトとポイントライトの生成と更新
+
 #ifndef LIGHT_H
 #define LIGHT_H
 

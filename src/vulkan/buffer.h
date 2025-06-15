@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan buffers
+// Vulkanバッファのラッパークラス
+
 #ifndef BUFFER_H
 #define BUFFER_H
 

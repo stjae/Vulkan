@@ -1,3 +1,6 @@
+// LinePoint structure: Used for grid/physics debugging line drawing
+// LinePoint構造体：グリッド／物理デバッグ用ライン描画で使用
+
 #ifndef LINE_H
 #define LINE_H
 

@@ -1,3 +1,6 @@
+// Rendering pipeline for line drawing
+// ライン描画用レンダーパイプライン
+
 #ifndef LINERENDERPIPELINE_H
 #define LINERENDERPIPELINE_H
 
@@ -11,7 +14,7 @@ class LineRenderPipeline : public vkn::Pipeline
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribDesc;
 
     void SetUpDescriptors() override;
-    void CreateRenderPass() override{};
+    void CreateRenderPass() override {};
 
 public:
     LineRenderPipeline();

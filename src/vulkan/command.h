@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan command management
+// Vulkanコマンド管理用ラッパークラス
+
 #ifndef COMMAND_H
 #define COMMAND_H
 

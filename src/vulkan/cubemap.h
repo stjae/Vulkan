@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan cube maps using Vulkan Image
+// VulkanのImageを用いたキューブマップのラッパークラス
+
 #ifndef CUBEMAP_H
 #define CUBEMAP_H
 

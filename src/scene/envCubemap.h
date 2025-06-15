@@ -1,3 +1,6 @@
+// Environment cubemap creation and update
+// 環境キューブマップの生成と更新
+
 #ifndef ENVCUBEMAP_H
 #define ENVCUBEMAP_H
 

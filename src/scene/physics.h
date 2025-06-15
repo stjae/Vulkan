@@ -1,3 +1,6 @@
+// Physics system setup using Bullet Physics
+// Bullet Physicsによる物理システム構成
+
 #ifndef PHYSICS_H
 #define PHYSICS_H
 

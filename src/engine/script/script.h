@@ -1,3 +1,6 @@
+// Setting up the Mono runtime environment to execute C# scripts
+// C#スクリプトを実行するためのMonoランタイム環境の構築
+
 #ifndef SCRIPT_H
 #define SCRIPT_H
 

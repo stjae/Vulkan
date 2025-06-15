@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan instance
+// Vulkan Instanceのラッパークラス
+
 #ifndef INSTANCE_H
 #define INSTANCE_H
 

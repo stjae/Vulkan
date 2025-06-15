@@ -1,3 +1,6 @@
+// Debugger for visualizing the shape and state of Bullet Physics Rigidbody
+// Bullet PhysicsのRigidbodyの形状および状態を可視化するためのデバッガー
+
 #ifndef PHYSICSDEBUGDRAWER_H
 #define PHYSICSDEBUGDRAWER_H
 

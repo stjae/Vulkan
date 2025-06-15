@@ -1,3 +1,6 @@
+// Execute the update and rendering of the viewport, UI, and scene
+// ビューポート、UI、シーンの更新およびレンダリングを実行
+
 #ifndef ENGINE_H
 #define ENGINE_H
 

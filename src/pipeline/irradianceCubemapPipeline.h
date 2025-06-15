@@ -1,3 +1,6 @@
+// Rendering pipeline for Irradiance Cubemap used for IBL
+// IBL向けIrradiance Cubemapレンダーパイプライン
+
 #ifndef IRRADIANCECUBEMAPPIPELINE_H
 #define IRRADIANCECUBEMAPPIPELINE_H
 

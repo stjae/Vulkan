@@ -1,3 +1,6 @@
+// Mesh creation/loading, instance management, UBO/ID update
+// メッシュ生成・ロード、インスタンス管理、UBO／ID更新
+
 #ifndef MESHPRIMITIVE_H
 #define MESHPRIMITIVE_H
 

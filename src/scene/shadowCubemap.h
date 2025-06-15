@@ -1,3 +1,6 @@
+// Shadow cubemap creation and update
+// シャドウキューブマップの生成と更新
+
 #ifndef SHADOWCUBEMAP_H
 #define SHADOWCUBEMAP_H
 

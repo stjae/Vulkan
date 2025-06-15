@@ -1,3 +1,6 @@
+// Common library and function definitions
+// 共通ライブラリ・関数の定義
+
 #ifndef COMMON_H
 #define COMMON_H
 

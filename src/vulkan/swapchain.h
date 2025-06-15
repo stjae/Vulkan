@@ -1,3 +1,6 @@
+// Swapchain creation, drawing, and destruction
+// スワップチェーンの作成・描画・破棄
+
 #ifndef SWAPCHAIN_H
 #define SWAPCHAIN_H
 

@@ -1,3 +1,6 @@
+// Creation and update of prefiltered cubemap
+// プリフィルタされたキューブマップの生成と更新
+
 #ifndef PREFILTEREDCUBEMAP_H
 #define PREFILTEREDCUBEMAP_H
 

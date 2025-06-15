@@ -1,3 +1,6 @@
+// Rendering pipeline for BRDF LUT texture in PBR
+// PBRにおけるBRDF LUTテクスチャのレンダリングパイプライン
+
 #ifndef BRDFLUTPIPELINE_H
 #define BRDFLUTPIPELINE_H
 

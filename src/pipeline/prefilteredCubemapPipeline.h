@@ -1,3 +1,6 @@
+// Rendering pipeline for prefiltered cubemap for PBR
+// PBR向けプリフィルタされたキューブマップパイプライン
+
 #ifndef PREFILTEREDCUBEMAPPIPELINE_H
 #define PREFILTEREDCUBEMAPPIPELINE_H
 

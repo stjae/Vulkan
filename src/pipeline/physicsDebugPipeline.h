@@ -1,3 +1,6 @@
+// Wireframe rendering pipeline for Rigidbody visualization
+// Rigidbody確認用Wireframeレンダーパイプライン
+
 #ifndef PHYSICSDEBUGPIPELINE_H
 #define PHYSICSDEBUGPIPELINE_H
 

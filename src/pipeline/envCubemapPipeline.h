@@ -1,3 +1,6 @@
+// Rendering pipeline for Environment Cubemap
+// Environment Cubemapレンダーパイプライン
+
 #ifndef ENVCUBEMAPPIPELINE_H
 #define ENVCUBEMAPPIPELINE_H
 

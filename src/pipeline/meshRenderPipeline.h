@@ -1,3 +1,6 @@
+// General object rendering pipeline
+// オブジェクトレンダーパイプライン
+
 #ifndef MESHRENDERPIPELINE_H
 #define MESHRENDERPIPELINE_H
 

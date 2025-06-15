@@ -1,3 +1,6 @@
+// Shadow cubemap rendering pipeline for point lights
+// ポイントライト用シャドウキューブマップパイプライン
+
 #ifndef SHADOWCUBEMAPPIPELINE_H
 #define SHADOWCUBEMAPPIPELINE_H
 

@@ -1,3 +1,6 @@
+// Cascade shadow map creation and update
+// カスケードシャドウマップ生成と更新
+
 #ifndef CASCADED_SHADOW_MAP_H
 #define CASCADED_SHADOW_MAP_H
 

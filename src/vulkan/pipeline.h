@@ -1,3 +1,6 @@
+// Wrapper class for Vulkan pipeline
+// Vulkan Pipelineのラッパークラス
+
 #ifndef PIPELINE_H
 #define PIPELINE_H
 
