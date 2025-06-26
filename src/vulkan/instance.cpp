@@ -3,7 +3,6 @@
 namespace vkn {
 Instance::Instance()
 {
-    //** create instance **//
     vk::ApplicationInfo applicationInfo;
     applicationInfo.apiVersion = VK_API_VERSION_1_3;
 

@@ -66,7 +66,6 @@ bool Image::InsertImage(const std::string& filePath, vk::Format format, const vk
     return true;
 }
 
-// TODO: reuse dummy
 void Image::InsertDummyImage(const vk::CommandBuffer& commandBuffer, std::array<uint8_t, 4>&& color)
 {
     BufferInfo bufferInfo = { sizeof(color), sizeof(color), vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };

@@ -19,34 +19,24 @@
 
 #pragma comment(lib, "vulkan-1.lib")
 #ifdef _DEBUG
-#pragma comment(lib, "glfw3d.lib")
-#pragma comment(lib, "nfdd.lib")
-#pragma comment(lib, "assimp-vc143-mtd.lib")
-#pragma comment(lib, "yaml-cppd.lib")
-
-#pragma comment(lib, "mono-2.0-sgend.lib")
-#pragma comment(lib, "libmonoruntime-sgend.lib")
-#pragma comment(lib, "libmono-static-sgend.lib")
-#pragma comment(lib, "libmini-sgend.lib")
-#pragma comment(lib, "libmonoutilsd.lib")
-#pragma comment(lib, "libgcmonosgend.lib")
-#pragma comment(lib, "MonoPosixHelperd.lib")
-#pragma comment(lib, "eglibd.lib")
+#define PATH "debug/"
 #else
-#pragma comment(lib, "glfw3.lib")
-#pragma comment(lib, "nfd.lib")
-#pragma comment(lib, "assimp-vc143-mt.lib")
-#pragma comment(lib, "yaml-cpp.lib")
-
-#pragma comment(lib, "mono-2.0-sgen.lib")
-#pragma comment(lib, "libmonoruntime-sgen.lib")
-#pragma comment(lib, "libmono-static-sgen.lib")
-#pragma comment(lib, "libmini-sgen.lib")
-#pragma comment(lib, "libmonoutils.lib")
-#pragma comment(lib, "libgcmonosgen.lib")
-#pragma comment(lib, "MonoPosixHelper.lib")
-#pragma comment(lib, "eglib.lib")
+#define PATH ""
 #endif
+#pragma comment(lib, PATH "glfw3.lib")
+#pragma comment(lib, PATH "nfd.lib")
+#pragma comment(lib, PATH "assimp-vc143-mt.lib")
+#pragma comment(lib, PATH "yaml-cpp.lib")
+#pragma comment(lib, PATH "mono-2.0-sgen.lib")
+#pragma comment(lib, PATH "libmonoruntime-sgen.lib")
+#pragma comment(lib, PATH "libmono-static-sgen.lib")
+#pragma comment(lib, PATH "libmini-sgen.lib")
+#pragma comment(lib, PATH "libmonoutils.lib")
+#pragma comment(lib, PATH "libgcmonosgen.lib")
+#pragma comment(lib, PATH "MonoPosixHelper.lib")
+#pragma comment(lib, PATH "eglib.lib")
+#pragma comment(lib, PATH "ktx.lib")
+#pragma comment(lib, PATH "ktx_read.lib")
 
 class Engine
 {

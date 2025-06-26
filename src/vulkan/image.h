@@ -9,6 +9,9 @@
 #include "pipeline.h"
 #include "../scene/mesh.h"
 #include <stb/stb_image.h>
+#include <filesystem>
+#include <ktx.h>
+#include <ktxvulkan.h>
 
 namespace vkn {
 class Image

@@ -17,7 +17,6 @@
 #include "../pipeline/envCubemapPipeline.h"
 #include "../pipeline/irradianceCubemapPipeline.h"
 #include "../pipeline/prefilteredCubemapPipeline.h"
-#include "../pipeline/brdfLutPipeline.h"
 #include "../pipeline/skyboxRenderPipeline.h"
 #include "../pipeline/lineRenderPipeline.h"
 #include "../pipeline/physicsDebugPipeline.h"

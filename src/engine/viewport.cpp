@@ -12,7 +12,6 @@ Viewport::Viewport() : m_outDated(false), m_isMouseHovered(false)
     envCubemapPipeline.CreatePipeline();
     irradianceCubemapPipeline.CreatePipeline();
     prefilteredCubemapPipeline.CreatePipeline();
-    brdfLutPipeline.CreatePipeline();
     skyboxRenderPipeline.CreatePipeline();
     lineRenderPipeline.CreatePipeline();
     physicsDebugPipeline.CreatePipeline();
@@ -303,7 +302,6 @@ Viewport::~Viewport()
     envCubemapPipeline.Destroy();
     irradianceCubemapPipeline.Destroy();
     prefilteredCubemapPipeline.Destroy();
-    brdfLutPipeline.Destroy();
     skyboxRenderPipeline.Destroy();
     lineRenderPipeline.Destroy();
     physicsDebugPipeline.Destroy();

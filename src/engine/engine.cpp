@@ -12,7 +12,6 @@ Engine::Engine()
     vkn::Command::SubmitAndWait(m_currentFrame);
 }
 
-// Render loop
 void Engine::Render()
 {
     vkn::CHECK_RESULT(vkn::Device::Get().device.waitForFences(1, &vkn::Sync::GetInFlightFence(m_currentFrame), VK_TRUE, UINT64_MAX));

@@ -5,7 +5,6 @@ ShadowMap::ShadowMap()
     vkn::BufferInfo bufferInfo = { sizeof(glm::mat4), sizeof(glm::mat4), vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
     m_viewProjBuffer = std::make_unique<vkn::Buffer>(bufferInfo);
     shadowMapPipeline.UpdateViewProjBuffer(m_viewProjBuffer->Get().descriptorBufferInfo);
-    //  meshRenderPipeline.UpdateShadowMapViewProj(m_viewProjBuffer->Get().descriptorBufferInfo);
 }
 
 void ShadowMap::CreateShadowMap(vk::CommandBuffer& commandBuffer)

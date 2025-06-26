@@ -5,11 +5,10 @@
 #include "engine/app.h"
 #include "common.h"
 
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-#if NDEBUG
-    HWND hWndConsole = GetConsoleWindow();
-    ShowWindow(hWndConsole, SW_HIDE);
+#ifdef _DEBUG
+    AllocConsole();
 #endif
 
     Application app(1920, 1080, "vulkan");

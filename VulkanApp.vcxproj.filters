@@ -45,9 +45,6 @@
     <ClCompile Include="src\engine\script\script.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline\brdfLutPipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\pipeline\colorIDPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -816,9 +813,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\script\script.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pipeline\brdfLutPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pipeline\colorIDPipeline.h">
@@ -3090,6 +3084,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="externalLibrary\glslang\glslang\glsl_intrinsic_header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="externalLibrary\ktx\KHR\khr_df.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="externalLibrary\ktx\ktx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="externalLibrary\ktx\ktxvulkan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

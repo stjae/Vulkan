@@ -106,14 +106,14 @@
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>externalLibrary\ktx;externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -154,13 +154,13 @@
     <ClCompile>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>externalLibrary\ktx;externalLibrary\glslang;externalLibrary\stb;externalLibrary\imgui;externalLibrary\mono;externalLibrary\bullet;externalLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)externalLibrary;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -395,7 +395,6 @@
     <ClCompile Include="src\engine\ui.cpp" />
     <ClCompile Include="src\engine\viewport.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\pipeline\brdfLutPipeline.cpp" />
     <ClCompile Include="src\pipeline\colorIDPipeline.cpp" />
     <ClCompile Include="src\pipeline\envCubemapPipeline.cpp" />
     <ClCompile Include="src\pipeline\irradianceCubemapPipeline.cpp" />
@@ -1107,6 +1106,9 @@
     <ClInclude Include="externalLibrary\imgui\imstb_textedit.h" />
     <ClInclude Include="externalLibrary\imgui\imstb_truetype.h" />
     <ClInclude Include="externalLibrary\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="externalLibrary\ktx\KHR\khr_df.h" />
+    <ClInclude Include="externalLibrary\ktx\ktx.h" />
+    <ClInclude Include="externalLibrary\ktx\ktxvulkan.h" />
     <ClInclude Include="externalLibrary\nfd\nfd.h" />
     <ClInclude Include="externalLibrary\nfd\nfd.hpp" />
     <ClInclude Include="externalLibrary\vk_video\vulkan_video_codecs_common.h" />
@@ -1164,7 +1166,6 @@
     <ClInclude Include="src\engine\ui.h" />
     <ClInclude Include="src\engine\viewport.h" />
     <ClInclude Include="src\keycode.h" />
-    <ClInclude Include="src\pipeline\brdfLutPipeline.h" />
     <ClInclude Include="src\pipeline\colorIDPipeline.h" />
     <ClInclude Include="src\pipeline\envCubemapPipeline.h" />
     <ClInclude Include="src\pipeline\irradianceCubemapPipeline.h" />

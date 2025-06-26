@@ -4,7 +4,6 @@
 #include "../pipeline/envCubemapPipeline.h"
 #include "../pipeline/irradianceCubemapPipeline.h"
 #include "../pipeline/prefilteredCubemapPipeline.h"
-#include "../pipeline/brdfLutPipeline.h"
 #include "../pipeline/skyboxRenderPipeline.h"
 #include "../pipeline/lineRenderPipeline.h"
 #include "../pipeline/physicsDebugPipeline.h"
@@ -72,13 +71,36 @@ void Scene::CreateEnvironmentMap(const vk::CommandBuffer& commandBuffer)
     m_square.CreateSquare();
     m_square.CreateBuffers(commandBuffer);
     m_square.m_meshInstances.push_back(std::make_unique<MeshInstance>(0, MeshInstanceUBO(0, 0)));
-    m_brdfLut.CreateImage({ 512, 512, 1 }, vk::Format::eR16G16Sfloat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eLinear, vk::MemoryPropertyFlagBits::eDeviceLocal, vkn::Image::s_clampSampler);
-    m_brdfLut.CreateImageView();
-    m_brdfLut.CreateFramebuffer(brdfLutPipeline);
-    m_brdfLut.ChangeImageLayout(commandBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    m_brdfLut.Draw(commandBuffer, m_square, brdfLutPipeline);
-    m_brdfLut.ChangeImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    meshRenderPipeline.UpdateBrdfLut(m_brdfLut.Get().descriptorImageInfo);
+
+    // load brdfLUT
+    ktxTexture* ktxTexture;
+    ktxVulkanTexture vkTexture;
+    ktxVulkanDeviceInfo devInfo;
+    vk::CommandPoolCreateInfo commandPoolCreateInfo;
+    vk::CommandPool commandPool;
+    commandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+    commandPoolCreateInfo.queueFamilyIndex = vkn::Device::Get().graphicsFamilyIndex.value();
+    commandPool = vkn::Device::Get().device.createCommandPool(commandPoolCreateInfo);
+    ktxVulkanDeviceInfo_Construct(&devInfo, vkn::Device::Get().physicalDevice, vkn::Device::Get().device, vkn::Device::Get().graphicsQueue, commandPool, nullptr);
+    ktxTexture_CreateFromNamedFile("image/brdfLUT.ktx", KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+    ktxTexture_VkUpload(ktxTexture, &devInfo, &vkTexture);
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = vkTexture.image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = VK_FORMAT_R16G16_SFLOAT;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = vkTexture.levelCount;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    VkImageView imageView;
+    vkCreateImageView(vkn::Device::Get().device, &viewInfo, nullptr, &imageView);
+    VkDescriptorImageInfo brdfLutImageInfo;
+    brdfLutImageInfo.imageLayout = vkTexture.imageLayout;
+    brdfLutImageInfo.imageView = imageView;
+    brdfLutImageInfo.sampler = vkn::Image::s_repeatSampler;
+    meshRenderPipeline.UpdateBrdfLut(brdfLutImageInfo);
 }
 
 void Scene::UpdateCameraDescriptor(Camera* camera)
